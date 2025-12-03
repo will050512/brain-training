@@ -874,6 +874,7 @@ export async function getCurrentGameDifficulty(odId: string, gameId: string): Pr
   const history = await getGameDifficultyHistory(odId, gameId)
   if (history.length === 0) return undefined
   const latest = history[0]
+  if (!latest) return undefined
   return {
     difficulty: latest.newDifficulty,
     subDifficulty: latest.newSubDifficulty

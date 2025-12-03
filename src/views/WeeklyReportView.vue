@@ -448,6 +448,9 @@ onMounted(() => {
   max-width: 800px;
   margin: 0 auto;
   padding: 1rem;
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 .page-header {
@@ -460,28 +463,40 @@ onMounted(() => {
 .back-btn,
 .export-btn {
   padding: 0.5rem 1rem;
-  background: var(--color-background-soft);
-  border: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
+  color: var(--color-text);
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background: var(--color-surface-alt);
 }
 
 .page-header h1 {
   flex: 1;
   font-size: 1.5rem;
   margin: 0;
+  color: var(--color-text);
 }
 
 .export-btn {
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
+  border: none;
+}
+
+.export-btn:hover {
+  opacity: 0.9;
 }
 
 .week-range {
   text-align: center;
   font-size: 1.125rem;
-  color: var(--color-text-light);
+  color: var(--color-text-secondary);
   margin-bottom: 1.5rem;
 }
 
@@ -489,13 +504,14 @@ onMounted(() => {
 .loading {
   text-align: center;
   padding: 3rem;
+  color: var(--color-text-secondary);
 }
 
 .spinner {
   width: 40px;
   height: 40px;
   border: 3px solid var(--color-border);
-  border-top-color: #3b82f6;
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 1rem;
@@ -520,20 +536,20 @@ onMounted(() => {
   border: none;
   cursor: pointer;
   font-size: 1rem;
-  color: var(--color-text-light);
+  color: var(--color-text-secondary);
   border-radius: 8px 8px 0 0;
   transition: all 0.2s;
 }
 
 .tab:hover {
   color: var(--color-text);
-  background: var(--color-background-soft);
+  background: var(--color-surface);
 }
 
 .tab.active {
-  color: #3b82f6;
+  color: var(--color-primary);
   font-weight: bold;
-  background: var(--color-background-soft);
+  background: var(--color-surface);
 }
 
 /* 統計區塊 */
@@ -546,6 +562,7 @@ onMounted(() => {
 .recommendation-section h2 {
   font-size: 1.25rem;
   margin-bottom: 1rem;
+  color: var(--color-text);
 }
 
 .stats-grid {
@@ -556,7 +573,8 @@ onMounted(() => {
 }
 
 .stat-card {
-  background: var(--color-background-soft);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   padding: 1rem;
   border-radius: 12px;
   text-align: center;
@@ -570,12 +588,12 @@ onMounted(() => {
 .stat-value {
   font-size: 1.5rem;
   font-weight: bold;
-  color: var(--color-heading);
+  color: var(--color-text);
 }
 
 .stat-label {
   font-size: 0.875rem;
-  color: var(--color-text-light);
+  color: var(--color-text-secondary);
 }
 
 /* 雷達圖 */
@@ -600,12 +618,13 @@ onMounted(() => {
 .dimension-name {
   width: 80px;
   font-weight: 500;
+  color: var(--color-text);
 }
 
 .dimension-bar {
   flex: 1;
   height: 20px;
-  background: var(--color-background-soft);
+  background: var(--color-surface-alt);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -619,11 +638,12 @@ onMounted(() => {
   width: 40px;
   text-align: right;
   font-weight: bold;
+  color: var(--color-text);
 }
 
 /* 專業評估 */
 .assessment-section {
-  background: white;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 1.5rem;
@@ -631,7 +651,7 @@ onMounted(() => {
 }
 
 .assessment-desc {
-  color: var(--color-text-light);
+  color: var(--color-text-secondary);
   font-size: 0.875rem;
   margin-bottom: 1rem;
 }
@@ -651,6 +671,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   margin-bottom: 0.5rem;
+  background: var(--color-surface);
 }
 
 .score-circle.large {
@@ -662,11 +683,12 @@ onMounted(() => {
   font-size: 2.5rem;
   font-weight: bold;
   line-height: 1;
+  color: var(--color-text);
 }
 
 .score-max {
   font-size: 1rem;
-  color: var(--color-text-light);
+  color: var(--color-text-secondary);
 }
 
 .score-interpretation {
@@ -685,6 +707,7 @@ onMounted(() => {
   justify-content: space-between;
   padding: 0.5rem 0;
   border-bottom: 1px dashed var(--color-border);
+  color: var(--color-text);
 }
 
 .detail-item:last-child {
@@ -698,16 +721,22 @@ onMounted(() => {
   padding: 1.5rem;
 }
 
+:where(.dark, .dark *) .recommendation-section {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+}
+
 .recommendation-text {
   font-size: 1rem;
   line-height: 1.6;
   margin: 0;
+  color: var(--color-text);
 }
 
 /* 無資料 */
 .no-data {
   text-align: center;
   padding: 3rem;
+  color: var(--color-text-secondary);
 }
 
 .no-data-icon {
@@ -716,12 +745,12 @@ onMounted(() => {
 }
 
 .no-data .sub {
-  color: var(--color-text-light);
+  color: var(--color-text-muted);
   margin-bottom: 1rem;
 }
 
 .start-link {
-  color: #3b82f6;
+  color: var(--color-primary);
   text-decoration: none;
   font-weight: bold;
 }
@@ -736,25 +765,27 @@ onMounted(() => {
 .calendar-day {
   text-align: center;
   padding: 1rem;
-  background: var(--color-background-soft);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
 }
 
 .calendar-day.active {
-  background: #dbeafe;
-  border: 2px solid #3b82f6;
+  background: rgba(59, 130, 246, 0.15);
+  border: 2px solid var(--color-primary);
 }
 
 .day-name {
   display: block;
   font-size: 0.875rem;
-  color: var(--color-text-light);
+  color: var(--color-text-secondary);
   margin-bottom: 0.25rem;
 }
 
 .day-count {
   font-size: 1.25rem;
   font-weight: bold;
+  color: var(--color-text);
 }
 
 /* 響應式 */

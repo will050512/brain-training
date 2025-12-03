@@ -3,10 +3,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, onUnmounted } from 'vue'
+import { ref, onMounted, watch, onUnmounted, computed } from 'vue'
 import * as echarts from 'echarts'
 import type { CognitiveScores } from '@/types/cognitive'
 import { COGNITIVE_DIMENSIONS } from '@/types/cognitive'
+import { useTheme } from '@/composables/useTheme'
+import { getChartTheme } from '@/utils/chartTheme'
 
 const props = withDefaults(defineProps<{
   scores: CognitiveScores
@@ -18,6 +20,10 @@ const props = withDefaults(defineProps<{
 
 const chartRef = ref<HTMLElement | null>(null)
 let chart: echarts.ECharts | null = null
+
+// 主題相關
+const { effectiveTheme } = useTheme()
+const chartTheme = computed(() => getChartTheme(effectiveTheme.value))
 
 // 認知維度順序
 const dimensions = ['reaction', 'logic', 'memory', 'cognition', 'coordination', 'attention'] as const
@@ -33,6 +39,12 @@ const SCORE_ZONES = {
 // 初始化圖表
 function initChart(): void {
   if (!chartRef.value) return
+  
+  // 如果已存在圖表，先銷毀
+  if (chart) {
+    chart.dispose()
+    chart = null
+  }
   
   chart = echarts.init(chartRef.value)
   updateChart()
@@ -50,13 +62,15 @@ function updateChart(): void {
 
   const currentData = dimensions.map(dim => props.scores[dim])
   const previousData = props.previousScores 
-    ? dimensions.map(dim => props.previousScores![dim])
+    ? dimensions.map(dim => props.previousScores?.[dim] ?? 0)
     : null
 
   const series: echarts.RadarSeriesOption[] = []
 
   // 如果顯示參考線，先添加參考區域（從外到內）
   if (props.showReferenceLines) {
+    const theme = chartTheme.value
+    
     // 90分參考線（優秀門檻）
     series.push({
       name: '優秀 (90分)',
@@ -68,7 +82,7 @@ function updateChart(): void {
         symbol: 'none',
         lineStyle: {
           width: 1,
-          color: '#22c55e',
+          color: theme.referenceLine.excellent,
           type: 'dashed',
           opacity: 0.6
         },
@@ -87,7 +101,7 @@ function updateChart(): void {
         symbol: 'none',
         lineStyle: {
           width: 1,
-          color: '#fbbf24',
+          color: theme.referenceLine.good,
           type: 'dashed',
           opacity: 0.6
         },
@@ -106,7 +120,7 @@ function updateChart(): void {
         symbol: 'none',
         lineStyle: {
           width: 1.5,
-          color: '#ef4444',
+          color: theme.referenceLine.warning,
           type: 'dashed',
           opacity: 0.7
         },
@@ -166,25 +180,27 @@ function updateChart(): void {
 
   series.push(mainSeries)
 
+  // 取得當前主題配色
+  const theme = chartTheme.value
+
   // 建立分區顏色陣列（從外到內：優秀、良好、正常、警戒、危險）
   const splitAreaColors = props.showReferenceLines
-    ? [
-        SCORE_ZONES.excellent.color,  // 90-100
-        SCORE_ZONES.good.color,       // 70-90
-        SCORE_ZONES.normal.color,     // 50-70
-        SCORE_ZONES.warning.color,    // 25-50
-        'rgba(239, 68, 68, 0.2)'      // 0-25 深紅色
-      ]
-    : ['#fff', '#f8fafc']
+    ? theme.radar.splitAreaColors
+    : [theme.backgroundColor, theme.backgroundColor]
 
   const option: echarts.EChartsOption = {
     tooltip: {
       trigger: 'item',
+      backgroundColor: theme.tooltip.backgroundColor,
+      borderColor: theme.tooltip.borderColor,
+      textStyle: {
+        color: theme.tooltip.textColor,
+      },
       formatter: (params: unknown) => {
         const p = params as { name: string; value: number[] }
         let html = `<strong>${p.name}</strong><br/>`
         dimensions.forEach((dim, i) => {
-          const score = p.value[i]
+          const score = p.value[i] ?? 0
           const status = score >= 90 ? '🌟' : score >= 70 ? '✅' : score >= 50 ? '⚠️' : '❗'
           html += `${COGNITIVE_DIMENSIONS[dim].icon} ${COGNITIVE_DIMENSIONS[dim].name}: ${score} 分 ${status}<br/>`
         })
@@ -196,6 +212,7 @@ function updateChart(): void {
       bottom: 0,
       textStyle: {
         fontSize: 14,
+        color: theme.legend.textColor,
       },
     },
     radar: {
@@ -203,13 +220,13 @@ function updateChart(): void {
       shape: 'polygon',
       splitNumber: 5,
       axisName: {
-        color: '#333',
+        color: theme.radar.axisNameColor,
         fontSize: 14,
         fontWeight: 'bold',
       },
       splitLine: {
         lineStyle: {
-          color: '#e2e8f0',
+          color: theme.splitLineColor,
         },
       },
       splitArea: {
@@ -220,7 +237,7 @@ function updateChart(): void {
       },
       axisLine: {
         lineStyle: {
-          color: '#e2e8f0',
+          color: theme.axisLineColor,
         },
       },
     },
@@ -239,6 +256,11 @@ function handleResize(): void {
 watch(() => [props.scores, props.previousScores, props.showReferenceLines], () => {
   updateChart()
 }, { deep: true })
+
+// 監聽主題變化 - 使用 dispose + 重新初始化
+watch(effectiveTheme, () => {
+  initChart()
+})
 
 onMounted(() => {
   initChart()

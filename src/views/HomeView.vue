@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+  <div class="min-h-screen bg-[var(--color-bg)] transition-colors duration-300">
     <!-- 首次使用歡迎彈窗 -->
     <WelcomeModal 
       v-if="showWelcome" 
@@ -11,10 +11,10 @@
     <div class="container mx-auto px-4 py-8">
       <!-- 頭部 -->
       <header class="text-center mb-12">
-        <div class="text-6xl mb-4">🧠</div>
-        <h1 class="title-lg mb-2">健腦訓練</h1>
-        <p class="text-xl text-gray-600">Brain Training</p>
-        <p class="mt-4 text-lg text-gray-500">
+        <div class="text-6xl mb-4 drop-shadow-lg">🧠</div>
+        <h1 class="text-3xl md:text-4xl font-bold text-[var(--color-text)] mb-2">健腦訓練</h1>
+        <p class="text-xl text-[var(--color-text-secondary)]">Brain Training</p>
+        <p class="mt-4 text-lg text-[var(--color-text-muted)]">
           透過有趣的遊戲，活化您的大腦
         </p>
       </header>
@@ -22,12 +22,12 @@
       <!-- 使用者狀態 -->
       <div v-if="userStore.isLoggedIn" class="card max-w-md mx-auto mb-8">
         <div class="flex items-center gap-4">
-          <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-2xl">
+          <div class="w-16 h-16 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center text-2xl">
             👤
           </div>
           <div class="flex-1">
-            <p class="text-xl font-semibold">{{ userStore.currentUser?.name }}</p>
-            <p class="text-gray-500">{{ userStore.userAge }} 歲</p>
+            <p class="text-xl font-semibold text-[var(--color-text)]">{{ userStore.currentUser?.name }}</p>
+            <p class="text-[var(--color-text-muted)]">{{ userStore.userAge }} 歲</p>
           </div>
           <button @click="handleLogout" class="btn btn-secondary">
             切換帳號
@@ -37,7 +37,7 @@
 
       <!-- 評估引導卡片（未完成評估時顯示） -->
       <div v-if="userStore.isLoggedIn && !settingsStore.hasCompletedAssessment" class="max-w-md mx-auto mb-8">
-        <div class="bg-gradient-to-r from-orange-400 to-amber-500 rounded-2xl p-6 text-white shadow-lg">
+        <div class="bg-gradient-to-r from-orange-500 to-amber-500 dark:from-orange-600 dark:to-amber-600 rounded-2xl p-6 text-white shadow-lg">
           <div class="flex items-center justify-between mb-4">
             <div>
               <h2 class="text-xl font-bold">🧪 認知評估</h2>
@@ -53,7 +53,7 @@
           <router-link 
             to="/assessment" 
             class="block w-full py-3 bg-white text-orange-600 rounded-xl font-semibold text-center
-                   hover:bg-orange-50 transition-colors"
+                   hover:bg-orange-50 transition-colors shadow-md"
           >
             開始評估（約 5 分鐘）
           </router-link>
@@ -62,7 +62,7 @@
 
       <!-- 每日訓練卡片 -->
       <div v-if="userStore.isLoggedIn" class="max-w-md mx-auto mb-8">
-        <div class="bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl p-6 text-white shadow-lg">
+        <div class="bg-gradient-to-r from-[var(--color-primary)] to-purple-500 dark:from-indigo-600 dark:to-purple-600 rounded-2xl p-6 text-white shadow-lg">
           <div class="flex items-center justify-between mb-4">
             <div>
               <h2 class="text-xl font-bold">今日訓練</h2>
@@ -87,7 +87,7 @@
           <router-link 
             to="/daily-challenge" 
             class="block w-full py-3 bg-white text-blue-600 rounded-xl font-semibold text-center
-                   hover:bg-blue-50 transition-colors"
+                   hover:bg-blue-50 transition-colors shadow-md"
           >
             {{ dailyProgress.completed ? '再次挑戰' : '開始訓練' }}
           </router-link>
@@ -98,33 +98,33 @@
       <div v-if="userStore.isLoggedIn && settingsStore.hasCompletedAssessment" class="max-w-md mx-auto mb-8">
         <div class="card">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="font-semibold text-gray-800">📊 認知趨勢</h3>
-            <router-link v-if="hasSufficientData" to="/report" class="text-sm text-blue-500 hover:underline">
+            <h3 class="font-semibold text-[var(--color-text)]">📊 認知趨勢</h3>
+            <router-link v-if="hasSufficientData" to="/report" class="text-sm text-[var(--color-primary)] hover:underline">
               查看詳情 →
             </router-link>
           </div>
           
           <!-- 未達到 5 場遊戲時的解鎖進度 -->
-          <div v-if="!hasSufficientData" class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div v-if="!hasSufficientData" class="mb-4 p-4 bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/20 rounded-lg">
             <div class="flex items-center gap-3 mb-3">
               <span class="text-2xl">🔒</span>
               <div class="flex-1">
-                <p class="text-sm font-medium text-blue-800">趨勢分析解鎖進度</p>
-                <p class="text-xs text-blue-600">完成 5 場遊戲後即可查看認知趨勢</p>
+                <p class="text-sm font-medium text-[var(--color-text)]">趨勢分析解鎖進度</p>
+                <p class="text-xs text-[var(--color-text-muted)]">完成 5 場遊戲後即可查看認知趨勢</p>
               </div>
             </div>
             
             <!-- 進度條 -->
             <div class="relative">
-              <div class="h-3 bg-blue-100 rounded-full overflow-hidden">
+              <div class="h-3 bg-[var(--color-primary)]/10 rounded-full overflow-hidden">
                 <div 
-                  class="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-500"
+                  class="h-full bg-gradient-to-r from-[var(--color-primary)] to-purple-500 rounded-full transition-all duration-500"
                   :style="{ width: unlockProgress.percentage + '%' }"
                 ></div>
               </div>
               <div class="flex justify-between mt-2">
-                <span class="text-xs text-blue-600">{{ unlockProgress.current }} / 5 場遊戲</span>
-                <span class="text-xs text-blue-500">{{ unlockProgress.remaining }} 場後解鎖</span>
+                <span class="text-xs text-[var(--color-text-muted)]">{{ unlockProgress.current }} / 5 場遊戲</span>
+                <span class="text-xs text-[var(--color-primary)]">{{ unlockProgress.remaining }} 場後解鎖</span>
               </div>
             </div>
           </div>
@@ -132,12 +132,12 @@
           <!-- 有足夠數據時顯示趨勢 -->
           <template v-else-if="cognitiveTrend">
             <!-- 退化警告 -->
-            <div v-if="hasDeclineWarning" class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div v-if="hasDeclineWarning" class="mb-4 p-3 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
               <div class="flex items-center gap-2">
                 <span class="text-xl">⚠️</span>
                 <div>
-                  <p class="text-sm font-medium text-yellow-800">偵測到表現變化</p>
-                  <p class="text-xs text-yellow-600">部分維度有下降趨勢，建議持續練習</p>
+                  <p class="text-sm font-medium text-yellow-700 dark:text-yellow-300">偵測到表現變化</p>
+                  <p class="text-xs text-yellow-600 dark:text-yellow-400">部分維度有下降趨勢，建議持續練習</p>
                 </div>
               </div>
             </div>
@@ -147,13 +147,13 @@
               <div 
                 v-for="dim in topDimensions" 
                 :key="dim.dimension"
-                class="text-center p-3 bg-gray-50 rounded-lg"
+                class="text-center p-3 bg-[var(--color-surface-alt)] rounded-lg"
               >
                 <span class="text-2xl">{{ dim.icon }}</span>
                 <p class="text-lg font-bold mt-1" :class="dim.trendClass">
                   {{ dim.score }}
                 </p>
-                <p class="text-xs text-gray-500">{{ dim.name }}</p>
+                <p class="text-xs text-[var(--color-text-muted)]">{{ dim.name }}</p>
                 <span v-if="dim.trend !== 0" class="text-xs" :class="dim.trendClass">
                   {{ dim.trend > 0 ? '↑' : '↓' }}{{ Math.abs(dim.trend) }}%
                 </span>
@@ -166,7 +166,7 @@
       <!-- 主要按鈕區 -->
       <div class="max-w-md mx-auto space-y-4">
         <template v-if="userStore.isLoggedIn">
-          <router-link to="/games" class="btn btn-primary btn-xl w-full">
+          <router-link to="/games" class="btn btn-primary btn-xl w-full shadow-lg hover:shadow-xl transition-shadow">
             <span class="text-2xl mr-2">🎮</span>
             開始訓練
           </router-link>
@@ -183,7 +183,7 @@
         </template>
         
         <template v-else>
-          <router-link to="/login" class="btn btn-primary btn-xl w-full">
+          <router-link to="/login" class="btn btn-primary btn-xl w-full shadow-lg hover:shadow-xl transition-shadow">
             <span class="text-2xl mr-2">👋</span>
             開始使用
           </router-link>
@@ -197,52 +197,52 @@
 
       <!-- 統計摘要 -->
       <div v-if="userStore.isLoggedIn && userStore.currentStats" class="mt-12">
-        <h2 class="title-sm text-center mb-6">您的訓練統計</h2>
+        <h2 class="text-xl font-bold text-center text-[var(--color-text)] mb-6">您的訓練統計</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
-          <div class="card text-center">
-            <div class="text-3xl font-bold text-blue-600">
+          <div class="card text-center hover:scale-105 transition-transform">
+            <div class="text-3xl font-bold text-blue-500 dark:text-blue-400">
               {{ userStore.currentStats.totalGamesPlayed }}
             </div>
-            <div class="text-gray-500">遊戲次數</div>
+            <div class="text-[var(--color-text-muted)]">遊戲次數</div>
           </div>
-          <div class="card text-center">
-            <div class="text-3xl font-bold text-green-600">
+          <div class="card text-center hover:scale-105 transition-transform">
+            <div class="text-3xl font-bold text-green-500 dark:text-green-400">
               {{ userStore.currentStats.averageScore }}
             </div>
-            <div class="text-gray-500">平均分數</div>
+            <div class="text-[var(--color-text-muted)]">平均分數</div>
           </div>
-          <div class="card text-center">
-            <div class="text-3xl font-bold text-purple-600">
+          <div class="card text-center hover:scale-105 transition-transform">
+            <div class="text-3xl font-bold text-purple-500 dark:text-purple-400">
               {{ formatPlayTime(userStore.currentStats.totalPlayTime) }}
             </div>
-            <div class="text-gray-500">總時長</div>
+            <div class="text-[var(--color-text-muted)]">總時長</div>
           </div>
-          <div class="card text-center">
-            <div class="text-3xl font-bold text-orange-600">
+          <div class="card text-center hover:scale-105 transition-transform">
+            <div class="text-3xl font-bold text-orange-500 dark:text-orange-400">
               {{ userStore.currentStats.streak }}
             </div>
-            <div class="text-gray-500">連續天數</div>
+            <div class="text-[var(--color-text-muted)]">連續天數</div>
           </div>
         </div>
       </div>
 
       <!-- 認知維度說明 -->
       <div class="mt-16 max-w-4xl mx-auto">
-        <h2 class="title-sm text-center mb-8">訓練六大認知能力</h2>
+        <h2 class="text-xl font-bold text-center text-[var(--color-text)] mb-8">訓練六大認知能力</h2>
         <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div v-for="dim in cognitiveDimensions" :key="dim.id" class="card text-center">
-            <div class="text-4xl mb-2">{{ dim.icon }}</div>
+          <div v-for="dim in cognitiveDimensions" :key="dim.id" class="card text-center hover:scale-105 transition-transform">
+            <div class="text-4xl mb-2 drop-shadow">{{ dim.icon }}</div>
             <h3 class="font-semibold text-lg" :style="{ color: dim.color }">
               {{ dim.name }}
             </h3>
-            <p class="text-sm text-gray-500 mt-1">{{ dim.description }}</p>
+            <p class="text-sm text-[var(--color-text-muted)] mt-1">{{ dim.description }}</p>
           </div>
         </div>
       </div>
     </div>
 
     <!-- 頁尾 -->
-    <footer class="mt-16 py-8 text-center text-gray-400">
+    <footer class="mt-16 py-8 text-center text-[var(--color-text-muted)] border-t border-[var(--color-border)]">
       <p>健腦訓練 Brain Training © 2024</p>
       <p class="text-sm mt-1">專為認知訓練設計</p>
     </footer>

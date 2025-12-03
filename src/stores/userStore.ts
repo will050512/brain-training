@@ -74,11 +74,11 @@ export const useUserStore = defineStore('user', () => {
           id: odId,
           name: name.trim(),
           birthday,
-          educationYears,  // 新增教育年數
+          educationYears: educationYears ?? 0,  // 預設教育年數為 0
           createdAt: new Date(),
           lastActiveAt: new Date(),
         }
-        await saveUser(user)
+        await saveUser(user as User)
         
         // 建立預設設定
         const settings = defaultUserSettings(odId)
@@ -90,14 +90,14 @@ export const useUserStore = defineStore('user', () => {
       } else {
         // 更新最後活動時間和教育年數（如果有提供）
         user.lastActiveAt = new Date()
-        if (educationYears !== undefined && user.educationYears === undefined) {
+        if (educationYears !== undefined) {
           user.educationYears = educationYears
         }
-        await saveUser(user)
+        await saveUser(user as User)
       }
 
       // 載入使用者資料
-      currentUser.value = user
+      currentUser.value = user as User
       currentSettings.value = await getUserSettings(odId) || defaultUserSettings(odId)
       currentStats.value = await getUserStats(odId) || defaultUserStats(odId)
 

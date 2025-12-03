@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { useUserStore, useSettingsStore } from '@/stores'
+import { useTheme } from '@/composables/useTheme'
 import InstallPrompt from '@/components/ui/InstallPrompt.vue'
 import ConsentModal from '@/components/ui/ConsentModal.vue'
 import { getDataConsent, checkConsentVersionNeedsUpdate } from '@/services/db'
@@ -8,6 +9,9 @@ import type { DataConsentOptions } from '@/types/user'
 
 const userStore = useUserStore()
 const settingsStore = useSettingsStore()
+
+// 初始化主題系統
+const { initTheme } = useTheme()
 
 // 同意對話框狀態
 const showConsentModal = ref(false)
@@ -58,6 +62,9 @@ watch(() => userStore.currentUser, (newUser) => {
 }, { immediate: false })
 
 onMounted(async () => {
+  // 初始化主題
+  initTheme()
+  
   // 載入設定
   settingsStore.loadSettings()
   

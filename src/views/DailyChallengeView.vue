@@ -260,6 +260,9 @@ onMounted(() => {
   max-width: 800px;
   margin: 0 auto;
   padding: 1rem;
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 .page-header {
@@ -271,29 +274,37 @@ onMounted(() => {
 
 .back-btn {
   padding: 0.5rem 1rem;
-  background: var(--color-background-soft);
-  border: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
+  color: var(--color-text);
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background: var(--color-surface-alt);
 }
 
 .page-header h1 {
   font-size: 1.5rem;
   margin: 0;
+  color: var(--color-text);
 }
 
 /* 載入中 */
 .loading {
   text-align: center;
   padding: 3rem;
+  color: var(--color-text-secondary);
 }
 
 .spinner {
   width: 40px;
   height: 40px;
   border: 3px solid var(--color-border);
-  border-top-color: #3b82f6;
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 1rem;
@@ -305,7 +316,8 @@ onMounted(() => {
 
 /* 進度區塊 */
 .progress-section {
-  background: var(--color-background-soft);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   padding: 1.5rem;
   border-radius: 16px;
   margin-bottom: 2rem;
@@ -315,6 +327,7 @@ onMounted(() => {
 .progress-section h2 {
   font-size: 1.25rem;
   margin-bottom: 1rem;
+  color: var(--color-text);
 }
 
 .progress-bar {
@@ -332,7 +345,7 @@ onMounted(() => {
 }
 
 .progress-text {
-  color: var(--color-text-light);
+  color: var(--color-text-secondary);
 }
 
 .congrats {
@@ -356,6 +369,11 @@ onMounted(() => {
   border: 1px solid #c7d2fe;
 }
 
+:where(.dark, .dark *) .suggestion-card {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
 .suggestion-icon {
   font-size: 2.5rem;
   flex-shrink: 0;
@@ -372,6 +390,10 @@ onMounted(() => {
   margin-bottom: 0.5rem;
 }
 
+:where(.dark, .dark *) .suggestion-title {
+  color: #60a5fa;
+}
+
 .suggestion-message {
   color: var(--color-text);
   margin: 0;
@@ -381,6 +403,7 @@ onMounted(() => {
 .recommendations-section h2 {
   font-size: 1.25rem;
   margin-bottom: 1rem;
+  color: var(--color-text);
 }
 
 .recommendation-list {
@@ -390,7 +413,7 @@ onMounted(() => {
 
 .recommendation-card {
   position: relative;
-  background: white;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 1.5rem;
@@ -400,6 +423,10 @@ onMounted(() => {
 .recommendation-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+:where(.dark, .dark *) .recommendation-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .recommendation-card.completed {
@@ -439,11 +466,12 @@ onMounted(() => {
   text-align: center;
   font-size: 1.25rem;
   margin: 0 0 0.5rem 0;
+  color: var(--color-text);
 }
 
 .game-description {
   text-align: center;
-  color: var(--color-text-light);
+  color: var(--color-text-secondary);
   margin: 0 0 1rem 0;
   font-size: 0.875rem;
 }
@@ -460,7 +488,7 @@ onMounted(() => {
 }
 
 .reason {
-  color: var(--color-text-light);
+  color: var(--color-text-secondary);
 }
 
 .cognitive-tags {
@@ -473,7 +501,7 @@ onMounted(() => {
 .cognitive-tag {
   font-size: 1.25rem;
   padding: 0.25rem;
-  background: var(--color-background-soft);
+  background: var(--color-surface-alt);
   border-radius: 8px;
 }
 
@@ -496,8 +524,12 @@ onMounted(() => {
 }
 
 .start-btn:disabled {
-  background: #9ca3af;
+  background: #6b7280;
   cursor: default;
+}
+
+:where(.dark, .dark *) .start-btn:disabled {
+  background: #4b5563;
 }
 
 /* 更多連結 */
@@ -507,7 +539,7 @@ onMounted(() => {
 }
 
 .more-link {
-  color: #3b82f6;
+  color: var(--color-primary);
   text-decoration: none;
   font-weight: bold;
   font-size: 1rem;

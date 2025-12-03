@@ -335,7 +335,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useSettingsStore } from '@/stores'
+import { useSettingsStore, useUserStore } from '@/stores'
 import { DIFFICULTIES } from '@/types/game'
 import MiniCogFlow from '@/components/assessment/MiniCogFlow.vue'
 import { getLatestMiniCogResult } from '@/services/db'
@@ -351,6 +351,7 @@ import {
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
+const userStore = useUserStore()
 
 // 狀態
 const stage = ref<'select' | 'mini-cog' | 'intro' | 'testing' | 'result'>('select')
@@ -419,11 +420,11 @@ function startMiniCog() {
 function handleMiniCogComplete(miniCogResult: MiniCogResult) {
   recentMiniCogResult.value = miniCogResult
   // 根據 Mini-Cog 分數設定建議難度
-  let suggestedDifficulty: 1 | 2 | 3 = 2
+  let suggestedDifficulty: 'easy' | 'medium' | 'hard' = 'medium'
   if (miniCogResult.totalScore >= 4) {
-    suggestedDifficulty = 3
+    suggestedDifficulty = 'hard'
   } else if (miniCogResult.totalScore <= 2) {
-    suggestedDifficulty = 1
+    suggestedDifficulty = 'easy'
   }
   
   settingsStore.setAssessmentResult({
@@ -431,8 +432,8 @@ function handleMiniCogComplete(miniCogResult: MiniCogResult) {
     completedAt: miniCogResult.completedAt,
     scores: {
       reaction: miniCogResult.totalScore * 20,
-      memory: miniCogResult.wordRecallScore * 33,
-      logic: miniCogResult.clockDrawingScore * 50
+      memory: miniCogResult.wordRecall.score * 33,
+      logic: miniCogResult.clockDrawing.score * 50
     }
   })
   
@@ -444,8 +445,9 @@ function viewMiniCogHistory() {
 }
 
 async function loadRecentMiniCog() {
+  if (!userStore.currentUser?.id) return
   try {
-    recentMiniCogResult.value = await getLatestMiniCogResult()
+    recentMiniCogResult.value = await getLatestMiniCogResult(userStore.currentUser.id) || null
   } catch (error) {
     console.error('Failed to load recent Mini-Cog result:', error)
   }

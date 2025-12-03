@@ -161,19 +161,19 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-[var(--color-surface)] rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-[var(--color-border)]">
       <!-- 標題區 -->
-      <div class="relative p-6 pb-4 text-center border-b">
+      <div class="relative p-6 pb-4 text-center border-b border-[var(--color-border)]">
         <!-- 遊戲圖示 -->
-        <div class="text-5xl mb-2">{{ gameInfo?.icon || '🎮' }}</div>
-        <h2 class="text-xl font-bold text-gray-800">{{ gameInfo?.name || '遊戲' }}</h2>
-        <p class="text-sm text-gray-500 mt-1">{{ formatDate(result.timestamp) }}</p>
+        <div class="text-5xl mb-2 drop-shadow-lg">{{ gameInfo?.icon || '🎮' }}</div>
+        <h2 class="text-xl font-bold text-[var(--color-text)]">{{ gameInfo?.name || '遊戲' }}</h2>
+        <p class="text-sm text-[var(--color-text-muted)] mt-1">{{ formatDate(result.timestamp) }}</p>
         
         <!-- 關閉按鈕 -->
         <button 
           @click="emit('close')"
-          class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+          class="absolute top-4 right-4 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
         >
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -182,7 +182,7 @@ onMounted(() => {
       </div>
 
       <!-- 評級區 -->
-      <div class="p-6 text-center border-b">
+      <div class="p-6 text-center border-b border-[var(--color-border)]">
         <div 
           class="inline-flex items-center justify-center w-24 h-24 rounded-full mb-4"
           :class="performanceGrade.bg"
@@ -197,35 +197,35 @@ onMounted(() => {
       </div>
 
       <!-- 分數詳情 -->
-      <div class="p-6 border-b">
+      <div class="p-6 border-b border-[var(--color-border)]">
         <div class="grid grid-cols-3 gap-4 text-center">
           <!-- 分數 -->
           <div>
-            <p class="text-sm text-gray-500">分數</p>
-            <p class="text-2xl font-bold text-blue-600">{{ result.score }}</p>
+            <p class="text-sm text-[var(--color-text-muted)]">分數</p>
+            <p class="text-2xl font-bold text-blue-500 dark:text-blue-400">{{ result.score }}</p>
             <p v-if="scoreChange !== null" class="text-xs mt-1"
-               :class="scoreChange > 0 ? 'text-green-500' : scoreChange < 0 ? 'text-red-500' : 'text-gray-400'">
+               :class="scoreChange > 0 ? 'text-green-500' : scoreChange < 0 ? 'text-red-500' : 'text-[var(--color-text-muted)]'">
               {{ scoreChange > 0 ? '+' : '' }}{{ scoreChange }}
             </p>
           </div>
           
           <!-- 正確率 -->
           <div>
-            <p class="text-sm text-gray-500">正確率</p>
-            <p class="text-2xl font-bold text-green-600">{{ result.accuracy }}%</p>
+            <p class="text-sm text-[var(--color-text-muted)]">正確率</p>
+            <p class="text-2xl font-bold text-green-500 dark:text-green-400">{{ result.accuracy }}%</p>
           </div>
           
           <!-- 用時 -->
           <div>
-            <p class="text-sm text-gray-500">用時</p>
-            <p class="text-2xl font-bold text-gray-700">{{ formatDuration(result.duration) }}</p>
+            <p class="text-sm text-[var(--color-text-muted)]">用時</p>
+            <p class="text-2xl font-bold text-[var(--color-text)]">{{ formatDuration(result.duration) }}</p>
           </div>
         </div>
       </div>
 
       <!-- 訓練維度 -->
-      <div class="p-6 border-b">
-        <h3 class="text-sm font-semibold text-gray-500 mb-3">訓練維度</h3>
+      <div class="p-6 border-b border-[var(--color-border)]">
+        <h3 class="text-sm font-semibold text-[var(--color-text-muted)] mb-3">訓練維度</h3>
         <div class="space-y-2">
           <div 
             v-for="dim in trainedDimensions" 
@@ -235,12 +235,12 @@ onMounted(() => {
             <span class="text-xl">{{ dim.icon }}</span>
             <div class="flex-1">
               <div class="flex justify-between text-sm mb-1">
-                <span class="font-medium">{{ dim.name }}</span>
-                <span class="text-gray-500">+{{ dim.contribution }}</span>
+                <span class="font-medium text-[var(--color-text)]">{{ dim.name }}</span>
+                <span class="text-[var(--color-text-muted)]">+{{ dim.contribution }}</span>
               </div>
-              <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-2 bg-[var(--color-surface-alt)] rounded-full overflow-hidden">
                 <div 
-                  class="h-full bg-blue-500 rounded-full transition-all duration-500"
+                  class="h-full bg-[var(--color-primary)] rounded-full transition-all duration-500"
                   :style="{ width: (dim.weight * 100) + '%' }"
                 ></div>
               </div>
@@ -250,16 +250,16 @@ onMounted(() => {
       </div>
 
       <!-- 退化警告 -->
-      <div v-if="declineWarning" class="p-4 mx-6 my-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+      <div v-if="declineWarning" class="p-4 mx-6 my-4 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
         <div class="flex items-start gap-3">
           <span class="text-xl">⚠️</span>
           <div>
-            <p class="text-sm font-semibold text-yellow-800">注意：偵測到表現下降</p>
-            <p class="text-xs text-yellow-700 mt-1">
+            <p class="text-sm font-semibold text-yellow-700 dark:text-yellow-300">注意：偵測到表現下降</p>
+            <p class="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
               {{ dimensionNames[declineWarning.dimension] }} 較基準下降 
               {{ Math.abs(Math.round(declineWarning.changePercent)) }}%
             </p>
-            <p class="text-xs text-yellow-600 mt-1">
+            <p class="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
               建議持續練習並保持規律作息
             </p>
           </div>
@@ -267,29 +267,29 @@ onMounted(() => {
       </div>
 
       <!-- 與上次比較 -->
-      <div v-if="previousResult" class="p-6 border-b bg-gray-50">
-        <h3 class="text-sm font-semibold text-gray-500 mb-3">與上次比較</h3>
+      <div v-if="previousResult" class="p-6 border-b border-[var(--color-border)] bg-[var(--color-surface-alt)]">
+        <h3 class="text-sm font-semibold text-[var(--color-text-muted)] mb-3">與上次比較</h3>
         <div class="flex justify-around text-center text-sm">
           <div>
-            <p class="text-gray-500">上次分數</p>
-            <p class="font-bold">{{ previousResult.score }}</p>
+            <p class="text-[var(--color-text-muted)]">上次分數</p>
+            <p class="font-bold text-[var(--color-text)]">{{ previousResult.score }}</p>
           </div>
           <div>
-            <p class="text-gray-500">上次正確率</p>
-            <p class="font-bold">{{ previousResult.accuracy }}%</p>
+            <p class="text-[var(--color-text-muted)]">上次正確率</p>
+            <p class="font-bold text-[var(--color-text)]">{{ previousResult.accuracy }}%</p>
           </div>
           <div>
-            <p class="text-gray-500">遊玩時間</p>
-            <p class="font-bold text-xs">{{ formatDate(previousResult.timestamp) }}</p>
+            <p class="text-[var(--color-text-muted)]">遊玩時間</p>
+            <p class="font-bold text-xs text-[var(--color-text)]">{{ formatDate(previousResult.timestamp) }}</p>
           </div>
         </div>
       </div>
 
       <!-- 改善建議 -->
-      <div class="p-6 border-b">
-        <h3 class="text-sm font-semibold text-gray-500 mb-3">💡 建議</h3>
+      <div class="p-6 border-b border-[var(--color-border)]">
+        <h3 class="text-sm font-semibold text-[var(--color-text-muted)] mb-3">💡 建議</h3>
         <ul class="space-y-2">
-          <li v-for="(suggestion, index) in suggestions" :key="index" class="text-sm text-gray-600">
+          <li v-for="(suggestion, index) in suggestions" :key="index" class="text-sm text-[var(--color-text-secondary)]">
             {{ suggestion }}
           </li>
         </ul>
@@ -299,15 +299,15 @@ onMounted(() => {
       <div class="p-6 flex gap-3">
         <button
           @click="emit('playAgain')"
-          class="flex-1 py-3 px-4 bg-blue-500 text-white rounded-xl font-semibold
-                 hover:bg-blue-600 active:scale-95 transition-all"
+          class="flex-1 py-3 px-4 bg-[var(--color-primary)] text-white rounded-xl font-semibold
+                 hover:opacity-90 active:scale-95 transition-all shadow-lg"
         >
           🔄 再玩一次
         </button>
         <button
           @click="emit('nextGame')"
-          class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold
-                 hover:bg-gray-200 active:scale-95 transition-all"
+          class="flex-1 py-3 px-4 bg-[var(--color-surface-alt)] text-[var(--color-text)] rounded-xl font-semibold
+                 hover:bg-[var(--color-border)] active:scale-95 transition-all border border-[var(--color-border)]"
         >
           ➡️ 下一個遊戲
         </button>

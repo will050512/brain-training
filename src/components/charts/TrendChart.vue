@@ -3,10 +3,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, onUnmounted } from 'vue'
+import { ref, onMounted, watch, onUnmounted, computed } from 'vue'
 import * as echarts from 'echarts'
 import type { ScoreHistory } from '@/services/scoreCalculator'
 import { COGNITIVE_DIMENSIONS, type CognitiveDimension } from '@/types/cognitive'
+import { useTheme } from '@/composables/useTheme'
+import { getChartTheme } from '@/utils/chartTheme'
 
 const props = withDefaults(defineProps<{
   history: ScoreHistory[]
@@ -20,12 +22,22 @@ const props = withDefaults(defineProps<{
 const chartRef = ref<HTMLElement | null>(null)
 let chart: echarts.ECharts | null = null
 
+// 主題相關
+const { effectiveTheme } = useTheme()
+const chartTheme = computed(() => getChartTheme(effectiveTheme.value))
+
 // 認知維度順序
 const dimensions: CognitiveDimension[] = ['reaction', 'logic', 'memory', 'cognition', 'coordination', 'attention']
 
 // 初始化圖表
 function initChart(): void {
   if (!chartRef.value) return
+  
+  // 如果已存在圖表，先銷毀
+  if (chart) {
+    chart.dispose()
+    chart = null
+  }
   
   chart = echarts.init(chartRef.value)
   updateChart()
@@ -35,6 +47,9 @@ function initChart(): void {
 function updateChart(): void {
   if (!chart) return
 
+  // 取得當前主題配色
+  const theme = chartTheme.value
+
   // 如果沒有歷史數據
   if (props.history.length === 0) {
     chart.setOption({
@@ -43,7 +58,7 @@ function updateChart(): void {
         left: 'center',
         top: 'center',
         textStyle: {
-          color: '#94a3b8',
+          color: theme.textColorSecondary,
           fontSize: 16,
         },
       },
@@ -78,6 +93,7 @@ function updateChart(): void {
   }))
 
   // 添加平均分數線
+  const avgLineColor = effectiveTheme.value === 'dark' ? '#60a5fa' : '#1e40af'
   series.push({
     name: '平均',
     type: 'line',
@@ -90,19 +106,27 @@ function updateChart(): void {
     }),
     lineStyle: {
       width: 3,
-      color: '#1e40af',
+      color: avgLineColor,
       type: 'solid',
     },
     itemStyle: {
-      color: '#1e40af',
+      color: avgLineColor,
     },
   })
 
   const option: echarts.EChartsOption = {
     tooltip: {
       trigger: 'axis',
+      backgroundColor: theme.tooltip.backgroundColor,
+      borderColor: theme.tooltip.borderColor,
+      textStyle: {
+        color: theme.tooltip.textColor,
+      },
       axisPointer: {
         type: 'cross',
+        lineStyle: {
+          color: theme.axisLineColor,
+        },
       },
       formatter: (params: unknown) => {
         const p = params as Array<{ seriesName: string; value: number; color: string; dataIndex: number }>
@@ -121,6 +145,7 @@ function updateChart(): void {
       type: 'scroll',
       textStyle: {
         fontSize: 12,
+        color: theme.legend.textColor,
       },
     },
     grid: {
@@ -136,6 +161,12 @@ function updateChart(): void {
       data: xAxisData,
       axisLabel: {
         fontSize: 12,
+        color: theme.textColorSecondary,
+      },
+      axisLine: {
+        lineStyle: {
+          color: theme.axisLineColor,
+        },
       },
     },
     yAxis: {
@@ -146,6 +177,17 @@ function updateChart(): void {
       axisLabel: {
         formatter: '{value}',
         fontSize: 12,
+        color: theme.textColorSecondary,
+      },
+      axisLine: {
+        lineStyle: {
+          color: theme.axisLineColor,
+        },
+      },
+      splitLine: {
+        lineStyle: {
+          color: theme.splitLineColor,
+        },
       },
     },
     series,
@@ -166,6 +208,10 @@ function updateChart(): void {
   // 為平均線添加警示標線
   if (props.showWarningLines && series.length > 0) {
     const avgSeries = series[series.length - 1]
+    if (!avgSeries) {
+      chart.setOption(option, true)
+      return
+    }
     const warningThreshold = props.professionalMode ? 70 : 60  // 專業模式: 70分, 一般模式: 60分
     const dangerThreshold = props.professionalMode ? 50 : 40   // 專業模式: 50分, 一般模式: 40分
     
@@ -223,7 +269,7 @@ function updateChart(): void {
         const declineRate = ((firstRecent - lastRecent) / firstRecent) * 100
         const significantDecline = props.professionalMode ? 7 : 15  // 專業模式: 7%, 一般模式: 15%
         
-        if (declineRate >= significantDecline) {
+        if (declineRate >= significantDecline && avgSeries) {
           // 在下降起點添加標記
           avgSeries.markPoint = {
             symbol: 'triangle',
@@ -242,6 +288,7 @@ function updateChart(): void {
             },
             data: [
               {
+                name: 'decline',
                 coord: [props.history.length - 1, lastRecent],
                 value: declineRate.toFixed(1)
               }
@@ -264,6 +311,11 @@ function handleResize(): void {
 watch(() => props.history, () => {
   updateChart()
 }, { deep: true })
+
+// 監聽主題變化 - 使用 dispose + 重新初始化
+watch(effectiveTheme, () => {
+  initChart()
+})
 
 onMounted(() => {
   initChart()

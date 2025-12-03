@@ -1,12 +1,12 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8">
+  <div class="min-h-screen bg-[var(--color-bg)] py-8 transition-colors duration-300">
     <div class="container mx-auto px-4">
       <!-- 頭部 -->
-      <div class="flex items-center justify-between mb-8">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
         <router-link to="/" class="btn btn-secondary">
           ← 返回首頁
         </router-link>
-        <h1 class="title-md">認知評估報告</h1>
+        <h1 class="text-xl md:text-2xl font-bold text-[var(--color-text)]">認知評估報告</h1>
         <div class="flex gap-2">
           <router-link to="/weekly-report" class="btn btn-secondary">
             📅 週報告
@@ -22,8 +22,8 @@
         <div class="flex items-start gap-3">
           <span class="text-2xl">⚠️</span>
           <div>
-            <p class="font-medium text-amber-800">重要聲明</p>
-            <p class="text-sm text-amber-700">
+            <p class="font-medium text-amber-800 dark:text-amber-200">重要聲明</p>
+            <p class="text-sm text-amber-700 dark:text-amber-300">
               本系統提供的 MMSE/MoCA/CASI 分數為基於遊戲表現的估算值，僅供參考，
               不可作為醫療診斷依據。如有認知功能相關疑慮，請諮詢專業醫師或職能治療師進行正式評估。
             </p>
@@ -35,22 +35,22 @@
       <div ref="reportRef" class="max-w-4xl mx-auto space-y-8">
         <!-- 使用者資訊卡片 -->
         <div class="card">
-          <div class="flex items-center gap-6">
-            <div class="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center text-4xl">
+          <div class="flex flex-wrap items-center gap-6">
+            <div class="w-20 h-20 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center text-4xl">
               👤
             </div>
-            <div class="flex-1">
-              <h2 class="text-2xl font-bold">{{ userStore.currentUser?.name }}</h2>
-              <p class="text-gray-500">{{ userStore.userAge }} 歲</p>
-              <p v-if="userStore.currentUser?.educationYears !== undefined" class="text-gray-400 text-sm">
+            <div class="flex-1 min-w-0">
+              <h2 class="text-2xl font-bold text-[var(--color-text)]">{{ userStore.currentUser?.name }}</h2>
+              <p class="text-[var(--color-text-muted)]">{{ userStore.userAge }} 歲</p>
+              <p v-if="userStore.currentUser?.educationYears !== undefined" class="text-[var(--color-text-muted)] text-sm">
                 教育年數：{{ userStore.currentUser.educationYears }} 年
               </p>
-              <p class="text-sm text-gray-400">
+              <p class="text-sm text-[var(--color-text-muted)]">
                 報告生成日期：{{ formatDate(new Date()) }}
               </p>
             </div>
             <div class="text-right">
-              <div class="text-sm text-gray-500">綜合認知指數</div>
+              <div class="text-sm text-[var(--color-text-muted)]">綜合認知指數</div>
               <div class="text-4xl font-bold" :class="getScoreClass(cognitiveIndex)">
                 {{ cognitiveIndex }}
               </div>
@@ -68,48 +68,48 @@
         </div>
 
         <!-- 台灣常模參考卡片 -->
-        <div v-if="userStore.userAge && userStore.userEducationYears !== null" class="card bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-          <h3 class="title-sm mb-4 flex items-center gap-2">
+        <div v-if="userStore.userAge && userStore.userEducationYears !== null" class="card normative-card">
+          <h3 class="text-lg font-bold text-[var(--color-text)] mb-4 flex items-center gap-2">
             <span>📊</span>
             台灣認知功能常模參考
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-white p-4 rounded-lg">
-              <div class="text-sm text-gray-500 mb-1">MMSE 參考切截點</div>
-              <div class="text-2xl font-bold text-blue-600">
+            <div class="bg-[var(--color-surface)] dark:bg-slate-700/50 p-4 rounded-lg">
+              <div class="text-sm text-[var(--color-text-muted)] mb-1">MMSE 參考切截點</div>
+              <div class="text-2xl font-bold text-blue-500 dark:text-blue-400">
                 {{ normativeData?.mmse?.cutoff || '-' }}
               </div>
-              <div class="text-xs text-gray-400">
+              <div class="text-xs text-[var(--color-text-muted)]">
                 ({{ getAgeGroupLabel() }}，{{ getEducationLabel() }})
               </div>
             </div>
-            <div class="bg-white p-4 rounded-lg">
-              <div class="text-sm text-gray-500 mb-1">MoCA 參考切截點</div>
-              <div class="text-2xl font-bold text-purple-600">
+            <div class="bg-[var(--color-surface)] dark:bg-slate-700/50 p-4 rounded-lg">
+              <div class="text-sm text-[var(--color-text-muted)] mb-1">MoCA 參考切截點</div>
+              <div class="text-2xl font-bold text-purple-500 dark:text-purple-400">
                 {{ normativeData?.moca?.cutoff || '-' }}
               </div>
-              <div class="text-xs text-gray-400">
+              <div class="text-xs text-[var(--color-text-muted)]">
                 建議 ≥23 分為正常
               </div>
             </div>
-            <div class="bg-white p-4 rounded-lg">
-              <div class="text-sm text-gray-500 mb-1">CASI 參考切截點</div>
-              <div class="text-2xl font-bold text-green-600">
+            <div class="bg-[var(--color-surface)] dark:bg-slate-700/50 p-4 rounded-lg">
+              <div class="text-sm text-[var(--color-text-muted)] mb-1">CASI 參考切截點</div>
+              <div class="text-2xl font-bold text-green-500 dark:text-green-400">
                 {{ normativeData?.casi?.cutoff || '-' }}
               </div>
-              <div class="text-xs text-gray-400">
+              <div class="text-xs text-[var(--color-text-muted)]">
                 分數越高越佳
               </div>
             </div>
           </div>
-          <p class="text-xs text-gray-500 mt-4">
+          <p class="text-xs text-[var(--color-text-muted)] mt-4">
             ※ 以上數據參考台灣本土研究常模，實際評估請諮詢專業醫療人員
           </p>
         </div>
 
         <!-- 雷達圖 -->
         <div class="card">
-          <h3 class="title-sm mb-6">認知能力分析</h3>
+          <h3 class="text-lg font-bold text-[var(--color-text)] mb-6">認知能力分析</h3>
           <div class="flex flex-col md:flex-row gap-8">
             <div class="flex-1">
               <RadarChart 
@@ -124,7 +124,7 @@
                   <span class="text-2xl">{{ dim.icon }}</span>
                   <div class="flex-1">
                     <div class="flex justify-between mb-1">
-                      <span class="font-medium">{{ dim.name }}</span>
+                      <span class="font-medium text-[var(--color-text)]">{{ dim.name }}</span>
                       <span class="font-bold" :style="{ color: dim.color }">
                         {{ gameStore.cognitiveScores[dim.id] }} 分
                       </span>
@@ -151,7 +151,7 @@
 
         <!-- 趨勢圖 -->
         <div class="card">
-          <h3 class="title-sm mb-6">歷史趨勢</h3>
+          <h3 class="text-lg font-bold text-[var(--color-text)] mb-6">歷史趨勢</h3>
           <TrendChart 
             :history="gameStore.scoreHistory" 
             :showWarningLines="true"
@@ -161,31 +161,31 @@
 
         <!-- 訓練統計 -->
         <div class="card">
-          <h3 class="title-sm mb-6">訓練統計</h3>
+          <h3 class="text-lg font-bold text-[var(--color-text)] mb-6">訓練統計</h3>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div class="text-center">
-              <div class="text-3xl font-bold text-blue-600">
+              <div class="text-3xl font-bold text-blue-500 dark:text-blue-400">
                 {{ userStore.currentStats?.totalGamesPlayed || 0 }}
               </div>
-              <div class="text-gray-500">總遊戲次數</div>
+              <div class="text-[var(--color-text-muted)]">總遊戲次數</div>
             </div>
             <div class="text-center">
-              <div class="text-3xl font-bold text-green-600">
+              <div class="text-3xl font-bold text-green-500 dark:text-green-400">
                 {{ userStore.currentStats?.averageScore || 0 }}
               </div>
-              <div class="text-gray-500">平均分數</div>
+              <div class="text-[var(--color-text-muted)]">平均分數</div>
             </div>
             <div class="text-center">
-              <div class="text-3xl font-bold text-purple-600">
+              <div class="text-3xl font-bold text-purple-500 dark:text-purple-400">
                 {{ formatPlayTime(userStore.currentStats?.totalPlayTime || 0) }}
               </div>
-              <div class="text-gray-500">總訓練時長</div>
+              <div class="text-[var(--color-text-muted)]">總訓練時長</div>
             </div>
             <div class="text-center">
-              <div class="text-3xl font-bold text-orange-600">
+              <div class="text-3xl font-bold text-orange-500 dark:text-orange-400">
                 {{ userStore.currentStats?.streak || 0 }}
               </div>
-              <div class="text-gray-500">連續訓練天數</div>
+              <div class="text-[var(--color-text-muted)]">連續訓練天數</div>
             </div>
           </div>
         </div>
@@ -330,28 +330,28 @@
 
         <!-- 各遊戲表現 -->
         <div class="card">
-          <h3 class="title-sm mb-6">各遊戲表現</h3>
+          <h3 class="text-lg font-bold text-[var(--color-text)] mb-6">各遊戲表現</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div 
               v-for="game in gameStore.allGames" 
               :key="game.id"
-              class="p-4 bg-gray-50 rounded-lg"
+              class="p-4 bg-[var(--color-surface-alt)] rounded-lg"
             >
               <div class="flex items-center gap-3 mb-2">
                 <span class="text-2xl">{{ game.icon }}</span>
-                <span class="font-medium">{{ game.name }}</span>
+                <span class="font-medium text-[var(--color-text)]">{{ game.name }}</span>
               </div>
               <div class="flex justify-between text-sm">
-                <span class="text-gray-500">最佳成績</span>
-                <span class="font-bold">{{ gameStore.getBestScore(game.id) || '-' }} 分</span>
+                <span class="text-[var(--color-text-muted)]">最佳成績</span>
+                <span class="font-bold text-[var(--color-text)]">{{ gameStore.getBestScore(game.id) || '-' }} 分</span>
               </div>
               <div class="flex justify-between text-sm">
-                <span class="text-gray-500">平均分數</span>
-                <span>{{ gameStore.getAverageScore(game.id) || '-' }} 分</span>
+                <span class="text-[var(--color-text-muted)]">平均分數</span>
+                <span class="text-[var(--color-text-secondary)]">{{ gameStore.getAverageScore(game.id) || '-' }} 分</span>
               </div>
               <div class="flex justify-between text-sm">
-                <span class="text-gray-500">遊玩次數</span>
-                <span>{{ gameStore.getSessionsByGame(game.id).length }} 次</span>
+                <span class="text-[var(--color-text-muted)]">遊玩次數</span>
+                <span class="text-[var(--color-text-secondary)]">{{ gameStore.getSessionsByGame(game.id).length }} 次</span>
               </div>
             </div>
           </div>
@@ -359,28 +359,28 @@
 
         <!-- 訓練建議 -->
         <div class="card">
-          <h3 class="title-sm mb-6">訓練建議</h3>
+          <h3 class="text-lg font-bold text-[var(--color-text)] mb-6">訓練建議</h3>
           <div class="space-y-4">
             <div 
               v-for="(suggestion, index) in trainingSuggestions" 
               :key="index"
               class="p-4 rounded-lg"
               :class="{
-                'bg-red-50 border-l-4 border-red-500': suggestion.priority === 'high',
-                'bg-yellow-50 border-l-4 border-yellow-500': suggestion.priority === 'medium',
-                'bg-green-50 border-l-4 border-green-500': suggestion.priority === 'low',
+                'bg-red-500/10 dark:bg-red-500/20 border-l-4 border-red-500': suggestion.priority === 'high',
+                'bg-yellow-500/10 dark:bg-yellow-500/20 border-l-4 border-yellow-500': suggestion.priority === 'medium',
+                'bg-green-500/10 dark:bg-green-500/20 border-l-4 border-green-500': suggestion.priority === 'low',
               }"
             >
               <div class="flex items-start gap-3">
                 <span class="text-2xl">{{ COGNITIVE_DIMENSIONS[suggestion.dimension].icon }}</span>
                 <div>
-                  <div class="font-medium">{{ COGNITIVE_DIMENSIONS[suggestion.dimension].name }}</div>
-                  <p class="text-gray-600 text-sm mt-1">{{ suggestion.message }}</p>
+                  <div class="font-medium text-[var(--color-text)]">{{ COGNITIVE_DIMENSIONS[suggestion.dimension].name }}</div>
+                  <p class="text-[var(--color-text-secondary)] text-sm mt-1">{{ suggestion.message }}</p>
                   <div class="flex flex-wrap gap-2 mt-2">
                     <span 
                       v-for="game in suggestion.suggestedGames" 
                       :key="game"
-                      class="text-xs bg-white px-2 py-1 rounded"
+                      class="text-xs bg-[var(--color-surface)] dark:bg-slate-600 px-2 py-1 rounded text-[var(--color-text)]"
                     >
                       {{ game }}
                     </span>
@@ -393,18 +393,18 @@
 
         <!-- 最近遊戲記錄 -->
         <div class="card">
-          <h3 class="title-sm mb-6">最近遊戲記錄</h3>
+          <h3 class="text-lg font-bold text-[var(--color-text)] mb-6">最近遊戲記錄</h3>
           <div v-if="gameStore.recentSessions.length > 0" class="space-y-2">
             <div 
               v-for="session in gameStore.recentSessions" 
               :key="session.id"
-              class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+              class="flex items-center justify-between p-3 bg-[var(--color-surface-alt)] rounded-lg"
             >
               <div class="flex items-center gap-3">
                 <span class="text-xl">{{ getGameIcon(session.gameId) }}</span>
                 <div>
-                  <div class="font-medium">{{ getGameName(session.gameId) }}</div>
-                  <div class="text-sm text-gray-500">
+                  <div class="font-medium text-[var(--color-text)]">{{ getGameName(session.gameId) }}</div>
+                  <div class="text-sm text-[var(--color-text-muted)]">
                     {{ formatDateTime(session.createdAt) }}
                   </div>
                 </div>
@@ -422,7 +422,7 @@
               </div>
             </div>
           </div>
-          <div v-else class="text-center py-8 text-gray-500">
+          <div v-else class="text-center py-8 text-[var(--color-text-muted)]">
             尚無遊戲記錄
           </div>
         </div>
@@ -441,9 +441,8 @@ import {
   generateTrainingSuggestions
 } from '@/services/scoreCalculator'
 import { 
-  getNormativeCutoff, 
-  getRiskLevel,
-  type NormativeResult 
+  getQuickReferenceCutoffs,
+  getRiskLevel as getNormativeRiskLevel
 } from '@/services/taiwanNormativeData'
 import { getUserMiniCogResults, getLatestMiniCogResult } from '@/services/db'
 import { 
@@ -495,10 +494,11 @@ const normativeData = computed(() => {
   const eduYears = userStore.userEducationYears
   if (!age || eduYears === null) return null
   
+  const cutoffs = getQuickReferenceCutoffs(age, eduYears)
   return {
-    mmse: getNormativeCutoff('MMSE', age, eduYears),
-    moca: getNormativeCutoff('MoCA', age, eduYears),
-    casi: getNormativeCutoff('CASI', age, eduYears)
+    mmse: { cutoff: cutoffs.MMSE.dementia },
+    moca: { cutoff: cutoffs.MoCA.dementia },
+    casi: { cutoff: cutoffs.CASI.dementia }
   }
 })
 
@@ -510,13 +510,13 @@ const normativeComparison = computed(() => {
   
   // 使用遊戲分數估算的 MMSE 分數（綜合指數 * 30 / 100）
   const estimatedMMSE = Math.round(cognitiveIndex.value * 30 / 100)
-  const riskLevel = getRiskLevel('MMSE', estimatedMMSE, age, eduYears)
+  const riskLevel = getNormativeRiskLevel(estimatedMMSE, 'MMSE', age, eduYears)
   
   const statusMap: Record<string, { statusText: string; statusClass: string }> = {
-    'normal': { statusText: '表現良好 ✓', statusClass: 'bg-green-100 text-green-700' },
-    'borderline-mci': { statusText: '邊緣值 ⚠', statusClass: 'bg-yellow-100 text-yellow-700' },
-    'mci-risk': { statusText: '需注意 ⚠', statusClass: 'bg-orange-100 text-orange-700' },
-    'dementia-risk': { statusText: '建議諮詢專業 ⚠', statusClass: 'bg-red-100 text-red-700' }
+    'normal': { statusText: '表現良好 ✓', statusClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+    'warning': { statusText: '邊緣值 ⚠', statusClass: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
+    'mci': { statusText: '需注意 ⚠', statusClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+    'dementia': { statusText: '建議諮詢專業 ⚠', statusClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }
   }
   
   return statusMap[riskLevel] || statusMap['normal']
@@ -703,10 +703,30 @@ async function downloadReport(): Promise<void> {
   padding: 1rem;
 }
 
+:root.dark .disclaimer-banner {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.2));
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+.normative-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(79, 70, 229, 0.1));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+:root.dark .normative-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(79, 70, 229, 0.15));
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
 /* Mini-Cog Card Styles */
 .mini-cog-card {
   border: 2px solid #4f46e5;
   background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+}
+
+:root.dark .mini-cog-card {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(139, 92, 246, 0.15) 100%);
+  border-color: rgba(139, 92, 246, 0.5);
 }
 
 .mini-cog-header {
@@ -718,9 +738,17 @@ async function downloadReport(): Promise<void> {
   border-bottom: 1px solid #e9d5ff;
 }
 
+:root.dark .mini-cog-header {
+  border-bottom-color: rgba(139, 92, 246, 0.3);
+}
+
 .mini-cog-date {
   font-size: 0.875rem;
   color: #7c3aed;
+}
+
+:root.dark .mini-cog-date {
+  color: #a78bfa;
 }
 
 .mini-cog-content {
@@ -780,30 +808,30 @@ async function downloadReport(): Promise<void> {
 }
 
 .mini-cog-interpretation.interpretation-normal {
-  background: #f0fdf4;
+  background: rgba(34, 197, 94, 0.1);
   border-left: 4px solid #22c55e;
 }
 
 .mini-cog-interpretation.interpretation-borderline {
-  background: #fffbeb;
+  background: rgba(245, 158, 11, 0.1);
   border-left: 4px solid #f59e0b;
 }
 
 .mini-cog-interpretation.interpretation-warning {
-  background: #fef2f2;
+  background: rgba(239, 68, 68, 0.1);
   border-left: 4px solid #ef4444;
 }
 
 .interpretation-level {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text);
 }
 
 .interpretation-desc {
   margin: 0.25rem 0 0;
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
 }
 
 .mini-cog-breakdown {
@@ -817,7 +845,7 @@ async function downloadReport(): Promise<void> {
   flex-direction: column;
   gap: 0.5rem;
   padding: 1rem;
-  background: white;
+  background: var(--color-surface);
   border-radius: 0.75rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
@@ -834,7 +862,7 @@ async function downloadReport(): Promise<void> {
 
 .breakdown-label {
   font-weight: 500;
-  color: #374151;
+  color: var(--color-text);
 }
 
 .breakdown-score {
@@ -842,9 +870,13 @@ async function downloadReport(): Promise<void> {
   color: #4f46e5;
 }
 
+:root.dark .breakdown-score {
+  color: #a78bfa;
+}
+
 .breakdown-bar {
   height: 8px;
-  background: #e2e8f0;
+  background: var(--color-surface-alt);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -860,9 +892,9 @@ async function downloadReport(): Promise<void> {
   display: flex;
   gap: 1rem;
   padding: 1rem;
-  background: #f0f9ff;
+  background: rgba(14, 165, 233, 0.1);
   border-radius: 0.75rem;
-  border: 1px solid #bae6fd;
+  border: 1px solid rgba(14, 165, 233, 0.3);
 }
 
 .mmse-icon {
@@ -881,22 +913,26 @@ async function downloadReport(): Promise<void> {
   margin-bottom: 0.25rem;
 }
 
+:root.dark .mmse-label {
+  color: #38bdf8;
+}
+
 .mmse-value {
   margin: 0;
-  color: #075985;
+  color: var(--color-text-secondary);
 }
 
 .mmse-note {
   margin: 0.25rem 0 0;
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--color-text-muted);
 }
 
 .mini-cog-warning {
   display: flex;
   gap: 1rem;
   padding: 1rem;
-  background: #fef2f2;
+  background: rgba(239, 68, 68, 0.1);
   border-radius: 0.75rem;
   border-left: 4px solid #ef4444;
 }
@@ -916,9 +952,13 @@ async function downloadReport(): Promise<void> {
   margin-bottom: 0.25rem;
 }
 
+:root.dark .warning-content strong {
+  color: #f87171;
+}
+
 .warning-content p {
   margin: 0;
-  color: #7f1d1d;
+  color: var(--color-text-secondary);
   font-size: 0.875rem;
 }
 
@@ -927,19 +967,19 @@ async function downloadReport(): Promise<void> {
   gap: 1rem;
   justify-content: flex-start;
   padding-top: 1rem;
-  border-top: 1px solid #e9d5ff;
+  border-top: 1px solid rgba(139, 92, 246, 0.2);
 }
 
 .mini-cog-history {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #e9d5ff;
+  border-top: 1px solid rgba(139, 92, 246, 0.2);
 }
 
 .history-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text);
   margin-bottom: 1rem;
 }
 
@@ -954,14 +994,14 @@ async function downloadReport(): Promise<void> {
   align-items: center;
   gap: 1rem;
   padding: 0.75rem 1rem;
-  background: white;
+  background: var(--color-surface);
   border-radius: 0.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .history-date {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--color-text-muted);
   min-width: 100px;
 }
 
@@ -980,9 +1020,13 @@ async function downloadReport(): Promise<void> {
 .history-score.score-moderate { color: #d97706; }
 .history-score.score-concern { color: #dc2626; }
 
+:root.dark .history-score.score-good { color: #4ade80; }
+:root.dark .history-score.score-moderate { color: #fbbf24; }
+:root.dark .history-score.score-concern { color: #f87171; }
+
 .history-detail {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--color-text-muted);
 }
 
 .history-status {
@@ -993,24 +1037,44 @@ async function downloadReport(): Promise<void> {
 }
 
 .history-status.interpretation-normal {
-  background: #dcfce7;
+  background: rgba(34, 197, 94, 0.15);
   color: #166534;
 }
 
 .history-status.interpretation-borderline {
-  background: #fef3c7;
+  background: rgba(245, 158, 11, 0.15);
   color: #92400e;
 }
 
 .history-status.interpretation-warning {
-  background: #fee2e2;
+  background: rgba(239, 68, 68, 0.15);
   color: #991b1b;
+}
+
+:root.dark .history-status.interpretation-normal {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+}
+
+:root.dark .history-status.interpretation-borderline {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fde047;
+}
+
+:root.dark .history-status.interpretation-warning {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
 }
 
 /* Mini-Cog Empty State */
 .mini-cog-empty {
-  border: 2px dashed #c7d2fe;
-  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  border: 2px dashed rgba(99, 102, 241, 0.3);
+  background: linear-gradient(135deg, rgba(238, 242, 255, 0.5) 0%, rgba(224, 231, 255, 0.5) 100%);
+}
+
+:root.dark .mini-cog-empty {
+  border-color: rgba(139, 92, 246, 0.3);
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(139, 92, 246, 0.1) 100%);
 }
 
 .empty-content {
@@ -1026,12 +1090,12 @@ async function downloadReport(): Promise<void> {
 
 .empty-title {
   font-size: 1.25rem;
-  color: #1e293b;
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
 .empty-description {
-  color: #64748b;
+  color: var(--color-text-muted);
   max-width: 400px;
   margin: 0 auto 1.5rem;
 }

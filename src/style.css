@@ -1,17 +1,38 @@
 @import "tailwindcss";
 
+/* Tailwind v4 深色模式配置 - 使用 class-based 切換 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ===== 長者友善全域樣式 ===== */
 
-/* CSS 變數定義 */
+/* CSS 變數定義 - 淺色模式（預設） */
 :root {
+  /* 語義化顏色（主題感知） */
+  --color-bg: #f8fafc;
+  --color-bg-soft: #f1f5f9;
+  --color-bg-muted: #e2e8f0;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-text: #1f2937;
+  --color-text-secondary: #4b5563;
+  --color-text-muted: #6b7280;
+  --color-text-inverse: #ffffff;
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
+  
   /* 顏色主題 */
   --color-primary: #3b82f6;
   --color-primary-dark: #1d4ed8;
   --color-primary-light: #60a5fa;
+  --color-primary-bg: #eff6ff;
   --color-success: #22c55e;
+  --color-success-bg: #f0fdf4;
   --color-warning: #eab308;
+  --color-warning-bg: #fefce8;
   --color-danger: #ef4444;
+  --color-danger-bg: #fef2f2;
   --color-info: #06b6d4;
+  --color-info-bg: #ecfeff;
   
   /* 認知維度顏色 */
   --color-reaction: #ef4444;
@@ -35,6 +56,8 @@
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
   --radius-full: 9999px;
   
   /* 間距 */
@@ -43,6 +66,58 @@
   --spacing-md: 16px;
   --spacing-lg: 24px;
   --spacing-xl: 32px;
+  
+  /* 陰影系統 */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.3);
+  
+  /* 漸層 */
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-hero: linear-gradient(to bottom, #eff6ff, #ffffff);
+  --gradient-card: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+}
+
+/* 深色模式變數 */
+:root.dark {
+  /* 語義化顏色（深色主題） */
+  --color-bg: #0f172a;
+  --color-bg-soft: #1e293b;
+  --color-bg-muted: #334155;
+  --color-surface: #1e293b;
+  --color-surface-elevated: #334155;
+  --color-text: #f1f5f9;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --color-text-inverse: #0f172a;
+  --color-border: #334155;
+  --color-border-light: #475569;
+  
+  /* 調整主題色以適應深色背景 */
+  --color-primary: #60a5fa;
+  --color-primary-dark: #3b82f6;
+  --color-primary-light: #93c5fd;
+  --color-primary-bg: rgba(59, 130, 246, 0.15);
+  --color-success-bg: rgba(34, 197, 94, 0.15);
+  --color-warning-bg: rgba(234, 179, 8, 0.15);
+  --color-danger-bg: rgba(239, 68, 68, 0.15);
+  --color-info-bg: rgba(6, 182, 212, 0.15);
+  
+  /* 深色模式陰影（更柔和） */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(96, 165, 250, 0.4);
+  
+  /* 深色漸層 */
+  --gradient-primary: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --gradient-hero: linear-gradient(to bottom, #1e293b, #0f172a);
+  --gradient-card: linear-gradient(145deg, #1e293b 0%, #334155 100%);
 }
 
 /* 基礎樣式 */
@@ -58,11 +133,12 @@ body {
   margin: 0;
   font-family: 'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif;
   line-height: 1.6;
-  color: #1f2937;
-  background-color: #f8fafc;
+  color: var(--color-text);
+  background-color: var(--color-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #app {
@@ -100,30 +176,31 @@ body {
 
 .btn-primary {
   background-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .btn-primary:hover:not(:disabled) {
   background-color: var(--color-primary-dark);
+  box-shadow: var(--shadow-glow);
 }
 
 .btn-secondary {
-  background-color: #e2e8f0;
-  color: #475569;
+  background-color: var(--color-bg-muted);
+  color: var(--color-text-secondary);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: #cbd5e1;
+  background-color: var(--color-border);
 }
 
 .btn-success {
   background-color: var(--color-success);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .btn-danger {
   background-color: var(--color-danger);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .btn-lg {
@@ -140,10 +217,16 @@ body {
 
 /* 卡片樣式 */
 .card {
-  background: white;
+  background: var(--color-surface);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border-light);
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
 }
 
 /* 輸入框樣式（長者友善） */
@@ -152,37 +235,40 @@ body {
   min-height: var(--min-touch-target);
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--font-size-lg);
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--color-border);
   border-radius: var(--radius-md);
-  transition: border-color 0.2s ease;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  transition: border-color 0.2s ease, background-color 0.3s ease;
 }
 
 .input:focus {
   outline: none;
   border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-bg);
 }
 
 .input::placeholder {
-  color: #94a3b8;
+  color: var(--color-text-muted);
 }
 
 /* 標題樣式 */
 .title-lg {
   font-size: var(--font-size-3xl);
   font-weight: 700;
-  color: #1e40af;
+  color: var(--color-primary);
 }
 
 .title-md {
   font-size: var(--font-size-2xl);
   font-weight: 600;
-  color: #1e40af;
+  color: var(--color-primary);
 }
 
 .title-sm {
   font-size: var(--font-size-xl);
   font-weight: 600;
-  color: #334155;
+  color: var(--color-text);
 }
 
 /* 難度標籤 */
@@ -226,7 +312,7 @@ body {
 /* 進度條 */
 .progress-bar {
   height: 12px;
-  background-color: #e2e8f0;
+  background-color: var(--color-bg-muted);
   border-radius: var(--radius-full);
   overflow: hidden;
 }
@@ -256,7 +342,8 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -265,13 +352,16 @@ body {
 }
 
 .modal-content {
-  background: white;
-  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border-radius: var(--radius-2xl);
   padding: var(--spacing-xl);
   max-width: 500px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--color-border-light);
+  transition: background-color 0.3s ease;
 }
 
 /* 遊戲容器 */
@@ -280,15 +370,18 @@ body {
   max-width: 800px;
   margin: 0 auto;
   padding: var(--spacing-lg);
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  transition: background-color 0.3s ease;
 }
 
 /* 遊戲畫布 */
 .game-canvas {
   width: 100%;
   aspect-ratio: 4/3;
-  background: white;
+  background: var(--color-surface);
   border-radius: var(--radius-lg);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 /* 動畫 */
@@ -459,36 +552,6 @@ body {
   }
 }
 
-/* 深色模式支援 */
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #0f172a;
-    color: #f1f5f9;
-  }
-
-  .game-container,
-  .modal-content {
-    background: #1e293b;
-  }
-
-  .card {
-    background: #334155;
-    border-color: #475569;
-  }
-
-  .progress-bar {
-    background-color: #334155;
-  }
-
-  input,
-  select,
-  textarea {
-    background: #1e293b;
-    border-color: #475569;
-    color: #f1f5f9;
-  }
-}
-
 /* 減少動畫偏好 */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -507,17 +570,41 @@ body {
   }
 
   .card {
-    border: 2px solid #1f2937;
+    border: 2px solid var(--color-text);
   }
+}
+
+/* 使用者設定：減少動畫 */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* 使用者設定：高對比 */
+.high-contrast {
+  --color-text: #000000;
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-border: #000000;
+}
+
+.high-contrast.dark {
+  --color-text: #ffffff;
+  --color-bg: #000000;
+  --color-surface: #000000;
+  --color-border: #ffffff;
 }
 
 /* 全螢幕 API 支援 */
 :fullscreen {
-  background: white;
+  background: var(--color-bg);
 }
 
 :-webkit-full-screen {
-  background: white;
+  background: var(--color-bg);
 }
 
 :fullscreen .game-container {
@@ -535,4 +622,39 @@ body {
     padding-right: max(var(--spacing-md), env(safe-area-inset-right));
     padding-bottom: max(var(--spacing-md), env(safe-area-inset-bottom));
   }
+}
+
+/* ========== 深色模式額外樣式 ========== */
+.dark .difficulty-easy {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+}
+
+.dark .difficulty-medium {
+  background-color: rgba(234, 179, 8, 0.2);
+  color: #fde047;
+}
+
+.dark .difficulty-hard {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+/* 深色模式滾動條 */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--color-bg-soft);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--color-border-light);
+  border-radius: var(--radius-full);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
 }

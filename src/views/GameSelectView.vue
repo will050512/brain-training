@@ -1,12 +1,12 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8">
+  <div class="min-h-screen bg-[var(--color-bg)] py-8 transition-colors duration-300">
     <div class="container mx-auto px-4">
       <!-- 頭部導航 -->
       <div class="flex items-center justify-between mb-8">
         <router-link to="/" class="btn btn-secondary">
           ← 返回首頁
         </router-link>
-        <h1 class="title-md">選擇遊戲</h1>
+        <h1 class="text-xl md:text-2xl font-bold text-[var(--color-text)]">選擇遊戲</h1>
         <router-link to="/report" class="btn btn-secondary">
           📊 報告
         </router-link>
@@ -37,21 +37,21 @@
         <div
           v-for="game in filteredGames"
           :key="game.id"
-          class="card hover:shadow-lg transition-shadow cursor-pointer"
+          class="card hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer"
           @click="openGameModal(game)"
         >
           <!-- 遊戲圖示 -->
-          <div class="text-5xl text-center mb-4">{{ game.icon }}</div>
+          <div class="text-5xl text-center mb-4 drop-shadow">{{ game.icon }}</div>
           
           <!-- 遊戲名稱 -->
-          <h3 class="title-sm text-center mb-2">{{ game.name }}</h3>
+          <h3 class="text-lg font-bold text-center text-[var(--color-text)] mb-2">{{ game.name }}</h3>
           
           <!-- 認知維度標籤 -->
           <div class="flex flex-wrap gap-1 justify-center mb-3">
             <span
               v-for="[dimension, weight] in Object.entries(game.cognitiveWeights)"
               :key="dimension"
-              class="text-xs px-2 py-1 rounded-full"
+              class="text-xs px-2 py-1 rounded-full font-medium"
               :style="{
                 backgroundColor: getDimensionColor(dimension as CognitiveDimension) + '20',
                 color: getDimensionColor(dimension as CognitiveDimension)
@@ -63,12 +63,12 @@
           </div>
           
           <!-- 遊戲說明 -->
-          <p class="text-gray-500 text-center text-sm mb-4">
+          <p class="text-[var(--color-text-muted)] text-center text-sm mb-4">
             {{ game.description }}
           </p>
           
           <!-- 最佳成績 -->
-          <div class="flex justify-between items-center text-sm text-gray-500 border-t pt-3">
+          <div class="flex justify-between items-center text-sm text-[var(--color-text-muted)] border-t border-[var(--color-border)] pt-3">
             <span>最佳成績</span>
             <span class="font-bold" :class="getScoreClass(gameStore.getBestScore(game.id))">
               {{ gameStore.getBestScore(game.id) || '-' }} 分
@@ -80,7 +80,7 @@
       <!-- 空狀態 -->
       <div v-if="filteredGames.length === 0" class="text-center py-16">
         <div class="text-5xl mb-4">🎮</div>
-        <p class="text-xl text-gray-500">此分類暫無遊戲</p>
+        <p class="text-xl text-[var(--color-text-muted)]">此分類暫無遊戲</p>
       </div>
     </div>
 
@@ -89,15 +89,15 @@
       <div class="modal-content max-w-lg animate-slide-up">
         <!-- 遊戲標題 -->
         <div class="text-center mb-6">
-          <div class="text-6xl mb-3">{{ selectedGame.icon }}</div>
-          <h2 class="title-md">{{ selectedGame.name }}</h2>
-          <p class="text-gray-500 mt-2">{{ selectedGame.description }}</p>
+          <div class="text-6xl mb-3 drop-shadow-lg">{{ selectedGame.icon }}</div>
+          <h2 class="text-2xl font-bold text-[var(--color-text)]">{{ selectedGame.name }}</h2>
+          <p class="text-[var(--color-text-muted)] mt-2">{{ selectedGame.description }}</p>
         </div>
 
         <!-- 遊戲說明 -->
         <div class="mb-6">
-          <h3 class="font-semibold mb-2">遊戲說明</h3>
-          <ul class="list-disc list-inside text-gray-600 space-y-1">
+          <h3 class="font-semibold text-[var(--color-text)] mb-2">遊戲說明</h3>
+          <ul class="list-disc list-inside text-[var(--color-text-secondary)] space-y-1">
             <li v-for="(instruction, index) in selectedGame.instructions" :key="index">
               {{ instruction }}
             </li>
@@ -106,15 +106,15 @@
 
         <!-- 難度選擇 -->
         <div class="mb-6">
-          <h3 class="font-semibold mb-3">選擇難度</h3>
+          <h3 class="font-semibold text-[var(--color-text)] mb-3">選擇難度</h3>
           <div class="grid grid-cols-3 gap-3">
             <button
               v-for="diff in difficulties"
               :key="diff.id"
               @click="selectedDifficulty = diff.id"
-              class="btn"
+              class="btn transition-all duration-200"
               :class="{
-                'ring-2 ring-offset-2': selectedDifficulty === diff.id,
+                'ring-2 ring-offset-2 dark:ring-offset-slate-800': selectedDifficulty === diff.id,
                 'ring-green-500': selectedDifficulty === diff.id && diff.id === 'easy',
                 'ring-yellow-500': selectedDifficulty === diff.id && diff.id === 'medium',
                 'ring-red-500': selectedDifficulty === diff.id && diff.id === 'hard',
@@ -130,16 +130,16 @@
         </div>
 
         <!-- 歷史成績 -->
-        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+        <div class="mb-6 p-4 bg-[var(--color-surface-alt)] rounded-lg">
           <div class="flex justify-between text-sm">
-            <span class="text-gray-500">{{ DIFFICULTIES[selectedDifficulty].name }}難度最佳</span>
-            <span class="font-bold">
+            <span class="text-[var(--color-text-muted)]">{{ DIFFICULTIES[selectedDifficulty].name }}難度最佳</span>
+            <span class="font-bold text-[var(--color-text)]">
               {{ gameStore.getBestScore(selectedGame.id, selectedDifficulty) || '-' }} 分
             </span>
           </div>
           <div class="flex justify-between text-sm mt-1">
-            <span class="text-gray-500">{{ DIFFICULTIES[selectedDifficulty].name }}難度平均</span>
-            <span>
+            <span class="text-[var(--color-text-muted)]">{{ DIFFICULTIES[selectedDifficulty].name }}難度平均</span>
+            <span class="text-[var(--color-text-secondary)]">
               {{ gameStore.getAverageScore(selectedGame.id, selectedDifficulty) || '-' }} 分
             </span>
           </div>
@@ -150,7 +150,7 @@
           <button @click="closeGameModal" class="btn btn-secondary flex-1">
             取消
           </button>
-          <button @click="startGame" class="btn btn-primary btn-lg flex-1">
+          <button @click="startGame" class="btn btn-primary btn-lg flex-1 shadow-lg hover:shadow-xl transition-shadow">
             開始遊戲 →
           </button>
         </div>

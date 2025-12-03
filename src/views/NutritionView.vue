@@ -391,6 +391,9 @@ onMounted(() => {
   margin: 0 auto;
   padding: 1rem;
   padding-bottom: 3rem;
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 .page-header {
@@ -402,16 +405,23 @@ onMounted(() => {
 
 .back-btn {
   padding: 0.5rem 1rem;
-  background: var(--color-background-soft, #f1f5f9);
-  border: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
+  color: var(--color-text);
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background: var(--color-surface-alt);
 }
 
 .page-header h1 {
   font-size: 1.5rem;
   margin: 0;
+  color: var(--color-text);
 }
 
 /* 免責聲明 */
@@ -425,6 +435,11 @@ onMounted(() => {
   margin-bottom: 1.5rem;
 }
 
+:where(.dark, .dark *) .disclaimer-box {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(234, 179, 8, 0.2));
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
 .disclaimer-icon {
   font-size: 2rem;
   flex-shrink: 0;
@@ -436,11 +451,19 @@ onMounted(() => {
   font-size: 1.125rem;
 }
 
+:where(.dark, .dark *) .disclaimer-content h3 {
+  color: #fbbf24;
+}
+
 .disclaimer-content p {
   margin: 0;
   color: #92400e;
   font-size: 0.9rem;
   line-height: 1.5;
+}
+
+:where(.dark, .dark *) .disclaimer-content p {
+  color: #fcd34d;
 }
 
 .disclaimer-note {
@@ -452,13 +475,14 @@ onMounted(() => {
 .loading {
   text-align: center;
   padding: 3rem;
+  color: var(--color-text-secondary);
 }
 
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #e2e8f0;
-  border-top-color: #3b82f6;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 1rem;
@@ -478,22 +502,23 @@ onMounted(() => {
 .toggle-btn {
   flex: 1;
   padding: 0.875rem;
-  background: var(--color-background-soft, #f1f5f9);
+  background: var(--color-surface);
   border: 2px solid transparent;
   border-radius: 12px;
   cursor: pointer;
   font-size: 0.9rem;
+  color: var(--color-text);
   transition: all 0.2s;
 }
 
 .toggle-btn:hover {
-  background: #e2e8f0;
+  background: var(--color-surface-alt);
 }
 
 .toggle-btn.active {
-  background: #dbeafe;
-  border-color: #3b82f6;
-  color: #1d4ed8;
+  background: rgba(59, 130, 246, 0.15);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -501,7 +526,8 @@ onMounted(() => {
 .no-recommendations {
   text-align: center;
   padding: 3rem 1rem;
-  background: var(--color-background-soft, #f1f5f9);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
 }
 
@@ -513,11 +539,12 @@ onMounted(() => {
 .no-recommendations h3 {
   margin: 0 0 0.5rem 0;
   font-size: 1.25rem;
+  color: var(--color-text);
 }
 
 .no-recommendations p {
   margin: 0;
-  color: #64748b;
+  color: var(--color-text-secondary);
 }
 
 .no-recommendations .sub {
@@ -528,7 +555,7 @@ onMounted(() => {
 .view-all-btn {
   margin-top: 1.5rem;
   padding: 0.75rem 1.5rem;
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 12px;
@@ -548,22 +575,24 @@ onMounted(() => {
 
 .type-btn {
   padding: 0.5rem 1rem;
-  background: var(--color-background-soft, #f1f5f9);
-  border: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 20px;
   cursor: pointer;
   font-size: 0.875rem;
   white-space: nowrap;
   transition: all 0.2s;
+  color: var(--color-text);
 }
 
 .type-btn:hover {
-  background: #e2e8f0;
+  background: var(--color-surface-alt);
 }
 
 .type-btn.active {
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
+  border-color: var(--color-primary);
 }
 
 /* 推薦列表 & 營養品列表 */
@@ -577,8 +606,8 @@ onMounted(() => {
 .recommendation-card,
 .supplement-card {
   position: relative;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 1.5rem;
 }
@@ -616,17 +645,18 @@ onMounted(() => {
 .sup-name {
   margin: 0;
   font-size: 1.25rem;
+  color: var(--color-text);
 }
 
 .rec-type,
 .sup-name-en {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
 }
 
 .rec-description,
 .sup-description {
-  color: #374151;
+  color: var(--color-text-secondary);
   margin: 0 0 1rem 0;
   line-height: 1.6;
 }
@@ -634,8 +664,12 @@ onMounted(() => {
 .rec-reason {
   margin-bottom: 0.75rem;
   padding: 0.75rem;
-  background: #f0fdf4;
+  background: rgba(34, 197, 94, 0.1);
   border-radius: 8px;
+}
+
+:where(.dark, .dark *) .rec-reason {
+  background: rgba(34, 197, 94, 0.15);
 }
 
 .reason-label {
@@ -643,8 +677,16 @@ onMounted(() => {
   font-weight: 500;
 }
 
+:where(.dark, .dark *) .reason-label {
+  color: #4ade80;
+}
+
 .reason-value {
   color: #166534;
+}
+
+:where(.dark, .dark *) .reason-value {
+  color: #86efac;
 }
 
 .rec-dimensions,
@@ -658,13 +700,13 @@ onMounted(() => {
 
 .dim-label {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
 }
 
 .dim-tag {
   padding: 0.25rem 0.5rem;
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--color-primary);
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 500;
@@ -676,11 +718,12 @@ onMounted(() => {
 .sup-benefits {
   font-size: 0.9rem;
   margin-bottom: 0.5rem;
+  color: var(--color-text);
 }
 
 .dosage-label,
 .benefits-label {
-  color: #64748b;
+  color: var(--color-text-secondary);
 }
 
 .dosage-value,
@@ -698,14 +741,14 @@ onMounted(() => {
 
 .rec-warnings details,
 .sup-warnings details {
-  background: #fef3c7;
+  background: rgba(245, 158, 11, 0.15);
   border-radius: 8px;
   padding: 0.75rem;
 }
 
 .rec-interactions details,
 .sup-interactions details {
-  background: #f1f5f9;
+  background: var(--color-surface-alt);
   border-radius: 8px;
   padding: 0.75rem;
   margin-top: 0.5rem;
@@ -718,11 +761,16 @@ onMounted(() => {
   color: #b45309;
 }
 
+:where(.dark, .dark *) .rec-warnings summary,
+:where(.dark, .dark *) .sup-warnings summary {
+  color: #fbbf24;
+}
+
 .rec-interactions summary,
 .sup-interactions summary {
   cursor: pointer;
   font-weight: 500;
-  color: #475569;
+  color: var(--color-text-secondary);
 }
 
 .rec-warnings ul,
@@ -739,17 +787,23 @@ onMounted(() => {
   color: #92400e;
 }
 
+:where(.dark, .dark *) .rec-warnings li,
+:where(.dark, .dark *) .sup-warnings li {
+  color: #fcd34d;
+}
+
 .rec-interactions li,
 .sup-interactions li {
   margin-bottom: 0.25rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
 }
 
 /* 底部提醒 */
 .bottom-reminder {
   margin-top: 2rem;
   padding: 1rem;
-  background: var(--color-background-soft, #f1f5f9);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   text-align: center;
 }
@@ -757,7 +811,7 @@ onMounted(() => {
 .bottom-reminder p {
   margin: 0.25rem 0;
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
 }
 
 /* 響應式 */

@@ -16,7 +16,7 @@ export default defineConfig({
         name: '健腦訓練 - 認知能力評估與訓練',
         short_name: '健腦訓練',
         description: '專為長者設計的認知訓練遊戲，預防失智症',
-        theme_color: '#3b82f6',
+        theme_color: '#667eea',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
@@ -43,7 +43,25 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // 確保樣式變更能即時生效
+        skipWaiting: true,
+        clientsClaim: true,
+        // 導航回退設定
+        navigateFallback: '/brain-training/index.html',
+        navigateFallbackAllowlist: [/^\/brain-training\/.*/],
         runtimeCaching: [
+          {
+            // CSS 和 JS 使用 StaleWhileRevalidate 確保更新即時生效
+            urlPattern: /\.(?:css|js)$/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'static-resources',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+              }
+            }
+          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
@@ -51,6 +69,20 @@ export default defineConfig({
               cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-webfonts',
+              expiration: {
+                maxEntries: 30,
                 maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
               },
               cacheableResponse: {

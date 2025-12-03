@@ -14,6 +14,9 @@ export type DeclineDetectionMode = 'professional' | 'general'
 // 每日訓練時長選項
 export type DailyTrainingDuration = 10 | 15 | 20 | 30
 
+// 主題模式
+export type ThemeMode = 'light' | 'dark' | 'system'
+
 export const FONT_SIZE_MAP: Record<FontSize, number> = {
   small: 14,
   medium: 16,
@@ -79,6 +82,9 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   } | null>(null)
 
+  // 主題設定 - 預設跟隨系統
+  const themeMode = ref<ThemeMode>('system')
+
   // 新增：退化檢測與訓練設定
   const declineDetectionMode = ref<DeclineDetectionMode>('general') // 預設一般模式
   const dailyTrainingDuration = ref<DailyTrainingDuration>(15) // 預設 15 分鐘
@@ -108,6 +114,8 @@ export const useSettingsStore = defineStore('settings', () => {
         fontSize.value = data.fontSize ?? 'large'
         hasCompletedAssessment.value = data.hasCompletedAssessment ?? false
         assessmentResult.value = data.assessmentResult ?? null
+        // 主題設定
+        themeMode.value = data.themeMode ?? 'system'
         // 新增設定
         declineDetectionMode.value = data.declineDetectionMode ?? 'general'
         dailyTrainingDuration.value = data.dailyTrainingDuration ?? 15
@@ -138,6 +146,8 @@ export const useSettingsStore = defineStore('settings', () => {
       fontSize: fontSize.value,
       hasCompletedAssessment: hasCompletedAssessment.value,
       assessmentResult: assessmentResult.value,
+      // 主題設定
+      themeMode: themeMode.value,
       // 新增設定
       declineDetectionMode: declineDetectionMode.value,
       dailyTrainingDuration: dailyTrainingDuration.value,
@@ -166,7 +176,7 @@ export const useSettingsStore = defineStore('settings', () => {
   // 監聽變化自動儲存
   watch(
     [soundEnabled, musicEnabled, soundVolume, musicVolume, hasSeenWelcome, fontSize, 
-     hasCompletedAssessment, assessmentResult, declineDetectionMode, dailyTrainingDuration,
+     hasCompletedAssessment, assessmentResult, themeMode, declineDetectionMode, dailyTrainingDuration,
      enableBehaviorTracking, reduceMotion, highContrast, enableVoicePrompts, enableHapticFeedback],
     () => saveToStorage(),
     { deep: true }
@@ -232,6 +242,11 @@ export const useSettingsStore = defineStore('settings', () => {
     enableBehaviorTracking.value = enabled ?? !enableBehaviorTracking.value
   }
 
+  // 新增：設定主題模式
+  function setThemeMode(mode: ThemeMode): void {
+    themeMode.value = mode
+  }
+
   // 新增：設定無障礙選項
   function setAccessibilityOption(option: 'reduceMotion' | 'highContrast' | 'enableVoicePrompts' | 'enableHapticFeedback', value: boolean): void {
     switch (option) {
@@ -269,6 +284,8 @@ export const useSettingsStore = defineStore('settings', () => {
     fontSizePx,
     hasCompletedAssessment,
     assessmentResult,
+    // 主題狀態
+    themeMode,
     // 新增狀態
     declineDetectionMode,
     dailyTrainingDuration,
@@ -289,6 +306,8 @@ export const useSettingsStore = defineStore('settings', () => {
     resetWelcome,
     setAssessmentResult,
     resetAssessment,
+    // 主題動作
+    setThemeMode,
     // 新增動作
     setDeclineDetectionMode,
     setDailyTrainingDuration,

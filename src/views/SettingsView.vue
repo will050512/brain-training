@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8">
+  <div class="min-h-screen bg-[var(--color-bg)] py-8 transition-colors duration-300">
     <div class="container mx-auto px-4">
       <!-- 頭部 -->
       <div class="flex items-center justify-between mb-8">
@@ -11,6 +11,50 @@
       </div>
 
       <div class="max-w-lg mx-auto space-y-6">
+        <!-- 外觀主題設定 -->
+        <div class="card">
+          <h3 class="title-sm mb-6">🎨 外觀主題</h3>
+          
+          <div class="grid grid-cols-3 gap-3">
+            <button
+              @click="settingsStore.setThemeMode('light')"
+              class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all"
+              :class="settingsStore.themeMode === 'light' 
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
+                : 'border-[var(--color-border)] hover:border-[var(--color-primary-light)]'"
+            >
+              <span class="text-2xl">☀️</span>
+              <span class="font-medium text-[var(--color-text)]">淺色</span>
+            </button>
+            
+            <button
+              @click="settingsStore.setThemeMode('dark')"
+              class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all"
+              :class="settingsStore.themeMode === 'dark' 
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
+                : 'border-[var(--color-border)] hover:border-[var(--color-primary-light)]'"
+            >
+              <span class="text-2xl">🌙</span>
+              <span class="font-medium text-[var(--color-text)]">深色</span>
+            </button>
+            
+            <button
+              @click="settingsStore.setThemeMode('system')"
+              class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all"
+              :class="settingsStore.themeMode === 'system' 
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
+                : 'border-[var(--color-border)] hover:border-[var(--color-primary-light)]'"
+            >
+              <span class="text-2xl">🖥️</span>
+              <span class="font-medium text-[var(--color-text)]">自動</span>
+            </button>
+          </div>
+          
+          <p class="text-sm text-[var(--color-text-muted)] mt-4 text-center">
+            {{ themeDescription }}
+          </p>
+        </div>
+
         <!-- 音效設定 -->
         <div class="card">
           <h3 class="title-sm mb-6">🔊 音效設定</h3>
@@ -18,13 +62,13 @@
           <!-- 遊戲音效 -->
           <div class="flex items-center justify-between mb-4">
             <div>
-              <div class="font-medium">遊戲音效</div>
-              <div class="text-sm text-gray-500">點擊、成功、錯誤等音效</div>
+              <div class="font-medium text-[var(--color-text)]">遊戲音效</div>
+              <div class="text-sm text-[var(--color-text-muted)]">點擊、成功、錯誤等音效</div>
             </div>
             <button
               @click="settingsStore.toggleSound()"
               class="w-16 h-8 rounded-full transition-colors relative"
-              :class="settingsStore.soundEnabled ? 'bg-blue-500' : 'bg-gray-300'"
+              :class="settingsStore.soundEnabled ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-bg-muted)]'"
             >
               <span
                 class="absolute top-1 w-6 h-6 bg-white rounded-full transition-transform shadow"
@@ -36,8 +80,8 @@
           <!-- 音效音量 -->
           <div v-if="settingsStore.soundEnabled" class="mb-6">
             <div class="flex justify-between text-sm mb-2">
-              <span>音效音量</span>
-              <span>{{ Math.round(settingsStore.soundVolume * 100) }}%</span>
+              <span class="text-[var(--color-text-secondary)]">音效音量</span>
+              <span class="text-[var(--color-text)]">{{ Math.round(settingsStore.soundVolume * 100) }}%</span>
             </div>
             <input
               type="range"
@@ -46,20 +90,20 @@
               step="0.1"
               :value="settingsStore.soundVolume"
               @input="(e) => settingsStore.setSoundVolume(parseFloat((e.target as HTMLInputElement).value))"
-              class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              class="w-full h-2 bg-[var(--color-bg-muted)] rounded-lg appearance-none cursor-pointer accent-[var(--color-primary)]"
             />
           </div>
           
           <!-- 背景音樂 -->
           <div class="flex items-center justify-between mb-4">
             <div>
-              <div class="font-medium">背景音樂</div>
-              <div class="text-sm text-gray-500">遊戲時的背景音樂</div>
+              <div class="font-medium text-[var(--color-text)]">背景音樂</div>
+              <div class="text-sm text-[var(--color-text-muted)]">遊戲時的背景音樂</div>
             </div>
             <button
               @click="settingsStore.toggleMusic()"
               class="w-16 h-8 rounded-full transition-colors relative"
-              :class="settingsStore.musicEnabled ? 'bg-blue-500' : 'bg-gray-300'"
+              :class="settingsStore.musicEnabled ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-bg-muted)]'"
             >
               <span
                 class="absolute top-1 w-6 h-6 bg-white rounded-full transition-transform shadow"
@@ -71,8 +115,8 @@
           <!-- 音樂音量 -->
           <div v-if="settingsStore.musicEnabled">
             <div class="flex justify-between text-sm mb-2">
-              <span>音樂音量</span>
-              <span>{{ Math.round(settingsStore.musicVolume * 100) }}%</span>
+              <span class="text-[var(--color-text-secondary)]">音樂音量</span>
+              <span class="text-[var(--color-text)]">{{ Math.round(settingsStore.musicVolume * 100) }}%</span>
             </div>
             <input
               type="range"
@@ -81,7 +125,7 @@
               step="0.1"
               :value="settingsStore.musicVolume"
               @input="(e) => settingsStore.setMusicVolume(parseFloat((e.target as HTMLInputElement).value))"
-              class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              class="w-full h-2 bg-[var(--color-bg-muted)] rounded-lg appearance-none cursor-pointer accent-[var(--color-primary)]"
             />
           </div>
         </div>
@@ -92,20 +136,20 @@
           
           <div class="space-y-3">
             <div class="flex justify-between">
-              <span class="text-gray-500">姓名</span>
-              <span class="font-medium">{{ userStore.currentUser?.name }}</span>
+              <span class="text-[var(--color-text-muted)]">姓名</span>
+              <span class="font-medium text-[var(--color-text)]">{{ userStore.currentUser?.name }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">生日</span>
-              <span>{{ formatDate(userStore.currentUser?.birthday) }}</span>
+              <span class="text-[var(--color-text-muted)]">生日</span>
+              <span class="text-[var(--color-text)]">{{ formatDate(userStore.currentUser?.birthday) }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">年齡</span>
-              <span>{{ userStore.userAge }} 歲</span>
+              <span class="text-[var(--color-text-muted)]">年齡</span>
+              <span class="text-[var(--color-text)]">{{ userStore.userAge }} 歲</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">註冊日期</span>
-              <span>{{ formatDate(userStore.currentUser?.createdAt) }}</span>
+              <span class="text-[var(--color-text-muted)]">註冊日期</span>
+              <span class="text-[var(--color-text)]">{{ formatDate(userStore.currentUser?.createdAt) }}</span>
             </div>
           </div>
           
@@ -123,20 +167,20 @@
           
           <div class="space-y-3">
             <div class="flex justify-between">
-              <span class="text-gray-500">總遊戲次數</span>
-              <span class="font-medium">{{ userStore.currentStats.totalGamesPlayed }} 次</span>
+              <span class="text-[var(--color-text-muted)]">總遊戲次數</span>
+              <span class="font-medium text-[var(--color-text)]">{{ userStore.currentStats.totalGamesPlayed }} 次</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">總訓練時長</span>
-              <span>{{ formatPlayTime(userStore.currentStats.totalPlayTime) }}</span>
+              <span class="text-[var(--color-text-muted)]">總訓練時長</span>
+              <span class="text-[var(--color-text)]">{{ formatPlayTime(userStore.currentStats.totalPlayTime) }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">平均分數</span>
-              <span>{{ userStore.currentStats.averageScore }} 分</span>
+              <span class="text-[var(--color-text-muted)]">平均分數</span>
+              <span class="text-[var(--color-text)]">{{ userStore.currentStats.averageScore }} 分</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">連續訓練天數</span>
-              <span>{{ userStore.currentStats.streak }} 天</span>
+              <span class="text-[var(--color-text-muted)]">連續訓練天數</span>
+              <span class="text-[var(--color-text)]">{{ userStore.currentStats.streak }} 天</span>
             </div>
           </div>
         </div>
@@ -165,8 +209,8 @@
         <div class="card">
           <h3 class="title-sm mb-6">ℹ️ 關於</h3>
           
-          <div class="text-center text-gray-500">
-            <p class="text-lg font-medium text-gray-700 mb-2">健腦訓練 Brain Training</p>
+          <div class="text-center text-[var(--color-text-muted)]">
+            <p class="text-lg font-medium text-[var(--color-text)] mb-2">健腦訓練 Brain Training</p>
             <p>版本 1.0.0</p>
             <p class="mt-4 text-sm">
               專為認知訓練設計的遊戲網站<br>
@@ -180,6 +224,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore, useSettingsStore, useGameStore } from '@/stores'
 import { clearUserGameSessions } from '@/services/db'
@@ -188,6 +233,20 @@ const router = useRouter()
 const userStore = useUserStore()
 const settingsStore = useSettingsStore()
 const gameStore = useGameStore()
+
+// 主題描述
+const themeDescription = computed(() => {
+  switch (settingsStore.themeMode) {
+    case 'light':
+      return '使用淺色主題，適合白天使用'
+    case 'dark':
+      return '使用深色主題，減少眼睛疲勞'
+    case 'system':
+      return '自動跟隨系統設定切換主題'
+    default:
+      return ''
+  }
+})
 
 // 格式化日期
 function formatDate(date: Date | string | undefined): string {

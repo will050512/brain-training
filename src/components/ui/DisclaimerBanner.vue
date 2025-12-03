@@ -1,19 +1,19 @@
 <template>
-  <div class="disclaimer-banner bg-amber-50 border-t border-amber-200 px-4 py-3">
+  <div class="disclaimer-banner bg-amber-50 dark:bg-amber-900/30 border-t border-amber-200 dark:border-amber-700/50 px-4 py-3">
     <div class="container mx-auto">
       <div class="flex items-start gap-3">
-        <span class="text-amber-600 text-xl flex-shrink-0">⚠️</span>
-        <div class="flex-1 text-sm text-amber-800">
+        <span class="text-amber-600 dark:text-amber-400 text-xl flex-shrink-0">⚠️</span>
+        <div class="flex-1 text-sm text-amber-800 dark:text-amber-200">
           <p class="font-medium mb-1">重要聲明</p>
           <p>
             本系統提供的 MMSE/MoCA/CASI 分數為基於遊戲表現的估算值，僅供參考，
-            <strong>不可作為醫療診斷依據</strong>。如有認知功能相關疑慮，請諮詢專業醫師或職能治療師進行正式評估。
+            <strong class="text-amber-900 dark:text-amber-100">不可作為醫療診斷依據</strong>。如有認知功能相關疑慮，請諮詢專業醫師或職能治療師進行正式評估。
           </p>
         </div>
         <button 
           v-if="dismissible"
           @click="emit('dismiss')" 
-          class="text-amber-600 hover:text-amber-800 flex-shrink-0"
+          class="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 flex-shrink-0 transition-colors"
           aria-label="關閉"
         >
           ✕

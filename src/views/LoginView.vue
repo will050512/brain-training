@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8">
+  <div class="min-h-screen bg-[var(--color-bg)] py-8 transition-colors duration-300">
     <div class="container mx-auto px-4">
       <!-- 返回按鈕 -->
       <router-link to="/" class="btn btn-secondary mb-8">
@@ -9,9 +9,9 @@
       <div class="max-w-md mx-auto">
         <!-- 標題 -->
         <div class="text-center mb-8">
-          <div class="text-5xl mb-4">👤</div>
-          <h1 class="title-md">登入 / 建立帳號</h1>
-          <p class="text-gray-500 mt-2">
+          <div class="text-5xl mb-4 drop-shadow-lg">👤</div>
+          <h1 class="text-2xl md:text-3xl font-bold text-[var(--color-text)]">登入 / 建立帳號</h1>
+          <p class="text-[var(--color-text-muted)] mt-2">
             輸入您的姓名和生日即可開始
           </p>
         </div>
@@ -20,7 +20,7 @@
         <form @submit.prevent="handleSubmit" class="card space-y-6">
           <!-- 姓名 -->
           <div>
-            <label for="name" class="block text-lg font-medium mb-2">
+            <label for="name" class="block text-lg font-medium text-[var(--color-text)] mb-2">
               姓名
             </label>
             <input
@@ -36,7 +36,7 @@
 
           <!-- 生日 -->
           <div>
-            <label for="birthday" class="block text-lg font-medium mb-2">
+            <label for="birthday" class="block text-lg font-medium text-[var(--color-text)] mb-2">
               生日
             </label>
             <input
@@ -51,7 +51,7 @@
 
           <!-- 教育程度 -->
           <div>
-            <label for="education" class="block text-lg font-medium mb-2">
+            <label for="education" class="block text-lg font-medium text-[var(--color-text)] mb-2">
               教育程度
             </label>
             <select
@@ -69,20 +69,20 @@
               <option :value="16">大學畢業 (16年)</option>
               <option :value="18">碩士以上 (18年+)</option>
             </select>
-            <p class="text-sm text-gray-500 mt-1">
+            <p class="text-sm text-[var(--color-text-muted)] mt-1">
               用於對照台灣認知功能常模資料
             </p>
           </div>
 
           <!-- 錯誤訊息 -->
-          <div v-if="error" class="bg-red-50 text-red-600 p-4 rounded-lg">
+          <div v-if="error" class="bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 p-4 rounded-lg border border-red-500/30">
             {{ error }}
           </div>
 
           <!-- 提交按鈕 -->
           <button
             type="submit"
-            class="btn btn-primary btn-xl w-full"
+            class="btn btn-primary btn-xl w-full shadow-lg hover:shadow-xl transition-shadow"
             :disabled="isLoading || !isFormValid"
           >
             <span v-if="isLoading">登入中...</span>
@@ -91,7 +91,7 @@
         </form>
 
         <!-- 說明文字 -->
-        <div class="mt-8 text-center text-gray-500">
+        <div class="mt-8 text-center text-[var(--color-text-muted)]">
           <p>💡 小提示</p>
           <p class="text-sm mt-2">
             系統會根據姓名和生日識別您的帳號，<br>
@@ -101,18 +101,18 @@
 
         <!-- 已存在的使用者列表 -->
         <div v-if="existingUsers.length > 0" class="mt-8">
-          <h3 class="text-center text-gray-600 mb-4">或選擇已有帳號</h3>
+          <h3 class="text-center text-[var(--color-text-secondary)] mb-4">或選擇已有帳號</h3>
           <div class="space-y-2">
             <button
               v-for="user in existingUsers"
               :key="user.id"
               @click="handleQuickLogin(user.id)"
-              class="btn btn-secondary w-full justify-start"
+              class="btn btn-secondary w-full justify-start hover:scale-[1.02] transition-transform"
             >
               <span class="text-xl mr-3">👤</span>
               <span class="flex-1 text-left">
                 {{ user.name }}
-                <span class="text-gray-400 text-sm ml-2">
+                <span class="text-[var(--color-text-muted)] text-sm ml-2">
                   {{ formatDate(user.birthday) }}
                 </span>
               </span>

@@ -1,14 +1,14 @@
 <template>
-  <div class="min-h-screen bg-gray-100">
+  <div class="min-h-screen bg-[var(--color-bg)]">
     <!-- 遊戲頭部 -->
-    <div class="bg-white shadow-sm py-4 px-6">
+    <div class="bg-[var(--color-surface)] shadow-sm py-4 px-6 border-b border-[var(--color-border)]">
       <div class="container mx-auto flex items-center justify-between">
         <button @click="handleBack" class="btn btn-secondary">
           ← 返回
         </button>
         
         <div class="text-center">
-          <h1 class="text-xl font-bold">{{ currentGame?.name || '遊戲' }}</h1>
+          <h1 class="text-xl font-bold text-[var(--color-text)]">{{ currentGame?.name || '遊戲' }}</h1>
           <span 
             class="difficulty-badge"
             :class="`difficulty-${gameStore.currentDifficulty}`"
@@ -20,14 +20,14 @@
         <div class="flex items-center gap-4">
           <!-- 分數顯示 -->
           <div class="text-right">
-            <div class="text-sm text-gray-500">分數</div>
-            <div class="text-2xl font-bold text-blue-600">{{ currentScore }}</div>
+            <div class="text-sm text-[var(--color-text-secondary)]">分數</div>
+            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ currentScore }}</div>
           </div>
           
           <!-- 計時器 -->
           <div class="text-right">
-            <div class="text-sm text-gray-500">時間</div>
-            <div class="text-2xl font-bold">{{ formatTime(elapsedTime) }}</div>
+            <div class="text-sm text-[var(--color-text-secondary)]">時間</div>
+            <div class="text-2xl font-bold text-[var(--color-text)]">{{ formatTime(elapsedTime) }}</div>
           </div>
         </div>
       </div>
@@ -37,13 +37,13 @@
     <div class="container mx-auto py-8 px-4">
       <!-- 遊戲準備畫面 -->
       <div v-if="gameState === 'ready'" class="max-w-lg mx-auto text-center">
-        <div class="card">
+        <div class="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 shadow-lg">
           <div class="text-6xl mb-6">{{ currentGame?.icon }}</div>
-          <h2 class="title-md mb-4">{{ currentGame?.name }}</h2>
+          <h2 class="text-xl font-bold mb-4 text-[var(--color-text)]">{{ currentGame?.name }}</h2>
           
           <div class="text-left mb-6">
-            <h3 class="font-semibold mb-2">遊戲說明</h3>
-            <ul class="list-disc list-inside text-gray-600 space-y-1">
+            <h3 class="font-semibold mb-2 text-[var(--color-text)]">遊戲說明</h3>
+            <ul class="list-disc list-inside text-[var(--color-text-secondary)] space-y-1">
               <li v-for="(instruction, index) in currentGame?.instructions" :key="index">
                 {{ instruction }}
               </li>
@@ -68,10 +68,10 @@
       </div>
 
       <!-- 遊戲暫停 -->
-      <div v-else-if="gameState === 'paused'" class="modal-overlay">
-        <div class="modal-content text-center">
+      <div v-else-if="gameState === 'paused'" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-[var(--color-surface)] rounded-2xl p-8 max-w-sm w-full mx-4 border border-[var(--color-border)] text-center">
           <div class="text-5xl mb-4">⏸️</div>
-          <h2 class="title-md mb-6">遊戲暫停</h2>
+          <h2 class="text-xl font-bold mb-6 text-[var(--color-text)]">遊戲暫停</h2>
           <div class="flex gap-3">
             <button @click="resumeGame" class="btn btn-primary btn-lg flex-1">
               繼續遊戲
@@ -85,49 +85,49 @@
 
       <!-- 遊戲結束 -->
       <div v-else-if="gameState === 'finished'" class="max-w-lg mx-auto text-center">
-        <div class="card">
+        <div class="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 shadow-lg">
           <div class="text-6xl mb-4">
             {{ getFinalEmoji(currentScore) }}
           </div>
-          <h2 class="title-md mb-2">遊戲結束！</h2>
+          <h2 class="text-xl font-bold mb-2 text-[var(--color-text)]">遊戲結束！</h2>
           
           <!-- 分數展示 -->
           <div class="my-8">
             <div class="text-6xl font-bold" :class="getScoreClass(currentScore)">
               {{ currentScore }}
             </div>
-            <div class="text-xl text-gray-500">分</div>
+            <div class="text-xl text-[var(--color-text-secondary)]">分</div>
           </div>
           
           <!-- 詳細數據 -->
           <div class="grid grid-cols-2 gap-4 mb-8 text-left">
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <div class="text-sm text-gray-500">正確率</div>
-              <div class="text-xl font-bold">{{ Math.round((gameResult?.accuracy || 0) * 100) }}%</div>
+            <div class="bg-[var(--color-surface-alt)] p-4 rounded-lg">
+              <div class="text-sm text-[var(--color-text-secondary)]">正確率</div>
+              <div class="text-xl font-bold text-[var(--color-text)]">{{ Math.round((gameResult?.accuracy || 0) * 100) }}%</div>
             </div>
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <div class="text-sm text-gray-500">遊戲時長</div>
-              <div class="text-xl font-bold">{{ formatTime(gameResult?.duration || 0) }}</div>
+            <div class="bg-[var(--color-surface-alt)] p-4 rounded-lg">
+              <div class="text-sm text-[var(--color-text-secondary)]">遊戲時長</div>
+              <div class="text-xl font-bold text-[var(--color-text)]">{{ formatTime(gameResult?.duration || 0) }}</div>
             </div>
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <div class="text-sm text-gray-500">答對題數</div>
-              <div class="text-xl font-bold">
+            <div class="bg-[var(--color-surface-alt)] p-4 rounded-lg">
+              <div class="text-sm text-[var(--color-text-secondary)]">答對題數</div>
+              <div class="text-xl font-bold text-[var(--color-text)]">
                 {{ gameResult?.correctCount || 0 }} / {{ gameResult?.totalCount || 0 }}
               </div>
             </div>
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <div class="text-sm text-gray-500">平均反應</div>
-              <div class="text-xl font-bold">{{ gameResult?.avgReactionTime || 0 }}ms</div>
+            <div class="bg-[var(--color-surface-alt)] p-4 rounded-lg">
+              <div class="text-sm text-[var(--color-text-secondary)]">平均反應</div>
+              <div class="text-xl font-bold text-[var(--color-text)]">{{ gameResult?.avgReactionTime || 0 }}ms</div>
             </div>
           </div>
           
           <!-- 與最佳成績比較 -->
-          <div v-if="bestScore > 0" class="mb-6 p-4 bg-blue-50 rounded-lg">
+          <div v-if="bestScore > 0" class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
             <div class="flex justify-between items-center">
-              <span>最佳成績</span>
-              <span class="font-bold text-blue-600">{{ bestScore }} 分</span>
+              <span class="text-[var(--color-text)]">最佳成績</span>
+              <span class="font-bold text-blue-600 dark:text-blue-400">{{ bestScore }} 分</span>
             </div>
-            <div v-if="currentScore > bestScore" class="text-green-600 font-bold mt-2">
+            <div v-if="currentScore > bestScore" class="text-green-600 dark:text-green-400 font-bold mt-2">
               🎉 新紀錄！
             </div>
           </div>
@@ -165,7 +165,7 @@
                 
                 <!-- 難度變化詳情 -->
                 <div 
-                  class="text-sm p-2 rounded-lg bg-white/60"
+                  class="text-sm p-2 rounded-lg bg-white/60 dark:bg-black/20"
                   :class="difficultyFeedbackStyle.subTextClass"
                 >
                   <div class="flex items-center gap-2">
@@ -393,7 +393,7 @@ async function handleGameEnd(result: GameResult): Promise<void> {
   
   // 計算難度調整
   try {
-    const odId = userStore.currentUser?.odId || ''
+    const odId = userStore.currentUser?.id || ''
     if (odId && gameId.value) {
       const adjustment = await calculateDifficultyAdjustment(
         odId,
