@@ -109,10 +109,12 @@
         <h2>時鐘繪圖</h2>
         <p class="instruction">
           請在下方畫一個時鐘，顯示時間：<strong>{{ clockTime }}</strong>
+          <span class="time-hint">（{{ clockTimeDescription }}）</span>
         </p>
         
         <ClockDrawingTest
           :target-time="clockTime"
+          :randomize="false"
           @complete="handleClockComplete"
         />
       </div>
@@ -238,7 +240,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted, onMounted } from 'vue'
 import ClockDrawingTest from '@/components/games/ClockDrawingTest.vue'
 import {
   type MiniCogResult,
@@ -252,6 +254,7 @@ import {
   getRiskLevelDescription,
   WORD_SETS
 } from '@/services/miniCogService'
+import { getRandomClockTime, getTimeDescription } from '@/services/clockDrawingAnalyzer'
 import { saveMiniCogResult, getDataConsent } from '@/services/db'
 import { useUserStore } from '@/stores/userStore'
 
@@ -288,7 +291,10 @@ const session = ref<LocalMiniCogSession>({
   wordSet: null
 })
 
-const clockTime = '11:10' // Standard Mini-Cog time
+// 隨機化時鐘時間（每次評估都不同）
+const clockTime = ref('11:10')
+const clockTimeDescription = computed(() => getTimeDescription(clockTime.value))
+
 const wordDisplayCountdown = ref(10)
 const showWordsComplete = ref(false)
 const selectedWords = ref<string[]>([])
@@ -305,6 +311,11 @@ const saveError = ref<string | null>(null)
 
 let countdownTimer: ReturnType<typeof setInterval> | null = null
 let sessionStartTime = 0
+
+// 初始化隨機時間
+onMounted(() => {
+  clockTime.value = getRandomClockTime()
+})
 
 // Steps configuration
 const steps = [
@@ -475,7 +486,7 @@ const submitRecall = () => {
       score: wordRecallScore
     },
     clockDrawing: {
-      targetTime: clockTime,
+      targetTime: clockTime.value,
       selfAssessment: clockAssessment.value,
       score: clockScore,
       imageData: clockImageData.value,
@@ -805,6 +816,12 @@ onUnmounted(() => {
 .clock-step .instruction strong {
   color: var(--color-primary);
   font-size: 1.25rem;
+}
+
+.clock-step .time-hint {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  font-weight: normal;
 }
 
 /* Recall Step */

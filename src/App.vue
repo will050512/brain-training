@@ -4,6 +4,7 @@ import { useUserStore, useSettingsStore } from '@/stores'
 import { useTheme } from '@/composables/useTheme'
 import InstallPrompt from '@/components/ui/InstallPrompt.vue'
 import ConsentModal from '@/components/ui/ConsentModal.vue'
+import ToastNotification from '@/components/ui/ToastNotification.vue'
 import { getDataConsent, checkConsentVersionNeedsUpdate } from '@/services/db'
 import type { DataConsentOptions } from '@/types/user'
 
@@ -100,6 +101,9 @@ onMounted(async () => {
       @confirmed="handleConsentConfirmed"
       @skipped="handleConsentSkipped"
     />
+    
+    <!-- Toast 通知 -->
+    <ToastNotification />
   </div>
 </template>
 

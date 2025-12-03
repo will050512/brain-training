@@ -5,7 +5,8 @@
       <h3>🕐 時鐘繪圖測試</h3>
       <p class="target-time">
         請在下方畫布上畫一個時鐘，並將指針指向 
-        <strong>{{ targetTime }}</strong>
+        <strong>{{ actualTargetTime }}</strong>
+        <span class="time-hint">（{{ targetTimeDescription }}）</span>
       </p>
       <p class="hint">提示：先畫圓形，再填入數字 1-12，最後畫指針</p>
     </div>
@@ -165,7 +166,7 @@
             <span class="checkmark">✓</span>
             <span class="item-text">
               <strong>指針指向正確時間</strong>
-              <small>時針和分針正確指向 {{ targetTime }}</small>
+              <small>時針和分針正確指向 {{ actualTargetTime }}（{{ targetTimeDescription }}）</small>
             </span>
           </label>
         </div>
@@ -199,7 +200,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import type { ClockDrawingSelfAssessment, ClockDrawingResult } from '@/services/miniCogService'
 import { calculateClockDrawingScore } from '@/services/miniCogService'
-import { analyzeClockDrawing, type ClockAnalysisResult } from '@/services/clockDrawingAnalyzer'
+import { analyzeClockDrawing, getRandomClockTime, getTimeDescription, type ClockAnalysisResult } from '@/services/clockDrawingAnalyzer'
 import { useTheme } from '@/composables/useTheme'
 
 // 主題
@@ -213,15 +214,35 @@ function getCSSVar(name: string): string {
 // Props
 const props = withDefaults(defineProps<{
   targetTime?: string
+  randomize?: boolean  // 是否隨機化題目時間
   canvasSize?: number
   behaviorTrackingConsent?: boolean
   enableAIAnalysis?: boolean  // 啟用 AI 自動分析
 }>(), {
-  targetTime: '11:10',
+  targetTime: '',  // 空字串表示使用隨機時間
+  randomize: true, // 預設啟用隨機化
   canvasSize: 350,
   behaviorTrackingConsent: false,
   enableAIAnalysis: true,  // 預設啟用
 })
+
+// 實際使用的目標時間（支援隨機化）
+const actualTargetTime = ref<string>('')
+const targetTimeDescription = computed(() => getTimeDescription(actualTargetTime.value))
+
+// 初始化目標時間
+function initializeTargetTime() {
+  if (props.targetTime) {
+    // 如果有指定時間，使用指定的
+    actualTargetTime.value = props.targetTime
+  } else if (props.randomize) {
+    // 隨機選擇時間
+    actualTargetTime.value = getRandomClockTime()
+  } else {
+    // 預設使用 11:10
+    actualTargetTime.value = '11:10'
+  }
+}
 
 // Emits
 const emit = defineEmits<{
@@ -369,11 +390,14 @@ function initCanvas() {
 function startDrawing(e: MouseEvent) {
   isDrawing.value = true
   const ctx = getContext()
-  if (!ctx) return
+  if (!ctx || !canvasRef.value) return
   
-  const rect = canvasRef.value!.getBoundingClientRect()
-  const x = e.clientX - rect.left
-  const y = e.clientY - rect.top
+  const rect = canvasRef.value.getBoundingClientRect()
+  const scaleX = canvasRef.value.width / rect.width
+  const scaleY = canvasRef.value.height / rect.height
+  
+  const x = (e.clientX - rect.left) * scaleX
+  const y = (e.clientY - rect.top) * scaleY
   
   ctx.beginPath()
   ctx.moveTo(x, y)
@@ -383,11 +407,14 @@ function startDrawing(e: MouseEvent) {
 function draw(e: MouseEvent) {
   if (!isDrawing.value) return
   const ctx = getContext()
-  if (!ctx) return
+  if (!ctx || !canvasRef.value) return
   
-  const rect = canvasRef.value!.getBoundingClientRect()
-  const x = e.clientX - rect.left
-  const y = e.clientY - rect.top
+  const rect = canvasRef.value.getBoundingClientRect()
+  const scaleX = canvasRef.value.width / rect.width
+  const scaleY = canvasRef.value.height / rect.height
+  
+  const x = (e.clientX - rect.left) * scaleX
+  const y = (e.clientY - rect.top) * scaleY
   
   ctx.lineTo(x, y)
   // 從 CSS 變數取得繪圖顏色
@@ -406,34 +433,46 @@ function stopDrawing() {
   isDrawing.value = false
 }
 
-// 觸控支援
+// 觸控支援 - 改進座標計算防止不跟手
 function handleTouchStart(e: TouchEvent) {
+  e.preventDefault()
+  e.stopPropagation()
+  
   const touch = e.touches[0]
   if (!touch) return
   
   isDrawing.value = true
   const ctx = getContext()
-  if (!ctx) return
+  if (!ctx || !canvasRef.value) return
   
-  const rect = canvasRef.value!.getBoundingClientRect()
-  const x = touch.clientX - rect.left
-  const y = touch.clientY - rect.top
+  const rect = canvasRef.value.getBoundingClientRect()
+  const scaleX = canvasRef.value.width / rect.width
+  const scaleY = canvasRef.value.height / rect.height
+  
+  const x = (touch.clientX - rect.left) * scaleX
+  const y = (touch.clientY - rect.top) * scaleY
   
   ctx.beginPath()
   ctx.moveTo(x, y)
 }
 
 function handleTouchMove(e: TouchEvent) {
+  e.preventDefault()
+  e.stopPropagation()
+  
   if (!isDrawing.value) return
   const touch = e.touches[0]
   if (!touch) return
   
   const ctx = getContext()
-  if (!ctx) return
+  if (!ctx || !canvasRef.value) return
   
-  const rect = canvasRef.value!.getBoundingClientRect()
-  const x = touch.clientX - rect.left
-  const y = touch.clientY - rect.top
+  const rect = canvasRef.value.getBoundingClientRect()
+  const scaleX = canvasRef.value.width / rect.width
+  const scaleY = canvasRef.value.height / rect.height
+  
+  const x = (touch.clientX - rect.left) * scaleX
+  const y = (touch.clientY - rect.top) * scaleY
   
   ctx.lineTo(x, y)
   // 從 CSS 變數取得繪圖顏色
@@ -487,7 +526,7 @@ async function showSelfAssessment() {
   if (props.enableAIAnalysis && previewImageUrl.value) {
     isAnalyzing.value = true
     try {
-      aiAnalysisResult.value = await analyzeClockDrawing(previewImageUrl.value, props.targetTime)
+      aiAnalysisResult.value = await analyzeClockDrawing(previewImageUrl.value, actualTargetTime.value)
       // 使用 AI 分析結果預填自評
       selfAssessment.value = { ...aiAnalysisResult.value.selfAssessment }
     } catch (error) {
@@ -507,7 +546,7 @@ function submitResult() {
   const finalScore = calculateClockDrawingScore(selfAssessment.value)
   
   const result: ClockDrawingResult = {
-    targetTime: props.targetTime,
+    targetTime: actualTargetTime.value,
     selfAssessment: { ...selfAssessment.value },
     score: finalScore,
     completionTime,
@@ -526,10 +565,13 @@ function submitResult() {
 
 // 生命週期
 onMounted(() => {
+  // 初始化目標時間（支援隨機化）
+  initializeTargetTime()
+  
   // 初始計算響應式尺寸
   responsiveCanvasSize.value = calculateResponsiveSize()
   
-  // 添加視窗大小變化監聽
+  // 添加視窗大小變化監聯
   window.addEventListener('resize', handleResize)
   
   // 初始化畫布
@@ -570,6 +612,12 @@ onUnmounted(() => {
 .target-time strong {
   color: #2563eb;
   font-size: 1.3rem;
+}
+
+.time-hint {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  font-weight: normal;
 }
 
 .hint {

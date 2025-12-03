@@ -5,6 +5,63 @@
 
 import type { ClockDrawingSelfAssessment } from './miniCogService'
 
+// 臨床常用的時鐘繪圖測試時間
+// Mini-Cog 標準使用 11:10 或 10:11，但為了防止記憶效應，提供多種選擇
+export const CLOCK_TEST_TIMES = [
+  '11:10', // Mini-Cog 標準時間
+  '10:11', // Mini-Cog 替代時間
+  '2:45',  // 經典測試時間
+  '3:40',  // 時針分針分開明顯
+  '8:20',  // 左右對稱測試
+  '1:50',  // 指針角度差異大
+  '9:15',  // 四分之一標記測試
+  '4:35',  // 指針不重疊
+] as const
+
+export type ClockTestTime = typeof CLOCK_TEST_TIMES[number]
+
+/**
+ * 隨機選擇一個測試時間
+ * @param excludeRecent 排除最近使用過的時間（可選）
+ */
+export function getRandomClockTime(excludeRecent?: string[]): string {
+  let availableTimes = [...CLOCK_TEST_TIMES]
+  
+  // 如果有排除列表，過濾掉這些時間
+  if (excludeRecent && excludeRecent.length > 0) {
+    availableTimes = availableTimes.filter(t => !excludeRecent.includes(t))
+    // 如果全部都被排除了，重置為全部可用
+    if (availableTimes.length === 0) {
+      availableTimes = [...CLOCK_TEST_TIMES]
+    }
+  }
+  
+  const randomIndex = Math.floor(Math.random() * availableTimes.length)
+  return availableTimes[randomIndex] ?? '11:10'
+}
+
+/**
+ * 獲取時間的中文描述
+ */
+export function getTimeDescription(timeStr: string): string {
+  const parts = timeStr.split(':')
+  const hour = parseInt(parts[0] ?? '0', 10)
+  const minute = parseInt(parts[1] ?? '0', 10)
+  
+  const hourText = hour === 0 ? '十二' : ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'][hour - 1] || hour.toString()
+  
+  let minuteText: string
+  if (minute === 0) {
+    minuteText = '整'
+  } else if (minute < 10) {
+    minuteText = `零${minute}分`
+  } else {
+    minuteText = `${minute}分`
+  }
+  
+  return `${hourText}點${minuteText}`
+}
+
 // 分析結果介面
 export interface ClockAnalysisResult {
   // 基本評估
@@ -422,5 +479,8 @@ export function quickAnalyzeClockDrawing(
 export default {
   analyzeClockDrawing,
   quickAnalyzeClockDrawing,
-  parseTargetTime
+  parseTargetTime,
+  getRandomClockTime,
+  getTimeDescription,
+  CLOCK_TEST_TIMES
 }

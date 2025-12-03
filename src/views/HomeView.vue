@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[var(--color-bg)] transition-colors duration-300">
+  <div class="app-page">
     <!-- 首次使用歡迎彈窗 -->
     <WelcomeModal 
       v-if="showWelcome" 
@@ -7,244 +7,221 @@
       @enable-sound="handleEnableSound"
     />
 
-    <!-- 主要內容 -->
-    <div class="container mx-auto px-4 py-8">
-      <!-- 頭部 -->
-      <header class="text-center mb-12">
-        <div class="text-6xl mb-4 drop-shadow-lg">🧠</div>
-        <h1 class="text-3xl md:text-4xl font-bold text-[var(--color-text)] mb-2">健腦訓練</h1>
-        <p class="text-xl text-[var(--color-text-secondary)]">Brain Training</p>
-        <p class="mt-4 text-lg text-[var(--color-text-muted)]">
-          透過有趣的遊戲，活化您的大腦
-        </p>
-      </header>
+    <!-- APP 頭部 -->
+    <header class="app-header">
+      <div class="app-header-action">
+        <router-link to="/settings" class="text-2xl">⚙️</router-link>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">🧠</span>
+        <h1 class="text-lg font-bold text-[var(--color-text)]">健腦訓練</h1>
+      </div>
+      <div class="app-header-action text-right">
+        <button v-if="userStore.isLoggedIn" @click="handleLogout" class="text-sm text-[var(--color-text-muted)]">
+          切換
+        </button>
+      </div>
+    </header>
 
-      <!-- 使用者狀態 -->
-      <div v-if="userStore.isLoggedIn" class="card max-w-md mx-auto mb-8">
-        <div class="flex items-center gap-4">
-          <div class="w-16 h-16 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center text-2xl">
-            👤
-          </div>
-          <div class="flex-1">
-            <p class="text-xl font-semibold text-[var(--color-text)]">{{ userStore.currentUser?.name }}</p>
-            <p class="text-[var(--color-text-muted)]">{{ userStore.userAge }} 歲</p>
-          </div>
-          <button @click="handleLogout" class="btn btn-secondary">
-            切換帳號
-          </button>
+    <!-- 可滾動內容區 -->
+    <div class="app-content-scroll">
+      <div class="container mx-auto px-4 py-6">
+
+      <!-- 使用者狀態（精簡版） -->
+      <div v-if="userStore.isLoggedIn" class="flex items-center gap-3 mb-6 p-3 bg-[var(--color-surface)] rounded-xl">
+        <div class="w-12 h-12 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center text-xl">
+          👤
+        </div>
+        <div class="flex-1">
+          <p class="font-semibold text-[var(--color-text)]">{{ userStore.currentUser?.name }}</p>
+          <p class="text-sm text-[var(--color-text-muted)]">{{ userStore.userAge }} 歲</p>
         </div>
       </div>
 
       <!-- 評估引導卡片（未完成評估時顯示） -->
-      <div v-if="userStore.isLoggedIn && !settingsStore.hasCompletedAssessment" class="max-w-md mx-auto mb-8">
-        <div class="bg-gradient-to-r from-orange-500 to-amber-500 dark:from-orange-600 dark:to-amber-600 rounded-2xl p-6 text-white shadow-lg">
-          <div class="flex items-center justify-between mb-4">
+      <div v-if="userStore.isLoggedIn && !settingsStore.hasCompletedAssessment" class="mb-6">
+        <div class="bg-gradient-to-r from-orange-500 to-amber-500 dark:from-orange-600 dark:to-amber-600 rounded-2xl p-4 text-white shadow-lg">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="text-3xl">🧪</span>
             <div>
-              <h2 class="text-xl font-bold">🧪 認知評估</h2>
+              <h2 class="font-bold">認知評估</h2>
               <p class="text-orange-100 text-sm">完成評估後即可開始訓練</p>
             </div>
-            <div class="text-4xl">📋</div>
           </div>
-          
-          <p class="text-orange-100 mb-4 text-sm">
-            評估將幫助我們了解您的認知狀況，並為您制定個人化的訓練計畫。
-          </p>
           
           <router-link 
             to="/assessment" 
-            class="block w-full py-3 bg-white text-orange-600 rounded-xl font-semibold text-center
-                   hover:bg-orange-50 transition-colors shadow-md"
+            class="block w-full py-2.5 bg-white text-orange-600 rounded-xl font-semibold text-center
+                   hover:bg-orange-50 transition-colors shadow-md text-sm"
           >
             開始評估（約 5 分鐘）
           </router-link>
         </div>
       </div>
 
-      <!-- 每日訓練卡片 -->
-      <div v-if="userStore.isLoggedIn" class="max-w-md mx-auto mb-8">
-        <div class="bg-gradient-to-r from-[var(--color-primary)] to-purple-500 dark:from-indigo-600 dark:to-purple-600 rounded-2xl p-6 text-white shadow-lg">
-          <div class="flex items-center justify-between mb-4">
+      <!-- 每日訓練卡片（精簡版） -->
+      <div v-if="userStore.isLoggedIn" class="mb-6">
+        <div class="bg-gradient-to-r from-[var(--color-primary)] to-purple-500 dark:from-indigo-600 dark:to-purple-600 rounded-2xl p-4 text-white shadow-lg">
+          <div class="flex items-center justify-between mb-3">
             <div>
-              <h2 class="text-xl font-bold">今日訓練</h2>
+              <h2 class="font-bold">今日訓練</h2>
               <p class="text-blue-100 text-sm">{{ settingsStore.dailyTrainingDuration }} 分鐘挑戰</p>
             </div>
-            <div class="text-4xl">{{ dailyProgress.completed ? '✅' : '🎯' }}</div>
+            <span class="text-3xl">{{ dailyProgress.completed ? '✅' : '🎯' }}</span>
           </div>
           
           <!-- 進度條 -->
-          <div class="mb-4">
-            <div class="h-3 bg-white/20 rounded-full overflow-hidden">
+          <div class="mb-3">
+            <div class="h-2 bg-white/20 rounded-full overflow-hidden">
               <div 
                 class="h-full bg-white rounded-full transition-all duration-500"
                 :style="{ width: dailyProgress.percentage + '%' }"
               ></div>
             </div>
-            <p class="text-right text-sm text-blue-100 mt-1">
+            <p class="text-right text-xs text-blue-100 mt-1">
               {{ dailyProgress.completed ? '已完成！' : `${dailyProgress.percentage}%` }}
             </p>
           </div>
           
           <router-link 
             to="/daily-challenge" 
-            class="block w-full py-3 bg-white text-blue-600 rounded-xl font-semibold text-center
-                   hover:bg-blue-50 transition-colors shadow-md"
+            class="block w-full py-2.5 bg-white text-blue-600 rounded-xl font-semibold text-center
+                   hover:bg-blue-50 transition-colors shadow-md text-sm"
           >
             {{ dailyProgress.completed ? '再次挑戰' : '開始訓練' }}
           </router-link>
         </div>
       </div>
 
-      <!-- 認知趨勢概覽 -->
-      <div v-if="userStore.isLoggedIn && settingsStore.hasCompletedAssessment" class="max-w-md mx-auto mb-8">
-        <div class="card">
-          <div class="flex items-center justify-between mb-4">
+      <!-- 認知趨勢概覽（精簡版） -->
+      <div v-if="userStore.isLoggedIn && settingsStore.hasCompletedAssessment" class="mb-6">
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-3">
             <h3 class="font-semibold text-[var(--color-text)]">📊 認知趨勢</h3>
-            <router-link v-if="hasSufficientData" to="/report" class="text-sm text-[var(--color-primary)] hover:underline">
-              查看詳情 →
+            <router-link v-if="hasSufficientData" to="/report" class="text-sm text-[var(--color-primary)]">
+              詳情 →
             </router-link>
           </div>
           
           <!-- 未達到 5 場遊戲時的解鎖進度 -->
-          <div v-if="!hasSufficientData" class="mb-4 p-4 bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/20 rounded-lg">
-            <div class="flex items-center gap-3 mb-3">
-              <span class="text-2xl">🔒</span>
-              <div class="flex-1">
-                <p class="text-sm font-medium text-[var(--color-text)]">趨勢分析解鎖進度</p>
-                <p class="text-xs text-[var(--color-text-muted)]">完成 5 場遊戲後即可查看認知趨勢</p>
-              </div>
+          <div v-if="!hasSufficientData" class="p-3 bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/20 rounded-lg">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xl">🔒</span>
+              <span class="text-sm text-[var(--color-text)]">完成 {{ unlockProgress.remaining }} 場遊戲後解鎖</span>
             </div>
-            
-            <!-- 進度條 -->
-            <div class="relative">
-              <div class="h-3 bg-[var(--color-primary)]/10 rounded-full overflow-hidden">
-                <div 
-                  class="h-full bg-gradient-to-r from-[var(--color-primary)] to-purple-500 rounded-full transition-all duration-500"
-                  :style="{ width: unlockProgress.percentage + '%' }"
-                ></div>
-              </div>
-              <div class="flex justify-between mt-2">
-                <span class="text-xs text-[var(--color-text-muted)]">{{ unlockProgress.current }} / 5 場遊戲</span>
-                <span class="text-xs text-[var(--color-primary)]">{{ unlockProgress.remaining }} 場後解鎖</span>
-              </div>
+            <div class="h-2 bg-[var(--color-primary)]/10 rounded-full overflow-hidden">
+              <div 
+                class="h-full bg-gradient-to-r from-[var(--color-primary)] to-purple-500 rounded-full transition-all duration-500"
+                :style="{ width: unlockProgress.percentage + '%' }"
+              ></div>
             </div>
           </div>
           
           <!-- 有足夠數據時顯示趨勢 -->
           <template v-else-if="cognitiveTrend">
             <!-- 退化警告 -->
-            <div v-if="hasDeclineWarning" class="mb-4 p-3 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
-              <div class="flex items-center gap-2">
-                <span class="text-xl">⚠️</span>
-                <div>
-                  <p class="text-sm font-medium text-yellow-700 dark:text-yellow-300">偵測到表現變化</p>
-                  <p class="text-xs text-yellow-600 dark:text-yellow-400">部分維度有下降趨勢，建議持續練習</p>
-                </div>
-              </div>
+            <div v-if="hasDeclineWarning" class="mb-3 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+              <span class="text-sm text-yellow-700 dark:text-yellow-300">⚠️ 偵測到表現變化，建議持續練習</span>
             </div>
             
             <!-- 維度摘要 -->
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-3 gap-2">
               <div 
                 v-for="dim in topDimensions" 
                 :key="dim.dimension"
-                class="text-center p-3 bg-[var(--color-surface-alt)] rounded-lg"
+                class="text-center p-2 bg-[var(--color-surface-alt)] rounded-lg"
               >
-                <span class="text-2xl">{{ dim.icon }}</span>
-                <p class="text-lg font-bold mt-1" :class="dim.trendClass">
-                  {{ dim.score }}
-                </p>
+                <span class="text-xl">{{ dim.icon }}</span>
+                <p class="text-sm font-bold" :class="dim.trendClass">{{ dim.score }}</p>
                 <p class="text-xs text-[var(--color-text-muted)]">{{ dim.name }}</p>
-                <span v-if="dim.trend !== 0" class="text-xs" :class="dim.trendClass">
-                  {{ dim.trend > 0 ? '↑' : '↓' }}{{ Math.abs(dim.trend) }}%
-                </span>
               </div>
             </div>
           </template>
         </div>
       </div>
 
-      <!-- 主要按鈕區 -->
-      <div class="max-w-md mx-auto space-y-4">
+      <!-- 主要按鈕區（更緊湊） -->
+      <div class="space-y-3 mb-6">
         <template v-if="userStore.isLoggedIn">
-          <router-link to="/games" class="btn btn-primary btn-xl w-full shadow-lg hover:shadow-xl transition-shadow">
-            <span class="text-2xl mr-2">🎮</span>
+          <router-link to="/games" class="btn btn-primary btn-lg w-full shadow-lg">
+            <span class="text-xl mr-2">🎮</span>
             開始訓練
           </router-link>
           
-          <router-link to="/report" class="btn btn-secondary btn-lg w-full">
-            <span class="text-xl mr-2">📊</span>
-            查看報告
-          </router-link>
-          
-          <router-link to="/nutrition" class="btn btn-secondary btn-lg w-full">
-            <span class="text-xl mr-2">🥗</span>
-            營養建議
-          </router-link>
+          <div class="grid grid-cols-2 gap-3">
+            <router-link to="/report" class="btn btn-secondary w-full py-3">
+              <span class="text-lg mr-1">📊</span>
+              報告
+            </router-link>
+            
+            <router-link to="/nutrition" class="btn btn-secondary w-full py-3">
+              <span class="text-lg mr-1">🥗</span>
+              營養
+            </router-link>
+          </div>
         </template>
         
         <template v-else>
-          <router-link to="/login" class="btn btn-primary btn-xl w-full shadow-lg hover:shadow-xl transition-shadow">
-            <span class="text-2xl mr-2">👋</span>
+          <router-link to="/login" class="btn btn-primary btn-lg w-full shadow-lg">
+            <span class="text-xl mr-2">👋</span>
             開始使用
           </router-link>
         </template>
-
-        <router-link to="/settings" class="btn btn-secondary btn-lg w-full">
-          <span class="text-xl mr-2">⚙️</span>
-          設定
-        </router-link>
       </div>
 
-      <!-- 統計摘要 -->
-      <div v-if="userStore.isLoggedIn && userStore.currentStats" class="mt-12">
-        <h2 class="text-xl font-bold text-center text-[var(--color-text)] mb-6">您的訓練統計</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
-          <div class="card text-center hover:scale-105 transition-transform">
-            <div class="text-3xl font-bold text-blue-500 dark:text-blue-400">
+      <!-- 統計摘要（精簡版） -->
+      <div v-if="userStore.isLoggedIn && userStore.currentStats" class="mb-6">
+        <h2 class="text-sm font-semibold text-[var(--color-text-muted)] mb-3">訓練統計</h2>
+        <div class="grid grid-cols-4 gap-2">
+          <div class="text-center p-3 bg-[var(--color-surface)] rounded-xl">
+            <div class="text-xl font-bold text-blue-500">
               {{ userStore.currentStats.totalGamesPlayed }}
             </div>
-            <div class="text-[var(--color-text-muted)]">遊戲次數</div>
+            <div class="text-xs text-[var(--color-text-muted)]">次數</div>
           </div>
-          <div class="card text-center hover:scale-105 transition-transform">
-            <div class="text-3xl font-bold text-green-500 dark:text-green-400">
+          <div class="text-center p-3 bg-[var(--color-surface)] rounded-xl">
+            <div class="text-xl font-bold text-green-500">
               {{ userStore.currentStats.averageScore }}
             </div>
-            <div class="text-[var(--color-text-muted)]">平均分數</div>
+            <div class="text-xs text-[var(--color-text-muted)]">平均</div>
           </div>
-          <div class="card text-center hover:scale-105 transition-transform">
-            <div class="text-3xl font-bold text-purple-500 dark:text-purple-400">
+          <div class="text-center p-3 bg-[var(--color-surface)] rounded-xl">
+            <div class="text-xl font-bold text-purple-500">
               {{ formatPlayTime(userStore.currentStats.totalPlayTime) }}
             </div>
-            <div class="text-[var(--color-text-muted)]">總時長</div>
+            <div class="text-xs text-[var(--color-text-muted)]">時長</div>
           </div>
-          <div class="card text-center hover:scale-105 transition-transform">
-            <div class="text-3xl font-bold text-orange-500 dark:text-orange-400">
+          <div class="text-center p-3 bg-[var(--color-surface)] rounded-xl">
+            <div class="text-xl font-bold text-orange-500">
               {{ userStore.currentStats.streak }}
             </div>
-            <div class="text-[var(--color-text-muted)]">連續天數</div>
+            <div class="text-xs text-[var(--color-text-muted)]">連續</div>
           </div>
         </div>
       </div>
 
-      <!-- 認知維度說明 -->
-      <div class="mt-16 max-w-4xl mx-auto">
-        <h2 class="text-xl font-bold text-center text-[var(--color-text)] mb-8">訓練六大認知能力</h2>
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div v-for="dim in cognitiveDimensions" :key="dim.id" class="card text-center hover:scale-105 transition-transform">
-            <div class="text-4xl mb-2 drop-shadow">{{ dim.icon }}</div>
-            <h3 class="font-semibold text-lg" :style="{ color: dim.color }">
+      <!-- 認知維度說明（可水平滾動） -->
+      <div class="mb-6">
+        <h2 class="text-sm font-semibold text-[var(--color-text-muted)] mb-3">六大認知能力</h2>
+        <div class="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+          <div 
+            v-for="dim in cognitiveDimensions" 
+            :key="dim.id" 
+            class="flex-shrink-0 w-28 text-center p-3 bg-[var(--color-surface)] rounded-xl"
+          >
+            <div class="text-2xl mb-1">{{ dim.icon }}</div>
+            <h3 class="font-semibold text-sm" :style="{ color: dim.color }">
               {{ dim.name }}
             </h3>
-            <p class="text-sm text-[var(--color-text-muted)] mt-1">{{ dim.description }}</p>
           </div>
         </div>
+      </div>
       </div>
     </div>
 
-    <!-- 頁尾 -->
-    <footer class="mt-16 py-8 text-center text-[var(--color-text-muted)] border-t border-[var(--color-border)]">
-      <p>健腦訓練 Brain Training © 2024</p>
-      <p class="text-sm mt-1">專為認知訓練設計</p>
+    <!-- 版本資訊 -->
+    <footer class="flex-shrink-0 py-2 text-center text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)]">
+      健腦訓練 Brain Training © 2024
     </footer>
   </div>
 </template>

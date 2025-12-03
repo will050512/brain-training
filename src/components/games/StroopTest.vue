@@ -2,8 +2,19 @@
   <div class="game-area">
     <!-- 遊戲說明 -->
     <div v-if="!isPlaying && !isFinished" class="text-center mb-6">
-      <p class="text-lg text-[var(--color-text-secondary)]">快速說出文字的「顏色」，而非文字本身！</p>
-      <p class="text-sm text-[var(--color-text-muted)]">例如：<span class="text-red-500 font-bold">藍色</span> → 答案是「紅色」</p>
+      <p class="text-lg text-[var(--color-text-secondary)]">
+        {{ gameModeDescription }}
+      </p>
+      <p class="text-sm text-[var(--color-text-muted)]">
+        例如：<span class="text-red-500 font-bold" style="border: 3px solid #3b82f6; padding: 2px 8px; border-radius: 4px;">藍色</span> 
+        → {{ props.difficulty === 'easy' ? '答案是「紅色」（文字顏色）' : props.difficulty === 'medium' ? '答案是「藍色」（文字意思）' : '注意題目提示！' }}
+      </p>
+      <div class="mt-4 p-3 bg-[var(--color-primary-bg)] rounded-lg">
+        <p class="text-sm text-[var(--color-primary)]">
+          <strong>🎯 難度說明：</strong>
+          {{ difficultyModeExplanation }}
+        </p>
+      </div>
     </div>
 
     <!-- 遊戲狀態 -->
@@ -25,10 +36,18 @@
 
     <!-- Stroop 測試區 -->
     <div v-if="isPlaying" class="stroop-area">
-      <!-- 顯示文字 -->
-      <div class="stroop-word mb-8">
+      <!-- 題目提示（混合模式時顯示） -->
+      <div class="question-prompt mb-4">
+        <span class="prompt-icon">{{ currentQuestionType === 'ink' ? '🎨' : '📝' }}</span>
+        <span class="prompt-text">
+          {{ currentQuestionType === 'ink' ? '請選擇文字的【顏色】' : '請選擇文字的【意思】' }}
+        </span>
+      </div>
+
+      <!-- 顯示文字（含外框） -->
+      <div class="stroop-word mb-8" :style="{ borderColor: borderColor }">
         <span 
-          class="text-6xl md:text-7xl font-bold"
+          class="text-5xl md:text-6xl font-bold"
           :style="{ color: currentColor }"
         >
           {{ currentWord }}
@@ -40,7 +59,7 @@
         <button
           v-for="option in options"
           :key="option.name"
-          class="btn btn-lg py-6 text-xl font-bold transition-all"
+          class="btn btn-lg py-5 text-lg font-bold transition-all"
           :class="getButtonClass(option)"
           :disabled="showResult"
           @click="selectAnswer(option.name)"
@@ -53,6 +72,9 @@
       <transition name="fade">
         <div v-if="showResult" class="mt-6 text-center">
           <span class="text-5xl">{{ isCorrect ? '✅' : '❌' }}</span>
+          <p v-if="!isCorrect" class="text-sm text-[var(--color-text-muted)] mt-2">
+            正確答案：{{ getCorrectAnswerLabel() }}
+          </p>
         </div>
       </transition>
     </div>
@@ -86,6 +108,9 @@ const emit = defineEmits<{
   'game-end': [result: GameResult]
 }>()
 
+// 遊戲模式類型
+type QuestionType = 'ink' | 'meaning'
+
 // 顏色定義
 interface ColorOption {
   name: string
@@ -100,17 +125,48 @@ const colors: ColorOption[] = [
   { name: 'yellow', label: '黃色', value: '#eab308' },
 ]
 
-// 難度設定
+// 難度設定（根據難度自動決定遊戲模式）
 const difficultyConfig = computed(() => {
   const defaults = {
-    easy: { rounds: 10, timePerRound: 8, congruentChance: 0.5 },
-    medium: { rounds: 15, timePerRound: 6, congruentChance: 0.3 },
-    hard: { rounds: 20, timePerRound: 4, congruentChance: 0.2 },
+    // easy: 固定詢問「墨水顏色」
+    easy: { rounds: 10, timePerRound: 8, congruentChance: 0.5, mode: 'ink' as const },
+    // medium: 固定詢問「文字意思」（反直覺挑戰）
+    medium: { rounds: 15, timePerRound: 6, congruentChance: 0.3, mode: 'meaning' as const },
+    // hard: 隨機切換詢問類型（mixed 模式）
+    hard: { rounds: 20, timePerRound: 4, congruentChance: 0.2, mode: 'mixed' as const },
   }
   return {
     ...defaults[props.difficulty],
     ...props.settings,
   } as typeof defaults.easy
+})
+
+// 遊戲模式說明
+const gameModeDescription = computed(() => {
+  switch (props.difficulty) {
+    case 'easy':
+      return '快速選出文字的「顏色」，而非文字本身的意思！'
+    case 'medium':
+      return '快速選出文字的「意思」，忽略它的顯示顏色！'
+    case 'hard':
+      return '根據提示選出文字的「顏色」或「意思」，注意切換！'
+    default:
+      return ''
+  }
+})
+
+// 難度模式解釋
+const difficultyModeExplanation = computed(() => {
+  switch (props.difficulty) {
+    case 'easy':
+      return '簡單模式 - 只需判斷文字的顏色（墨水顏色）'
+    case 'medium':
+      return '中等模式 - 只需判斷文字代表的意思'
+    case 'hard':
+      return '困難模式 - 隨機切換判斷顏色或意思，需快速反應！'
+    default:
+      return ''
+  }
 })
 
 // 遊戲狀態
@@ -121,8 +177,12 @@ const totalRounds = computed(() => difficultyConfig.value.rounds)
 const correctCount = ref(0)
 const remainingTime = ref(0)
 
-const currentWord = ref('')
-const currentColor = ref('')
+const currentWord = ref('')        // 文字內容（如「紅色」）
+const currentColor = ref('')       // 墨水顏色（如 #3b82f6 藍色）
+const borderColor = ref('')        // 外框顏色（增加干擾）
+const currentWordName = ref('')    // 文字代表的顏色名稱（如 'red'）
+const currentInkName = ref('')     // 墨水顏色名稱（如 'blue'）
+const currentQuestionType = ref<QuestionType>('ink')  // 當前詢問類型
 const correctAnswer = ref('')
 const selectedAnswer = ref('')
 const showResult = ref(false)
@@ -139,19 +199,41 @@ let countdownTimer: ReturnType<typeof setInterval> | null = null
 function generateRound(): void {
   const config = difficultyConfig.value
   
+  // 決定本題的詢問類型
+  if (config.mode === 'mixed') {
+    currentQuestionType.value = Math.random() < 0.5 ? 'ink' : 'meaning'
+  } else {
+    currentQuestionType.value = config.mode === 'meaning' ? 'meaning' : 'ink'
+  }
+  
   // 決定是否一致（文字和顏色相同）
   const isCongruent = Math.random() < config.congruentChance
 
   // 隨機選擇顏色
   const shuffledColors = [...colors].sort(() => Math.random() - 0.5)
-  const wordColor = shuffledColors[0]
-  const inkColor = isCongruent ? wordColor : shuffledColors[1]
+  const wordColor = shuffledColors[0]  // 文字內容代表的顏色
+  const inkColor = isCongruent ? wordColor : shuffledColors[1]  // 墨水顏色
+  
+  // 選擇外框顏色（增加干擾，選擇第三個不同的顏色）
+  const borderOptions = shuffledColors.filter(c => c !== wordColor && c !== inkColor)
+  const borderColorOption = borderOptions[0] || shuffledColors[2]
 
   if (!wordColor || !inkColor) return
 
   currentWord.value = wordColor.label
+  currentWordName.value = wordColor.name
   currentColor.value = inkColor.value
-  correctAnswer.value = inkColor.name
+  currentInkName.value = inkColor.name
+  borderColor.value = borderColorOption?.value || 'transparent'
+  
+  // 根據詢問類型決定正確答案
+  if (currentQuestionType.value === 'ink') {
+    // 問墨水顏色
+    correctAnswer.value = inkColor.name
+  } else {
+    // 問文字意思
+    correctAnswer.value = wordColor.name
+  }
 
   // 生成選項（打亂順序）
   options.value = [...colors].sort(() => Math.random() - 0.5)
@@ -160,6 +242,12 @@ function generateRound(): void {
   showResult.value = false
   remainingTime.value = config.timePerRound
   roundStartTime = Date.now()
+}
+
+// 取得正確答案的標籤
+function getCorrectAnswerLabel(): string {
+  const correctOption = colors.find(c => c.name === correctAnswer.value)
+  return correctOption?.label || ''
 }
 
 // 獲取按鈕樣式
@@ -290,7 +378,42 @@ onUnmounted(() => {
 <style scoped>
 .stroop-area {
   text-align: center;
-  padding: 2rem;
+  padding: 1.5rem;
+}
+
+.question-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--color-primary-bg), rgba(99, 102, 241, 0.1));
+  border: 2px solid var(--color-primary);
+  border-radius: 12px;
+  animation: pulse-border 1.5s ease-in-out infinite;
+}
+
+.prompt-icon {
+  font-size: 1.5rem;
+}
+
+.prompt-text {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+:where(.dark, .dark *) .prompt-text {
+  color: var(--color-primary-light);
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(99, 102, 241, 0);
+  }
 }
 
 .stroop-word {
@@ -301,7 +424,9 @@ onUnmounted(() => {
   background: var(--color-surface);
   border-radius: 16px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+  padding: 1.5rem 2rem;
+  border: 4px solid transparent;
+  transition: border-color 0.3s ease;
 }
 
 .fade-enter-active,
@@ -312,5 +437,25 @@ onUnmounted(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* 手機優化 */
+@media (max-width: 640px) {
+  .stroop-area {
+    padding: 1rem;
+  }
+
+  .question-prompt {
+    padding: 0.5rem 1rem;
+  }
+
+  .prompt-text {
+    font-size: 1rem;
+  }
+
+  .stroop-word {
+    min-height: 80px;
+    padding: 1rem;
+  }
 }
 </style>

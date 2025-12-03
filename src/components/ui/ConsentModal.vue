@@ -241,8 +241,13 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { CURRENT_CONSENT_VERSION, defaultDataConsent, type DataConsentOptions } from '@/types/user'
 import { saveDataConsent, getDataConsent, checkConsentVersionNeedsUpdate } from '@/services/db'
 import { useUserStore } from '@/stores/userStore'
+import { useToast } from '@/composables/useToast'
 
 const userStore = useUserStore()
+const { success } = useToast()
+
+// 追蹤用戶是否有手動修改過選項
+const hasUserModifiedOptions = ref(false)
 
 // Props
 const props = withDefaults(defineProps<{
@@ -302,6 +307,20 @@ watch(() => consent.value.behaviorTrackingConsent, (newVal) => {
   if (!newVal) {
     consent.value.detailedBehaviorConsent = false
   }
+  hasUserModifiedOptions.value = true
+})
+
+// 監聽其他選項的變化
+watch(() => consent.value.analyticsConsent, () => {
+  hasUserModifiedOptions.value = true
+})
+
+watch(() => consent.value.detailedBehaviorConsent, () => {
+  hasUserModifiedOptions.value = true
+})
+
+watch(() => consent.value.medicalSharingConsent, () => {
+  hasUserModifiedOptions.value = true
 })
 
 // Methods
@@ -318,6 +337,17 @@ const handleSkip = () => {
 
 const handleConfirm = async () => {
   if (!canConfirm.value) return
+
+  // 如果用戶沒有手動修改過任何選項，則默認全部同意
+  if (!hasUserModifiedOptions.value) {
+    consent.value.analyticsConsent = true
+    consent.value.behaviorTrackingConsent = true
+    consent.value.detailedBehaviorConsent = true
+    consent.value.medicalSharingConsent = true
+    
+    // 顯示 Toast 提示
+    success('已同意所有選項', { duration: 3000, icon: '✅' })
+  }
 
   // Update timestamp and version
   consent.value.odId = currentOdId.value
@@ -354,6 +384,9 @@ const loadExistingConsent = async () => {
         ...existing,
         consentVersion: CURRENT_CONSENT_VERSION
       }
+      
+      // 如果有現有的同意記錄，標記為已修改（保持用戶之前的選擇）
+      hasUserModifiedOptions.value = true
     }
   } catch (error) {
     console.error('Failed to load existing consent:', error)
