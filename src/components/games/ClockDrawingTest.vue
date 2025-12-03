@@ -196,10 +196,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import type { ClockDrawingSelfAssessment, ClockDrawingResult } from '@/services/miniCogService'
 import { calculateClockDrawingScore } from '@/services/miniCogService'
 import { analyzeClockDrawing, type ClockAnalysisResult } from '@/services/clockDrawingAnalyzer'
+import { useTheme } from '@/composables/useTheme'
+
+// 主題
+const { isDark } = useTheme()
+
+// 輔助函式：從 CSS 變數取得實際顏色值
+function getCSSVar(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+}
 
 // Props
 const props = withDefaults(defineProps<{
@@ -331,11 +340,12 @@ function initCanvas() {
   
   const size = responsiveCanvasSize.value
   
-  // 設定白色背景
-  ctx.fillStyle = '#ffffff'
+  // 設定背景顏色（從 CSS 變數取得）
+  const bgColor = getCSSVar('--color-canvas-bg') || '#ffffff'
+  ctx.fillStyle = bgColor
   ctx.fillRect(0, 0, size, size)
   
-  // 畫一個淡灰色的圓形參考線
+  // 畫一個淡色參考線（從 CSS 變數取得）
   ctx.beginPath()
   ctx.arc(
     size / 2,
@@ -344,7 +354,8 @@ function initCanvas() {
     0,
     Math.PI * 2
   )
-  ctx.strokeStyle = '#e5e7eb'
+  const gridColor = getCSSVar('--color-canvas-grid') || '#e5e7eb'
+  ctx.strokeStyle = gridColor
   ctx.lineWidth = 1
   ctx.setLineDash([5, 5])
   ctx.stroke()
@@ -379,7 +390,11 @@ function draw(e: MouseEvent) {
   const y = e.clientY - rect.top
   
   ctx.lineTo(x, y)
-  ctx.strokeStyle = currentTool.value === 'pen' ? '#1f2937' : '#ffffff'
+  // 從 CSS 變數取得繪圖顏色
+  const strokeColor = currentTool.value === 'pen' 
+    ? (getCSSVar('--color-canvas-stroke') || '#1f2937')
+    : (getCSSVar('--color-canvas-bg') || '#ffffff')
+  ctx.strokeStyle = strokeColor
   ctx.lineWidth = currentTool.value === 'eraser' ? brushSize.value * 3 : brushSize.value
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
@@ -421,7 +436,11 @@ function handleTouchMove(e: TouchEvent) {
   const y = touch.clientY - rect.top
   
   ctx.lineTo(x, y)
-  ctx.strokeStyle = currentTool.value === 'pen' ? '#1f2937' : '#ffffff'
+  // 從 CSS 變數取得繪圖顏色
+  const strokeColor = currentTool.value === 'pen' 
+    ? (getCSSVar('--color-canvas-stroke') || '#1f2937')
+    : (getCSSVar('--color-canvas-bg') || '#ffffff')
+  ctx.strokeStyle = strokeColor
   ctx.lineWidth = currentTool.value === 'eraser' ? brushSize.value * 3 : brushSize.value
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
@@ -435,7 +454,9 @@ function clearCanvas() {
   
   const size = responsiveCanvasSize.value
   
-  ctx.fillStyle = '#ffffff'
+  // 從 CSS 變數取得背景顏色
+  const bgColor = getCSSVar('--color-canvas-bg') || '#ffffff'
+  ctx.fillStyle = bgColor
   ctx.fillRect(0, 0, size, size)
   
   // 重新畫參考線
@@ -447,7 +468,8 @@ function clearCanvas() {
     0,
     Math.PI * 2
   )
-  ctx.strokeStyle = '#e5e7eb'
+  const gridColor = getCSSVar('--color-canvas-grid') || '#e5e7eb'
+  ctx.strokeStyle = gridColor
   ctx.lineWidth = 1
   ctx.setLineDash([5, 5])
   ctx.stroke()

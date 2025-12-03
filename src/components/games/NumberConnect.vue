@@ -286,7 +286,7 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
       <div class="flex gap-4">
         <div class="text-sm">
           <span class="text-[var(--color-text-muted)]">分數</span>
-          <span class="font-bold ml-1 text-blue-600">{{ score }}</span>
+          <span class="font-bold ml-1 text-blue-600 dark:text-blue-400">{{ score }}</span>
         </div>
         <div class="text-sm">
           <span class="text-[var(--color-text-muted)]">進度</span>
@@ -294,10 +294,10 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
         </div>
         <div class="text-sm">
           <span class="text-[var(--color-text-muted)]">錯誤</span>
-          <span class="font-bold ml-1 text-red-500">{{ errors }}</span>
+          <span class="font-bold ml-1 text-red-500 dark:text-red-400">{{ errors }}</span>
         </div>
       </div>
-      <div class="text-lg font-mono font-bold" :class="timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-[var(--color-text)]'">
+      <div class="text-lg font-mono font-bold" :class="timeLeft <= 10 ? 'text-red-500 dark:text-red-400 animate-pulse' : 'text-[var(--color-text)]'">
         {{ formatTime(timeLeft) }}
       </div>
     </div>
@@ -305,7 +305,7 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
     <!-- 目標提示 -->
     <div class="text-center mb-4 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
       <span class="text-[var(--color-text-secondary)]">找到數字：</span>
-      <span class="text-2xl font-bold text-blue-600">{{ currentTarget }}</span>
+      <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ currentTarget }}</span>
     </div>
 
     <!-- 遊戲區域 -->
@@ -385,7 +385,7 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
             <div class="grid grid-cols-2 gap-3 text-left text-sm">
               <div>
                 <p class="text-[var(--color-text-muted)]">最終分數</p>
-                <p class="text-xl font-bold text-blue-600">{{ score }}</p>
+                <p class="text-xl font-bold text-blue-600 dark:text-blue-400">{{ score }}</p>
               </div>
               <div>
                 <p class="text-[var(--color-text-muted)]">完成數量</p>
@@ -399,7 +399,7 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
               </div>
               <div>
                 <p class="text-[var(--color-text-muted)]">錯誤次數</p>
-                <p class="font-bold text-red-500">{{ errors }}</p>
+                <p class="font-bold text-red-500 dark:text-red-400">{{ errors }}</p>
               </div>
             </div>
           </div>

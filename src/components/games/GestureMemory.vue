@@ -307,11 +307,11 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
         </div>
         <div class="text-sm">
           <span class="text-[var(--color-text-muted)]">分數</span>
-          <span class="font-bold ml-1 text-blue-600">{{ score }}</span>
+          <span class="font-bold ml-1 text-blue-600 dark:text-blue-400">{{ score }}</span>
         </div>
         <div class="text-sm">
           <span class="text-[var(--color-text-muted)]">連續</span>
-          <span class="font-bold ml-1 text-green-600">{{ streak }}</span>
+          <span class="font-bold ml-1 text-green-600 dark:text-green-400">{{ streak }}</span>
         </div>
       </div>
       <div class="text-sm text-[var(--color-text-muted)]">
@@ -342,7 +342,7 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
             v-for="(_, index) in sequence" 
             :key="index"
             class="w-3 h-3 rounded-full transition-colors"
-            :class="index <= currentShowIndex ? 'bg-blue-500' : 'bg-gray-300'"
+            :class="index <= currentShowIndex ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'"
           ></div>
         </div>
       </div>
@@ -365,7 +365,7 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
           <div 
             v-for="i in (sequence.length - userInput.length)" 
             :key="'empty-' + i"
-            class="w-14 h-14 border-2 border-dashed border-gray-300 rounded-xl"
+            class="w-14 h-14 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl"
           ></div>
         </div>
 
@@ -389,7 +389,7 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
         <div class="text-8xl mb-4">
           {{ isCorrect ? '✅' : '❌' }}
         </div>
-        <p class="text-2xl font-bold mb-4" :class="isCorrect ? 'text-green-600' : 'text-red-600'">
+        <p class="text-2xl font-bold mb-4" :class="isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
           {{ isCorrect ? '正確！' : '錯誤' }}
         </p>
         
@@ -412,11 +412,11 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
           <div class="grid grid-cols-2 gap-4 text-left">
             <div>
               <p class="text-sm text-[var(--color-text-muted)]">最終分數</p>
-              <p class="text-2xl font-bold text-blue-600">{{ score }}</p>
+              <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ score }}</p>
             </div>
             <div>
               <p class="text-sm text-[var(--color-text-muted)]">正確率</p>
-              <p class="text-2xl font-bold text-green-600">
+              <p class="text-2xl font-bold text-green-600 dark:text-green-400">
                 {{ Math.round((correctRounds / (currentRound - 1)) * 100) }}%
               </p>
             </div>

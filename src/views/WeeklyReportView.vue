@@ -120,13 +120,13 @@ function formatTime(seconds: number): string {
 // 取得評估等級顏色
 function getInterpretationColor(interpretation: string): string {
   switch (interpretation) {
-    case 'normal': return '#22c55e'
+    case 'normal': return 'var(--color-success)'
     case 'mild':
-    case 'mci': return '#f59e0b'
-    case 'moderate': return '#ef4444'
+    case 'mci': return 'var(--color-warning)'
+    case 'moderate': return 'var(--color-danger)'
     case 'severe':
-    case 'dementia': return '#dc2626'
-    default: return '#6b7280'
+    case 'dementia': return 'var(--color-score-concern)'
+    default: return 'var(--color-text-muted)'
   }
 }
 
@@ -276,10 +276,8 @@ onMounted(() => {
               <div class="dimension-bar">
                 <div 
                   class="dimension-fill"
-                  :style="{ 
-                    width: `${score}%`,
-                    backgroundColor: score >= 70 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444'
-                  }"
+                  :class="score >= 70 ? 'fill-good' : score >= 50 ? 'fill-moderate' : 'fill-concern'"
+                  :style="{ width: `${score}%` }"
                 ></div>
               </div>
               <div class="dimension-score">{{ score }}</div>
@@ -634,6 +632,18 @@ onMounted(() => {
   transition: width 0.5s ease;
 }
 
+.dimension-fill.fill-good {
+  background-color: var(--color-success);
+}
+
+.dimension-fill.fill-moderate {
+  background-color: var(--color-warning);
+}
+
+.dimension-fill.fill-concern {
+  background-color: var(--color-danger);
+}
+
 .dimension-score {
   width: 40px;
   text-align: right;
@@ -716,13 +726,13 @@ onMounted(() => {
 
 /* 建議 */
 .recommendation-section {
-  background: linear-gradient(135deg, #eff6ff, #f5f3ff);
+  background: var(--color-primary-bg);
   border-radius: 16px;
   padding: 1.5rem;
 }
 
 :where(.dark, .dark *) .recommendation-section {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+  background: var(--color-primary-bg);
 }
 
 .recommendation-text {

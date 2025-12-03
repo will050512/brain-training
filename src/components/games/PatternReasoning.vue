@@ -416,15 +416,15 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
         </div>
         <div class="text-sm">
           <span class="text-[var(--color-text-muted)]">分數</span>
-          <span class="font-bold ml-1 text-blue-600">{{ score }}</span>
+          <span class="font-bold ml-1 text-blue-600 dark:text-blue-400">{{ score }}</span>
         </div>
         <div class="text-sm">
           <span class="text-[var(--color-text-muted)]">正確</span>
-          <span class="font-bold ml-1 text-green-600">{{ correctRounds }}</span>
+          <span class="font-bold ml-1 text-green-600 dark:text-green-400">{{ correctRounds }}</span>
         </div>
       </div>
       <div v-if="phase === 'playing'" class="text-lg font-mono font-bold" 
-           :class="timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-[var(--color-text)]'">
+           :class="timeLeft <= 5 ? 'text-red-500 dark:text-red-400 animate-pulse' : 'text-[var(--color-text)]'">
         {{ timeLeft }}s
       </div>
     </div>
@@ -461,7 +461,7 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
                     :fill="getColorValue(shape.color)"
                   />
                 </svg>
-                <span v-if="index < currentQuestion.sequence.length - 1" class="text-2xl text-gray-300 mx-1">→</span>
+                <span v-if="index < currentQuestion.sequence.length - 1" class="text-2xl text-gray-300 dark:text-gray-600 mx-1">→</span>
               </div>
               <!-- 問號 -->
               <span class="text-2xl text-[var(--color-text-muted)] mx-1">→</span>
@@ -484,8 +484,8 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
               :class="[
                 phase === 'result' && selectedOption === index
                   ? isCorrect 
-                    ? 'ring-4 ring-green-500 bg-green-50'
-                    : 'ring-4 ring-red-500 bg-red-50'
+                    ? 'ring-4 ring-green-500 bg-green-50 dark:bg-green-900/30'
+                    : 'ring-4 ring-red-500 bg-red-50 dark:bg-red-900/30'
                   : '',
                 phase === 'result' && 
                   option.type === currentQuestion.answer.type &&
@@ -512,7 +512,7 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
 
           <!-- 結果提示 -->
           <div v-if="phase === 'result'" class="text-center mt-6">
-            <p class="text-xl font-bold" :class="isCorrect ? 'text-green-600' : 'text-red-600'">
+            <p class="text-xl font-bold" :class="isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
               {{ isCorrect ? '✅ 正確！' : '❌ 錯誤' }}
             </p>
             <p class="text-sm text-[var(--color-text-muted)] mt-2">
@@ -530,11 +530,11 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
           <div class="grid grid-cols-2 gap-4 text-left">
             <div>
               <p class="text-sm text-[var(--color-text-muted)]">最終分數</p>
-              <p class="text-2xl font-bold text-blue-600">{{ score }}</p>
+              <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ score }}</p>
             </div>
             <div>
               <p class="text-sm text-[var(--color-text-muted)]">正確率</p>
-              <p class="text-2xl font-bold text-green-600">
+              <p class="text-2xl font-bold text-green-600 dark:text-green-400">
                 {{ Math.round((correctRounds / gameConfig.totalRounds) * 100) }}%
               </p>
             </div>

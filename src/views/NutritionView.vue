@@ -104,10 +104,10 @@ async function loadRecommendations(): Promise<void> {
 // 取得優先級顏色
 function getPriorityColor(priority: string): string {
   switch (priority) {
-    case 'high': return '#ef4444'
-    case 'medium': return '#f59e0b'
-    case 'low': return '#22c55e'
-    default: return '#6b7280'
+    case 'high': return 'var(--color-danger)'
+    case 'medium': return 'var(--color-warning)'
+    case 'low': return 'var(--color-success)'
+    default: return 'var(--color-text-muted)'
   }
 }
 
@@ -429,15 +429,15 @@ onMounted(() => {
   display: flex;
   gap: 1rem;
   padding: 1.25rem;
-  background: linear-gradient(135deg, #fef3c7, #fef9c3);
-  border: 2px solid #f59e0b;
+  background: var(--color-disclaimer);
+  border: 2px solid var(--color-disclaimer-border);
   border-radius: 16px;
   margin-bottom: 1.5rem;
 }
 
 :where(.dark, .dark *) .disclaimer-box {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(234, 179, 8, 0.2));
-  border-color: rgba(245, 158, 11, 0.5);
+  background: var(--color-disclaimer);
+  border-color: var(--color-disclaimer-border);
 }
 
 .disclaimer-icon {
@@ -447,23 +447,23 @@ onMounted(() => {
 
 .disclaimer-content h3 {
   margin: 0 0 0.5rem 0;
-  color: #b45309;
+  color: var(--color-disclaimer-text);
   font-size: 1.125rem;
 }
 
 :where(.dark, .dark *) .disclaimer-content h3 {
-  color: #fbbf24;
+  color: var(--color-disclaimer-text);
 }
 
 .disclaimer-content p {
   margin: 0;
-  color: #92400e;
+  color: var(--color-disclaimer-text);
   font-size: 0.9rem;
   line-height: 1.5;
 }
 
 :where(.dark, .dark *) .disclaimer-content p {
-  color: #fcd34d;
+  color: var(--color-disclaimer-text);
 }
 
 .disclaimer-note {
@@ -673,20 +673,20 @@ onMounted(() => {
 }
 
 .reason-label {
-  color: #166534;
+  color: var(--color-score-good);
   font-weight: 500;
 }
 
 :where(.dark, .dark *) .reason-label {
-  color: #4ade80;
+  color: var(--color-score-good);
 }
 
 .reason-value {
-  color: #166534;
+  color: var(--color-score-good);
 }
 
 :where(.dark, .dark *) .reason-value {
-  color: #86efac;
+  color: var(--color-score-good);
 }
 
 .rec-dimensions,
@@ -758,12 +758,12 @@ onMounted(() => {
 .sup-warnings summary {
   cursor: pointer;
   font-weight: 500;
-  color: #b45309;
+  color: var(--color-disclaimer-text);
 }
 
 :where(.dark, .dark *) .rec-warnings summary,
 :where(.dark, .dark *) .sup-warnings summary {
-  color: #fbbf24;
+  color: var(--color-disclaimer-text);
 }
 
 .rec-interactions summary,
@@ -784,12 +784,12 @@ onMounted(() => {
 .rec-warnings li,
 .sup-warnings li {
   margin-bottom: 0.25rem;
-  color: #92400e;
+  color: var(--color-disclaimer-text);
 }
 
 :where(.dark, .dark *) .rec-warnings li,
 :where(.dark, .dark *) .sup-warnings li {
-  color: #fcd34d;
+  color: var(--color-disclaimer-text);
 }
 
 .rec-interactions li,

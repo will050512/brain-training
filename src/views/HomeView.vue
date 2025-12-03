@@ -321,7 +321,7 @@ const topDimensions = computed(() => {
       name: dimensionMeta[dimension].name,
       score: Math.round(data.score),
       trend: Math.round(data.trend),
-      trendClass: data.trend > 0 ? 'text-green-600' : data.trend < 0 ? 'text-red-600' : 'text-gray-600'
+      trendClass: data.trend > 0 ? 'trend-up' : data.trend < 0 ? 'trend-down' : 'trend-neutral'
     }))
 })
 

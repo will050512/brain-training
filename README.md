@@ -338,6 +338,67 @@ npm run lint
 
 ---
 
+## 🌐 部署至 GitHub Pages
+
+本專案已配置好 GitHub Actions 自動部署至 GitHub Pages。
+
+### 自動部署（推薦）
+
+1. 將專案推送至 GitHub
+2. 前往 Repository → Settings → Pages
+3. 在 Source 區域選擇 **GitHub Actions**
+4. 每次推送至 `main` 分支會自動觸發部署
+
+### 手動部署
+
+```bash
+# 1. 建構生產版本
+npm run build
+
+# 2. 將 dist/ 資料夾內容部署至 gh-pages 分支
+# 或使用 gh-pages 工具
+npm install -g gh-pages
+gh-pages -d dist
+```
+
+### GitHub Actions 工作流程
+
+專案已包含 `.github/workflows/deploy.yml`：
+
+```yaml
+name: Deploy to GitHub Pages
+on:
+  push:
+    branches: [main]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build
+      - uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+```
+
+### Vite 基礎路徑設定
+
+在 `vite.config.ts` 中已設定 base 路徑：
+
+```typescript
+export default defineConfig({
+  base: '/brain-training/', // 替換為您的 repo 名稱
+  // ...
+})
+```
+
+---
+
 ## 📱 PWA 功能
 
 ### 安裝至裝置
@@ -395,19 +456,61 @@ npm run lint
 
 ## 📈 資料儲存
 
-### 本地儲存 (IndexedDB)
+### 本地儲存架構
 
-- `users` - 使用者資料
-- `gameResults` - 遊戲結果
-- `assessments` - 評估記錄
-- `dailyTrainingSessions` - 每日訓練記錄
-- `declineAlerts` - 退化警報
+本專案使用 IndexedDB（透過 `idb` 封裝）在本機儲存所有資料，確保使用者隱私。
+
+### 資料庫結構 (13 個資料表)
+
+| 資料表 | 說明 | 主要欄位 |
+|--------|------|----------|
+| `users` | 使用者基本資料 | id, name, avatar, settings |
+| `settings` | 應用程式設定 | theme, difficulty, sound |
+| `gameResults` | 遊戲結果記錄 | gameId, score, accuracy, duration |
+| `gameSessions` | 遊戲詳細過程 | sessionId, actions, timestamps |
+| `assessments` | 認知評估記錄 | type, scores, date |
+| `miniCogResults` | Mini-Cog 專屬結果 | wordRecall, clockDrawing, score |
+| `dailyTrainingSessions` | 每日訓練紀錄 | date, games, totalMinutes |
+| `declineAlerts` | 退化警報記錄 | dimension, severity, date |
+| `consentRecords` | 同意書記錄 | type, version, accepted |
+| `weeklyReports` | 週報快照 | weekStart, scores, analysis |
+| `nutritionLogs` | 營養追蹤記錄 | date, foods, supplements |
+| `behaviorMetrics` | 行為分析數據 | patterns, preferences |
+| `syncQueue` | 離線同步佇列 | action, data, timestamp |
+
+### 資料生命週期
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  遊戲進行   │ ──► │  本地儲存   │ ──► │  分析計算   │
+│ (Vue 元件)  │     │ (IndexedDB) │     │  (Services) │
+└─────────────┘     └─────────────┘     └─────────────┘
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │  匯出/匯入  │
+                    │  (JSON 檔)  │
+                    └─────────────┘
+```
+
+### 資料匯出與備份
+
+```typescript
+// 在 SettingsView 中可匯出所有資料
+const exportData = async () => {
+  const data = await db.exportAll()
+  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
+  // 下載為 JSON 檔案
+}
+```
 
 ### 資料保護
 
-- 所有資料僅儲存於本機
-- 無雲端上傳
-- 可匯出/匯入資料
+- ✅ 所有資料僅儲存於使用者本機
+- ✅ 無雲端上傳，無第三方存取
+- ✅ 支援完整資料匯出
+- ✅ 支援資料匯入還原
+- ✅ 可清除所有資料重新開始
 
 ---
 
@@ -439,6 +542,106 @@ npm run lint
 - 遵循 Vue 3 Composition API 風格
 - TypeScript 類型完整
 - 元件使用 `<script setup>` 語法
+
+### 深色模式開發指南
+
+#### CSS 變數使用原則
+
+```css
+/* ✅ 正確：使用 CSS 變數 */
+.my-component {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+/* ❌ 避免：硬編碼顏色 */
+.my-component {
+  background: #ffffff;
+  color: #1f2937;
+}
+```
+
+#### Tailwind CSS 深色模式
+
+```vue
+<!-- ✅ 正確：使用 dark: 變體 -->
+<div class="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+
+<!-- ✅ 正確：使用 CSS 變數 -->
+<div class="bg-[var(--color-surface)] text-[var(--color-text)]">
+
+<!-- ❌ 避免：只有淺色樣式 -->
+<div class="bg-white text-gray-900">
+```
+
+#### JavaScript 中取得 CSS 變數
+
+```typescript
+// 輔助函式
+function getCSSVar(name: string): string {
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim()
+}
+
+// 使用
+const bgColor = getCSSVar('--color-surface')
+const textColor = getCSSVar('--color-text')
+```
+
+#### Canvas 繪圖深色模式
+
+```typescript
+import { useTheme } from '@/composables/useTheme'
+
+const { isDark } = useTheme()
+
+function drawChart() {
+  const bgColor = getCSSVar('--color-canvas-bg')
+  const strokeColor = getCSSVar('--color-canvas-stroke')
+  
+  ctx.fillStyle = bgColor
+  ctx.strokeStyle = strokeColor
+}
+
+// 監聽主題變化重繪
+watch(isDark, () => {
+  drawChart()
+})
+```
+
+#### ECharts 圖表主題
+
+```typescript
+import { useTheme } from '@/composables/useTheme'
+import { getChartTheme } from '@/utils/chartTheme'
+
+const { effectiveTheme } = useTheme()
+const chartTheme = computed(() => getChartTheme(effectiveTheme.value))
+
+// 監聽主題變化重新初始化
+watch(effectiveTheme, () => {
+  chart.dispose()
+  initChart()
+})
+```
+
+#### 新增 CSS 變數
+
+在 `src/style.css` 中新增：
+
+```css
+:root {
+  /* 淺色模式 */
+  --color-my-new-color: #3b82f6;
+}
+
+:root.dark {
+  /* 深色模式 */
+  --color-my-new-color: #60a5fa;
+}
+```
 
 ---
 

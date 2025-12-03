@@ -434,11 +434,11 @@ const hitProgress = computed(() => {
         </div>
         <div class="text-sm">
           <span class="text-[var(--color-text-muted)]">分數</span>
-          <span class="font-bold ml-1 text-blue-600">{{ score }}</span>
+          <span class="font-bold ml-1 text-blue-600 dark:text-blue-400">{{ score }}</span>
         </div>
         <div class="text-sm">
           <span class="text-[var(--color-text-muted)]">正確</span>
-          <span class="font-bold ml-1 text-green-600">{{ correctRounds }}</span>
+          <span class="font-bold ml-1 text-green-600 dark:text-green-400">{{ correctRounds }}</span>
         </div>
       </div>
       <div class="text-sm text-[var(--color-text-muted)]">
@@ -467,7 +467,7 @@ const hitProgress = computed(() => {
             class="w-10 h-10 rounded-full transition-all duration-100"
             :class="index === patternIndex 
               ? 'bg-blue-500 scale-125 shadow-lg' 
-              : 'bg-gray-200'"
+              : 'bg-gray-200 dark:bg-gray-600'"
           ></div>
         </div>
         
@@ -506,7 +506,7 @@ const hitProgress = computed(() => {
             v-for="(beat, index) in pattern" 
             :key="index"
             class="w-8 h-8 rounded-full transition-all"
-            :class="beat.hit ? 'bg-green-500' : 'bg-gray-300'"
+            :class="beat.hit ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'"
           ></div>
         </div>
         
@@ -545,7 +545,7 @@ const hitProgress = computed(() => {
           {{ pattern.filter(b => b.hit).length >= pattern.length * 0.8 ? '✅' : '❌' }}
         </div>
         <p class="text-2xl font-bold mb-2" 
-           :class="pattern.filter(b => b.hit).length >= pattern.length * 0.8 ? 'text-green-600' : 'text-red-600'">
+           :class="pattern.filter(b => b.hit).length >= pattern.length * 0.8 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
           {{ pattern.filter(b => b.hit).length >= pattern.length * 0.8 ? '通過！' : '再加油！' }}
         </p>
         <p class="text-[var(--color-text-muted)]">
@@ -561,11 +561,11 @@ const hitProgress = computed(() => {
           <div class="grid grid-cols-2 gap-4 text-left">
             <div>
               <p class="text-sm text-[var(--color-text-muted)]">最終分數</p>
-              <p class="text-2xl font-bold text-blue-600">{{ score }}</p>
+              <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ score }}</p>
             </div>
             <div>
               <p class="text-sm text-[var(--color-text-muted)]">通過率</p>
-              <p class="text-2xl font-bold text-green-600">
+              <p class="text-2xl font-bold text-green-600 dark:text-green-400">
                 {{ Math.round((correctRounds / (currentRound - 1)) * 100) }}%
               </p>
             </div>

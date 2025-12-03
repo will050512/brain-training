@@ -95,10 +95,10 @@ function startGame(gameId: string, difficulty: string) {
 // 取得優先級顏色
 function getPriorityColor(priority: string): string {
   switch (priority) {
-    case 'high': return '#ef4444'
-    case 'medium': return '#f59e0b'
-    case 'low': return '#22c55e'
-    default: return '#6b7280'
+    case 'high': return 'var(--color-danger)'
+    case 'medium': return 'var(--color-warning)'
+    case 'low': return 'var(--color-success)'
+    default: return 'var(--color-text-muted)'
   }
 }
 
@@ -115,10 +115,10 @@ function getPriorityText(priority: string): string {
 // 難度顏色
 function getDifficultyColor(difficulty: string): string {
   switch (difficulty) {
-    case 'easy': return '#22c55e'
-    case 'medium': return '#f59e0b'
-    case 'hard': return '#ef4444'
-    default: return '#6b7280'
+    case 'easy': return 'var(--color-success)'
+    case 'medium': return 'var(--color-warning)'
+    case 'hard': return 'var(--color-danger)'
+    default: return 'var(--color-text-muted)'
   }
 }
 
@@ -340,7 +340,7 @@ onMounted(() => {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  background: var(--gradient-primary);
   transition: width 0.5s ease;
 }
 
@@ -351,7 +351,7 @@ onMounted(() => {
 .congrats {
   margin-top: 1rem;
   font-size: 1.25rem;
-  color: #22c55e;
+  color: var(--color-success);
   font-weight: bold;
 }
 
@@ -364,14 +364,14 @@ onMounted(() => {
   display: flex;
   gap: 1rem;
   padding: 1.25rem;
-  background: linear-gradient(135deg, #eff6ff, #f5f3ff);
+  background: var(--color-primary-bg);
   border-radius: 16px;
-  border: 1px solid #c7d2fe;
+  border: 1px solid var(--color-border);
 }
 
 :where(.dark, .dark *) .suggestion-card {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
-  border-color: rgba(139, 92, 246, 0.3);
+  background: var(--color-primary-bg);
+  border-color: var(--color-border);
 }
 
 .suggestion-icon {
@@ -386,12 +386,12 @@ onMounted(() => {
 .suggestion-title {
   font-weight: bold;
   font-size: 1.125rem;
-  color: #3b82f6;
+  color: var(--color-primary);
   margin-bottom: 0.5rem;
 }
 
 :where(.dark, .dark *) .suggestion-title {
-  color: #60a5fa;
+  color: var(--color-primary);
 }
 
 .suggestion-message {
@@ -437,8 +437,8 @@ onMounted(() => {
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background: #22c55e;
-  color: white;
+  background: var(--color-success);
+  color: var(--color-text-inverse);
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-size: 0.875rem;
@@ -510,8 +510,8 @@ onMounted(() => {
   padding: 0.875rem;
   font-size: 1rem;
   font-weight: bold;
-  color: white;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: var(--color-text-inverse);
+  background: var(--gradient-primary);
   border: none;
   border-radius: 12px;
   cursor: pointer;
@@ -520,16 +520,16 @@ onMounted(() => {
 
 .start-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  box-shadow: var(--shadow-glow);
 }
 
 .start-btn:disabled {
-  background: #6b7280;
+  background: var(--color-text-muted);
   cursor: default;
 }
 
 :where(.dark, .dark *) .start-btn:disabled {
-  background: #4b5563;
+  background: var(--color-bg-muted);
 }
 
 /* 更多連結 */

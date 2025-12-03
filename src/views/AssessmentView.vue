@@ -586,7 +586,7 @@ watch(stage, (newStage) => {
 
 .progress-bar-fill {
   height: 100%;
-  background-color: #3b82f6;
+  background-color: var(--color-primary);
   border-radius: 9999px;
 }
 
@@ -608,24 +608,24 @@ watch(stage, (newStage) => {
 }
 
 .mini-cog-card {
-  border-color: #4f46e5;
-  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
 }
 
 .mini-cog-card:hover {
-  border-color: #7c3aed;
+  border-color: var(--color-logic);
 }
 
 .full-assessment-card:hover {
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
 }
 
 .card-badge {
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  color: white;
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.25rem 0.75rem;
@@ -672,7 +672,7 @@ watch(stage, (newStage) => {
   justify-content: space-between;
   padding-top: 1rem;
   border-top: 1px solid var(--color-border);
-  color: #4f46e5;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -703,7 +703,7 @@ watch(stage, (newStage) => {
 
 .language-select:focus {
   outline: none;
-  border-color: #4f46e5;
+  border-color: var(--color-primary);
 }
 
 /* Recent Result Banner */
@@ -711,10 +711,10 @@ watch(stage, (newStage) => {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  background: var(--gradient-result-good);
   padding: 1rem 1.5rem;
   border-radius: 1rem;
-  border: 1px solid #bbf7d0;
+  border: 1px solid var(--color-success);
 }
 
 .banner-icon {
@@ -728,19 +728,19 @@ watch(stage, (newStage) => {
 
 .banner-title {
   font-weight: 600;
-  color: #166534;
+  color: var(--color-score-good);
   margin: 0;
 }
 
 .banner-date {
   font-size: 0.875rem;
-  color: #15803d;
+  color: var(--color-score-good);
   margin: 0.25rem 0 0;
 }
 
 .banner-action {
-  background: #22c55e;
-  color: white;
+  background: var(--color-success);
+  color: var(--color-text-inverse);
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
@@ -750,7 +750,7 @@ watch(stage, (newStage) => {
 }
 
 .banner-action:hover {
-  background: #16a34a;
+  background: var(--color-score-good);
 }
 
 /* Responsive */

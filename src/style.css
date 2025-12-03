@@ -62,6 +62,66 @@
   --game-maze-wall: #374151;
   --game-maze-path: #fef3c7;
   
+  /* 步驟進度指示器 */
+  --color-step: #e2e8f0;
+  --color-step-active: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --color-step-complete: #22c55e;
+  --color-step-label: #64748b;
+  --color-step-label-active: #4f46e5;
+  
+  /* 資訊卡片與提示 */
+  --color-infocard: #f8fafc;
+  --color-infocard-border: #e2e8f0;
+  --color-disclaimer: #fef3c7;
+  --color-disclaimer-text: #92400e;
+  --color-disclaimer-border: #fcd34d;
+  
+  /* 分數狀態顏色 */
+  --color-score-good: #16a34a;
+  --color-score-moderate: #d97706;
+  --color-score-concern: #dc2626;
+  
+  /* 趨勢指示顏色 */
+  --color-trend-up: #16a34a;
+  --color-trend-down: #dc2626;
+  --color-trend-neutral: #6b7280;
+  
+  /* 遊戲音符顏色 */
+  --color-note-do: #ef4444;
+  --color-note-re: #f97316;
+  --color-note-mi: #eab308;
+  --color-note-fa: #22c55e;
+  --color-note-sol: #3b82f6;
+  --color-note-la: #a855f7;
+  --color-note-si: #6b7280;
+  --color-note-do2: #ec4899;
+  
+  /* 圖形推理顏色 */
+  --color-shape-red: #ef4444;
+  --color-shape-blue: #3b82f6;
+  --color-shape-green: #22c55e;
+  --color-shape-yellow: #eab308;
+  --color-shape-purple: #a855f7;
+  --color-shape-orange: #f97316;
+  
+  /* Canvas 繪圖顏色 */
+  --color-canvas-bg: #ffffff;
+  --color-canvas-stroke: #374151;
+  --color-canvas-text: #1f2937;
+  --color-canvas-grid: #e5e7eb;
+  --color-canvas-highlight: #3b82f6;
+  
+  /* 結果區塊漸層 */
+  --gradient-result-good: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  --gradient-result-warning: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  --gradient-result-danger: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  
+  /* 詞卡顏色 */
+  --color-wordcard: #f8fafc;
+  --color-wordcard-border: #e2e8f0;
+  --color-wordcard-selected: #f0f0ff;
+  --color-wordcard-selected-border: #4f46e5;
+  
   /* 字體大小（長者友善） */
   --font-size-base: 18px;
   --font-size-lg: 20px;
@@ -145,6 +205,66 @@
   --game-highlight: #60a5fa;
   --game-maze-wall: #1e293b;
   --game-maze-path: #fef3c7;
+  
+  /* 步驟進度指示器（深色） */
+  --color-step: #334155;
+  --color-step-active: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --color-step-complete: #4ade80;
+  --color-step-label: #94a3b8;
+  --color-step-label-active: #818cf8;
+  
+  /* 資訊卡片與提示（深色） */
+  --color-infocard: #1e293b;
+  --color-infocard-border: #334155;
+  --color-disclaimer: rgba(251, 191, 36, 0.15);
+  --color-disclaimer-text: #fbbf24;
+  --color-disclaimer-border: #b45309;
+  
+  /* 分數狀態顏色（深色） */
+  --color-score-good: #4ade80;
+  --color-score-moderate: #fbbf24;
+  --color-score-concern: #f87171;
+  
+  /* 趨勢指示顏色（深色） */
+  --color-trend-up: #4ade80;
+  --color-trend-down: #f87171;
+  --color-trend-neutral: #94a3b8;
+  
+  /* 遊戲音符顏色（深色 - 稍亮版本） */
+  --color-note-do: #f87171;
+  --color-note-re: #fb923c;
+  --color-note-mi: #facc15;
+  --color-note-fa: #4ade80;
+  --color-note-sol: #60a5fa;
+  --color-note-la: #c084fc;
+  --color-note-si: #9ca3af;
+  --color-note-do2: #f472b6;
+  
+  /* 圖形推理顏色（深色 - 稍亮版本） */
+  --color-shape-red: #f87171;
+  --color-shape-blue: #60a5fa;
+  --color-shape-green: #4ade80;
+  --color-shape-yellow: #facc15;
+  --color-shape-purple: #c084fc;
+  --color-shape-orange: #fb923c;
+  
+  /* Canvas 繪圖顏色（深色） */
+  --color-canvas-bg: #1e293b;
+  --color-canvas-stroke: #cbd5e1;
+  --color-canvas-text: #f1f5f9;
+  --color-canvas-grid: #475569;
+  --color-canvas-highlight: #60a5fa;
+  
+  /* 結果區塊漸層（深色） */
+  --gradient-result-good: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(74, 222, 128, 0.15) 100%);
+  --gradient-result-warning: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(253, 224, 71, 0.15) 100%);
+  --gradient-result-danger: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(248, 113, 113, 0.15) 100%);
+  
+  /* 詞卡顏色（深色） */
+  --color-wordcard: #334155;
+  --color-wordcard-border: #475569;
+  --color-wordcard-selected: rgba(99, 102, 241, 0.2);
+  --color-wordcard-selected-border: #818cf8;
   
   /* 深色模式陰影（更柔和） */
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
@@ -347,6 +467,19 @@ body {
 
 .score-low {
   color: var(--color-danger);
+}
+
+/* 趨勢指示類別 */
+.trend-up {
+  color: var(--color-trend-up);
+}
+
+.trend-down {
+  color: var(--color-trend-down);
+}
+
+.trend-neutral {
+  color: var(--color-trend-neutral);
 }
 
 /* 進度條 */
