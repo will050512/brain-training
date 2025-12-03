@@ -80,7 +80,20 @@ export interface BehaviorLog {
   gameId: string
   sessionId: string
   timestamp: string
-  eventType: 'click' | 'hesitation' | 'error' | 'fatigue' | 'attention-drift' | 'correction' | 'pattern-break' | 'speed-change'
+  eventType: 
+    | 'click' 
+    | 'hesitation' 
+    | 'error' 
+    | 'fatigue' 
+    | 'attention-drift' 
+    | 'correction' 
+    | 'pattern-break' 
+    | 'speed-change'
+    | 'thinking-time'   // 思考時間
+    | 'cancellation'    // 操作取消
+    | 'regret'          // 反悔更改
+    | 'rapid-response'  // 快速反應
+    | 'timeout'         // 超時未作答
   data: Record<string, unknown>
   synced: boolean
 }
@@ -759,7 +772,11 @@ async function calculateWeeklyTrends(
   
   // 分組遊戲會話
   for (const session of sessions) {
-    const sessionDate = session.endTime ? new Date(session.endTime) : new Date(session.startTime)
+    const sessionDate = session.endTime 
+      ? new Date(session.endTime) 
+      : session.startTime 
+        ? new Date(session.startTime)
+        : new Date(session.createdAt)
     const weekStart = getWeekStart(sessionDate)
     
     if (!weeklyData.has(weekStart)) {
@@ -795,24 +812,24 @@ async function calculateWeeklyTrends(
     
     // 計算該週平均分數
     const scores = weekSessions
-      .filter(s => s.finalScore !== undefined)
-      .map(s => s.finalScore as number)
+      .filter(s => s.result?.score !== undefined)
+      .map(s => s.result.score)
     const averageScore = scores.length > 0 
       ? scores.reduce((a, b) => a + b, 0) / scores.length 
       : 0
     
     // 計算該週平均正確率
     const accuracies = weekSessions
-      .filter(s => s.accuracy !== undefined)
-      .map(s => s.accuracy as number)
+      .filter(s => s.result?.accuracy !== undefined)
+      .map(s => s.result.accuracy)
     const averageAccuracy = accuracies.length > 0
       ? accuracies.reduce((a, b) => a + b, 0) / accuracies.length
       : 0
     
     // 計算該週平均反應時間
     const reactionTimes = weekSessions
-      .filter(s => s.averageReactionTime !== undefined)
-      .map(s => s.averageReactionTime as number)
+      .filter(s => s.result?.avgReactionTime !== undefined)
+      .map(s => s.result.avgReactionTime)
     const averageReactionTime = reactionTimes.length > 0
       ? reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length
       : 0

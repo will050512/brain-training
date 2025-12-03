@@ -131,6 +131,8 @@ export interface GameSession {
   result: GameResult
   cognitiveScores: Record<CognitiveDimension, number>
   createdAt: Date
+  startTime?: Date   // 遊戲開始時間
+  endTime?: Date     // 遊戲結束時間
 }
 
 // 遊戲事件

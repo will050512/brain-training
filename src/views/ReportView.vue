@@ -678,11 +678,18 @@ async function downloadReport(): Promise<void> {
     // 準備 Mini-Cog 資料
     let miniCogReportData = null
     if (latestMiniCogResult.value) {
+      const selfAssess = latestMiniCogResult.value.clockDrawing.selfAssessment
+      // 計算自評分數：完整圓形(1分) + 正確數字(1分) + 正確指針(1分) = 最高 3 分
+      const selfAssessScore = selfAssess 
+        ? (selfAssess.hasCompleteCircle ? 1 : 0) + 
+          (selfAssess.hasCorrectNumbers ? 1 : 0) + 
+          (selfAssess.hasCorrectHands ? 1 : 0)
+        : 0
       miniCogReportData = {
         totalScore: latestMiniCogResult.value.totalScore,
         wordRecallScore: latestMiniCogResult.value.wordRecall.score,
         clockDrawingScore: latestMiniCogResult.value.clockDrawing.score,
-        clockSelfAssessment: latestMiniCogResult.value.clockDrawing.selfAssessment || 0,
+        clockSelfAssessment: selfAssessScore,
         atRisk: latestMiniCogResult.value.atRisk,
         duration: latestMiniCogResult.value.duration,
         completedAt: latestMiniCogResult.value.completedAt,
@@ -695,17 +702,24 @@ async function downloadReport(): Promise<void> {
     const cognitiveScoreData = {
       memory: gameStore.cognitiveScores.memory || 0,
       attention: gameStore.cognitiveScores.attention || 0,
-      processing: gameStore.cognitiveScores.processing || 0,
-      executive: gameStore.cognitiveScores.executive || 0,
-      language: gameStore.cognitiveScores.language || 0
+      processing: gameStore.cognitiveScores.cognition || 0,  // 對應到 cognition
+      executive: gameStore.cognitiveScores.logic || 0,       // 對應到 logic
+      language: gameStore.cognitiveScores.coordination || 0  // 對應到 coordination
     }
     
     // 準備趨勢資料
-    const trendData = gameStore.scoreHistory.slice(-20).map((h: { date: string; score: number; gameId?: string }) => ({
-      date: h.date,
-      score: h.score,
-      gameType: h.gameId ? getGameName(h.gameId) : undefined
-    }))
+    const trendData = gameStore.scoreHistory.slice(-20).map((h) => {
+      // 計算總分（各維度平均）
+      const dims = Object.values(h.scores).filter(v => v > 0)
+      const avgScore = dims.length > 0 
+        ? dims.reduce((a, b) => a + b, 0) / dims.length 
+        : 0
+      return {
+        date: h.date,
+        score: Math.round(avgScore),
+        gameType: undefined
+      }
+    })
     
     // 嘗試獲取行為分析資料
     let behaviorSummary = null
