@@ -26,7 +26,8 @@
     "MOCA",
     "Teng",
     "Nasreddine",
-    "Levenshtein"
+    "Levenshtein",
+    "Noto"
   ],
   "ignorePaths": [
     "node_modules",
