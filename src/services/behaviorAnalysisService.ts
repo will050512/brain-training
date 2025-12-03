@@ -21,6 +21,11 @@ export type BehaviorEventType =
   | 'attention-drift' // 注意力漂移
   | 'pattern-break'   // 模式中斷
   | 'speed-change'    // 速度變化
+  | 'thinking-time'   // 思考時間（題目出現到首次操作）
+  | 'cancellation'    // 操作取消（放棄當前選擇）
+  | 'regret'          // 反悔（選擇後又更改答案）
+  | 'rapid-response'  // 快速反應（可能是隨意點擊）
+  | 'timeout'         // 超時未作答
 
 // 點擊精準度資料
 export interface ClickAccuracyData {
@@ -64,6 +69,50 @@ export interface AttentionDriftData {
   consecutiveErrors: number
 }
 
+// 思考時間資料
+export interface ThinkingTimeData {
+  questionId: string | number
+  questionType: string
+  timeToFirstAction: number      // 題目出現到首次操作的毫秒數
+  expectedThinkingTime: number   // 預期思考時間
+  ratio: number                  // 實際/預期比率
+  difficulty: number             // 題目難度 1-5
+}
+
+// 操作取消資料
+export interface CancellationData {
+  questionId: string | number
+  cancelledAction: string        // 被取消的操作描述
+  timeBeforeCancel: number       // 取消前的操作時間
+  reason?: string                // 可能的取消原因（推測）
+}
+
+// 反悔資料
+export interface RegretData {
+  questionId: string | number
+  originalAnswer: string         // 原始答案
+  newAnswer: string              // 更改後的答案
+  timeBetweenChanges: number     // 兩次選擇之間的時間
+  finalAnswerCorrect: boolean    // 最終答案是否正確
+  originalAnswerCorrect: boolean // 原始答案是否正確
+}
+
+// 快速反應資料
+export interface RapidResponseData {
+  questionId: string | number
+  responseTime: number           // 反應時間（毫秒）
+  minimumExpectedTime: number    // 預期最少需要的時間
+  isCorrect: boolean             // 是否正確
+}
+
+// 超時資料
+export interface TimeoutData {
+  questionId: string | number
+  allowedTime: number            // 允許的時間
+  elapsedTime: number            // 實際經過時間
+  partialAnswer?: string         // 部分答案（如果有）
+}
+
 // 行為分析結果
 export interface BehaviorAnalysis {
   sessionId: string
@@ -94,6 +143,21 @@ export interface BehaviorAnalysis {
     driftEvents: number
     focusScore: number
     quality: 'excellent' | 'good' | 'fair' | 'poor'
+  }
+  // 新增精細行為分析
+  thinkingTimeAnalysis: {
+    averageThinkingTime: number
+    thinkingTimeVariance: number
+    prolongedThinkingCount: number    // 過長思考次數
+    rushingCount: number              // 過快回應次數
+    pattern: 'thoughtful' | 'impulsive' | 'mixed' | 'deliberate'
+  }
+  decisionStability: {
+    cancellationCount: number
+    regretCount: number
+    changeToCorrectRate: number       // 反悔後改對的比率
+    changeToWrongRate: number         // 反悔後改錯的比率
+    stability: 'stable' | 'indecisive' | 'second-guessing'
   }
   insights: string[]
   recommendations: string[]
@@ -172,9 +236,49 @@ export class BehaviorCollector {
   }
 
   /**
+   * 記錄思考時間
+   */
+  recordThinkingTime(data: ThinkingTimeData): void {
+    this.addLog('thinking-time', data)
+  }
+
+  /**
+   * 記錄操作取消
+   */
+  recordCancellation(data: CancellationData): void {
+    this.addLog('cancellation', data)
+  }
+
+  /**
+   * 記錄反悔行為
+   */
+  recordRegret(data: RegretData): void {
+    this.addLog('regret', data)
+  }
+
+  /**
+   * 記錄快速反應（可能的隨意點擊）
+   */
+  recordRapidResponse(data: RapidResponseData): void {
+    this.addLog('rapid-response', data)
+  }
+
+  /**
+   * 記錄超時
+   */
+  recordTimeout(data: TimeoutData): void {
+    this.addLog('timeout', data)
+  }
+
+  /**
    * 添加日誌
    */
-  private addLog(eventType: BehaviorEventType, data: ClickAccuracyData | HesitationData | ErrorData | FatigueData | AttentionDriftData | Record<string, unknown>): void {
+  private addLog(
+    eventType: BehaviorEventType, 
+    data: ClickAccuracyData | HesitationData | ErrorData | FatigueData | 
+          AttentionDriftData | ThinkingTimeData | CancellationData | 
+          RegretData | RapidResponseData | TimeoutData | Record<string, unknown>
+  ): void {
     const now = Date.now()
     const timeSinceStart = now - this.startTime
     const timeSinceLastEvent = now - this.lastEventTime
@@ -234,7 +338,12 @@ export class BehaviorCollector {
       'fatigue': 0,
       'attention-drift': 0,
       'pattern-break': 0,
-      'speed-change': 0
+      'speed-change': 0,
+      'thinking-time': 0,
+      'cancellation': 0,
+      'regret': 0,
+      'rapid-response': 0,
+      'timeout': 0
     }
     
     for (const log of this.logs) {
@@ -295,13 +404,31 @@ export async function analyzeBehavior(sessionId: string): Promise<BehaviorAnalys
   
   const attentionQuality = analyzeAttention(driftData, logs.length)
   
+  // 分析思考時間
+  const thinkingLogs = logs.filter(l => l.eventType === 'thinking-time')
+  const rapidLogs = logs.filter(l => l.eventType === 'rapid-response')
+  const thinkingData = thinkingLogs.map(l => l.data as unknown as ThinkingTimeData)
+  const rapidData = rapidLogs.map(l => l.data as unknown as RapidResponseData)
+  
+  const thinkingTimeAnalysis = analyzeThinkingTime(thinkingData, rapidData)
+  
+  // 分析決策穩定性
+  const cancellationLogs = logs.filter(l => l.eventType === 'cancellation')
+  const regretLogs = logs.filter(l => l.eventType === 'regret')
+  const cancellationData = cancellationLogs.map(l => l.data as unknown as CancellationData)
+  const regretData = regretLogs.map(l => l.data as unknown as RegretData)
+  
+  const decisionStability = analyzeDecisionStability(cancellationData, regretData)
+  
   // 生成洞察和建議
   const { insights, recommendations } = generateInsightsAndRecommendations(
     clickAccuracy,
     responsePattern,
     errorPattern,
     fatigueIndicators,
-    attentionQuality
+    attentionQuality,
+    thinkingTimeAnalysis,
+    decisionStability
   )
 
   return {
@@ -313,6 +440,8 @@ export async function analyzeBehavior(sessionId: string): Promise<BehaviorAnalys
     errorPattern,
     fatigueIndicators,
     attentionQuality,
+    thinkingTimeAnalysis,
+    decisionStability,
     insights,
     recommendations
   }
@@ -477,6 +606,98 @@ function analyzeAttention(
 }
 
 /**
+ * 分析思考時間模式
+ */
+function analyzeThinkingTime(
+  thinkingData: ThinkingTimeData[],
+  rapidData: RapidResponseData[]
+): BehaviorAnalysis['thinkingTimeAnalysis'] {
+  if (thinkingData.length === 0) {
+    return {
+      averageThinkingTime: 0,
+      thinkingTimeVariance: 0,
+      prolongedThinkingCount: 0,
+      rushingCount: rapidData.length,
+      pattern: 'mixed'
+    }
+  }
+  
+  const times = thinkingData.map(d => d.timeToFirstAction)
+  const averageThinkingTime = times.reduce((a, b) => a + b, 0) / times.length
+  
+  // 計算變異數
+  const variance = times.reduce((sum, t) => sum + Math.pow(t - averageThinkingTime, 2), 0) / times.length
+  const thinkingTimeVariance = Math.sqrt(variance)
+  
+  // 計算過長思考次數（超過預期時間 2 倍）
+  const prolongedThinkingCount = thinkingData.filter(d => d.ratio > 2).length
+  
+  // 快速反應次數（可能是隨意點擊）
+  const rushingCount = rapidData.length
+  
+  // 判斷模式
+  let pattern: 'thoughtful' | 'impulsive' | 'mixed' | 'deliberate'
+  const rushRatio = rushingCount / (thinkingData.length + rushingCount || 1)
+  const prolongedRatio = prolongedThinkingCount / (thinkingData.length || 1)
+  
+  if (rushRatio > 0.3) {
+    pattern = 'impulsive'
+  } else if (prolongedRatio > 0.3) {
+    pattern = 'deliberate'
+  } else if (thinkingTimeVariance < averageThinkingTime * 0.3) {
+    pattern = 'thoughtful'
+  } else {
+    pattern = 'mixed'
+  }
+  
+  return {
+    averageThinkingTime,
+    thinkingTimeVariance,
+    prolongedThinkingCount,
+    rushingCount,
+    pattern
+  }
+}
+
+/**
+ * 分析決策穩定性
+ */
+function analyzeDecisionStability(
+  cancellationData: CancellationData[],
+  regretData: RegretData[]
+): BehaviorAnalysis['decisionStability'] {
+  const cancellationCount = cancellationData.length
+  const regretCount = regretData.length
+  
+  // 計算反悔後改對/改錯的比率
+  const changedToCorrect = regretData.filter(d => d.finalAnswerCorrect && !d.originalAnswerCorrect).length
+  const changedToWrong = regretData.filter(d => !d.finalAnswerCorrect && d.originalAnswerCorrect).length
+  
+  const changeToCorrectRate = regretCount > 0 ? changedToCorrect / regretCount : 0
+  const changeToWrongRate = regretCount > 0 ? changedToWrong / regretCount : 0
+  
+  // 判斷穩定性
+  let stability: 'stable' | 'indecisive' | 'second-guessing'
+  
+  const totalChanges = cancellationCount + regretCount
+  if (totalChanges <= 2) {
+    stability = 'stable'
+  } else if (changeToWrongRate > changeToCorrectRate) {
+    stability = 'second-guessing'  // 反悔後反而更常改錯
+  } else {
+    stability = 'indecisive'
+  }
+  
+  return {
+    cancellationCount,
+    regretCount,
+    changeToCorrectRate,
+    changeToWrongRate,
+    stability
+  }
+}
+
+/**
  * 生成洞察和建議
  */
 function generateInsightsAndRecommendations(
@@ -484,7 +705,9 @@ function generateInsightsAndRecommendations(
   responsePattern: BehaviorAnalysis['responsePattern'],
   errorPattern: BehaviorAnalysis['errorPattern'],
   fatigueIndicators: BehaviorAnalysis['fatigueIndicators'],
-  attentionQuality: BehaviorAnalysis['attentionQuality']
+  attentionQuality: BehaviorAnalysis['attentionQuality'],
+  thinkingTimeAnalysis: BehaviorAnalysis['thinkingTimeAnalysis'],
+  decisionStability: BehaviorAnalysis['decisionStability']
 ): { insights: string[]; recommendations: string[] } {
   const insights: string[] = []
   const recommendations: string[] = []
@@ -531,6 +754,39 @@ function generateInsightsAndRecommendations(
     recommendations.push('建議在安靜環境進行訓練，減少干擾')
   } else if (attentionQuality.quality === 'excellent') {
     insights.push('注意力集中度優秀，專注力良好')
+  }
+  
+  // 思考時間分析
+  if (thinkingTimeAnalysis.pattern === 'impulsive') {
+    insights.push('反應模式偏向衝動，經常快速作答而未充分思考')
+    recommendations.push('建議放慢節奏，在作答前多思考幾秒鐘')
+  } else if (thinkingTimeAnalysis.pattern === 'deliberate') {
+    insights.push('思考模式謹慎，傾向花較長時間考慮')
+    if (thinkingTimeAnalysis.prolongedThinkingCount > 5) {
+      recommendations.push('可嘗試在有時間壓力的遊戲中練習決策速度')
+    }
+  } else if (thinkingTimeAnalysis.pattern === 'thoughtful') {
+    insights.push('思考時間穩定適中，展現良好的認知節奏')
+  }
+  
+  if (thinkingTimeAnalysis.rushingCount > 3) {
+    insights.push(`有 ${thinkingTimeAnalysis.rushingCount} 次過快反應，可能是隨意點擊`)
+    recommendations.push('請確保每次作答都經過思考，避免隨意點擊')
+  }
+  
+  // 決策穩定性分析
+  if (decisionStability.stability === 'second-guessing') {
+    insights.push('有反悔行為且反悔後答案反而更常出錯')
+    recommendations.push('建議相信自己的第一直覺，減少反覆更改答案')
+  } else if (decisionStability.stability === 'indecisive') {
+    insights.push('決策過程較不穩定，有多次取消或更改選擇')
+    recommendations.push('可嘗試先在心中確認答案再進行操作')
+  } else if (decisionStability.cancellationCount === 0 && decisionStability.regretCount === 0) {
+    insights.push('決策穩定，作答後較少反悔更改')
+  }
+  
+  if (decisionStability.changeToCorrectRate > 0.5 && decisionStability.regretCount >= 2) {
+    insights.push('反悔後經常改為正確答案，顯示有良好的自我檢視能力')
   }
   
   return { insights, recommendations }

@@ -656,36 +656,92 @@ onMounted(() => {
 
 // 下載報告
 async function downloadReport(): Promise<void> {
-  if (!reportRef.value) return
-  
   isGenerating.value = true
   
   try {
-    // 動態載入 html2pdf
-    const html2pdf = (await import('html2pdf.js')).default
+    // 使用新的 PDF 服務
+    const { 
+      generateCognitiveReport, 
+      downloadPdf, 
+      formatBehaviorSummary 
+    } = await import('@/services/pdfService')
+    const { analyzeBehavior } = await import('@/services/behaviorAnalysisService')
     
-    const options = {
-      margin: [15, 15, 15, 15] as [number, number, number, number],
-      filename: `認知評估報告_${userStore.currentUser?.name}_${new Date().toISOString().split('T')[0]}.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.95 },
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true,
-        logging: false,
-      },
-      jsPDF: { 
-        unit: 'mm' as const, 
-        format: 'a4' as const, 
-        orientation: 'portrait' as const
-      },
-      pagebreak: { 
-        mode: ['avoid-all', 'css'] as const,
-        before: '.page-break-before',
-        avoid: '.card'
-      },
+    // 準備使用者資訊
+    const userInfo = {
+      name: userStore.currentUser?.name || '未知',
+      age: userStore.userAge || 0,
+      educationYears: userStore.currentUser?.educationYears || 0,
+      reportDate: new Date().toISOString().split('T')[0] || ''
     }
     
-    await html2pdf().set(options).from(reportRef.value).save()
+    // 準備 Mini-Cog 資料
+    let miniCogReportData = null
+    if (latestMiniCogResult.value) {
+      miniCogReportData = {
+        totalScore: latestMiniCogResult.value.totalScore,
+        wordRecallScore: latestMiniCogResult.value.wordRecall.score,
+        clockDrawingScore: latestMiniCogResult.value.clockDrawing.score,
+        clockSelfAssessment: latestMiniCogResult.value.clockDrawing.selfAssessment || 0,
+        atRisk: latestMiniCogResult.value.atRisk,
+        duration: latestMiniCogResult.value.duration,
+        completedAt: latestMiniCogResult.value.completedAt,
+        clockImageData: latestMiniCogResult.value.clockDrawing.imageData,
+        wordsUsed: latestMiniCogResult.value.wordRecall.wordSet?.words
+      }
+    }
+    
+    // 準備認知分數資料
+    const cognitiveScoreData = {
+      memory: gameStore.cognitiveScores.memory || 0,
+      attention: gameStore.cognitiveScores.attention || 0,
+      processing: gameStore.cognitiveScores.processing || 0,
+      executive: gameStore.cognitiveScores.executive || 0,
+      language: gameStore.cognitiveScores.language || 0
+    }
+    
+    // 準備趨勢資料
+    const trendData = gameStore.scoreHistory.slice(-20).map((h: { date: string; score: number; gameId?: string }) => ({
+      date: h.date,
+      score: h.score,
+      gameType: h.gameId ? getGameName(h.gameId) : undefined
+    }))
+    
+    // 嘗試獲取行為分析資料
+    let behaviorSummary = null
+    if (gameStore.recentSessions.length > 0) {
+      try {
+        const latestSession = gameStore.recentSessions[0]
+        if (latestSession?.id) {
+          const analysis = await analyzeBehavior(latestSession.id)
+          behaviorSummary = formatBehaviorSummary(analysis)
+        }
+      } catch {
+        // 行為分析失敗，繼續生成報告
+        console.warn('行為分析獲取失敗')
+      }
+    }
+    
+    // 生成 PDF
+    const pdfBlob = await generateCognitiveReport(
+      userInfo,
+      miniCogReportData,
+      cognitiveScoreData,
+      trendData,
+      behaviorSummary,
+      {
+        includeClockDrawing: true,
+        includeTrends: true,
+        includeBehavior: true,
+        includeRecommendations: true,
+        language: 'bilingual'
+      }
+    )
+    
+    // 下載 PDF
+    const filename = `認知評估報告_${userStore.currentUser?.name}_${new Date().toISOString().split('T')[0]}.pdf`
+    downloadPdf(pdfBlob, filename)
+    
   } catch (error) {
     console.error('PDF 生成失敗:', error)
     alert('報告生成失敗，請稍後再試')

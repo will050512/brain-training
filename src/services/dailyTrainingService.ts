@@ -2,6 +2,7 @@
  * 每日訓練計畫服務
  * 根據用戶設定時長和認知弱項，智慧選擇遊戲組合
  * 支援中斷恢復功能
+ * 整合 Mini-Cog 評估結果與行為分析進行個人化難度調整
  */
 
 import type { CognitiveDimension, CognitiveScores } from '@/types/cognitive'
@@ -11,6 +12,7 @@ import {
   getTodayTrainingSession, 
   saveDailyTrainingSession,
   generateId,
+  getLatestMiniCogResult,
   type DailyTrainingSession
 } from '@/services/db'
 import { analyzeWeaknesses, suggestDifficulty } from '@/services/recommendationEngine'
@@ -47,12 +49,35 @@ export interface DailyTrainingPlan {
   canContinue: boolean
 }
 
+// 個人化難度建議結果
+export interface PersonalizedDifficultyRecommendation {
+  difficulty: Difficulty
+  subDifficulty: SubDifficulty
+  reason: string
+  adjustmentFactors: {
+    miniCogScore?: number
+    recentAccuracy?: number
+    behaviorPattern?: string
+    fatigueLevel?: string
+  }
+}
+
 // 時長對應遊戲數量配置
 const DURATION_GAME_CONFIG: Record<DailyTrainingDuration, { min: number; max: number }> = {
   10: { min: 3, max: 4 },
   15: { min: 4, max: 5 },
   20: { min: 5, max: 6 },
   30: { min: 6, max: 8 }
+}
+
+// Mini-Cog 分數對應基礎難度
+const MINICOG_DIFFICULTY_MAP: Record<number, { difficulty: Difficulty; subDifficulty: SubDifficulty }> = {
+  5: { difficulty: 'medium', subDifficulty: 3 },
+  4: { difficulty: 'medium', subDifficulty: 2 },
+  3: { difficulty: 'easy', subDifficulty: 3 },
+  2: { difficulty: 'easy', subDifficulty: 2 },
+  1: { difficulty: 'easy', subDifficulty: 1 },
+  0: { difficulty: 'easy', subDifficulty: 1 }
 }
 
 /**
@@ -537,5 +562,278 @@ export async function getTodayTrainingStatus(): Promise<{
   } catch (error) {
     console.error('取得今日訓練狀態失敗:', error)
     return { progress: 0, completed: false }
+  }
+}
+
+/**
+ * 根據 Mini-Cog 評估結果和行為分析計算個人化難度建議
+ */
+export async function calculatePersonalizedDifficulty(
+  odId: string,
+  gameId: string,
+  recentGameSessions: { accuracy?: number; averageReactionTime?: number }[] = []
+): Promise<PersonalizedDifficultyRecommendation> {
+  let baseDifficulty: Difficulty = 'easy'
+  let baseSubDifficulty: SubDifficulty = 2
+  const adjustmentFactors: PersonalizedDifficultyRecommendation['adjustmentFactors'] = {}
+  const reasons: string[] = []
+
+  // 1. 從 Mini-Cog 評估結果獲取基礎難度
+  try {
+    const miniCogResult = await getLatestMiniCogResult(odId)
+    if (miniCogResult) {
+      const score = miniCogResult.totalScore
+      adjustmentFactors.miniCogScore = score
+      
+      const mapped = MINICOG_DIFFICULTY_MAP[score]
+      if (mapped) {
+        baseDifficulty = mapped.difficulty
+        baseSubDifficulty = mapped.subDifficulty
+        reasons.push(`Mini-Cog 分數 ${score}/5`)
+      }
+      
+      // 如果有風險，進一步降低難度
+      if (miniCogResult.atRisk) {
+        if (baseDifficulty === 'medium') {
+          baseDifficulty = 'easy'
+          baseSubDifficulty = 3
+        } else {
+          baseSubDifficulty = Math.max(1, baseSubDifficulty - 1) as SubDifficulty
+        }
+        reasons.push('篩檢結果建議適度降低難度')
+      }
+    }
+  } catch (error) {
+    console.warn('無法獲取 Mini-Cog 結果:', error)
+  }
+
+  // 2. 從遊戲歷史難度獲取（如果沒有 Mini-Cog）
+  try {
+    const currentDiff = await getCurrentGameDifficulty(odId, gameId)
+    if (currentDiff && !adjustmentFactors.miniCogScore) {
+      baseDifficulty = currentDiff.difficulty
+      baseSubDifficulty = currentDiff.subDifficulty
+      reasons.push('沿用歷史難度設定')
+    }
+  } catch {
+    // 忽略錯誤
+  }
+
+  // 3. 根據最近遊戲表現調整
+  if (recentGameSessions.length >= 3) {
+    const validAccuracies = recentGameSessions
+      .filter(s => s.accuracy !== undefined)
+      .map(s => s.accuracy as number)
+    
+    if (validAccuracies.length >= 3) {
+      const avgAccuracy = validAccuracies.reduce((a, b) => a + b, 0) / validAccuracies.length
+      adjustmentFactors.recentAccuracy = Math.round(avgAccuracy * 100) / 100
+
+      if (avgAccuracy >= 0.9) {
+        // 正確率很高，可以提升難度
+        if (baseDifficulty === 'easy' && baseSubDifficulty >= 3) {
+          baseDifficulty = 'medium'
+          baseSubDifficulty = 1
+          reasons.push('近期正確率優秀，提升難度')
+        } else if (baseSubDifficulty < 3) {
+          baseSubDifficulty = (baseSubDifficulty + 1) as SubDifficulty
+          reasons.push('近期正確率優秀，小幅提升')
+        }
+      } else if (avgAccuracy < 0.5) {
+        // 正確率較低，降低難度
+        if (baseDifficulty === 'medium') {
+          baseDifficulty = 'easy'
+          baseSubDifficulty = 3
+          reasons.push('近期正確率偏低，降低難度')
+        } else if (baseSubDifficulty > 1) {
+          baseSubDifficulty = (baseSubDifficulty - 1) as SubDifficulty
+          reasons.push('近期正確率偏低，小幅降低')
+        }
+      }
+    }
+  }
+
+  // 4. 嘗試獲取行為分析調整
+  try {
+    const { analyzeBehavior } = await import('@/services/behaviorAnalysisService')
+    const recentSession = recentGameSessions[0] as { id?: string } | undefined
+    
+    if (recentSession?.id) {
+      const analysis = await analyzeBehavior(recentSession.id)
+      
+      if (analysis) {
+        // 疲勞調整
+        if (analysis.fatigueIndicators.severity === 'severe') {
+          if (baseSubDifficulty > 1) {
+            baseSubDifficulty = (baseSubDifficulty - 1) as SubDifficulty
+          }
+          adjustmentFactors.fatigueLevel = analysis.fatigueIndicators.severity
+          reasons.push('偵測到較高疲勞度')
+        }
+        
+        // 思考模式調整
+        if (analysis.thinkingTimeAnalysis) {
+          adjustmentFactors.behaviorPattern = analysis.thinkingTimeAnalysis.pattern
+          
+          if (analysis.thinkingTimeAnalysis.pattern === 'impulsive') {
+            // 衝動型可能需要稍微增加難度來促進思考
+            if (baseSubDifficulty < 3) {
+              baseSubDifficulty = (baseSubDifficulty + 1) as SubDifficulty
+              reasons.push('建議提升思考深度')
+            }
+          } else if (analysis.thinkingTimeAnalysis.pattern === 'deliberate') {
+            // 謹慎型可能需要適當難度避免壓力
+            // 維持當前難度即可
+          }
+        }
+      }
+    }
+  } catch {
+    // 行為分析失敗，不影響主流程
+  }
+
+  return {
+    difficulty: baseDifficulty,
+    subDifficulty: baseSubDifficulty,
+    reason: reasons.length > 0 ? reasons.join('；') : '預設難度',
+    adjustmentFactors
+  }
+}
+
+/**
+ * 建立個人化的每日訓練計畫（含智慧難度調整）
+ */
+export async function createPersonalizedTrainingPlan(
+  odId: string,
+  duration: DailyTrainingDuration,
+  cognitiveScores: CognitiveScores,
+  recentSessions: { gameId: string; accuracy?: number; id?: string }[] = []
+): Promise<DailyTrainingPlan> {
+  const today = new Date().toISOString().split('T')[0] || new Date().toLocaleDateString('sv-SE')
+  
+  // 檢查是否已有今日計畫
+  const existingSession = await getTodayTrainingSession(odId)
+  if (existingSession) {
+    return convertSessionToPlan(existingSession)
+  }
+  
+  // 取得最近遊玩的遊戲
+  const recentGames = recentSessions.slice(0, 5).map(s => s.gameId)
+  
+  // 選擇遊戲
+  const selectedGames = selectGamesForTraining(duration, cognitiveScores, recentGames)
+  
+  // 為每個遊戲計算個人化難度
+  const games: TrainingGameItem[] = await Promise.all(
+    selectedGames.map(async (game, index) => {
+      // 找出該遊戲的最近會話
+      const gameRecentSessions = recentSessions.filter(s => s.gameId === game.id)
+      
+      // 計算個人化難度
+      const recommendation = await calculatePersonalizedDifficulty(
+        odId, 
+        game.id, 
+        gameRecentSessions
+      )
+      
+      console.log(`[個人化訓練] ${game.name}: ${recommendation.difficulty}-${recommendation.subDifficulty} (${recommendation.reason})`)
+      
+      return {
+        gameId: game.id,
+        game,
+        difficulty: recommendation.difficulty,
+        subDifficulty: recommendation.subDifficulty,
+        estimatedTime: game.estimatedTime[recommendation.difficulty],
+        targetDimensions: getGameDimensions(game),
+        isCompleted: false,
+        order: index + 1
+      }
+    })
+  )
+  
+  // 儲存會話
+  const session: DailyTrainingSession = {
+    id: generateId(),
+    odId,
+    date: today,
+    plannedGames: games.map(g => ({
+      gameId: g.gameId,
+      difficulty: g.difficulty,
+      subDifficulty: g.subDifficulty,
+      estimatedTime: g.estimatedTime
+    })),
+    completedGames: [],
+    interrupted: false,
+    startedAt: new Date().toISOString(),
+    totalDuration: 0
+  }
+  
+  await saveDailyTrainingSession(session)
+  
+  return {
+    id: session.id,
+    date: today,
+    status: 'not-started',
+    games,
+    totalEstimatedTime: games.reduce((sum, g) => sum + g.estimatedTime, 0),
+    completedGames: 0,
+    totalGames: games.length,
+    progress: 0,
+    canContinue: false
+  }
+}
+
+/**
+ * 取得使用者認知能力概況（用於個人化推薦）
+ */
+export async function getUserCognitiveProfile(odId: string): Promise<{
+  miniCogScore: number | null
+  atRisk: boolean
+  weakAreas: CognitiveDimension[]
+  recommendedDifficulty: Difficulty
+  lastAssessmentDate: string | null
+}> {
+  let miniCogScore: number | null = null
+  let atRisk = false
+  let lastAssessmentDate: string | null = null
+  
+  // 取得 Mini-Cog 結果
+  try {
+    const result = await getLatestMiniCogResult(odId)
+    if (result) {
+      miniCogScore = result.totalScore
+      atRisk = result.atRisk
+      lastAssessmentDate = result.completedAt.split('T')[0] || null
+    }
+  } catch {
+    // 忽略錯誤
+  }
+  
+  // 計算弱項（這裡簡化處理，實際應該從 cognitiveScores 分析）
+  const weakAreas: CognitiveDimension[] = []
+  
+  // 根據 Mini-Cog 推斷可能的弱項
+  if (miniCogScore !== null) {
+    if (miniCogScore <= 2) {
+      weakAreas.push('memory', 'cognition')
+    } else if (miniCogScore <= 3) {
+      weakAreas.push('memory')
+    }
+  }
+  
+  // 推薦難度
+  let recommendedDifficulty: Difficulty = 'easy'
+  if (miniCogScore !== null) {
+    if (miniCogScore >= 4) {
+      recommendedDifficulty = 'medium'
+    }
+  }
+  
+  return {
+    miniCogScore,
+    atRisk,
+    weakAreas,
+    recommendedDifficulty,
+    lastAssessmentDate
   }
 }

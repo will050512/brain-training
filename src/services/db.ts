@@ -618,10 +618,28 @@ export async function anonymizeMiniCogResult(result: MiniCogResult): Promise<Rec
 
 /**
  * 匯出使用者去識別化資料（供研究用途）
+ * 包含行為統計和時間序列趨勢資料
  */
 export async function exportAnonymizedData(odId: string): Promise<{
   sessions: Record<string, unknown>[]
   miniCogResults: Record<string, unknown>[]
+  behaviorStats: {
+    totalBehaviorEvents: number
+    eventTypeCounts: Record<string, number>
+    averageThinkingTime: number
+    decisionStabilityScore: number
+    fatigueFrequency: number
+    attentionDriftFrequency: number
+  } | null
+  weeklyTrends: {
+    weekStartDate: string
+    averageScore: number
+    totalGames: number
+    averageAccuracy: number
+    averageReactionTime: number
+    miniCogScore: number | null
+    dominantCognitiveArea: string | null
+  }[]
   exportedAt: string
 }> {
   const sessions = await getUserGameSessions(odId)
@@ -635,11 +653,198 @@ export async function exportAnonymizedData(odId: string): Promise<{
     miniCogResults.map(r => anonymizeMiniCogResult(r))
   )
   
+  // 計算行為統計
+  const behaviorStats = await calculateBehaviorStats(odId)
+  
+  // 計算每週趨勢
+  const weeklyTrends = await calculateWeeklyTrends(odId, sessions, miniCogResults)
+  
   return {
     sessions: anonymizedSessions,
     miniCogResults: anonymizedMiniCog,
+    behaviorStats,
+    weeklyTrends,
     exportedAt: new Date().toISOString(),
   }
+}
+
+/**
+ * 計算行為統計資料
+ */
+async function calculateBehaviorStats(odId: string): Promise<{
+  totalBehaviorEvents: number
+  eventTypeCounts: Record<string, number>
+  averageThinkingTime: number
+  decisionStabilityScore: number
+  fatigueFrequency: number
+  attentionDriftFrequency: number
+} | null> {
+  try {
+    const db = await getDB()
+    const allLogs = await db.getAllFromIndex('behaviorLogs', 'by-odId', odId)
+    
+    if (allLogs.length === 0) return null
+    
+    const eventTypeCounts: Record<string, number> = {}
+    let totalThinkingTime = 0
+    let thinkingTimeCount = 0
+    let cancellationCount = 0
+    let regretCount = 0
+    let fatigueCount = 0
+    let driftCount = 0
+    
+    for (const log of allLogs) {
+      eventTypeCounts[log.eventType] = (eventTypeCounts[log.eventType] || 0) + 1
+      
+      if (log.eventType === 'thinking-time' && log.data?.timeToFirstAction) {
+        totalThinkingTime += log.data.timeToFirstAction as number
+        thinkingTimeCount++
+      }
+      
+      if (log.eventType === 'cancellation') cancellationCount++
+      if (log.eventType === 'regret') regretCount++
+      if (log.eventType === 'fatigue') fatigueCount++
+      if (log.eventType === 'attention-drift') driftCount++
+    }
+    
+    const averageThinkingTime = thinkingTimeCount > 0 ? totalThinkingTime / thinkingTimeCount : 0
+    
+    // 決策穩定性分數：0-100，越高越穩定
+    const totalDecisionChanges = cancellationCount + regretCount
+    const decisionStabilityScore = Math.max(0, 100 - (totalDecisionChanges / (allLogs.length / 10)) * 10)
+    
+    return {
+      totalBehaviorEvents: allLogs.length,
+      eventTypeCounts,
+      averageThinkingTime: Math.round(averageThinkingTime),
+      decisionStabilityScore: Math.round(decisionStabilityScore),
+      fatigueFrequency: fatigueCount,
+      attentionDriftFrequency: driftCount
+    }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 計算每週趨勢資料
+ */
+async function calculateWeeklyTrends(
+  odId: string, 
+  sessions: GameSession[],
+  miniCogResults: MiniCogResult[]
+): Promise<{
+  weekStartDate: string
+  averageScore: number
+  totalGames: number
+  averageAccuracy: number
+  averageReactionTime: number
+  miniCogScore: number | null
+  dominantCognitiveArea: string | null
+}[]> {
+  // 按週分組會話
+  const weeklyData = new Map<string, {
+    sessions: GameSession[]
+    miniCogResults: MiniCogResult[]
+  }>()
+  
+  // 獲取週的開始日期（週一）
+  const getWeekStart = (date: Date): string => {
+    const d = new Date(date)
+    const day = d.getDay()
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+    d.setDate(diff)
+    return d.toISOString().split('T')[0] || ''
+  }
+  
+  // 分組遊戲會話
+  for (const session of sessions) {
+    const sessionDate = session.endTime ? new Date(session.endTime) : new Date(session.startTime)
+    const weekStart = getWeekStart(sessionDate)
+    
+    if (!weeklyData.has(weekStart)) {
+      weeklyData.set(weekStart, { sessions: [], miniCogResults: [] })
+    }
+    weeklyData.get(weekStart)!.sessions.push(session)
+  }
+  
+  // 分組 Mini-Cog 結果
+  for (const result of miniCogResults) {
+    const resultDate = new Date(result.completedAt)
+    const weekStart = getWeekStart(resultDate)
+    
+    if (!weeklyData.has(weekStart)) {
+      weeklyData.set(weekStart, { sessions: [], miniCogResults: [] })
+    }
+    weeklyData.get(weekStart)!.miniCogResults.push(result)
+  }
+  
+  // 計算每週統計
+  const trends: {
+    weekStartDate: string
+    averageScore: number
+    totalGames: number
+    averageAccuracy: number
+    averageReactionTime: number
+    miniCogScore: number | null
+    dominantCognitiveArea: string | null
+  }[] = []
+  
+  for (const [weekStart, data] of weeklyData) {
+    const { sessions: weekSessions, miniCogResults: weekMiniCog } = data
+    
+    // 計算該週平均分數
+    const scores = weekSessions
+      .filter(s => s.finalScore !== undefined)
+      .map(s => s.finalScore as number)
+    const averageScore = scores.length > 0 
+      ? scores.reduce((a, b) => a + b, 0) / scores.length 
+      : 0
+    
+    // 計算該週平均正確率
+    const accuracies = weekSessions
+      .filter(s => s.accuracy !== undefined)
+      .map(s => s.accuracy as number)
+    const averageAccuracy = accuracies.length > 0
+      ? accuracies.reduce((a, b) => a + b, 0) / accuracies.length
+      : 0
+    
+    // 計算該週平均反應時間
+    const reactionTimes = weekSessions
+      .filter(s => s.averageReactionTime !== undefined)
+      .map(s => s.averageReactionTime as number)
+    const averageReactionTime = reactionTimes.length > 0
+      ? reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length
+      : 0
+    
+    // 獲取該週最新的 Mini-Cog 分數
+    const latestMiniCog = weekMiniCog.length > 0
+      ? weekMiniCog.sort((a, b) => 
+          new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+        )[0]
+      : null
+    
+    // 計算主要認知領域（基於遊戲類型分布）
+    const gameTypeCounts: Record<string, number> = {}
+    for (const session of weekSessions) {
+      gameTypeCounts[session.gameId] = (gameTypeCounts[session.gameId] || 0) + 1
+    }
+    const dominantCognitiveArea = Object.entries(gameTypeCounts)
+      .sort((a, b) => b[1] - a[1])[0]?.[0] || null
+    
+    trends.push({
+      weekStartDate: weekStart,
+      averageScore: Math.round(averageScore * 10) / 10,
+      totalGames: weekSessions.length,
+      averageAccuracy: Math.round(averageAccuracy * 1000) / 10,
+      averageReactionTime: Math.round(averageReactionTime),
+      miniCogScore: latestMiniCog?.totalScore ?? null,
+      dominantCognitiveArea
+    })
+  }
+  
+  // 按週排序
+  return trends.sort((a, b) => a.weekStartDate.localeCompare(b.weekStartDate))
 }
 
 /**

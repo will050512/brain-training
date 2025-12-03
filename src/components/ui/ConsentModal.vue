@@ -126,6 +126,40 @@
               </div>
             </section>
 
+            <!-- Detailed Behavior Analysis -->
+            <section class="consent-section">
+              <div class="consent-item">
+                <div class="consent-checkbox-wrapper">
+                  <input
+                    type="checkbox"
+                    id="detailed-behavior-consent"
+                    v-model="consent.detailedBehaviorConsent"
+                    class="consent-checkbox"
+                    :disabled="!consent.behaviorTrackingConsent"
+                  />
+                  <label for="detailed-behavior-consent" class="consent-label">
+                    <span class="consent-label-title">
+                      精細行為分析
+                      <span class="optional-badge">選用</span>
+                    </span>
+                  </label>
+                </div>
+                <div class="consent-description">
+                  <p>若您同意，我們將額外記錄：</p>
+                  <ul>
+                    <li>每道題目的思考時間（題目出現到首次操作的時間）</li>
+                    <li>操作取消行為（放棄當前選擇重新選擇）</li>
+                    <li>答案反悔行為（選擇後又更改答案）</li>
+                    <li>注意力漂移偵測（長時間無操作或快速隨意點擊）</li>
+                    <li>疲勞指標（反應時間變化趨勢）</li>
+                  </ul>
+                  <p class="consent-note">
+                    <strong>重要：</strong>此資料可協助早期偵測認知功能變化趨勢，對醫療評估報告特別有價值。需先同意「行為追蹤資料」才能啟用此選項。
+                  </p>
+                </div>
+              </div>
+            </section>
+
             <!-- Medical Sharing -->
             <section class="consent-section">
               <div class="consent-item">
@@ -236,6 +270,7 @@ const consent = ref<DataConsentOptions>({
   essentialConsent: true, // Always required
   analyticsConsent: false,
   behaviorTrackingConsent: false,
+  detailedBehaviorConsent: false,
   medicalSharingConsent: false,
   consentTimestamp: '',
   consentVersion: CURRENT_CONSENT_VERSION
@@ -260,6 +295,13 @@ watch(() => props.modelValue, (newVal) => {
 
 watch(visible, (newVal) => {
   emit('update:modelValue', newVal)
+})
+
+// 當取消行為追蹤同意時，自動取消精細行為分析同意
+watch(() => consent.value.behaviorTrackingConsent, (newVal) => {
+  if (!newVal) {
+    consent.value.detailedBehaviorConsent = false
+  }
 })
 
 // Methods

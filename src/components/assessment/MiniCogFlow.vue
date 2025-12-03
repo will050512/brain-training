@@ -530,8 +530,13 @@ const saveAndClose = async () => {
         resultToSave.completedAt = new Date().toISOString()
       }
       
-      console.log('Saving Mini-Cog result:', resultToSave)
-      await saveMiniCogResult(resultToSave)
+      // 使用 sanitizeForIDB 移除 Vue Proxy 等不可序列化的內容
+      // 解決 "Failed to execute 'put' on 'IDBObjectStore': #<Object> could not be cloned" 錯誤
+      const { sanitizeForIDB } = await import('@/utils/serialization')
+      const sanitizedResult = sanitizeForIDB(resultToSave)
+      
+      console.log('Saving Mini-Cog result:', sanitizedResult)
+      await saveMiniCogResult(sanitizedResult)
       saveSuccess.value = true
       
       // 短暫顯示成功訊息後觸發完成事件

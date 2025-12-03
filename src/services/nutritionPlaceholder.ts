@@ -517,3 +517,330 @@ export const NUTRITION_DISCLAIMER = `
 
 如有任何健康疑慮，請尋求專業醫療協助。
 `.trim()
+
+// ===== 個人化營養建議系統 =====
+
+/** 使用者個人資料（用於營養建議） */
+export interface UserNutritionProfile {
+  age: number
+  educationYears: number
+  miniCogScore?: number
+  miniCogAtRisk?: boolean
+  cognitiveScores: CognitiveScores
+  scoreHistory: ScoreHistory[]
+}
+
+/** 年齡特定營養建議 */
+interface AgeSpecificRecommendation {
+  minAge: number
+  maxAge: number
+  prioritySupplements: SupplementType[]
+  reason: string
+}
+
+/** 個人化營養建議結果 */
+export interface PersonalizedNutritionResult {
+  recommendations: NutritionRecommendation[]
+  generalAdvice: string[]
+  ageBasedAdvice: string[]
+  cognitiveBasedAdvice: string[]
+  disclaimerAcknowledged: boolean
+}
+
+// 年齡特定營養建議配置
+const AGE_SPECIFIC_RECOMMENDATIONS: AgeSpecificRecommendation[] = [
+  {
+    minAge: 50,
+    maxAge: 64,
+    prioritySupplements: ['omega3', 'vitaminD', 'vitaminB'],
+    reason: '50-64歲是預防認知退化的關鍵期'
+  },
+  {
+    minAge: 65,
+    maxAge: 74,
+    prioritySupplements: ['omega3', 'vitaminB', 'phosphatidylserine', 'coq10'],
+    reason: '65歲以上建議加強腦部營養支持'
+  },
+  {
+    minAge: 75,
+    maxAge: 120,
+    prioritySupplements: ['omega3', 'vitaminB', 'vitaminD', 'lecithin', 'phosphatidylserine'],
+    reason: '75歲以上需要更全面的營養補充支持'
+  }
+]
+
+// Mini-Cog 分數對應的營養建議強度
+const MINICOG_SUPPLEMENT_CONFIG: Record<number, {
+  additionalSupplements: SupplementType[]
+  intensityLevel: 'standard' | 'enhanced' | 'intensive'
+}> = {
+  5: { additionalSupplements: [], intensityLevel: 'standard' },
+  4: { additionalSupplements: ['omega3'], intensityLevel: 'standard' },
+  3: { additionalSupplements: ['omega3', 'vitaminB'], intensityLevel: 'enhanced' },
+  2: { additionalSupplements: ['omega3', 'vitaminB', 'phosphatidylserine'], intensityLevel: 'enhanced' },
+  1: { additionalSupplements: ['omega3', 'vitaminB', 'phosphatidylserine', 'lecithin'], intensityLevel: 'intensive' },
+  0: { additionalSupplements: ['omega3', 'vitaminB', 'phosphatidylserine', 'lecithin', 'ginkgo'], intensityLevel: 'intensive' }
+}
+
+/**
+ * 生成個人化營養建議
+ * 
+ * @param profile 使用者個人資料
+ * @returns 個人化營養建議結果
+ */
+export function generatePersonalizedRecommendations(
+  profile: UserNutritionProfile
+): PersonalizedNutritionResult {
+  const recommendations: NutritionRecommendation[] = []
+  const addedSupplements = new Set<SupplementType>()
+  const generalAdvice: string[] = []
+  const ageBasedAdvice: string[] = []
+  const cognitiveBasedAdvice: string[] = []
+
+  // 1. 基於認知分數的觸發條件檢查
+  const triggerBasedRecs = checkNutritionTriggers(
+    profile.cognitiveScores,
+    profile.scoreHistory
+  )
+  
+  for (const rec of triggerBasedRecs) {
+    if (!addedSupplements.has(rec.supplement.type)) {
+      recommendations.push(rec)
+      addedSupplements.add(rec.supplement.type)
+      cognitiveBasedAdvice.push(`根據${getDimensionNameFromRec(rec)}表現，建議考慮補充${rec.supplement.name}`)
+    }
+  }
+
+  // 2. 基於年齡的建議
+  const ageConfig = AGE_SPECIFIC_RECOMMENDATIONS.find(
+    config => profile.age >= config.minAge && profile.age <= config.maxAge
+  )
+  
+  if (ageConfig) {
+    ageBasedAdvice.push(ageConfig.reason)
+    
+    for (const supplementType of ageConfig.prioritySupplements) {
+      if (!addedSupplements.has(supplementType)) {
+        const supplement = getSupplementInfo(supplementType)
+        recommendations.push({
+          id: `age_${Date.now()}_${supplementType}`,
+          triggerId: 'age_based',
+          supplement,
+          reason: `${profile.age}歲年齡層建議補充`,
+          dimension: supplement.relatedDimensions[0] || 'cognition',
+          priority: 'low',
+          recommendedAt: new Date().toISOString(),
+          viewed: false,
+          dismissed: false
+        })
+        addedSupplements.add(supplementType)
+        ageBasedAdvice.push(`${supplement.name}：${supplement.benefits[0]}`)
+      }
+    }
+  }
+
+  // 3. 基於 Mini-Cog 結果的建議
+  if (profile.miniCogScore !== undefined) {
+    const miniCogConfig = MINICOG_SUPPLEMENT_CONFIG[profile.miniCogScore]
+    
+    if (miniCogConfig) {
+      if (miniCogConfig.intensityLevel === 'intensive') {
+        cognitiveBasedAdvice.push('⚠️ 認知篩檢結果建議加強營養支持，請諮詢醫師')
+      } else if (miniCogConfig.intensityLevel === 'enhanced') {
+        cognitiveBasedAdvice.push('認知篩檢結果顯示可考慮增加營養補充')
+      }
+
+      for (const supplementType of miniCogConfig.additionalSupplements) {
+        if (!addedSupplements.has(supplementType)) {
+          const supplement = getSupplementInfo(supplementType)
+          const priority: TriggerPriority = miniCogConfig.intensityLevel === 'intensive' ? 'high' : 
+                          miniCogConfig.intensityLevel === 'enhanced' ? 'medium' : 'low'
+          
+          recommendations.push({
+            id: `minicog_${Date.now()}_${supplementType}`,
+            triggerId: 'minicog_based',
+            supplement,
+            reason: `根據 Mini-Cog 評估結果（${profile.miniCogScore}/5 分）建議`,
+            dimension: supplement.relatedDimensions[0] || 'cognition',
+            priority,
+            recommendedAt: new Date().toISOString(),
+            viewed: false,
+            dismissed: false
+          })
+          addedSupplements.add(supplementType)
+        }
+      }
+    }
+
+    // 如果有風險，添加特別提醒
+    if (profile.miniCogAtRisk) {
+      cognitiveBasedAdvice.push('🔔 建議定期進行認知評估，並諮詢專業醫療人員')
+    }
+  }
+
+  // 4. 教育程度相關建議
+  if (profile.educationYears <= 6) {
+    generalAdvice.push('研究顯示教育程度較低者可能需要更積極的認知保健')
+    
+    if (!addedSupplements.has('omega3')) {
+      const omega3 = getSupplementInfo('omega3')
+      recommendations.push({
+        id: `edu_${Date.now()}_omega3`,
+        triggerId: 'education_based',
+        supplement: omega3,
+        reason: '建議補充支持腦部健康的營養素',
+        dimension: 'cognition',
+        priority: 'low',
+        recommendedAt: new Date().toISOString(),
+        viewed: false,
+        dismissed: false
+      })
+    }
+  }
+
+  // 5. 通用建議
+  generalAdvice.push('均衡飲食是認知健康的基礎')
+  generalAdvice.push('建議每週進行 3-5 次中等強度運動')
+  generalAdvice.push('保持良好的睡眠品質對認知功能很重要')
+  generalAdvice.push('社交互動和持續學習有助於維持認知活力')
+
+  // 依優先級排序建議
+  recommendations.sort((a, b) => {
+    const priorityOrder = { high: 0, medium: 1, low: 2 }
+    return priorityOrder[a.priority] - priorityOrder[b.priority]
+  })
+
+  return {
+    recommendations,
+    generalAdvice,
+    ageBasedAdvice,
+    cognitiveBasedAdvice,
+    disclaimerAcknowledged: false
+  }
+}
+
+/**
+ * 從建議中取得維度名稱
+ */
+function getDimensionNameFromRec(rec: NutritionRecommendation): string {
+  const names: Record<CognitiveDimension, string> = {
+    memory: '記憶力',
+    attention: '注意力',
+    reaction: '反應力',
+    logic: '邏輯力',
+    cognition: '認知力',
+    coordination: '協調力'
+  }
+  return names[rec.dimension] || rec.dimension
+}
+
+/**
+ * 取得適合特定年齡的營養品概覽
+ */
+export function getAgeAppropriateSupplements(age: number): {
+  primary: SupplementInfo[]
+  secondary: SupplementInfo[]
+  reason: string
+} {
+  const config = AGE_SPECIFIC_RECOMMENDATIONS.find(
+    c => age >= c.minAge && age <= c.maxAge
+  ) || AGE_SPECIFIC_RECOMMENDATIONS[0]!
+
+  const primary = config.prioritySupplements.slice(0, 3).map(t => getSupplementInfo(t))
+  const secondary = config.prioritySupplements.slice(3).map(t => getSupplementInfo(t))
+
+  return {
+    primary,
+    secondary,
+    reason: config.reason
+  }
+}
+
+/**
+ * 根據認知弱項取得針對性營養建議
+ */
+export function getWeaknessTargetedSupplements(
+  weakDimensions: CognitiveDimension[]
+): Map<CognitiveDimension, SupplementInfo[]> {
+  const result = new Map<CognitiveDimension, SupplementInfo[]>()
+  
+  for (const dim of weakDimensions) {
+    const supplements = getSupplementsByDimension(dim)
+    result.set(dim, supplements)
+  }
+  
+  return result
+}
+
+/**
+ * 生成簡易營養報告文字
+ */
+export function generateNutritionReportText(
+  result: PersonalizedNutritionResult,
+  userName: string
+): string {
+  const lines: string[] = []
+  
+  lines.push(`${userName} 的個人化營養建議報告`)
+  lines.push('=' .repeat(40))
+  lines.push(`生成時間: ${new Date().toLocaleString('zh-TW')}`)
+  lines.push('')
+  
+  // 高優先級建議
+  const highPriority = result.recommendations.filter(r => r.priority === 'high')
+  if (highPriority.length > 0) {
+    lines.push('🔴 高優先建議')
+    lines.push('-'.repeat(20))
+    for (const rec of highPriority) {
+      lines.push(`• ${rec.supplement.name}：${rec.reason}`)
+    }
+    lines.push('')
+  }
+  
+  // 中優先級建議
+  const mediumPriority = result.recommendations.filter(r => r.priority === 'medium')
+  if (mediumPriority.length > 0) {
+    lines.push('🟡 建議考慮')
+    lines.push('-'.repeat(20))
+    for (const rec of mediumPriority) {
+      lines.push(`• ${rec.supplement.name}：${rec.reason}`)
+    }
+    lines.push('')
+  }
+  
+  // 認知相關建議
+  if (result.cognitiveBasedAdvice.length > 0) {
+    lines.push('🧠 認知評估相關建議')
+    lines.push('-'.repeat(20))
+    for (const advice of result.cognitiveBasedAdvice) {
+      lines.push(`• ${advice}`)
+    }
+    lines.push('')
+  }
+  
+  // 年齡相關建議
+  if (result.ageBasedAdvice.length > 0) {
+    lines.push('📅 年齡相關建議')
+    lines.push('-'.repeat(20))
+    for (const advice of result.ageBasedAdvice) {
+      lines.push(`• ${advice}`)
+    }
+    lines.push('')
+  }
+  
+  // 通用建議
+  lines.push('💡 一般保健建議')
+  lines.push('-'.repeat(20))
+  for (const advice of result.generalAdvice) {
+    lines.push(`• ${advice}`)
+  }
+  lines.push('')
+  
+  // 免責聲明
+  lines.push('⚠️ 重要提醒')
+  lines.push('-'.repeat(20))
+  lines.push('以上建議僅供參考，不構成醫療診斷或治療建議。')
+  lines.push('請在開始任何營養補充計畫前諮詢專業醫療人員。')
+  
+  return lines.join('\n')
+}
