@@ -1,0 +1,230 @@
+/**
+ * 遊戲狀態管理
+ */
+
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import type { 
+  GameSession, 
+  GameResult, 
+  Difficulty,
+  SettingValue,
+  CognitiveDimension,
+  CognitiveScores 
+} from '@/types'
+import { gameRegistry } from '@/core/gameRegistry'
+import { 
+  saveGameSession, 
+  getUserGameSessions, 
+  generateId 
+} from '@/services/db'
+import { 
+  calculateCognitiveScoresFromResult,
+  calculateOverallCognitiveScores,
+  calculateScoreTrends,
+  calculateScoreHistory,
+  type ScoreTrend,
+  type ScoreHistory
+} from '@/services/scoreCalculator'
+import { useUserStore } from './userStore'
+
+export const useGameStore = defineStore('game', () => {
+  // 狀態
+  const sessions = ref<GameSession[]>([])
+  const currentGameId = ref<string | null>(null)
+  const currentDifficulty = ref<Difficulty>('easy')
+  const isLoading = ref(false)
+  
+  // 計算屬性
+  const currentGame = computed(() => {
+    if (!currentGameId.value) return null
+    return gameRegistry.get(currentGameId.value)
+  })
+
+  const allGames = computed(() => gameRegistry.getAll())
+
+  const cognitiveScores = computed((): CognitiveScores => {
+    return calculateOverallCognitiveScores(sessions.value)
+  })
+
+  const recentSessions = computed(() => {
+    return [...sessions.value]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 10)
+  })
+
+  const scoreHistory = computed((): ScoreHistory[] => {
+    return calculateScoreHistory(sessions.value, 'week')
+  })
+
+  // 動作
+
+  /**
+   * 載入使用者的遊戲記錄
+   */
+  async function loadUserSessions(odId: string): Promise<void> {
+    isLoading.value = true
+    try {
+      sessions.value = await getUserGameSessions(odId)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * 選擇遊戲
+   */
+  function selectGame(gameId: string): void {
+    if (gameRegistry.has(gameId)) {
+      currentGameId.value = gameId
+    }
+  }
+
+  /**
+   * 選擇難度
+   */
+  function selectDifficulty(difficulty: Difficulty): void {
+    currentDifficulty.value = difficulty
+  }
+
+  /**
+   * 記錄遊戲結果
+   */
+  async function recordGameResult(result: GameResult): Promise<GameSession> {
+    const userStore = useUserStore()
+    if (!userStore.currentUser) {
+      throw new Error('使用者未登入')
+    }
+
+    const odId = userStore.currentUser.id
+    const cognitiveScores = calculateCognitiveScoresFromResult(result.gameId, result)
+
+    const session: GameSession = {
+      id: generateId(),
+      odId,
+      gameId: result.gameId,
+      difficulty: result.difficulty,
+      result,
+      cognitiveScores,
+      createdAt: new Date(),
+    }
+
+    await saveGameSession(session)
+    sessions.value.push(session)
+
+    // 更新使用者統計
+    await userStore.recordGamePlayed(result.score, result.duration, result.gameId)
+
+    return session
+  }
+
+  /**
+   * 取得特定遊戲的會話
+   */
+  function getSessionsByGame(gameId: string): GameSession[] {
+    return sessions.value.filter((s: GameSession) => s.gameId === gameId)
+  }
+
+  /**
+   * 取得特定遊戲的最佳分數
+   */
+  function getBestScore(gameId: string, difficulty?: Difficulty): number {
+    let gameSessions = getSessionsByGame(gameId)
+    if (difficulty) {
+      gameSessions = gameSessions.filter(s => s.difficulty === difficulty)
+    }
+    if (gameSessions.length === 0) return 0
+    return Math.max(...gameSessions.map(s => s.result.score))
+  }
+
+  /**
+   * 取得特定遊戲的平均分數
+   */
+  function getAverageScore(gameId: string, difficulty?: Difficulty): number {
+    let gameSessions = getSessionsByGame(gameId)
+    if (difficulty) {
+      gameSessions = gameSessions.filter(s => s.difficulty === difficulty)
+    }
+    if (gameSessions.length === 0) return 0
+    const sum = gameSessions.reduce((acc, s) => acc + s.result.score, 0)
+    return Math.round(sum / gameSessions.length)
+  }
+
+  /**
+   * 計算與上週的分數趨勢比較
+   */
+  function getWeeklyTrends(): ScoreTrend[] {
+    const now = new Date()
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+
+    const currentWeekSessions = sessions.value.filter((s: GameSession) => {
+      const date = new Date(s.createdAt)
+      return date >= oneWeekAgo && date <= now
+    })
+
+    const previousWeekSessions = sessions.value.filter((s: GameSession) => {
+      const date = new Date(s.createdAt)
+      return date >= twoWeeksAgo && date < oneWeekAgo
+    })
+
+    const currentScores = calculateOverallCognitiveScores(currentWeekSessions)
+    const previousScores = calculateOverallCognitiveScores(previousWeekSessions)
+
+    return calculateScoreTrends(currentScores, previousScores)
+  }
+
+  /**
+   * 取得認知維度的遊戲
+   */
+  function getGamesByDimension(dimension: CognitiveDimension) {
+    return gameRegistry.getByDimension(dimension)
+  }
+
+  /**
+   * 取得遊戲的難度設定
+   */
+  function getDifficultySettings(gameId: string, difficulty: Difficulty): Record<string, SettingValue> {
+    const game = gameRegistry.get(gameId)
+    if (!game) return {}
+    
+    // 使用 defaultSettings 來取得難度設定
+    return game.defaultSettings?.[difficulty] || {}
+  }
+
+  /**
+   * 清除當前遊戲選擇
+   */
+  function clearSelection(): void {
+    currentGameId.value = null
+    currentDifficulty.value = 'easy'
+  }
+
+  return {
+    // 狀態
+    sessions,
+    currentGameId,
+    currentDifficulty,
+    isLoading,
+
+    // 計算屬性
+    currentGame,
+    allGames,
+    cognitiveScores,
+    recentSessions,
+    scoreHistory,
+
+    // 動作
+    loadUserSessions,
+    selectGame,
+    selectDifficulty,
+    recordGameResult,
+    getSessionsByGame,
+    getBestScore,
+    getAverageScore,
+    getWeeklyTrends,
+    getGamesByDimension,
+    getDifficultySettings,
+    clearSelection,
+  }
+})

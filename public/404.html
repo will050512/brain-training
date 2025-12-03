@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>健腦訓練遊戲</title>
+  <script>
+    // 單頁應用程式的 GitHub Pages 路由處理
+    // 將所有 404 請求重定向到 index.html
+    const segment = 1; // 根據你的 repo 設定
+    const segmentCount = location.pathname.split('/').length;
+    
+    // 只有在非根路徑時才處理
+    if (segmentCount > segment + 1) {
+      const path = location.pathname.split('/').slice(segment + 1).join('/');
+      const search = location.search;
+      const hash = location.hash;
+      
+      // 將路由資訊存入 sessionStorage
+      sessionStorage.setItem('redirectPath', path + search + hash);
+      
+      // 重定向到根路徑
+      location.replace(
+        location.pathname.split('/').slice(0, segment + 1).join('/') + '/'
+      );
+    }
+  </script>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .loading {
+      text-align: center;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="loading">
+    <div class="spinner"></div>
+    <p>正在載入...</p>
+  </div>
+</body>
+</html>

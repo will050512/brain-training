@@ -1,0 +1,35 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "gameover",
+    "lookback",
+    "odId",
+    "pinia",
+    "vite",
+    "tailwindcss",
+    "autoprefixer",
+    "postcss",
+    "echarts",
+    "ENOENT",
+    "stroop",
+    "minicog",
+    "phosphatidylserine",
+    "curcumin",
+    "lecithin",
+    "ginkgo",
+    "coq10",
+    "cognitiveScores",
+    "CASI",
+    "MMSE",
+    "MOCA",
+    "Teng",
+    "Nasreddine",
+    "Levenshtein"
+  ],
+  "ignorePaths": [
+    "node_modules",
+    "dist",
+    "dev-dist"
+  ]
+}

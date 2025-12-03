@@ -1,0 +1,769 @@
+<template>
+  <div class="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <!-- 頭部 -->
+    <div class="bg-white shadow-sm">
+      <div class="container mx-auto px-4 py-4">
+        <div class="flex items-center justify-between">
+          <router-link to="/" class="text-gray-600 hover:text-gray-900">
+            ← 返回
+          </router-link>
+          <h1 class="text-xl font-bold">能力評估測試</h1>
+          <div class="w-16"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+      <!-- Mini-Cog 測驗模式 -->
+      <MiniCogFlow 
+        v-if="stage === 'mini-cog'"
+        :language="selectedLanguage"
+        @complete="handleMiniCogComplete"
+        @cancel="stage = 'select'"
+      />
+
+      <!-- 選擇評估類型 -->
+      <div v-else-if="stage === 'select'" class="max-w-3xl mx-auto">
+        <div class="text-center mb-8">
+          <div class="text-6xl mb-4">🧠</div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">選擇評估類型</h2>
+          <p class="text-gray-600">請選擇適合您的評估方式</p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+          <!-- Mini-Cog 快速篩檢 -->
+          <div class="assessment-card mini-cog-card" @click="startMiniCog">
+            <div class="card-badge">推薦</div>
+            <div class="card-icon">⏱️</div>
+            <h3 class="card-title">Mini-Cog™ 快速篩檢</h3>
+            <p class="card-description">
+              國際標準的認知篩檢工具，適合快速評估認知功能狀態。
+            </p>
+            <ul class="card-features">
+              <li>⏱️ 約 3 分鐘完成</li>
+              <li>📝 3 詞語記憶 + 時鐘繪圖</li>
+              <li>📊 專業評分與 MMSE 對照</li>
+              <li>🎯 早期認知變化偵測</li>
+            </ul>
+            <div class="card-action">
+              <span>開始快速篩檢</span>
+              <span class="arrow">→</span>
+            </div>
+          </div>
+
+          <!-- 完整能力評估 -->
+          <div class="assessment-card full-assessment-card" @click="stage = 'intro'">
+            <div class="card-icon">📋</div>
+            <h3 class="card-title">完整能力評估</h3>
+            <p class="card-description">
+              全面評估反應力、記憶力、邏輯力，為您推薦適合的遊戲難度。
+            </p>
+            <ul class="card-features">
+              <li>⏱️ 約 5 分鐘完成</li>
+              <li>⚡ 反應力測試</li>
+              <li>🧠 記憶力測試</li>
+              <li>🧩 邏輯力測試</li>
+            </ul>
+            <div class="card-action">
+              <span>開始完整評估</span>
+              <span class="arrow">→</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 語言選擇（用於 Mini-Cog） -->
+        <div class="language-selector mt-8">
+          <label class="text-sm text-gray-600 mr-3">Mini-Cog 詞語語言：</label>
+          <select v-model="selectedLanguage" class="language-select">
+            <option value="zh-TW">繁體中文</option>
+            <option value="zh-CN">简体中文</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+
+        <!-- 歷史記錄提示 -->
+        <div v-if="hasRecentMiniCog" class="recent-result-banner mt-6">
+          <div class="banner-icon">📊</div>
+          <div class="banner-content">
+            <p class="banner-title">您最近有 Mini-Cog 評估記錄</p>
+            <p class="banner-date">{{ formatRecentMiniCogDate }}</p>
+          </div>
+          <button class="banner-action" @click="viewMiniCogHistory">
+            查看記錄
+          </button>
+        </div>
+      </div>
+
+      <!-- 開始前說明（完整評估） -->
+      <div v-else-if="stage === 'intro'" class="max-w-2xl mx-auto">
+        <div class="card text-center">
+          <div class="text-6xl mb-6">🧠</div>
+          <h2 class="text-2xl font-bold mb-4">能力評估測試</h2>
+          <p class="text-gray-600 text-lg mb-6">
+            這個簡短的測試將幫助我們了解您的認知能力，
+            <br />並為您推薦最適合的遊戲難度。
+          </p>
+          
+          <div class="bg-blue-50 rounded-xl p-6 mb-6 text-left">
+            <h3 class="font-bold mb-3 text-blue-800">📋 測試內容</h3>
+            <ul class="space-y-2 text-blue-700">
+              <li class="flex items-center gap-2">
+                <span class="text-xl">⚡</span>
+                <span>反應力測試 - 快速選擇正確顏色</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-xl">🧠</span>
+                <span>記憶力測試 - 記住並輸入數字序列</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-xl">🧩</span>
+                <span>邏輯力測試 - 簡單數學計算</span>
+              </li>
+            </ul>
+          </div>
+          
+          <div class="bg-amber-50 rounded-xl p-4 mb-8 text-amber-800">
+            <p>⏱️ 預計時間：約 3 分鐘</p>
+            <p class="text-sm mt-1">請在安靜的環境下進行測試</p>
+          </div>
+          
+          <button 
+            @click="startAssessment" 
+            class="btn btn-primary btn-lg text-xl px-12 py-4"
+          >
+            開始測試
+          </button>
+          <button 
+            @click="stage = 'select'" 
+            class="btn btn-secondary mt-4 px-8"
+          >
+            返回選擇
+          </button>
+        </div>
+      </div>
+
+      <!-- 測試進行中 -->
+      <div v-else-if="stage === 'testing'" class="max-w-2xl mx-auto">
+        <!-- 進度條 -->
+        <div class="mb-6">
+          <div class="flex justify-between text-sm text-gray-500 mb-2">
+            <span>第 {{ currentIndex + 1 }} 題，共 {{ questions.length }} 題</span>
+            <span>{{ questionTypeLabel }}</span>
+          </div>
+          <div class="progress-bar h-3">
+            <div 
+              class="progress-bar-fill transition-all duration-300"
+              :style="{ width: `${((currentIndex + 1) / questions.length) * 100}%` }"
+            ></div>
+          </div>
+        </div>
+
+        <!-- 題目卡片 -->
+        <div class="card">
+          <!-- 反應力題目 -->
+          <template v-if="currentQuestion?.type === 'reaction'">
+            <div class="text-center">
+              <p class="text-lg text-gray-600 mb-6">{{ currentQuestion.question }}</p>
+              <div 
+                class="text-6xl font-bold mb-8 p-8 rounded-xl"
+                :style="{ 
+                  backgroundColor: currentQuestion.data?.displayColor as string,
+                  color: 'white'
+                }"
+              >
+                {{ currentQuestion.data?.displayText }}
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <button
+                  v-for="option in currentQuestion.options"
+                  :key="option"
+                  @click="submitAnswer(option)"
+                  class="btn btn-secondary text-xl py-4"
+                  :disabled="isSubmitting"
+                >
+                  {{ option }}
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <!-- 記憶力題目 -->
+          <template v-else-if="currentQuestion?.type === 'memory'">
+            <div class="text-center">
+              <p class="text-lg text-gray-600 mb-6">{{ currentQuestion.question }}</p>
+              
+              <!-- 顯示數字階段 -->
+              <div v-if="memoryPhase === 'display'" class="mb-8">
+                <div class="text-6xl font-bold text-blue-600 tracking-widest py-8">
+                  {{ currentQuestion.data?.sequence }}
+                </div>
+                <p class="text-gray-500">請記住這些數字...</p>
+              </div>
+              
+              <!-- 輸入階段 -->
+              <div v-else class="mb-6">
+                <input
+                  v-model="memoryInput"
+                  type="text"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  class="text-4xl text-center font-bold tracking-widest w-full max-w-xs border-2 border-gray-300 rounded-xl p-4 focus:border-blue-500 focus:outline-none"
+                  placeholder="輸入數字"
+                  @keyup.enter="submitAnswer(memoryInput)"
+                  ref="memoryInputRef"
+                />
+                <button
+                  @click="submitAnswer(memoryInput)"
+                  class="btn btn-primary btn-lg mt-6 px-12"
+                  :disabled="!memoryInput || isSubmitting"
+                >
+                  確定
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <!-- 邏輯力題目 -->
+          <template v-else-if="currentQuestion?.type === 'logic'">
+            <div class="text-center">
+              <p class="text-lg text-gray-600 mb-4">請計算以下算式</p>
+              <div class="text-5xl font-bold text-purple-600 mb-8 py-6">
+                {{ currentQuestion.question }}
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <button
+                  v-for="option in currentQuestion.options"
+                  :key="option"
+                  @click="submitAnswer(option)"
+                  class="btn btn-secondary text-2xl py-4"
+                  :disabled="isSubmitting"
+                >
+                  {{ option }}
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <!-- 倒數計時 -->
+          <div class="mt-6 text-center">
+            <div 
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-full"
+              :class="timeLeft <= 3 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'"
+            >
+              <span>⏱️</span>
+              <span class="font-bold">{{ timeLeft }} 秒</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 結果頁面 -->
+      <div v-else-if="stage === 'result'" class="max-w-2xl mx-auto">
+        <div class="card text-center">
+          <div class="text-6xl mb-6">🎉</div>
+          <h2 class="text-2xl font-bold mb-2">測試完成！</h2>
+          <p class="text-gray-600 mb-8">以下是您的評估結果</p>
+
+          <!-- 分數卡片 -->
+          <div class="grid grid-cols-3 gap-4 mb-8">
+            <div class="bg-red-50 rounded-xl p-4">
+              <div class="text-3xl mb-2">⚡</div>
+              <div class="text-2xl font-bold text-red-600">{{ result?.scores.reaction }}</div>
+              <div class="text-sm text-gray-500">反應力</div>
+            </div>
+            <div class="bg-blue-50 rounded-xl p-4">
+              <div class="text-3xl mb-2">🧠</div>
+              <div class="text-2xl font-bold text-blue-600">{{ result?.scores.memory }}</div>
+              <div class="text-sm text-gray-500">記憶力</div>
+            </div>
+            <div class="bg-purple-50 rounded-xl p-4">
+              <div class="text-3xl mb-2">🧩</div>
+              <div class="text-2xl font-bold text-purple-600">{{ result?.scores.logic }}</div>
+              <div class="text-sm text-gray-500">邏輯力</div>
+            </div>
+          </div>
+
+          <!-- 統計資訊 -->
+          <div class="bg-gray-50 rounded-xl p-6 mb-8">
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <div class="text-gray-500">答對題數</div>
+                <div class="text-xl font-bold">
+                  {{ result?.correctCount }} / {{ result?.totalQuestions }}
+                </div>
+              </div>
+              <div>
+                <div class="text-gray-500">平均反應時間</div>
+                <div class="text-xl font-bold">
+                  {{ (result?.averageReactionTime ?? 0 / 1000).toFixed(1) }} 秒
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 建議難度 -->
+          <div class="bg-green-50 border-2 border-green-200 rounded-xl p-6 mb-8">
+            <h3 class="font-bold text-green-800 mb-2">🎯 建議難度</h3>
+            <div class="text-3xl font-bold text-green-600 mb-2">
+              {{ difficultyLabel }}
+            </div>
+            <p class="text-green-700 text-sm">
+              {{ difficultyDescription }}
+            </p>
+          </div>
+
+          <div class="flex gap-4 justify-center">
+            <button 
+              @click="saveAndContinue" 
+              class="btn btn-primary btn-lg px-8"
+            >
+              儲存並開始訓練
+            </button>
+            <button 
+              @click="retakeAssessment" 
+              class="btn btn-secondary px-6"
+            >
+              重新測試
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useSettingsStore } from '@/stores'
+import { DIFFICULTIES } from '@/types/game'
+import MiniCogFlow from '@/components/assessment/MiniCogFlow.vue'
+import { getLatestMiniCogResult } from '@/services/db'
+import type { MiniCogResult } from '@/services/miniCogService'
+import {
+  generateAssessmentQuestions,
+  calculateAssessmentResult,
+  getDifficultyDescription,
+  type AssessmentQuestion,
+  type AssessmentAnswer,
+  type AssessmentResult,
+} from '@/services/assessmentService'
+
+const router = useRouter()
+const settingsStore = useSettingsStore()
+
+// 狀態
+const stage = ref<'select' | 'mini-cog' | 'intro' | 'testing' | 'result'>('select')
+const questions = ref<AssessmentQuestion[]>([])
+const answers = ref<AssessmentAnswer[]>([])
+const currentIndex = ref(0)
+const timeLeft = ref(0)
+const isSubmitting = ref(false)
+const result = ref<AssessmentResult | null>(null)
+
+// Mini-Cog 相關
+const selectedLanguage = ref<'zh-TW' | 'zh-CN' | 'en'>('zh-TW')
+const recentMiniCogResult = ref<MiniCogResult | null>(null)
+
+// 記憶題專用
+const memoryPhase = ref<'display' | 'input'>('display')
+const memoryInput = ref('')
+const memoryInputRef = ref<HTMLInputElement | null>(null)
+
+// 計時器
+let timer: ReturnType<typeof setInterval> | null = null
+let questionStartTime = 0
+
+// 計算屬性
+const currentQuestion = computed(() => questions.value[currentIndex.value])
+
+const questionTypeLabel = computed(() => {
+  switch (currentQuestion.value?.type) {
+    case 'reaction': return '⚡ 反應力測試'
+    case 'memory': return '🧠 記憶力測試'
+    case 'logic': return '🧩 邏輯力測試'
+    default: return ''
+  }
+})
+
+const difficultyLabel = computed(() => {
+  if (!result.value) return ''
+  return DIFFICULTIES[result.value.suggestedDifficulty].name
+})
+
+const difficultyDescription = computed(() => {
+  if (!result.value) return ''
+  return getDifficultyDescription(result.value.suggestedDifficulty)
+})
+
+// Mini-Cog 相關計算屬性
+const hasRecentMiniCog = computed(() => recentMiniCogResult.value !== null)
+
+const formatRecentMiniCogDate = computed(() => {
+  if (!recentMiniCogResult.value) return ''
+  const date = new Date(recentMiniCogResult.value.completedAt)
+  return date.toLocaleDateString('zh-TW', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+})
+
+// Mini-Cog 方法
+function startMiniCog() {
+  stage.value = 'mini-cog'
+}
+
+function handleMiniCogComplete(miniCogResult: MiniCogResult) {
+  recentMiniCogResult.value = miniCogResult
+  // 根據 Mini-Cog 分數設定建議難度
+  let suggestedDifficulty: 1 | 2 | 3 = 2
+  if (miniCogResult.totalScore >= 4) {
+    suggestedDifficulty = 3
+  } else if (miniCogResult.totalScore <= 2) {
+    suggestedDifficulty = 1
+  }
+  
+  settingsStore.setAssessmentResult({
+    suggestedDifficulty,
+    completedAt: miniCogResult.completedAt,
+    scores: {
+      reaction: miniCogResult.totalScore * 20,
+      memory: miniCogResult.wordRecallScore * 33,
+      logic: miniCogResult.clockDrawingScore * 50
+    }
+  })
+  
+  router.push('/report')
+}
+
+function viewMiniCogHistory() {
+  router.push('/report')
+}
+
+async function loadRecentMiniCog() {
+  try {
+    recentMiniCogResult.value = await getLatestMiniCogResult()
+  } catch (error) {
+    console.error('Failed to load recent Mini-Cog result:', error)
+  }
+}
+
+// 開始評估
+function startAssessment() {
+  questions.value = generateAssessmentQuestions()
+  answers.value = []
+  currentIndex.value = 0
+  stage.value = 'testing'
+  startQuestion()
+}
+
+// 開始單一題目
+function startQuestion() {
+  const q = currentQuestion.value
+  if (!q) return
+
+  timeLeft.value = q.timeLimit
+  questionStartTime = Date.now()
+  isSubmitting.value = false
+
+  // 記憶題特殊處理
+  if (q.type === 'memory') {
+    memoryPhase.value = 'display'
+    memoryInput.value = ''
+    
+    // 顯示一段時間後進入輸入階段
+    const displayTime = (q.data?.displayTime as number) || 3000
+    setTimeout(() => {
+      memoryPhase.value = 'input'
+      nextTick(() => {
+        memoryInputRef.value?.focus()
+      })
+    }, displayTime)
+  }
+
+  // 開始倒數
+  startTimer()
+}
+
+// 倒數計時器
+function startTimer() {
+  stopTimer()
+  timer = setInterval(() => {
+    timeLeft.value--
+    if (timeLeft.value <= 0) {
+      // 時間到，自動提交空答案
+      submitAnswer(null)
+    }
+  }, 1000)
+}
+
+function stopTimer() {
+  if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
+}
+
+// 提交答案
+function submitAnswer(answer: string | number | null) {
+  if (isSubmitting.value) return
+  isSubmitting.value = true
+  stopTimer()
+
+  const q = currentQuestion.value
+  if (!q) return
+
+  const reactionTime = Date.now() - questionStartTime
+  const isCorrect = answer !== null && String(answer) === String(q.correctAnswer)
+
+  answers.value.push({
+    questionId: q.id,
+    userAnswer: answer,
+    isCorrect,
+    reactionTime,
+  })
+
+  // 下一題或結束
+  setTimeout(() => {
+    if (currentIndex.value < questions.value.length - 1) {
+      currentIndex.value++
+      startQuestion()
+    } else {
+      finishAssessment()
+    }
+  }, 300)
+}
+
+// 完成評估
+function finishAssessment() {
+  stopTimer()
+  result.value = calculateAssessmentResult(questions.value, answers.value)
+  stage.value = 'result'
+}
+
+// 儲存結果並繼續
+function saveAndContinue() {
+  if (result.value) {
+    settingsStore.setAssessmentResult({
+      suggestedDifficulty: result.value.suggestedDifficulty,
+      completedAt: result.value.completedAt,
+      scores: result.value.scores,
+    })
+  }
+  router.push('/games')
+}
+
+// 重新測試
+function retakeAssessment() {
+  stage.value = 'select'
+  result.value = null
+}
+
+// 生命週期
+onMounted(() => {
+  loadRecentMiniCog()
+})
+
+// 監聽頁面離開
+watch(stage, (newStage) => {
+  if (newStage !== 'testing') {
+    stopTimer()
+  }
+})
+</script>
+
+<style scoped>
+.progress-bar {
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: #3b82f6;
+  border-radius: 9999px;
+}
+
+/* Assessment Card Styles */
+.assessment-card {
+  position: relative;
+  background: white;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.assessment-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
+}
+
+.mini-cog-card {
+  border-color: #4f46e5;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+}
+
+.mini-cog-card:hover {
+  border-color: #7c3aed;
+}
+
+.full-assessment-card:hover {
+  border-color: #3b82f6;
+}
+
+.card-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+}
+
+.card-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.card-description {
+  color: #64748b;
+  font-size: 0.9375rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.card-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+}
+
+.card-features li {
+  padding: 0.5rem 0;
+  color: #475569;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  color: #4f46e5;
+  font-weight: 600;
+}
+
+.card-action .arrow {
+  font-size: 1.25rem;
+  transition: transform 0.2s ease;
+}
+
+.assessment-card:hover .card-action .arrow {
+  transform: translateX(4px);
+}
+
+/* Language Selector */
+.language-selector {
+  text-align: center;
+}
+
+.language-select {
+  padding: 0.5rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  color: #1e293b;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.language-select:focus {
+  outline: none;
+  border-color: #4f46e5;
+}
+
+/* Recent Result Banner */
+.recent-result-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  padding: 1rem 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid #bbf7d0;
+}
+
+.banner-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.banner-content {
+  flex: 1;
+}
+
+.banner-title {
+  font-weight: 600;
+  color: #166534;
+  margin: 0;
+}
+
+.banner-date {
+  font-size: 0.875rem;
+  color: #15803d;
+  margin: 0.25rem 0 0;
+}
+
+.banner-action {
+  background: #22c55e;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.banner-action:hover {
+  background: #16a34a;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .assessment-card {
+    padding: 1.5rem;
+  }
+  
+  .recent-result-banner {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .banner-action {
+    width: 100%;
+  }
+}
+</style>

@@ -1,0 +1,538 @@
+@import "tailwindcss";
+
+/* ===== 長者友善全域樣式 ===== */
+
+/* CSS 變數定義 */
+:root {
+  /* 顏色主題 */
+  --color-primary: #3b82f6;
+  --color-primary-dark: #1d4ed8;
+  --color-primary-light: #60a5fa;
+  --color-success: #22c55e;
+  --color-warning: #eab308;
+  --color-danger: #ef4444;
+  --color-info: #06b6d4;
+  
+  /* 認知維度顏色 */
+  --color-reaction: #ef4444;
+  --color-logic: #8b5cf6;
+  --color-memory: #3b82f6;
+  --color-cognition: #22c55e;
+  --color-coordination: #f59e0b;
+  --color-attention: #ec4899;
+  
+  /* 字體大小（長者友善） */
+  --font-size-base: 18px;
+  --font-size-lg: 20px;
+  --font-size-xl: 24px;
+  --font-size-2xl: 30px;
+  --font-size-3xl: 36px;
+  
+  /* 最小點擊區域 */
+  --min-touch-target: 48px;
+  
+  /* 圓角 */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+  
+  /* 間距 */
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+}
+
+/* 基礎樣式 */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: var(--font-size-base);
+}
+
+body {
+  margin: 0;
+  font-family: 'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+  line-height: 1.6;
+  color: #1f2937;
+  background-color: #f8fafc;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* 長者友善按鈕基礎樣式 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--min-touch-target);
+  min-width: var(--min-touch-target);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  outline: none;
+  text-decoration: none;
+  gap: var(--spacing-xs);
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+}
+
+.btn-secondary {
+  background-color: #e2e8f0;
+  color: #475569;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #cbd5e1;
+}
+
+.btn-success {
+  background-color: var(--color-success);
+  color: white;
+}
+
+.btn-danger {
+  background-color: var(--color-danger);
+  color: white;
+}
+
+.btn-lg {
+  min-height: 56px;
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: var(--font-size-xl);
+}
+
+.btn-xl {
+  min-height: 64px;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  font-size: var(--font-size-2xl);
+}
+
+/* 卡片樣式 */
+.card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+/* 輸入框樣式（長者友善） */
+.input {
+  width: 100%;
+  min-height: var(--min-touch-target);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-lg);
+  border: 2px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  transition: border-color 0.2s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.input::placeholder {
+  color: #94a3b8;
+}
+
+/* 標題樣式 */
+.title-lg {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  color: #1e40af;
+}
+
+.title-md {
+  font-size: var(--font-size-2xl);
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.title-sm {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: #334155;
+}
+
+/* 難度標籤 */
+.difficulty-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.difficulty-easy {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.difficulty-medium {
+  background-color: #fef9c3;
+  color: #854d0e;
+}
+
+.difficulty-hard {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* 分數顏色 */
+.score-good {
+  color: var(--color-success);
+}
+
+.score-medium {
+  color: var(--color-warning);
+}
+
+.score-low {
+  color: var(--color-danger);
+}
+
+/* 進度條 */
+.progress-bar {
+  height: 12px;
+  background-color: #e2e8f0;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+/* 認知維度顏色類 */
+.cognitive-reaction { color: var(--color-reaction); }
+.cognitive-logic { color: var(--color-logic); }
+.cognitive-memory { color: var(--color-memory); }
+.cognitive-cognition { color: var(--color-cognition); }
+.cognitive-coordination { color: var(--color-coordination); }
+.cognitive-attention { color: var(--color-attention); }
+
+.bg-cognitive-reaction { background-color: var(--color-reaction); }
+.bg-cognitive-logic { background-color: var(--color-logic); }
+.bg-cognitive-memory { background-color: var(--color-memory); }
+.bg-cognitive-cognition { background-color: var(--color-cognition); }
+.bg-cognitive-coordination { background-color: var(--color-coordination); }
+.bg-cognitive-attention { background-color: var(--color-attention); }
+
+/* 模態框背景 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: var(--spacing-md);
+}
+
+.modal-content {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* 遊戲容器 */
+.game-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+}
+
+/* 遊戲畫布 */
+.game-canvas {
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* 動畫 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease;
+}
+
+.animate-pulse {
+  animation: pulse 0.5s ease;
+}
+
+.animate-shake {
+  animation: shake 0.3s ease;
+}
+
+/* 列印樣式 */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white;
+  }
+}
+
+/* ========== 年長者友善響應式設計 ========== */
+
+/* 遊戲全螢幕容器 */
+.game-fullscreen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-md);
+}
+
+/* 手機優化 */
+@media (max-width: 640px) {
+  :root {
+    --font-size-base: 16px;
+    --font-size-lg: 18px;
+    --font-size-xl: 22px;
+    --font-size-2xl: 28px;
+    --min-touch-target: 52px;
+  }
+
+  .game-container {
+    padding: var(--spacing-sm);
+    max-width: 100%;
+  }
+
+  .modal-content {
+    padding: var(--spacing-lg);
+    max-height: 95vh;
+    margin: var(--spacing-sm);
+  }
+
+  .btn {
+    min-height: 52px;
+    font-size: var(--font-size-base);
+    padding: var(--spacing-md) var(--spacing-lg);
+    width: 100%;
+  }
+
+  h1 { font-size: var(--font-size-2xl); }
+  h2 { font-size: var(--font-size-xl); }
+  h3 { font-size: var(--font-size-lg); }
+}
+
+/* 平板優化 */
+@media (min-width: 641px) and (max-width: 1024px) {
+  :root {
+    --font-size-base: 18px;
+    --font-size-lg: 20px;
+    --font-size-xl: 24px;
+    --min-touch-target: 56px;
+  }
+
+  .game-container {
+    padding: var(--spacing-lg);
+    max-width: 100%;
+  }
+
+  .btn {
+    min-height: 56px;
+  }
+}
+
+/* 超大螢幕 */
+@media (min-width: 1400px) {
+  .game-container {
+    max-width: 1000px;
+  }
+}
+
+/* 橫向模式（手機橫放） */
+@media (max-height: 500px) and (orientation: landscape) {
+  .game-container {
+    padding: var(--spacing-xs) var(--spacing-md);
+  }
+
+  .modal-content {
+    max-height: 98vh;
+    padding: var(--spacing-md);
+  }
+
+  .btn {
+    min-height: 44px;
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+}
+
+/* 觸控裝置優化 */
+@media (hover: none) and (pointer: coarse) {
+  .btn,
+  button,
+  a,
+  [role="button"] {
+    min-height: var(--min-touch-target);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* 防止雙擊縮放 */
+  * {
+    touch-action: manipulation;
+  }
+
+  /* 增加可點擊區域視覺回饋 */
+  .btn:active,
+  button:active {
+    transform: scale(0.98);
+    transition: transform 0.1s;
+  }
+}
+
+/* 深色模式支援 */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #0f172a;
+    color: #f1f5f9;
+  }
+
+  .game-container,
+  .modal-content {
+    background: #1e293b;
+  }
+
+  .card {
+    background: #334155;
+    border-color: #475569;
+  }
+
+  .progress-bar {
+    background-color: #334155;
+  }
+
+  input,
+  select,
+  textarea {
+    background: #1e293b;
+    border-color: #475569;
+    color: #f1f5f9;
+  }
+}
+
+/* 減少動畫偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 高對比模式 */
+@media (prefers-contrast: high) {
+  .btn {
+    border: 2px solid currentColor;
+  }
+
+  .card {
+    border: 2px solid #1f2937;
+  }
+}
+
+/* 全螢幕 API 支援 */
+:fullscreen {
+  background: white;
+}
+
+:-webkit-full-screen {
+  background: white;
+}
+
+:fullscreen .game-container {
+  max-width: 100%;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* 安全區域支援（iPhone X 等帶瀏海的裝置） */
+@supports (padding: max(0px)) {
+  .game-container {
+    padding-left: max(var(--spacing-md), env(safe-area-inset-left));
+    padding-right: max(var(--spacing-md), env(safe-area-inset-right));
+    padding-bottom: max(var(--spacing-md), env(safe-area-inset-bottom));
+  }
+}

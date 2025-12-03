@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/brain-training/dev-sw.js?dev-sw', { scope: '/brain-training/', type: 'classic' })

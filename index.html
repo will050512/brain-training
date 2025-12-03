@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/brain-training/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#667eea" />
+    <meta name="description" content="健腦訓練遊戲 - 透過有趣的遊戲訓練認知能力，預防失智症" />
+    
+    <!-- PWA 支援 -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="健腦訓練" />
+    
+    <title>健腦訓練遊戲</title>
+    
+    <!-- SPA 路由恢復腳本 -->
+    <script>
+      (function() {
+        var redirect = sessionStorage.getItem('redirectPath');
+        if (redirect) {
+          sessionStorage.removeItem('redirectPath');
+          history.replaceState(null, null, redirect);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+    
+    <!-- 無 JavaScript 提示 -->
+    <noscript>
+      <div style="text-align: center; padding: 2rem; font-family: sans-serif;">
+        <h1>⚠️ 請啟用 JavaScript</h1>
+        <p>此網站需要 JavaScript 才能正常運作。</p>
+      </div>
+    </noscript>
+  </body>
+</html>
