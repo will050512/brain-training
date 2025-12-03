@@ -1,5 +1,18 @@
 <template>
-  <div class="clock-drawing-test">
+  <div 
+    ref="containerRef"
+    class="clock-drawing-test"
+    :class="{ 'pseudo-fullscreen': isPseudoFullscreen }"
+  >
+    <!-- 模擬全螢幕關閉按鈕 -->
+    <button 
+      v-if="isPseudoFullscreen" 
+      class="pseudo-fullscreen-close"
+      @click="exitPseudoFullscreen"
+    >
+      ✕
+    </button>
+
     <!-- 指示區域 -->
     <div class="instructions" v-if="!isComplete">
       <h3>🕐 時鐘繪圖測試</h3>
@@ -58,6 +71,14 @@
         </button>
         <button class="tool-btn clear-btn" @click="clearCanvas">
           🗑️ 清除
+        </button>
+        <!-- 全螢幕按鈕 -->
+        <button 
+          class="tool-btn fullscreen-btn" 
+          @click="toggleFullscreen"
+          :title="isFullscreen || isPseudoFullscreen ? '退出全螢幕' : '全螢幕模式'"
+        >
+          {{ isFullscreen || isPseudoFullscreen ? '✖' : '⛶' }}
         </button>
       </div>
       
@@ -301,6 +322,7 @@ function handleResize() {
 
 // Refs
 const canvasRef = ref<HTMLCanvasElement | null>(null)
+const containerRef = ref<HTMLElement | null>(null)
 const isDrawing = ref(false)
 const currentTool = ref<'pen' | 'eraser'>('pen')
 const brushSize = ref(4)
@@ -308,6 +330,17 @@ const showAssessment = ref(false)
 const isComplete = ref(false)
 const previewImageUrl = ref<string>('')
 const startTime = ref<number>(0)
+
+// 全螢幕相關狀態
+const isFullscreen = ref(false)
+const isPseudoFullscreen = ref(false)
+
+// 檢測是否支援全螢幕 API
+const supportsFullscreen = computed(() => {
+  return typeof document !== 'undefined' && 
+         (document.fullscreenEnabled || 
+          (document as unknown as { webkitFullscreenEnabled?: boolean }).webkitFullscreenEnabled)
+})
 
 // AI 分析相關
 const isAnalyzing = ref(false)
@@ -515,6 +548,116 @@ function clearCanvas() {
   ctx.setLineDash([])
 }
 
+// 全螢幕切換
+async function toggleFullscreen(): Promise<void> {
+  if (isFullscreen.value) {
+    // 退出全螢幕
+    try {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen()
+      } else if ((document as unknown as { webkitExitFullscreen?: () => Promise<void> }).webkitExitFullscreen) {
+        await (document as unknown as { webkitExitFullscreen: () => Promise<void> }).webkitExitFullscreen()
+      }
+    } catch (error) {
+      console.warn('退出全螢幕失敗:', error)
+    }
+  } else if (isPseudoFullscreen.value) {
+    // 退出模擬全螢幕
+    exitPseudoFullscreen()
+  } else {
+    // 進入全螢幕
+    if (supportsFullscreen.value && containerRef.value) {
+      try {
+        if (containerRef.value.requestFullscreen) {
+          await containerRef.value.requestFullscreen()
+        } else if ((containerRef.value as unknown as { webkitRequestFullscreen?: () => Promise<void> }).webkitRequestFullscreen) {
+          await (containerRef.value as unknown as { webkitRequestFullscreen: () => Promise<void> }).webkitRequestFullscreen()
+        }
+      } catch (error) {
+        // Fullscreen API 失敗，使用模擬全螢幕
+        console.warn('全螢幕 API 不可用，使用模擬模式:', error)
+        enterPseudoFullscreen()
+      }
+    } else {
+      // 不支援 Fullscreen API（iOS Safari），使用模擬全螢幕
+      enterPseudoFullscreen()
+    }
+  }
+}
+
+// 進入模擬全螢幕
+function enterPseudoFullscreen(): void {
+  isPseudoFullscreen.value = true
+  // 禁用頁面滾動
+  document.body.style.overflow = 'hidden'
+  // 重新計算 canvas 尺寸
+  setTimeout(() => {
+    const newSize = Math.min(window.innerWidth * 0.85, window.innerHeight * 0.65)
+    updateCanvasSize(newSize)
+  }, 50)
+}
+
+// 退出模擬全螢幕
+function exitPseudoFullscreen(): void {
+  isPseudoFullscreen.value = false
+  // 恢復頁面滾動
+  document.body.style.overflow = ''
+  // 恢復原始 canvas 尺寸
+  setTimeout(() => {
+    const newSize = calculateResponsiveSize()
+    updateCanvasSize(newSize)
+  }, 50)
+}
+
+// 更新 canvas 尺寸並保留繪圖內容
+function updateCanvasSize(newSize: number): void {
+  const canvas = canvasRef.value
+  if (!canvas) return
+  
+  // 保存當前繪圖
+  const tempCanvas = document.createElement('canvas')
+  tempCanvas.width = canvas.width
+  tempCanvas.height = canvas.height
+  const tempCtx = tempCanvas.getContext('2d')
+  tempCtx?.drawImage(canvas, 0, 0)
+  
+  // 更新尺寸
+  responsiveCanvasSize.value = newSize
+  
+  // 在下一個 tick 恢復繪圖
+  setTimeout(() => {
+    const ctx = getContext()
+    if (ctx && canvas) {
+      canvas.width = newSize
+      canvas.height = newSize
+      // 縮放恢復繪圖
+      ctx.drawImage(tempCanvas, 0, 0, tempCanvas.width, tempCanvas.height, 0, 0, newSize, newSize)
+    }
+  }, 0)
+}
+
+// 監聽全螢幕變化並調整 canvas 尺寸
+function handleFullscreenChange(): void {
+  const fullscreenElement = document.fullscreenElement || 
+    (document as unknown as { webkitFullscreenElement?: Element }).webkitFullscreenElement
+  
+  isFullscreen.value = !!fullscreenElement
+  
+  if (isFullscreen.value) {
+    // 進入全螢幕，放大 canvas
+    setTimeout(() => {
+      const newSize = Math.min(window.innerWidth * 0.8, window.innerHeight * 0.7)
+      updateCanvasSize(newSize)
+    }, 100)
+  } else {
+    // 退出全螢幕，恢復原始尺寸
+    setTimeout(() => {
+      const newSize = calculateResponsiveSize()
+      updateCanvasSize(newSize)
+    }, 100)
+  }
+}
+
 // 顯示自評量表
 async function showSelfAssessment() {
   // 產生預覽圖
@@ -574,6 +717,10 @@ onMounted(() => {
   // 添加視窗大小變化監聯
   window.addEventListener('resize', handleResize)
   
+  // 添加全螢幕變化監聽
+  document.addEventListener('fullscreenchange', handleFullscreenChange)
+  document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
+  
   // 初始化畫布
   setTimeout(initCanvas, 0)
 })
@@ -581,6 +728,14 @@ onMounted(() => {
 onUnmounted(() => {
   // 移除監聽器
   window.removeEventListener('resize', handleResize)
+  document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
+  
+  // 清理模擬全螢幕狀態
+  if (isPseudoFullscreen.value) {
+    document.body.style.overflow = ''
+  }
+  
   // 清理
   previewImageUrl.value = ''
 })
@@ -697,6 +852,27 @@ canvas {
 
 .clear-btn:hover {
   background: #fef2f2;
+}
+
+/* 全螢幕按鈕 */
+.fullscreen-btn {
+  margin-left: auto;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border-color: #3b82f6;
+  font-size: 1.25rem;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fullscreen-btn:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
 }
 
 .complete-btn {
@@ -1392,5 +1568,68 @@ canvas {
   justify-content: center;
   padding: 2rem;
   background: white;
+}
+
+/* 模擬全螢幕樣式（iOS Safari） */
+.pseudo-fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  background: var(--color-bg) !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 1rem !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.pseudo-fullscreen .instructions {
+  max-width: 600px;
+  text-align: center;
+}
+
+.pseudo-fullscreen .canvas-container {
+  margin: 0 auto;
+}
+
+.pseudo-fullscreen .toolbar {
+  max-width: 600px;
+  width: 100%;
+}
+
+.pseudo-fullscreen-close {
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pseudo-fullscreen-close:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: scale(1.1);
+}
+
+:root.dark .pseudo-fullscreen-close {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+:root.dark .pseudo-fullscreen-close:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 </style>

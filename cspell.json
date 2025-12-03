@@ -27,7 +27,9 @@
     "Teng",
     "Nasreddine",
     "Levenshtein",
-    "Noto"
+    "Noto",
+    "infocard",
+    "wordcard"
   ],
   "ignorePaths": [
     "node_modules",

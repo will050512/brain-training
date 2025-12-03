@@ -50,6 +50,55 @@
           </div>
         </div>
 
+        <!-- 螢幕方向設定 -->
+        <div class="card p-4">
+          <h3 class="font-semibold text-[var(--color-text)] mb-4">📱 螢幕方向</h3>
+          
+          <div class="grid grid-cols-3 gap-2">
+            <button
+              @click="settingsStore.setOrientationPreference('portrait')"
+              class="flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all"
+              :class="settingsStore.orientationPreference === 'portrait' 
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
+                : 'border-[var(--color-border)]'"
+            >
+              <span class="text-xl">📱</span>
+              <span class="text-sm text-[var(--color-text)]">直向</span>
+            </button>
+            
+            <button
+              @click="settingsStore.setOrientationPreference('landscape')"
+              class="flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all"
+              :class="settingsStore.orientationPreference === 'landscape' 
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
+                : 'border-[var(--color-border)]'"
+            >
+              <span class="text-xl">📺</span>
+              <span class="text-sm text-[var(--color-text)]">橫向</span>
+            </button>
+            
+            <button
+              @click="settingsStore.setOrientationPreference('auto')"
+              class="flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all"
+              :class="settingsStore.orientationPreference === 'auto' 
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
+                : 'border-[var(--color-border)]'"
+            >
+              <span class="text-xl">🔄</span>
+              <span class="text-sm text-[var(--color-text)]">自動</span>
+            </button>
+          </div>
+          
+          <!-- 不支援提示 -->
+          <p 
+            v-if="!settingsStore.orientationSupported" 
+            class="text-xs text-[var(--color-text-muted)] mt-3 flex items-center gap-1"
+          >
+            <span>⚠️</span>
+            <span>您的裝置/瀏覽器不支援自動方向鎖定，請手動旋轉螢幕</span>
+          </p>
+        </div>
+
         <!-- 音效設定 -->
         <div class="card p-4">
           <h3 class="font-semibold text-[var(--color-text)] mb-4">🔊 音效設定</h3>

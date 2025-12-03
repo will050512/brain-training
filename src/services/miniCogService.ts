@@ -126,14 +126,29 @@ export const LOCALE_INFO: Record<MiniCogLocale, { name: string; nativeName: stri
 // ===== 核心函數 =====
 
 /**
- * 取得隨機詞彙組
+ * Fisher-Yates 洗牌演算法
+ * 隨機打亂陣列順序（不修改原陣列）
+ */
+function shuffleArray<T>(array: T[]): T[] {
+  const result = [...array]
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[result[i], result[j]] = [result[j]!, result[i]!]
+  }
+  return result
+}
+
+/**
+ * 取得隨機詞彙組（詞序已打亂）
  */
 export function getRandomWordSet(locale: MiniCogLocale = 'zh-TW'): MiniCogWordSet {
   const sets = WORD_SETS[locale] || WORD_SETS['zh-TW']
   const setIndex = Math.floor(Math.random() * sets.length)
+  // 複製並打亂詞彙順序
+  const shuffledWords = shuffleArray(sets[setIndex]!) as [string, string, string]
   return {
     locale,
-    words: sets[setIndex]!,
+    words: shuffledWords,
     setIndex,
   }
 }
