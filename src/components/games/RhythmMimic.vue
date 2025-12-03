@@ -429,19 +429,19 @@ const hitProgress = computed(() => {
     <div class="flex justify-between items-center mb-6">
       <div class="flex gap-4">
         <div class="text-sm">
-          <span class="text-gray-500">回合</span>
+          <span class="text-[var(--color-text-muted)]">回合</span>
           <span class="font-bold ml-1">{{ currentRound }}/{{ gameConfig.totalRounds }}</span>
         </div>
         <div class="text-sm">
-          <span class="text-gray-500">分數</span>
+          <span class="text-[var(--color-text-muted)]">分數</span>
           <span class="font-bold ml-1 text-blue-600">{{ score }}</span>
         </div>
         <div class="text-sm">
-          <span class="text-gray-500">正確</span>
+          <span class="text-[var(--color-text-muted)]">正確</span>
           <span class="font-bold ml-1 text-green-600">{{ correctRounds }}</span>
         </div>
       </div>
-      <div class="text-sm text-gray-500">
+      <div class="text-sm text-[var(--color-text-muted)]">
         節拍數: {{ beatCount }}
       </div>
     </div>
@@ -451,13 +451,13 @@ const hitProgress = computed(() => {
       <!-- 準備階段 -->
       <div v-if="phase === 'ready'" class="text-center">
         <div class="text-6xl mb-4">🎶</div>
-        <p class="text-xl text-gray-600">準備開始...</p>
-        <p class="text-sm text-gray-400 mt-2">觀察節奏後跟著敲擊！</p>
+        <p class="text-xl text-[var(--color-text-secondary)]">準備開始...</p>
+        <p class="text-sm text-[var(--color-text-muted)] mt-2">觀察節奏後跟著敲擊！</p>
       </div>
 
       <!-- 示範階段 -->
       <div v-if="phase === 'demo'" class="text-center">
-        <p class="text-lg text-gray-500 mb-4">觀察節奏...</p>
+        <p class="text-lg text-[var(--color-text-muted)] mb-4">觀察節奏...</p>
         
         <!-- 節拍顯示 -->
         <div class="flex justify-center gap-3 mb-6">
@@ -482,7 +482,7 @@ const hitProgress = computed(() => {
 
       <!-- 倒數階段 -->
       <div v-if="phase === 'countdown'" class="text-center">
-        <p class="text-lg text-gray-500 mb-4">準備...</p>
+        <p class="text-lg text-[var(--color-text-muted)] mb-4">準備...</p>
         <div class="text-8xl font-bold text-blue-500 animate-pulse">
           {{ countdown }}
         </div>
@@ -490,10 +490,10 @@ const hitProgress = computed(() => {
 
       <!-- 玩家輸入階段 -->
       <div v-if="phase === 'play'" class="text-center w-full">
-        <p class="text-lg text-gray-500 mb-4">現在輪到你！</p>
+        <p class="text-lg text-[var(--color-text-muted)] mb-4">現在輪到你！</p>
         
         <!-- 進度條 -->
-        <div class="w-full max-w-xs mx-auto h-3 bg-gray-200 rounded-full mb-6">
+        <div class="w-full max-w-xs mx-auto h-3 bg-[var(--color-bg-soft)] rounded-full mb-6">
           <div 
             class="h-full bg-green-500 rounded-full transition-all duration-300"
             :style="{ width: hitProgress + '%' }"
@@ -548,7 +548,7 @@ const hitProgress = computed(() => {
            :class="pattern.filter(b => b.hit).length >= pattern.length * 0.8 ? 'text-green-600' : 'text-red-600'">
           {{ pattern.filter(b => b.hit).length >= pattern.length * 0.8 ? '通過！' : '再加油！' }}
         </p>
-        <p class="text-gray-500">
+        <p class="text-[var(--color-text-muted)]">
           命中 {{ pattern.filter(b => b.hit).length }}/{{ pattern.length }} 拍
         </p>
       </div>
@@ -556,25 +556,25 @@ const hitProgress = computed(() => {
       <!-- 遊戲結束 -->
       <div v-if="phase === 'gameover'" class="text-center">
         <div class="text-6xl mb-4">🎉</div>
-        <p class="text-2xl font-bold text-gray-800 mb-4">遊戲結束！</p>
-        <div class="bg-gray-50 rounded-xl p-6 max-w-sm mx-auto">
+        <p class="text-2xl font-bold text-[var(--color-text)] mb-4">遊戲結束！</p>
+        <div class="bg-[var(--color-bg-soft)] rounded-xl p-6 max-w-sm mx-auto">
           <div class="grid grid-cols-2 gap-4 text-left">
             <div>
-              <p class="text-sm text-gray-500">最終分數</p>
+              <p class="text-sm text-[var(--color-text-muted)]">最終分數</p>
               <p class="text-2xl font-bold text-blue-600">{{ score }}</p>
             </div>
             <div>
-              <p class="text-sm text-gray-500">通過率</p>
+              <p class="text-sm text-[var(--color-text-muted)]">通過率</p>
               <p class="text-2xl font-bold text-green-600">
                 {{ Math.round((correctRounds / (currentRound - 1)) * 100) }}%
               </p>
             </div>
             <div>
-              <p class="text-sm text-gray-500">最高等級</p>
+              <p class="text-sm text-[var(--color-text-muted)]">最高等級</p>
               <p class="text-xl font-bold">{{ maxLevelReached }} 拍</p>
             </div>
             <div>
-              <p class="text-sm text-gray-500">平均誤差</p>
+              <p class="text-sm text-[var(--color-text-muted)]">平均誤差</p>
               <p class="text-xl font-bold">
                 {{ timingErrors.length > 0 
                    ? Math.round(timingErrors.reduce((a, b) => a + b, 0) / timingErrors.length) 

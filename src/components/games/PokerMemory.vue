@@ -457,17 +457,17 @@ onMounted(() => {
 
 .ready-screen h2 {
   font-size: 1.75rem;
-  color: var(--color-heading);
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
 .description {
-  color: var(--color-text);
+  color: var(--color-text-secondary);
   margin-bottom: 1.5rem;
 }
 
 .rules {
-  background: var(--color-background-soft);
+  background: var(--color-bg-soft);
   border-radius: 12px;
   padding: 1rem;
   margin-bottom: 1.5rem;
@@ -482,7 +482,7 @@ onMounted(() => {
 .rules ul {
   list-style: disc;
   padding-left: 1.5rem;
-  color: var(--color-text);
+  color: var(--color-text-secondary);
 }
 
 .rules li {
@@ -554,13 +554,13 @@ onMounted(() => {
 .stat .label {
   display: block;
   font-size: 0.75rem;
-  color: var(--color-text-light);
+  color: var(--color-text-muted);
 }
 
 .stat .value {
   font-size: 1.25rem;
   font-weight: bold;
-  color: var(--color-heading);
+  color: var(--color-text);
 }
 
 .stat .value.warning {
@@ -572,7 +572,7 @@ onMounted(() => {
   width: 100%;
   max-width: 500px;
   height: 8px;
-  background: var(--color-background-soft);
+  background: var(--color-bg-soft);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 1.5rem;
@@ -637,10 +637,10 @@ onMounted(() => {
 }
 
 .card-front {
-  background: white;
+  background: var(--color-surface);
   transform: rotateY(180deg);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
 }
 
 .card-rank {
@@ -663,7 +663,7 @@ onMounted(() => {
 
 .finished-screen h2 {
   font-size: 1.5rem;
-  color: var(--color-heading);
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
@@ -678,7 +678,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  background: var(--color-background-soft);
+  background: var(--color-bg-soft);
   padding: 1.5rem;
   border-radius: 12px;
   min-width: 250px;
@@ -690,7 +690,7 @@ onMounted(() => {
 }
 
 .stat-label {
-  color: var(--color-text-light);
+  color: var(--color-text-muted);
 }
 
 .stat-value {

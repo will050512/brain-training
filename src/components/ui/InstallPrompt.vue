@@ -2,13 +2,13 @@
   <Transition name="slide-up">
     <div 
       v-if="showPrompt" 
-      class="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 z-50"
+      class="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-[var(--color-surface)] rounded-2xl shadow-2xl border border-[var(--color-border)] p-6 z-50"
     >
       <div class="flex items-start gap-4">
         <div class="text-4xl">🧠</div>
         <div class="flex-1">
-          <h3 class="font-bold text-lg mb-1">安裝健腦訓練</h3>
-          <p class="text-gray-600 text-sm mb-4">
+          <h3 class="font-bold text-lg mb-1 text-[var(--color-text)]">安裝健腦訓練</h3>
+          <p class="text-[var(--color-text-secondary)] text-sm mb-4">
             安裝到主畫面，離線也能使用！
           </p>
           <div class="flex gap-2">
@@ -28,7 +28,7 @@
         </div>
         <button 
           @click="dismissPrompt" 
-          class="text-gray-400 hover:text-gray-600"
+          class="text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
           aria-label="關閉"
         >
           ✕

@@ -2,29 +2,29 @@
   <div class="game-area">
     <!-- 遊戲說明 -->
     <div v-if="!isPlaying && !isFinished" class="text-center mb-6">
-      <p class="text-lg text-gray-600">翻開卡片，找出相同的配對！</p>
-      <p class="text-sm text-gray-500">記住卡片位置，用最少步數完成</p>
+      <p class="text-lg text-[var(--color-text-secondary)]">翻開卡片，找出相同的配對！</p>
+      <p class="text-sm text-[var(--color-text-muted)]">記住卡片位置，用最少步數完成</p>
     </div>
 
     <!-- 遊戲狀態 -->
     <div class="flex justify-between items-center mb-4">
       <div class="text-lg">
-        <span class="text-gray-500">配對：</span>
-        <span class="font-bold text-green-500">{{ matchedPairs }}/{{ totalPairs }}</span>
+        <span class="text-[var(--color-text-muted)]">配對：</span>
+        <span class="font-bold text-green-500 dark:text-green-400">{{ matchedPairs }}/{{ totalPairs }}</span>
       </div>
       <div class="text-lg">
-        <span class="text-gray-500">翻牌：</span>
-        <span class="font-bold text-blue-600">{{ moves }}</span>
+        <span class="text-[var(--color-text-muted)]">翻牌：</span>
+        <span class="font-bold text-blue-600 dark:text-blue-400">{{ moves }}</span>
       </div>
       <div class="text-lg">
-        <span class="text-gray-500">時間：</span>
-        <span class="font-bold">{{ formatTime(elapsedTime) }}</span>
+        <span class="text-[var(--color-text-muted)]">時間：</span>
+        <span class="font-bold text-[var(--color-text)]">{{ formatTime(elapsedTime) }}</span>
       </div>
     </div>
 
     <!-- 卡片區域 -->
     <div 
-      class="card-grid gap-3 p-4 bg-gray-100 rounded-xl"
+      class="card-grid gap-3 p-4 bg-[var(--game-area-bg)] rounded-xl"
       :class="gridClass"
     >
       <div

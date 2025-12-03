@@ -397,17 +397,17 @@ onUnmounted(() => {
 
 .ready-screen h2 {
   font-size: 1.75rem;
-  color: var(--color-heading);
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
 .description {
-  color: var(--color-text);
+  color: var(--color-text-secondary);
   margin-bottom: 1.5rem;
 }
 
 .rules {
-  background: var(--color-background-soft);
+  background: var(--color-bg-soft);
   border-radius: 12px;
   padding: 1rem;
   margin-bottom: 1.5rem;
@@ -422,7 +422,7 @@ onUnmounted(() => {
 .rules ul {
   list-style: disc;
   padding-left: 1.5rem;
-  color: var(--color-text);
+  color: var(--color-text-secondary);
 }
 
 .rules li {
@@ -461,13 +461,13 @@ onUnmounted(() => {
 .stat .label {
   display: block;
   font-size: 0.875rem;
-  color: var(--color-text-light);
+  color: var(--color-text-muted);
 }
 
 .stat .value {
   font-size: 1.5rem;
   font-weight: bold;
-  color: var(--color-heading);
+  color: var(--color-text);
 }
 
 .stat .value.highlight {
@@ -478,7 +478,7 @@ onUnmounted(() => {
   width: 100%;
   max-width: 400px;
   height: 8px;
-  background: var(--color-background-soft);
+  background: var(--color-bg-soft);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 2rem;
@@ -499,7 +499,7 @@ onUnmounted(() => {
 
 .instruction {
   font-size: 1.25rem;
-  color: var(--color-text);
+  color: var(--color-text-secondary);
   margin-bottom: 1.5rem;
 }
 
@@ -519,7 +519,7 @@ onUnmounted(() => {
   justify-content: center;
   font-size: 2rem;
   font-weight: bold;
-  background: var(--color-background-soft);
+  background: var(--color-bg-soft);
   border-radius: 8px;
   transition: all 0.3s;
 }
@@ -575,7 +575,7 @@ onUnmounted(() => {
   justify-content: center;
   font-size: 2rem;
   font-weight: bold;
-  background: white;
+  background: var(--color-surface);
   border: 2px dashed var(--color-border);
   border-radius: 8px;
   transition: all 0.2s;
@@ -599,7 +599,7 @@ onUnmounted(() => {
   padding: 1rem;
   font-size: 1.5rem;
   font-weight: bold;
-  background: white;
+  background: var(--color-surface);
   border: 2px solid var(--color-border);
   border-radius: 12px;
   cursor: pointer;
@@ -646,7 +646,7 @@ onUnmounted(() => {
 }
 
 .answer-comparison {
-  background: var(--color-background-soft);
+  background: var(--color-bg-soft);
   padding: 1rem;
   border-radius: 12px;
 }
@@ -658,7 +658,7 @@ onUnmounted(() => {
 }
 
 .comparison-label {
-  color: var(--color-text-light);
+  color: var(--color-text-muted);
 }
 
 .comparison-value {
@@ -701,7 +701,7 @@ onUnmounted(() => {
 
 .finished-screen h2 {
   font-size: 1.5rem;
-  color: var(--color-heading);
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
@@ -716,7 +716,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  background: var(--color-background-soft);
+  background: var(--color-bg-soft);
   padding: 1.5rem;
   border-radius: 12px;
   min-width: 250px;
@@ -735,7 +735,7 @@ onUnmounted(() => {
 }
 
 .stat-label {
-  color: var(--color-text-light);
+  color: var(--color-text-muted);
 }
 
 .stat-value {

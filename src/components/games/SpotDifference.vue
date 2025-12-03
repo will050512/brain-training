@@ -2,24 +2,24 @@
   <div class="game-area">
     <!-- 遊戲說明 -->
     <div v-if="!isPlaying && !isFinished" class="text-center mb-6">
-      <p class="text-lg text-gray-600">找出兩張圖片的不同之處！</p>
-      <p class="text-sm text-gray-500">點擊右圖中不同的位置</p>
+      <p class="text-lg text-[var(--color-text-secondary)]">找出兩張圖片的不同之處！</p>
+      <p class="text-sm text-[var(--color-text-muted)]">點擊右圖中不同的位置</p>
     </div>
 
     <!-- 遊戲狀態 -->
     <div class="flex justify-between items-center mb-4">
       <div class="text-lg">
-        <span class="text-gray-500">第</span>
-        <span class="font-bold text-blue-600">{{ currentRound }}/{{ totalRounds }}</span>
-        <span class="text-gray-500">關</span>
+        <span class="text-[var(--color-text-muted)]">第</span>
+        <span class="font-bold text-blue-600 dark:text-blue-400">{{ currentRound }}/{{ totalRounds }}</span>
+        <span class="text-[var(--color-text-muted)]">關</span>
       </div>
       <div class="text-lg">
-        <span class="text-gray-500">找到：</span>
-        <span class="font-bold text-green-500">{{ foundCount }}/{{ differences.length }}</span>
+        <span class="text-[var(--color-text-muted)]">找到：</span>
+        <span class="font-bold text-green-500 dark:text-green-400">{{ foundCount }}/{{ differences.length }}</span>
       </div>
       <div class="text-lg">
-        <span class="text-gray-500">剩餘：</span>
-        <span class="font-bold">{{ remainingTime }}秒</span>
+        <span class="text-[var(--color-text-muted)]">剩餘：</span>
+        <span class="font-bold text-[var(--color-text)]">{{ remainingTime }}秒</span>
       </div>
     </div>
 
@@ -353,7 +353,7 @@ onUnmounted(() => {
 
 .image-container {
   position: relative;
-  background: white;
+  background: var(--color-surface);
   border-radius: 12px;
   padding: 1rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -383,7 +383,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
-  background: #f3f4f6;
+  background: var(--color-bg-soft);
   border-radius: 8px;
   transition: all 0.2s ease;
 }

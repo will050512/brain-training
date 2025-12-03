@@ -2,24 +2,24 @@
   <div class="game-area">
     <!-- 遊戲說明 -->
     <div v-if="!isPlaying && !isFinished" class="text-center mb-6">
-      <p class="text-lg text-gray-600">哪邊比較重？點選較重的一側！</p>
-      <p class="text-sm text-gray-500">觀察物品數量和大小來判斷</p>
+      <p class="text-lg text-[var(--color-text-secondary)]">哪邊比較重？點選較重的一側！</p>
+      <p class="text-sm text-[var(--color-text-muted)]">觀察物品數量和大小來判斷</p>
     </div>
 
     <!-- 遊戲狀態 -->
     <div class="flex justify-between items-center mb-4">
       <div class="text-lg">
-        <span class="text-gray-500">第</span>
-        <span class="font-bold text-blue-600">{{ currentRound }}/{{ totalRounds }}</span>
-        <span class="text-gray-500">題</span>
+        <span class="text-[var(--color-text-muted)]">第</span>
+        <span class="font-bold text-blue-600 dark:text-blue-400">{{ currentRound }}/{{ totalRounds }}</span>
+        <span class="text-[var(--color-text-muted)]">題</span>
       </div>
       <div class="text-lg">
-        <span class="text-gray-500">正確：</span>
-        <span class="font-bold text-green-500">{{ correctCount }}</span>
+        <span class="text-[var(--color-text-muted)]">正確：</span>
+        <span class="font-bold text-green-500 dark:text-green-400">{{ correctCount }}</span>
       </div>
       <div class="text-lg">
-        <span class="text-gray-500">剩餘：</span>
-        <span class="font-bold">{{ remainingTime }}秒</span>
+        <span class="text-[var(--color-text-muted)]">剩餘：</span>
+        <span class="font-bold text-[var(--color-text)]">{{ remainingTime }}秒</span>
       </div>
     </div>
 

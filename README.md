@@ -25,6 +25,65 @@
 
 ---
 
+## 🎨 主題系統
+
+本專案採用統一的 CSS 變數主題系統，完整支援淺色與深色模式。
+
+### CSS 變數命名規範
+
+| 變數名稱 | 用途 | 淺色模式 | 深色模式 |
+|---------|------|----------|----------|
+| `--color-background` | 頁面背景 | `#ffffff` | `#0f172a` |
+| `--color-surface` | 卡片/元件表面 | `#ffffff` | `#1e293b` |
+| `--color-bg-soft` | 次要背景 | `#f8fafc` | `#1e293b` |
+| `--color-text` | 主要文字 | `#1e293b` | `#f1f5f9` |
+| `--color-text-secondary` | 次要文字 | `#475569` | `#94a3b8` |
+| `--color-text-muted` | 輔助文字 | `#94a3b8` | `#64748b` |
+| `--color-border` | 邊框 | `#e2e8f0` | `#334155` |
+| `--color-primary` | 主色調 | `#3b82f6` | `#60a5fa` |
+
+### 遊戲專用變數
+
+| 變數名稱 | 用途 |
+|---------|------|
+| `--game-area-bg` | 遊戲區域背景 |
+| `--game-card-bg` | 遊戲卡片背景 |
+| `--game-button-bg` | 遊戲按鈕背景 |
+| `--game-correct` | 正確回饋顏色 |
+| `--game-wrong` | 錯誤回饋顏色 |
+
+### 使用方式
+
+```css
+/* 在 scoped CSS 中使用 */
+.my-component {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+/* 在 Tailwind CSS 中使用 */
+<div class="bg-[var(--color-surface)] text-[var(--color-text)]">
+```
+
+### 主題切換
+
+透過 `useTheme` composable 控制主題：
+
+```typescript
+import { useTheme } from '@/composables/useTheme'
+
+const { isDark, toggleTheme, setTheme } = useTheme()
+
+// 切換主題
+toggleTheme()
+
+// 設定特定主題
+setTheme('dark')  // 'light' | 'dark' | 'system'
+```
+
+---
+
 ## 🧩 認知訓練維度
 
 本應用訓練六大認知能力：
@@ -182,8 +241,18 @@ src/
 ├── components/           # Vue 元件
 │   ├── assessment/       # 評估相關元件
 │   ├── charts/           # 圖表元件
-│   ├── games/            # 遊戲元件
+│   ├── games/            # 遊戲元件 (15+)
 │   └── ui/               # UI 共用元件
+│       ├── BaseButton.vue    # 基礎按鈕
+│       ├── BaseCard.vue      # 基礎卡片
+│       ├── BaseInput.vue     # 基礎輸入框
+│       ├── LoadingSpinner.vue # 載入動畫
+│       ├── EmptyState.vue    # 空狀態
+│       ├── ConsentModal.vue  # 同意視窗
+│       ├── GameResultModal.vue # 遊戲結果
+│       └── ...
+├── composables/          # Vue Composables
+│   └── useTheme.ts       # 主題切換
 ├── core/                 # 核心邏輯
 │   └── gameRegistry.ts   # 遊戲註冊中心
 ├── router/               # 路由設定

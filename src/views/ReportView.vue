@@ -571,9 +571,9 @@ function formatPlayTime(seconds: number): string {
 
 // 取得分數顏色
 function getScoreClass(score: number): string {
-  if (score >= 80) return 'text-green-500'
-  if (score >= 50) return 'text-yellow-500'
-  return 'text-red-500'
+  if (score >= 80) return 'text-green-500 dark:text-green-400'
+  if (score >= 50) return 'text-yellow-500 dark:text-yellow-400'
+  return 'text-red-500 dark:text-red-400'
 }
 
 // 取得趨勢圖示

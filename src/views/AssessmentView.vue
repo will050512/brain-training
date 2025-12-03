@@ -1,13 +1,13 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+  <div class="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-slate-900 dark:to-slate-800">
     <!-- 頭部 -->
-    <div class="bg-white shadow-sm">
+    <div class="bg-[var(--color-surface)] shadow-sm">
       <div class="container mx-auto px-4 py-4">
         <div class="flex items-center justify-between">
-          <router-link to="/" class="text-gray-600 hover:text-gray-900">
+          <router-link to="/" class="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">
             ← 返回
           </router-link>
-          <h1 class="text-xl font-bold">能力評估測試</h1>
+          <h1 class="text-xl font-bold text-[var(--color-text)]">能力評估測試</h1>
           <div class="w-16"></div>
         </div>
       </div>
@@ -26,8 +26,8 @@
       <div v-else-if="stage === 'select'" class="max-w-3xl mx-auto">
         <div class="text-center mb-8">
           <div class="text-6xl mb-4">🧠</div>
-          <h2 class="text-2xl font-bold text-gray-800 mb-2">選擇評估類型</h2>
-          <p class="text-gray-600">請選擇適合您的評估方式</p>
+          <h2 class="text-2xl font-bold text-[var(--color-text)] mb-2">選擇評估類型</h2>
+          <p class="text-[var(--color-text-secondary)]">請選擇適合您的評估方式</p>
         </div>
 
         <div class="grid md:grid-cols-2 gap-6">
@@ -73,7 +73,7 @@
 
         <!-- 語言選擇（用於 Mini-Cog） -->
         <div class="language-selector mt-8">
-          <label class="text-sm text-gray-600 mr-3">Mini-Cog 詞語語言：</label>
+          <label class="text-sm text-[var(--color-text-muted)] mr-3">Mini-Cog 詞語語言：</label>
           <select v-model="selectedLanguage" class="language-select">
             <option value="zh-TW">繁體中文</option>
             <option value="zh-CN">简体中文</option>
@@ -99,14 +99,14 @@
         <div class="card text-center">
           <div class="text-6xl mb-6">🧠</div>
           <h2 class="text-2xl font-bold mb-4">能力評估測試</h2>
-          <p class="text-gray-600 text-lg mb-6">
+          <p class="text-[var(--color-text-secondary)] text-lg mb-6">
             這個簡短的測試將幫助我們了解您的認知能力，
             <br />並為您推薦最適合的遊戲難度。
           </p>
           
-          <div class="bg-blue-50 rounded-xl p-6 mb-6 text-left">
-            <h3 class="font-bold mb-3 text-blue-800">📋 測試內容</h3>
-            <ul class="space-y-2 text-blue-700">
+          <div class="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-6 mb-6 text-left">
+            <h3 class="font-bold mb-3 text-blue-800 dark:text-blue-300">📋 測試內容</h3>
+            <ul class="space-y-2 text-blue-700 dark:text-blue-300">
               <li class="flex items-center gap-2">
                 <span class="text-xl">⚡</span>
                 <span>反應力測試 - 快速選擇正確顏色</span>
@@ -122,7 +122,7 @@
             </ul>
           </div>
           
-          <div class="bg-amber-50 rounded-xl p-4 mb-8 text-amber-800">
+          <div class="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-4 mb-8 text-amber-800 dark:text-amber-300">
             <p>⏱️ 預計時間：約 3 分鐘</p>
             <p class="text-sm mt-1">請在安靜的環境下進行測試</p>
           </div>
@@ -146,7 +146,7 @@
       <div v-else-if="stage === 'testing'" class="max-w-2xl mx-auto">
         <!-- 進度條 -->
         <div class="mb-6">
-          <div class="flex justify-between text-sm text-gray-500 mb-2">
+          <div class="flex justify-between text-sm text-[var(--color-text-muted)] mb-2">
             <span>第 {{ currentIndex + 1 }} 題，共 {{ questions.length }} 題</span>
             <span>{{ questionTypeLabel }}</span>
           </div>
@@ -163,7 +163,7 @@
           <!-- 反應力題目 -->
           <template v-if="currentQuestion?.type === 'reaction'">
             <div class="text-center">
-              <p class="text-lg text-gray-600 mb-6">{{ currentQuestion.question }}</p>
+              <p class="text-lg text-[var(--color-text-secondary)] mb-6">{{ currentQuestion.question }}</p>
               <div 
                 class="text-6xl font-bold mb-8 p-8 rounded-xl"
                 :style="{ 
@@ -190,14 +190,14 @@
           <!-- 記憶力題目 -->
           <template v-else-if="currentQuestion?.type === 'memory'">
             <div class="text-center">
-              <p class="text-lg text-gray-600 mb-6">{{ currentQuestion.question }}</p>
+              <p class="text-lg text-[var(--color-text-secondary)] mb-6">{{ currentQuestion.question }}</p>
               
               <!-- 顯示數字階段 -->
               <div v-if="memoryPhase === 'display'" class="mb-8">
                 <div class="text-6xl font-bold text-blue-600 tracking-widest py-8">
                   {{ currentQuestion.data?.sequence }}
                 </div>
-                <p class="text-gray-500">請記住這些數字...</p>
+                <p class="text-[var(--color-text-muted)]">請記住這些數字...</p>
               </div>
               
               <!-- 輸入階段 -->
@@ -207,7 +207,7 @@
                   type="text"
                   inputmode="numeric"
                   pattern="[0-9]*"
-                  class="text-4xl text-center font-bold tracking-widest w-full max-w-xs border-2 border-gray-300 rounded-xl p-4 focus:border-blue-500 focus:outline-none"
+                  class="text-4xl text-center font-bold tracking-widest w-full max-w-xs border-2 border-[var(--color-border)] rounded-xl p-4 focus:border-blue-500 focus:outline-none bg-[var(--color-surface)] text-[var(--color-text)]"
                   placeholder="輸入數字"
                   @keyup.enter="submitAnswer(memoryInput)"
                   ref="memoryInputRef"
@@ -226,7 +226,7 @@
           <!-- 邏輯力題目 -->
           <template v-else-if="currentQuestion?.type === 'logic'">
             <div class="text-center">
-              <p class="text-lg text-gray-600 mb-4">請計算以下算式</p>
+              <p class="text-lg text-[var(--color-text-secondary)] mb-4">請計算以下算式</p>
               <div class="text-5xl font-bold text-purple-600 mb-8 py-6">
                 {{ currentQuestion.question }}
               </div>
@@ -248,7 +248,7 @@
           <div class="mt-6 text-center">
             <div 
               class="inline-flex items-center gap-2 px-4 py-2 rounded-full"
-              :class="timeLeft <= 3 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'"
+              :class="timeLeft <= 3 ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-[var(--color-bg-soft)] text-[var(--color-text-secondary)]'"
             >
               <span>⏱️</span>
               <span class="font-bold">{{ timeLeft }} 秒</span>
@@ -261,40 +261,40 @@
       <div v-else-if="stage === 'result'" class="max-w-2xl mx-auto">
         <div class="card text-center">
           <div class="text-6xl mb-6">🎉</div>
-          <h2 class="text-2xl font-bold mb-2">測試完成！</h2>
-          <p class="text-gray-600 mb-8">以下是您的評估結果</p>
+          <h2 class="text-2xl font-bold mb-2 text-[var(--color-text)]">測試完成！</h2>
+          <p class="text-[var(--color-text-secondary)] mb-8">以下是您的評估結果</p>
 
           <!-- 分數卡片 -->
           <div class="grid grid-cols-3 gap-4 mb-8">
-            <div class="bg-red-50 rounded-xl p-4">
+            <div class="bg-red-50 dark:bg-red-900/20 rounded-xl p-4">
               <div class="text-3xl mb-2">⚡</div>
-              <div class="text-2xl font-bold text-red-600">{{ result?.scores.reaction }}</div>
-              <div class="text-sm text-gray-500">反應力</div>
+              <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ result?.scores.reaction }}</div>
+              <div class="text-sm text-[var(--color-text-muted)]">反應力</div>
             </div>
-            <div class="bg-blue-50 rounded-xl p-4">
+            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
               <div class="text-3xl mb-2">🧠</div>
-              <div class="text-2xl font-bold text-blue-600">{{ result?.scores.memory }}</div>
-              <div class="text-sm text-gray-500">記憶力</div>
+              <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ result?.scores.memory }}</div>
+              <div class="text-sm text-[var(--color-text-muted)]">記憶力</div>
             </div>
-            <div class="bg-purple-50 rounded-xl p-4">
+            <div class="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4">
               <div class="text-3xl mb-2">🧩</div>
-              <div class="text-2xl font-bold text-purple-600">{{ result?.scores.logic }}</div>
-              <div class="text-sm text-gray-500">邏輯力</div>
+              <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ result?.scores.logic }}</div>
+              <div class="text-sm text-[var(--color-text-muted)]">邏輯力</div>
             </div>
           </div>
 
           <!-- 統計資訊 -->
-          <div class="bg-gray-50 rounded-xl p-6 mb-8">
+          <div class="bg-[var(--color-bg-soft)] rounded-xl p-6 mb-8">
             <div class="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <div class="text-gray-500">答對題數</div>
+                <div class="text-[var(--color-text-muted)]">答對題數</div>
                 <div class="text-xl font-bold">
                   {{ result?.correctCount }} / {{ result?.totalQuestions }}
                 </div>
               </div>
               <div>
-                <div class="text-gray-500">平均反應時間</div>
-                <div class="text-xl font-bold">
+                <div class="text-[var(--color-text-muted)]">平均反應時間</div>
+                <div class="text-xl font-bold text-[var(--color-text)]">
                   {{ (result?.averageReactionTime ?? 0 / 1000).toFixed(1) }} 秒
                 </div>
               </div>
@@ -579,7 +579,7 @@ watch(stage, (newStage) => {
 
 <style scoped>
 .progress-bar {
-  background-color: #e5e7eb;
+  background-color: var(--color-bg-soft);
   border-radius: 9999px;
   overflow: hidden;
 }
@@ -593,12 +593,12 @@ watch(stage, (newStage) => {
 /* Assessment Card Styles */
 .assessment-card {
   position: relative;
-  background: white;
+  background: var(--color-surface);
   border-radius: 1.5rem;
   padding: 2rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--color-border);
   overflow: hidden;
 }
 
@@ -640,12 +640,12 @@ watch(stage, (newStage) => {
 .card-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
 .card-description {
-  color: #64748b;
+  color: var(--color-text-secondary);
   font-size: 0.9375rem;
   margin-bottom: 1.5rem;
   line-height: 1.6;
@@ -659,7 +659,7 @@ watch(stage, (newStage) => {
 
 .card-features li {
   padding: 0.5rem 0;
-  color: #475569;
+  color: var(--color-text-secondary);
   font-size: 0.875rem;
   display: flex;
   align-items: center;
@@ -671,7 +671,7 @@ watch(stage, (newStage) => {
   align-items: center;
   justify-content: space-between;
   padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--color-border);
   color: #4f46e5;
   font-weight: 600;
 }
@@ -692,11 +692,11 @@ watch(stage, (newStage) => {
 
 .language-select {
   padding: 0.5rem 1rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--color-border);
   border-radius: 0.5rem;
   font-size: 0.9375rem;
-  color: #1e293b;
-  background: white;
+  color: var(--color-text);
+  background: var(--color-surface);
   cursor: pointer;
   transition: border-color 0.2s ease;
 }

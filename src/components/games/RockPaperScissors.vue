@@ -472,17 +472,17 @@ onUnmounted(() => {
 
 .ready-screen h2 {
   font-size: 1.75rem;
-  color: var(--color-heading);
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
 .description {
-  color: var(--color-text);
+  color: var(--color-text-secondary);
   margin-bottom: 1.5rem;
 }
 
 .rules {
-  background: var(--color-background-soft);
+  background: var(--color-bg-soft);
   border-radius: 12px;
   padding: 1rem;
   margin-bottom: 1.5rem;
@@ -497,7 +497,7 @@ onUnmounted(() => {
 .rules ul {
   list-style: disc;
   padding-left: 1.5rem;
-  color: var(--color-text);
+  color: var(--color-text-secondary);
 }
 
 .rules li {
@@ -543,7 +543,7 @@ onUnmounted(() => {
 
 .countdown-text {
   font-size: 1.5rem;
-  color: var(--color-text);
+  color: var(--color-text-secondary);
 }
 
 /* 狀態列 */
@@ -562,13 +562,13 @@ onUnmounted(() => {
 .stat .label {
   display: block;
   font-size: 0.75rem;
-  color: var(--color-text-light);
+  color: var(--color-text-muted);
 }
 
 .stat .value {
   font-size: 1.25rem;
   font-weight: bold;
-  color: var(--color-heading);
+  color: var(--color-text);
 }
 
 .stat .value.win {
@@ -583,7 +583,7 @@ onUnmounted(() => {
   width: 100%;
   max-width: 450px;
   height: 8px;
-  background: var(--color-background-soft);
+  background: var(--color-bg-soft);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 1rem;
@@ -636,7 +636,7 @@ onUnmounted(() => {
 .computer-section .label,
 .player-section .label {
   font-size: 0.875rem;
-  color: var(--color-text-light);
+  color: var(--color-text-muted);
   margin-bottom: 0.5rem;
 }
 
@@ -664,13 +664,13 @@ onUnmounted(() => {
 
 .gesture-name {
   font-weight: bold;
-  color: var(--color-heading);
+  color: var(--color-text);
 }
 
 .vs {
   font-size: 1.5rem;
   font-weight: bold;
-  color: var(--color-text-light);
+  color: var(--color-text-muted);
 }
 
 /* 手勢按鈕 */
@@ -686,7 +686,7 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   padding: 0.75rem;
-  background: white;
+  background: var(--color-surface);
   border: 2px solid var(--color-border);
   border-radius: 12px;
   cursor: pointer;
@@ -709,14 +709,14 @@ onUnmounted(() => {
 
 .gesture-btn .name {
   font-size: 0.75rem;
-  color: var(--color-text);
+  color: var(--color-text-secondary);
   margin-top: 0.25rem;
 }
 
 /* 計時條 */
 .timer-bar {
   height: 8px;
-  background: var(--color-background-soft);
+  background: var(--color-bg-soft);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 0.5rem;
@@ -734,7 +734,7 @@ onUnmounted(() => {
 
 .timer-text {
   font-size: 0.875rem;
-  color: var(--color-text-light);
+  color: var(--color-text-muted);
 }
 
 .result-text {
@@ -755,7 +755,7 @@ onUnmounted(() => {
 
 .finished-screen h2 {
   font-size: 1.5rem;
-  color: var(--color-heading);
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
@@ -767,7 +767,7 @@ onUnmounted(() => {
 }
 
 .stats {
-  background: var(--color-background-soft);
+  background: var(--color-bg-soft);
   padding: 1.5rem;
   border-radius: 12px;
   min-width: 280px;
@@ -793,7 +793,7 @@ onUnmounted(() => {
 
 .stat-label {
   font-size: 0.875rem;
-  color: var(--color-text-light);
+  color: var(--color-text-muted);
   display: block;
 }
 

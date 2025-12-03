@@ -401,17 +401,17 @@ onMounted(() => {
 
 .ready-screen h2 {
   font-size: 1.75rem;
-  color: var(--color-heading);
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
 .description {
-  color: var(--color-text);
+  color: var(--color-text-secondary);
   margin-bottom: 1.5rem;
 }
 
 .rules {
-  background: var(--color-background-soft);
+  background: var(--color-bg-soft);
   border-radius: 12px;
   padding: 1rem;
   margin-bottom: 1.5rem;
@@ -426,7 +426,7 @@ onMounted(() => {
 .rules ul {
   list-style: disc;
   padding-left: 1.5rem;
-  color: var(--color-text);
+  color: var(--color-text-secondary);
 }
 
 .rules li {
@@ -468,13 +468,13 @@ onMounted(() => {
 .stat .label {
   display: block;
   font-size: 0.875rem;
-  color: var(--color-text-light);
+  color: var(--color-text-muted);
 }
 
 .stat .value {
   font-size: 1.5rem;
   font-weight: bold;
-  color: var(--color-heading);
+  color: var(--color-text);
 }
 
 .stat .value.warning {
@@ -489,7 +489,7 @@ onMounted(() => {
 
 .progress-bar {
   height: 8px;
-  background: var(--color-background-soft);
+  background: var(--color-bg-soft);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 2rem;
@@ -514,7 +514,7 @@ onMounted(() => {
   font-weight: bold;
   margin-bottom: 2rem;
   padding: 1.5rem;
-  background: var(--color-background-soft);
+  background: var(--color-bg-soft);
   border-radius: 16px;
 }
 
@@ -529,7 +529,7 @@ onMounted(() => {
 }
 
 .number {
-  color: var(--color-heading);
+  color: var(--color-text);
 }
 
 .operation {
@@ -537,7 +537,7 @@ onMounted(() => {
 }
 
 .equals {
-  color: var(--color-text-light);
+  color: var(--color-text-muted);
 }
 
 .answer-placeholder {
@@ -557,7 +557,7 @@ onMounted(() => {
   padding: 1.25rem;
   font-size: 1.5rem;
   font-weight: bold;
-  background: white;
+  background: var(--color-surface);
   border: 2px solid var(--color-border);
   border-radius: 12px;
   cursor: pointer;
@@ -633,7 +633,7 @@ onMounted(() => {
 
 .finished-screen h2 {
   font-size: 1.5rem;
-  color: var(--color-heading);
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
@@ -648,7 +648,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  background: var(--color-background-soft);
+  background: var(--color-bg-soft);
   padding: 1.5rem;
   border-radius: 12px;
 }
@@ -659,7 +659,7 @@ onMounted(() => {
 }
 
 .stat-label {
-  color: var(--color-text-light);
+  color: var(--color-text-muted);
 }
 
 .stat-value {

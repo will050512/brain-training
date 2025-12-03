@@ -2,24 +2,24 @@
   <div class="game-area">
     <!-- 遊戲說明 -->
     <div v-if="!isPlaying && !isFinished" class="text-center mb-6">
-      <p class="text-lg text-gray-600">快速說出文字的「顏色」，而非文字本身！</p>
-      <p class="text-sm text-gray-500">例如：<span class="text-red-500 font-bold">藍色</span> → 答案是「紅色」</p>
+      <p class="text-lg text-[var(--color-text-secondary)]">快速說出文字的「顏色」，而非文字本身！</p>
+      <p class="text-sm text-[var(--color-text-muted)]">例如：<span class="text-red-500 font-bold">藍色</span> → 答案是「紅色」</p>
     </div>
 
     <!-- 遊戲狀態 -->
     <div class="flex justify-between items-center mb-4">
       <div class="text-lg">
-        <span class="text-gray-500">第</span>
-        <span class="font-bold text-blue-600">{{ currentRound }}/{{ totalRounds }}</span>
-        <span class="text-gray-500">題</span>
+        <span class="text-[var(--color-text-muted)]">第</span>
+        <span class="font-bold text-blue-600 dark:text-blue-400">{{ currentRound }}/{{ totalRounds }}</span>
+        <span class="text-[var(--color-text-muted)]">題</span>
       </div>
       <div class="text-lg">
-        <span class="text-gray-500">正確：</span>
-        <span class="font-bold text-green-500">{{ correctCount }}</span>
+        <span class="text-[var(--color-text-muted)]">正確：</span>
+        <span class="font-bold text-green-500 dark:text-green-400">{{ correctCount }}</span>
       </div>
       <div class="text-lg">
-        <span class="text-gray-500">剩餘：</span>
-        <span class="font-bold">{{ remainingTime }}秒</span>
+        <span class="text-[var(--color-text-muted)]">剩餘：</span>
+        <span class="font-bold text-[var(--color-text)]">{{ remainingTime }}秒</span>
       </div>
     </div>
 
@@ -165,18 +165,18 @@ function generateRound(): void {
 // 獲取按鈕樣式
 function getButtonClass(option: ColorOption): string {
   if (!showResult.value) {
-    return 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+    return 'bg-[var(--game-button-bg)] hover:bg-[var(--game-button-hover)] text-[var(--color-text)]'
   }
   
   if (option.name === correctAnswer.value) {
-    return 'bg-green-500 text-white'
+    return 'bg-green-500 dark:bg-green-600 text-white'
   }
   
   if (option.name === selectedAnswer.value && !isCorrect.value) {
-    return 'bg-red-500 text-white'
+    return 'bg-red-500 dark:bg-red-600 text-white'
   }
   
-  return 'bg-gray-100 text-gray-400'
+  return 'bg-[var(--color-bg-muted)] text-[var(--color-text-muted)]'
 }
 
 // 選擇答案
@@ -298,7 +298,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: white;
+  background: var(--color-surface);
   border-radius: 16px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   padding: 2rem;

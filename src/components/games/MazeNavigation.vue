@@ -2,19 +2,19 @@
   <div class="game-area">
     <!-- 遊戲說明 -->
     <div v-if="!isPlaying && !isFinished" class="text-center mb-6">
-      <p class="text-lg text-gray-600">使用方向鍵或點擊按鈕，幫助角色走出迷宮！</p>
-      <p class="text-sm text-gray-500">🟢 起點 → 🔴 終點</p>
+      <p class="text-lg text-[var(--color-text-secondary)]">使用方向鍵或點擊按鈕，幫助角色走出迷宮！</p>
+      <p class="text-sm text-[var(--color-text-muted)]">🟢 起點 → 🔴 終點</p>
     </div>
 
     <!-- 遊戲狀態 -->
     <div class="flex justify-between items-center mb-4">
       <div class="text-lg">
-        <span class="text-gray-500">步數：</span>
-        <span class="font-bold text-blue-600">{{ moves }}</span>
+        <span class="text-[var(--color-text-muted)]">步數：</span>
+        <span class="font-bold text-blue-600 dark:text-blue-400">{{ moves }}</span>
       </div>
       <div class="text-lg">
-        <span class="text-gray-500">時間：</span>
-        <span class="font-bold">{{ formatTime(elapsedTime) }}</span>
+        <span class="text-[var(--color-text-muted)]">時間：</span>
+        <span class="font-bold text-[var(--color-text)]">{{ formatTime(elapsedTime) }}</span>
       </div>
     </div>
 
@@ -248,17 +248,17 @@ function getCellClass(cell: CellType, index: number): string {
   const classes: string[] = []
 
   if (cell === 'wall') {
-    classes.push('bg-gray-700')
+    classes.push('bg-[var(--game-maze-wall)]')
   } else if (cell === 'start') {
-    classes.push('bg-green-400')
+    classes.push('bg-green-400 dark:bg-green-500')
   } else if (cell === 'end') {
-    classes.push('bg-red-400')
+    classes.push('bg-red-400 dark:bg-red-500')
   } else {
-    classes.push('bg-amber-100')
+    classes.push('bg-[var(--game-maze-path)]')
   }
 
   if (playerPosition.value === index) {
-    classes.push('ring-2 ring-blue-500')
+    classes.push('ring-2 ring-blue-500 dark:ring-blue-400')
   }
 
   return classes.join(' ')
@@ -458,7 +458,7 @@ onUnmounted(() => {
   width: 60px;
   height: 60px;
   font-size: 1.5rem;
-  background: linear-gradient(145deg, #f0f0f0, #e0e0e0);
+  background: var(--game-button-bg);
   border-radius: 12px;
   border: none;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);

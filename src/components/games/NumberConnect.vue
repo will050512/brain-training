@@ -285,41 +285,41 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
     <div class="flex justify-between items-center mb-4">
       <div class="flex gap-4">
         <div class="text-sm">
-          <span class="text-gray-500">分數</span>
+          <span class="text-[var(--color-text-muted)]">分數</span>
           <span class="font-bold ml-1 text-blue-600">{{ score }}</span>
         </div>
         <div class="text-sm">
-          <span class="text-gray-500">進度</span>
+          <span class="text-[var(--color-text-muted)]">進度</span>
           <span class="font-bold ml-1">{{ currentTarget - 1 }}/{{ gameConfig.count }}</span>
         </div>
         <div class="text-sm">
-          <span class="text-gray-500">錯誤</span>
+          <span class="text-[var(--color-text-muted)]">錯誤</span>
           <span class="font-bold ml-1 text-red-500">{{ errors }}</span>
         </div>
       </div>
-      <div class="text-lg font-mono font-bold" :class="timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-gray-700'">
+      <div class="text-lg font-mono font-bold" :class="timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-[var(--color-text)]'">
         {{ formatTime(timeLeft) }}
       </div>
     </div>
 
     <!-- 目標提示 -->
-    <div class="text-center mb-4 py-2 bg-blue-50 rounded-lg">
-      <span class="text-gray-600">找到數字：</span>
+    <div class="text-center mb-4 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+      <span class="text-[var(--color-text-secondary)]">找到數字：</span>
       <span class="text-2xl font-bold text-blue-600">{{ currentTarget }}</span>
     </div>
 
     <!-- 遊戲區域 -->
     <div 
       ref="gameAreaRef"
-      class="game-area relative bg-gray-50 rounded-xl overflow-hidden mx-auto"
+      class="game-area relative bg-[var(--game-area-bg)] rounded-xl overflow-hidden mx-auto"
       style="width: 350px; height: 400px;"
     >
       <!-- 準備階段 -->
-      <div v-if="phase === 'ready'" class="absolute inset-0 flex items-center justify-center bg-white/80">
+      <div v-if="phase === 'ready'" class="absolute inset-0 flex items-center justify-center bg-[var(--color-surface)]/80">
         <div class="text-center">
           <div class="text-6xl mb-4">🔢</div>
-          <p class="text-xl text-gray-600">準備開始...</p>
-          <p class="text-sm text-gray-400 mt-2">依序點擊 1 到 {{ gameConfig.count }}</p>
+          <p class="text-xl text-[var(--color-text-secondary)]">準備開始...</p>
+          <p class="text-sm text-[var(--color-text-muted)] mt-2">依序點擊 1 到 {{ gameConfig.count }}</p>
         </div>
       </div>
 
@@ -337,7 +337,7 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
               ? 'bg-green-500 text-white scale-75 opacity-50' 
               : node.isWrong 
                 ? 'bg-red-500 text-white animate-shake'
-                : 'bg-white text-gray-800 shadow-md hover:shadow-lg hover:scale-110 cursor-pointer',
+                : 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-md hover:shadow-lg hover:scale-110 cursor-pointer',
             node.value === currentTarget && !node.clicked ? 'ring-2 ring-blue-400 ring-offset-2' : ''
           ]"
           :style="{
@@ -373,32 +373,32 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
       </svg>
 
       <!-- 遊戲結束 -->
-      <div v-if="phase === 'gameover'" class="absolute inset-0 flex items-center justify-center bg-white/90">
+      <div v-if="phase === 'gameover'" class="absolute inset-0 flex items-center justify-center bg-[var(--color-surface)]/90">
         <div class="text-center p-6">
           <div class="text-6xl mb-4">
             {{ currentTarget > gameConfig.count ? '🎉' : '⏱️' }}
           </div>
-          <p class="text-2xl font-bold text-gray-800 mb-2">
+          <p class="text-2xl font-bold text-[var(--color-text)] mb-2">
             {{ currentTarget > gameConfig.count ? '完美完成！' : '時間到！' }}
           </p>
-          <div class="bg-gray-50 rounded-xl p-4 mt-4">
+          <div class="bg-[var(--color-bg-soft)] rounded-xl p-4 mt-4">
             <div class="grid grid-cols-2 gap-3 text-left text-sm">
               <div>
-                <p class="text-gray-500">最終分數</p>
+                <p class="text-[var(--color-text-muted)]">最終分數</p>
                 <p class="text-xl font-bold text-blue-600">{{ score }}</p>
               </div>
               <div>
-                <p class="text-gray-500">完成數量</p>
+                <p class="text-[var(--color-text-muted)]">完成數量</p>
                 <p class="text-xl font-bold">{{ currentTarget - 1 }}/{{ gameConfig.count }}</p>
               </div>
               <div>
-                <p class="text-gray-500">平均速度</p>
+                <p class="text-[var(--color-text-muted)]">平均速度</p>
                 <p class="font-bold">
                   {{ clickTimes.length > 0 ? Math.round(clickTimes.reduce((a, b) => a + b, 0) / clickTimes.length) : 0 }}ms
                 </p>
               </div>
               <div>
-                <p class="text-gray-500">錯誤次數</p>
+                <p class="text-[var(--color-text-muted)]">錯誤次數</p>
                 <p class="font-bold text-red-500">{{ errors }}</p>
               </div>
             </div>

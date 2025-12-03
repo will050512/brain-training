@@ -411,20 +411,20 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
     <div class="flex justify-between items-center mb-4">
       <div class="flex gap-4">
         <div class="text-sm">
-          <span class="text-gray-500">回合</span>
+          <span class="text-[var(--color-text-muted)]">回合</span>
           <span class="font-bold ml-1">{{ currentRound }}/{{ gameConfig.totalRounds }}</span>
         </div>
         <div class="text-sm">
-          <span class="text-gray-500">分數</span>
+          <span class="text-[var(--color-text-muted)]">分數</span>
           <span class="font-bold ml-1 text-blue-600">{{ score }}</span>
         </div>
         <div class="text-sm">
-          <span class="text-gray-500">正確</span>
+          <span class="text-[var(--color-text-muted)]">正確</span>
           <span class="font-bold ml-1 text-green-600">{{ correctRounds }}</span>
         </div>
       </div>
       <div v-if="phase === 'playing'" class="text-lg font-mono font-bold" 
-           :class="timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-gray-700'">
+           :class="timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-[var(--color-text)]'">
         {{ timeLeft }}s
       </div>
     </div>
@@ -434,8 +434,8 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
       <!-- 準備階段 -->
       <div v-if="phase === 'ready'" class="text-center">
         <div class="text-6xl mb-4">🧩</div>
-        <p class="text-xl text-gray-600">準備開始...</p>
-        <p class="text-sm text-gray-400 mt-2">找出圖形規律，選擇下一個！</p>
+        <p class="text-xl text-[var(--color-text-secondary)]">準備開始...</p>
+        <p class="text-sm text-[var(--color-text-muted)] mt-2">找出圖形規律，選擇下一個！</p>
       </div>
 
       <!-- 遊戲進行中 -->
@@ -443,7 +443,7 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
         <div v-if="currentQuestion" class="w-full">
           <!-- 序列區域 -->
           <div class="mb-6">
-            <p class="text-center text-gray-500 mb-3">找出規律，下一個是？</p>
+            <p class="text-center text-[var(--color-text-muted)] mb-3">找出規律，下一個是？</p>
             <div class="flex items-center justify-center gap-2 flex-wrap">
               <div 
                 v-for="(shape, index) in currentQuestion.sequence" 
@@ -464,9 +464,9 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
                 <span v-if="index < currentQuestion.sequence.length - 1" class="text-2xl text-gray-300 mx-1">→</span>
               </div>
               <!-- 問號 -->
-              <span class="text-2xl text-gray-300 mx-1">→</span>
-              <div class="w-16 h-16 border-3 border-dashed border-gray-300 rounded-xl flex items-center justify-center">
-                <span class="text-3xl text-gray-400">?</span>
+              <span class="text-2xl text-[var(--color-text-muted)] mx-1">→</span>
+              <div class="w-16 h-16 border-3 border-dashed border-[var(--color-border)] rounded-xl flex items-center justify-center">
+                <span class="text-3xl text-[var(--color-text-muted)]">?</span>
               </div>
             </div>
           </div>
@@ -478,7 +478,7 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
               :key="index"
               @click="selectOption(index)"
               :disabled="phase === 'result'"
-              class="option-btn aspect-square bg-white rounded-xl shadow-md p-4
+              class="option-btn aspect-square bg-[var(--color-surface)] rounded-xl shadow-md p-4
                      flex items-center justify-center transition-all
                      hover:shadow-lg hover:scale-105 disabled:hover:scale-100"
               :class="[
@@ -515,7 +515,7 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
             <p class="text-xl font-bold" :class="isCorrect ? 'text-green-600' : 'text-red-600'">
               {{ isCorrect ? '✅ 正確！' : '❌ 錯誤' }}
             </p>
-            <p class="text-sm text-gray-500 mt-2">
+            <p class="text-sm text-[var(--color-text-muted)] mt-2">
               規律：{{ currentQuestion.rule }}
             </p>
           </div>
@@ -525,25 +525,25 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
       <!-- 遊戲結束 -->
       <div v-if="phase === 'gameover'" class="text-center">
         <div class="text-6xl mb-4">🎉</div>
-        <p class="text-2xl font-bold text-gray-800 mb-4">遊戲結束！</p>
-        <div class="bg-gray-50 rounded-xl p-6 max-w-sm mx-auto">
+        <p class="text-2xl font-bold text-[var(--color-text)] mb-4">遊戲結束！</p>
+        <div class="bg-[var(--color-bg-soft)] rounded-xl p-6 max-w-sm mx-auto">
           <div class="grid grid-cols-2 gap-4 text-left">
             <div>
-              <p class="text-sm text-gray-500">最終分數</p>
+              <p class="text-sm text-[var(--color-text-muted)]">最終分數</p>
               <p class="text-2xl font-bold text-blue-600">{{ score }}</p>
             </div>
             <div>
-              <p class="text-sm text-gray-500">正確率</p>
+              <p class="text-sm text-[var(--color-text-muted)]">正確率</p>
               <p class="text-2xl font-bold text-green-600">
                 {{ Math.round((correctRounds / gameConfig.totalRounds) * 100) }}%
               </p>
             </div>
             <div>
-              <p class="text-sm text-gray-500">正確題數</p>
+              <p class="text-sm text-[var(--color-text-muted)]">正確題數</p>
               <p class="text-xl font-bold">{{ correctRounds }}/{{ gameConfig.totalRounds }}</p>
             </div>
             <div>
-              <p class="text-sm text-gray-500">平均反應</p>
+              <p class="text-sm text-[var(--color-text-muted)]">平均反應</p>
               <p class="text-xl font-bold">
                 {{ responseTimes.length > 0 ? (responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length / 1000).toFixed(1) : 0 }}s
               </p>

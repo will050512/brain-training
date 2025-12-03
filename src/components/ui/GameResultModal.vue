@@ -40,11 +40,11 @@ const scoreChange = computed(() => {
 // 表現評級
 const performanceGrade = computed(() => {
   const accuracy = props.result.accuracy
-  if (accuracy >= 95) return { grade: 'S', label: '完美！', color: 'text-yellow-500', bg: 'bg-yellow-100' }
-  if (accuracy >= 85) return { grade: 'A', label: '優秀', color: 'text-green-500', bg: 'bg-green-100' }
-  if (accuracy >= 70) return { grade: 'B', label: '良好', color: 'text-blue-500', bg: 'bg-blue-100' }
-  if (accuracy >= 50) return { grade: 'C', label: '普通', color: 'text-gray-500', bg: 'bg-gray-100' }
-  return { grade: 'D', label: '加油', color: 'text-red-500', bg: 'bg-red-100' }
+  if (accuracy >= 95) return { grade: 'S', label: '完美！', color: 'text-yellow-500 dark:text-yellow-400', bg: 'bg-yellow-100 dark:bg-yellow-900/30' }
+  if (accuracy >= 85) return { grade: 'A', label: '優秀', color: 'text-green-500 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30' }
+  if (accuracy >= 70) return { grade: 'B', label: '良好', color: 'text-blue-500 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30' }
+  if (accuracy >= 50) return { grade: 'C', label: '普通', color: 'text-[var(--color-text-muted)]', bg: 'bg-[var(--color-surface-alt)]' }
+  return { grade: 'D', label: '加油', color: 'text-red-500 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/30' }
 })
 
 // 維度名稱對照

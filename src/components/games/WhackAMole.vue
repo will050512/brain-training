@@ -2,23 +2,23 @@
   <div class="game-area">
     <!-- 遊戲說明 -->
     <div v-if="!isPlaying && !isFinished" class="text-center mb-6">
-      <p class="text-lg text-gray-600">快速點擊出現的地鼠！</p>
-      <p class="text-sm text-gray-500">小心不要點到炸彈 💣</p>
+      <p class="text-lg text-[var(--color-text-secondary)]">快速點擊出現的地鼠！</p>
+      <p class="text-sm text-[var(--color-text-muted)]">小心不要點到炸彈 💣</p>
     </div>
 
     <!-- 遊戲狀態 -->
     <div class="flex justify-between items-center mb-4">
       <div class="text-lg">
-        <span class="text-gray-500">得分：</span>
-        <span class="font-bold text-blue-600">{{ score }}</span>
+        <span class="text-[var(--color-text-muted)]">得分：</span>
+        <span class="font-bold text-blue-600 dark:text-blue-400">{{ score }}</span>
       </div>
       <div class="text-lg">
-        <span class="text-gray-500">剩餘：</span>
-        <span class="font-bold">{{ remainingTime }}秒</span>
+        <span class="text-[var(--color-text-muted)]">剩餘：</span>
+        <span class="font-bold text-[var(--color-text)]">{{ remainingTime }}秒</span>
       </div>
       <div class="text-lg">
-        <span class="text-gray-500">連擊：</span>
-        <span class="font-bold text-orange-500">{{ combo }}x</span>
+        <span class="text-[var(--color-text-muted)]">連擊：</span>
+        <span class="font-bold text-orange-500 dark:text-orange-400">{{ combo }}x</span>
       </div>
     </div>
 

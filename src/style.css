@@ -48,6 +48,73 @@
   --color-coordination: #f59e0b;
   --color-attention: #ec4899;
   
+  /* 步驟進度顏色 */
+  --color-step: #e2e8f0;
+  --color-step-active: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --color-step-complete: #22c55e;
+  --color-step-label: #64748b;
+  --color-step-label-active: #4f46e5;
+  --color-progress-track: #e2e8f0;
+  --color-progress-fill: linear-gradient(90deg, #22c55e 0%, #4f46e5 100%);
+  
+  /* 資訊卡片顏色 */
+  --color-infocard: #f8fafc;
+  --color-infocard-border: #e2e8f0;
+  --color-disclaimer: #fef3c7;
+  --color-disclaimer-text: #92400e;
+  --color-disclaimer-border: #fde68a;
+  
+  /* 分數狀態顏色 */
+  --color-score-good: #16a34a;
+  --color-score-moderate: #d97706;
+  --color-score-concern: #dc2626;
+  
+  /* 趨勢指示顏色 */
+  --color-trend-up: #22c55e;
+  --color-trend-down: #ef4444;
+  --color-trend-neutral: #6b7280;
+  
+  /* 結果狀態顏色 */
+  --color-result-normal: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  --color-result-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --color-result-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --color-result-normal-bg: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  --color-result-warning-bg: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  --color-result-danger-bg: #fef2f2;
+  
+  /* 遊戲音符顏色 */
+  --color-note-do: #ef4444;
+  --color-note-re: #f97316;
+  --color-note-mi: #eab308;
+  --color-note-fa: #22c55e;
+  --color-note-sol: #3b82f6;
+  --color-note-la: #a855f7;
+  --color-note-si: #6b7280;
+  --color-note-do2: #ec4899;
+  
+  /* 圖形推理顏色 */
+  --color-shape-red: #ef4444;
+  --color-shape-blue: #3b82f6;
+  --color-shape-green: #22c55e;
+  --color-shape-yellow: #eab308;
+  --color-shape-purple: #a855f7;
+  --color-shape-orange: #f97316;
+  
+  /* Canvas 繪圖顏色 */
+  --color-canvas-bg: #ffffff;
+  --color-canvas-stroke: #374151;
+  --color-canvas-text: #1f2937;
+  --color-canvas-grid: #e5e7eb;
+  --color-canvas-highlight: #3b82f6;
+  
+  /* 選項按鈕顏色 */
+  --color-option: #f8fafc;
+  --color-option-border: #e2e8f0;
+  --color-option-hover: #f0f0ff;
+  --color-option-selected: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --color-option-correct: #22c55e;
+  --color-option-wrong: #ef4444;
+  
   /* 遊戲專用變數 */
   --game-area-bg: #f1f5f9;
   --game-card-bg: #ffffff;
@@ -131,6 +198,73 @@
   --color-warning-bg: rgba(234, 179, 8, 0.15);
   --color-danger-bg: rgba(239, 68, 68, 0.15);
   --color-info-bg: rgba(6, 182, 212, 0.15);
+  
+  /* 深色模式步驟進度顏色 */
+  --color-step: #334155;
+  --color-step-active: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --color-step-complete: #4ade80;
+  --color-step-label: #94a3b8;
+  --color-step-label-active: #a5b4fc;
+  --color-progress-track: #334155;
+  --color-progress-fill: linear-gradient(90deg, #4ade80 0%, #6366f1 100%);
+  
+  /* 深色模式資訊卡片顏色 */
+  --color-infocard: #1e293b;
+  --color-infocard-border: #334155;
+  --color-disclaimer: rgba(251, 191, 36, 0.15);
+  --color-disclaimer-text: #fcd34d;
+  --color-disclaimer-border: rgba(251, 191, 36, 0.3);
+  
+  /* 深色模式分數狀態顏色 */
+  --color-score-good: #4ade80;
+  --color-score-moderate: #fbbf24;
+  --color-score-concern: #f87171;
+  
+  /* 深色模式趨勢指示顏色 */
+  --color-trend-up: #4ade80;
+  --color-trend-down: #f87171;
+  --color-trend-neutral: #94a3b8;
+  
+  /* 深色模式結果狀態顏色 */
+  --color-result-normal: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  --color-result-warning: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  --color-result-danger: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  --color-result-normal-bg: rgba(34, 197, 94, 0.15);
+  --color-result-warning-bg: rgba(251, 191, 36, 0.15);
+  --color-result-danger-bg: rgba(239, 68, 68, 0.15);
+  
+  /* 深色模式遊戲音符顏色（稍微調亮） */
+  --color-note-do: #f87171;
+  --color-note-re: #fb923c;
+  --color-note-mi: #facc15;
+  --color-note-fa: #4ade80;
+  --color-note-sol: #60a5fa;
+  --color-note-la: #c084fc;
+  --color-note-si: #94a3b8;
+  --color-note-do2: #f472b6;
+  
+  /* 深色模式圖形推理顏色 */
+  --color-shape-red: #f87171;
+  --color-shape-blue: #60a5fa;
+  --color-shape-green: #4ade80;
+  --color-shape-yellow: #facc15;
+  --color-shape-purple: #c084fc;
+  --color-shape-orange: #fb923c;
+  
+  /* 深色模式 Canvas 繪圖顏色 */
+  --color-canvas-bg: #1e293b;
+  --color-canvas-stroke: #e2e8f0;
+  --color-canvas-text: #f1f5f9;
+  --color-canvas-grid: #475569;
+  --color-canvas-highlight: #60a5fa;
+  
+  /* 深色模式選項按鈕顏色 */
+  --color-option: #1e293b;
+  --color-option-border: #334155;
+  --color-option-hover: rgba(99, 102, 241, 0.15);
+  --color-option-selected: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --color-option-correct: #4ade80;
+  --color-option-wrong: #f87171;
   
   /* 遊戲專用變數（深色） */
   --game-area-bg: #1e293b;

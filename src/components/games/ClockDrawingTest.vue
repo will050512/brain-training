@@ -536,13 +536,13 @@ onUnmounted(() => {
 
 .instructions h3 {
   font-size: 1.25rem;
-  color: #1f2937;
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
 .target-time {
   font-size: 1.1rem;
-  color: #374151;
+  color: var(--color-text-secondary);
 }
 
 .target-time strong {
@@ -552,7 +552,7 @@ onUnmounted(() => {
 
 .hint {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--color-text-muted);
   margin-top: 0.5rem;
 }
 
@@ -563,9 +563,9 @@ onUnmounted(() => {
 }
 
 canvas {
-  border: 2px solid #d1d5db;
+  border: 2px solid var(--color-border);
   border-radius: 12px;
-  background: #ffffff;
+  background: #ffffff; /* 繪圖區始終保持白色 */
   cursor: crosshair;
   touch-action: none;
 }
@@ -575,7 +575,7 @@ canvas {
   flex-direction: column;
   gap: 0.75rem;
   padding: 1rem;
-  background: #f9fafb;
+  background: var(--color-bg-soft);
   border-radius: 12px;
 }
 
@@ -584,7 +584,7 @@ canvas {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--color-text-secondary);
 }
 
 .brush-size input[type="range"] {
@@ -600,16 +600,17 @@ canvas {
 
 .tool-btn {
   padding: 0.5rem 1rem;
-  border: 2px solid #d1d5db;
+  border: 2px solid var(--color-border);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--color-surface);
+  color: var(--color-text);
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .tool-btn:hover {
-  background: #f3f4f6;
+  background: var(--color-bg-soft);
 }
 
 .tool-btn.active {
@@ -652,13 +653,13 @@ canvas {
 
 .self-assessment h3 {
   text-align: center;
-  color: #1f2937;
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
 .assessment-intro {
   text-align: center;
-  color: #6b7280;
+  color: var(--color-text-muted);
   font-size: 0.875rem;
   margin-bottom: 1rem;
 }
@@ -688,8 +689,8 @@ canvas {
   align-items: flex-start;
   gap: 0.75rem;
   padding: 1rem;
-  background: #f9fafb;
-  border: 2px solid #e5e7eb;
+  background: var(--color-bg-soft);
+  border: 2px solid var(--color-border);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
@@ -717,9 +718,9 @@ canvas {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #d1d5db;
+  border: 2px solid var(--color-border);
   border-radius: 6px;
-  background: white;
+  background: var(--color-surface);
   color: transparent;
   font-size: 1rem;
   font-weight: bold;
@@ -733,12 +734,12 @@ canvas {
 }
 
 .item-text strong {
-  color: #1f2937;
+  color: var(--color-text);
   font-size: 1rem;
 }
 
 .item-text small {
-  color: #6b7280;
+  color: var(--color-text-muted);
   font-size: 0.8rem;
 }
 
@@ -758,13 +759,13 @@ canvas {
 }
 
 .back-btn {
-  background: #f3f4f6;
-  border: 2px solid #d1d5db;
-  color: #374151;
+  background: var(--color-bg-soft);
+  border: 2px solid var(--color-border);
+  color: var(--color-text-secondary);
 }
 
 .back-btn:hover {
-  background: #e5e7eb;
+  background: var(--color-surface);
 }
 
 .submit-btn {
@@ -781,12 +782,12 @@ canvas {
 .result {
   text-align: center;
   padding: 2rem;
-  background: #f9fafb;
+  background: var(--color-bg-soft);
   border-radius: 12px;
 }
 
 .result h3 {
-  color: #1f2937;
+  color: var(--color-text);
   margin-bottom: 1rem;
 }
 
@@ -800,7 +801,7 @@ canvas {
 
 .score-label {
   font-size: 1rem;
-  color: #6b7280;
+  color: var(--color-text-muted);
 }
 
 .score-value {
@@ -821,7 +822,7 @@ canvas {
 }
 
 .score-description {
-  color: #6b7280;
+  color: var(--color-text-muted);
   font-size: 0.875rem;
 }
 
@@ -829,6 +830,10 @@ canvas {
 .analyzing-indicator {
   text-align: center;
   padding: 2rem;
+}
+
+.analyzing-indicator p {
+  color: var(--color-text-secondary);
 }
 
 .spinner {
@@ -944,7 +949,7 @@ canvas {
   gap: 0.5rem;
   font-size: 0.875rem;
   padding: 0.25rem 0;
-  color: #6b7280;
+  color: var(--color-text-muted);
 }
 
 .breakdown-row.correct {
@@ -976,7 +981,7 @@ canvas {
 .ai-details {
   margin-top: 0.5rem;
   padding: 0.75rem;
-  background: white;
+  background: var(--color-surface);
   border-radius: 0.5rem;
   font-size: 0.8rem;
 }
@@ -987,7 +992,7 @@ canvas {
 }
 
 .ai-details li {
-  color: #4b5563;
+  color: var(--color-text-secondary);
   margin: 0.25rem 0;
 }
 
@@ -1240,68 +1245,73 @@ canvas {
   }
 }
 
-/* 深色模式 */
-@media (prefers-color-scheme: dark) {
-  .clock-drawing-test {
-    background: #0f172a;
-    color: #f1f5f9;
-  }
+/* 深色模式 - 使用 .dark class 而非 media query */
+:root.dark .clock-drawing-test {
+  background: var(--color-background);
+  color: var(--color-text);
+}
 
-  .instructions {
-    background: #1e293b;
-    border-color: #334155;
-  }
+:root.dark .instructions {
+  background: var(--color-bg-soft);
+  border-color: var(--color-border);
+}
 
-  .canvas-container {
-    border-color: #334155;
-    background: #1e293b;
-  }
+:root.dark .canvas-container {
+  border-color: var(--color-border);
+  background: var(--color-bg-soft);
+}
 
-  .canvas-container canvas {
-    background: white;
-  }
+/* 繪圖區始終保持白色以確保清晰度 */
+:root.dark .canvas-container canvas {
+  background: white;
+}
 
-  .toolbar {
-    background: #1e293b;
-    border-color: #334155;
-  }
+:root.dark .toolbar {
+  background: var(--color-bg-soft);
+  border-color: var(--color-border);
+}
 
-  .tool-btn {
-    background: #334155;
-    color: #f1f5f9;
-    border-color: #475569;
-  }
+:root.dark .tool-btn {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
 
-  .tool-btn:hover,
-  .tool-btn.active {
-    background: #4f46e5;
-  }
+:root.dark .tool-btn:hover,
+:root.dark .tool-btn.active {
+  background: #4f46e5;
+  color: white;
+}
 
-  .self-assessment {
-    background: #1e293b;
-  }
+:root.dark .self-assessment {
+  background: var(--color-bg-soft);
+}
 
-  .assessment-item {
-    background: #334155;
-    border-color: #475569;
-  }
+:root.dark .assessment-item {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
 
-  .result {
-    background: #1e293b;
-  }
+:root.dark .assessment-item:hover {
+  background: rgba(79, 70, 229, 0.2);
+  border-color: #6366f1;
+}
 
-  .ai-result-section {
-    background: linear-gradient(135deg, #1e3a5f, #1e293b);
-    border-color: #3b82f6;
-  }
+:root.dark .result {
+  background: var(--color-bg-soft);
+}
 
-  .ai-details {
-    background: #1e293b;
-  }
+:root.dark .ai-result-section {
+  background: linear-gradient(135deg, #1e3a5f, var(--color-bg-soft));
+  border-color: #3b82f6;
+}
 
-  .ai-details li {
-    color: #94a3b8;
-  }
+:root.dark .ai-details {
+  background: var(--color-bg-soft);
+}
+
+:root.dark .ai-details li {
+  color: var(--color-text-secondary);
 }
 
 /* 全螢幕時確保內容填滿 */

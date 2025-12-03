@@ -302,19 +302,19 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
     <div class="flex justify-between items-center mb-6">
       <div class="flex gap-4">
         <div class="text-sm">
-          <span class="text-gray-500">回合</span>
+          <span class="text-[var(--color-text-muted)]">回合</span>
           <span class="font-bold ml-1">{{ currentRound }}/{{ gameConfig.totalRounds }}</span>
         </div>
         <div class="text-sm">
-          <span class="text-gray-500">分數</span>
+          <span class="text-[var(--color-text-muted)]">分數</span>
           <span class="font-bold ml-1 text-blue-600">{{ score }}</span>
         </div>
         <div class="text-sm">
-          <span class="text-gray-500">連續</span>
+          <span class="text-[var(--color-text-muted)]">連續</span>
           <span class="font-bold ml-1 text-green-600">{{ streak }}</span>
         </div>
       </div>
-      <div class="text-sm text-gray-500">
+      <div class="text-sm text-[var(--color-text-muted)]">
         序列長度: {{ sequenceLength }}
       </div>
     </div>
@@ -324,17 +324,17 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
       <!-- 準備階段 -->
       <div v-if="phase === 'ready'" class="text-center">
         <div class="text-6xl mb-4">🎯</div>
-        <p class="text-xl text-gray-600">準備開始...</p>
-        <p class="text-sm text-gray-400 mt-2">記住手勢的順序！</p>
+        <p class="text-xl text-[var(--color-text-secondary)]">準備開始...</p>
+        <p class="text-sm text-[var(--color-text-muted)] mt-2">記住手勢的順序！</p>
       </div>
 
       <!-- 顯示序列階段 -->
       <div v-if="phase === 'showing'" class="text-center">
-        <p class="text-lg text-gray-500 mb-4">請記住順序</p>
+        <p class="text-lg text-[var(--color-text-muted)] mb-4">請記住順序</p>
         <div class="gesture-display text-9xl mb-4 animate-pulse">
           {{ sequence[currentShowIndex]?.icon || '' }}
         </div>
-        <p class="text-xl text-gray-700">
+        <p class="text-xl text-[var(--color-text)]">
           {{ sequence[currentShowIndex]?.name || '' }}
         </p>
         <div class="flex justify-center gap-2 mt-6">
@@ -349,7 +349,7 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
 
       <!-- 輸入階段 -->
       <div v-if="phase === 'input'" class="w-full">
-        <p class="text-lg text-center text-gray-600 mb-4">
+        <p class="text-lg text-center text-[var(--color-text-secondary)] mb-4">
           請按順序選擇手勢 ({{ userInput.length }}/{{ sequence.length }})
         </p>
         
@@ -358,7 +358,7 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
           <div 
             v-for="(gesture, index) in userInput" 
             :key="index"
-            class="text-4xl bg-gray-100 rounded-xl p-2"
+            class="text-4xl bg-[var(--color-bg-soft)] rounded-xl p-2"
           >
             {{ gesture.icon }}
           </div>
@@ -375,7 +375,7 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
             v-for="gesture in gesturePool"
             :key="gesture.id"
             @click="selectGesture(gesture)"
-            class="gesture-btn aspect-square text-4xl bg-white rounded-xl shadow-md
+            class="gesture-btn aspect-square text-4xl bg-[var(--color-surface)] rounded-xl shadow-md
                    hover:shadow-lg hover:scale-105 active:scale-95 transition-all
                    border-2 border-transparent hover:border-blue-300"
           >
@@ -395,7 +395,7 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
         
         <!-- 顯示正確答案 -->
         <div v-if="!isCorrect" class="mt-4">
-          <p class="text-sm text-gray-500 mb-2">正確順序：</p>
+          <p class="text-sm text-[var(--color-text-muted)] mb-2">正確順序：</p>
           <div class="flex justify-center gap-2">
             <span v-for="(gesture, index) in sequence" :key="index" class="text-3xl">
               {{ gesture.icon }}
@@ -407,25 +407,25 @@ watch([() => props.difficulty, () => props.subDifficulty], () => {
       <!-- 遊戲結束 -->
       <div v-if="phase === 'gameover'" class="text-center">
         <div class="text-6xl mb-4">🎉</div>
-        <p class="text-2xl font-bold text-gray-800 mb-4">遊戲結束！</p>
-        <div class="bg-gray-50 rounded-xl p-6 max-w-sm mx-auto">
+        <p class="text-2xl font-bold text-[var(--color-text)] mb-4">遊戲結束！</p>
+        <div class="bg-[var(--color-bg-soft)] rounded-xl p-6 max-w-sm mx-auto">
           <div class="grid grid-cols-2 gap-4 text-left">
             <div>
-              <p class="text-sm text-gray-500">最終分數</p>
+              <p class="text-sm text-[var(--color-text-muted)]">最終分數</p>
               <p class="text-2xl font-bold text-blue-600">{{ score }}</p>
             </div>
             <div>
-              <p class="text-sm text-gray-500">正確率</p>
+              <p class="text-sm text-[var(--color-text-muted)]">正確率</p>
               <p class="text-2xl font-bold text-green-600">
                 {{ Math.round((correctRounds / (currentRound - 1)) * 100) }}%
               </p>
             </div>
             <div>
-              <p class="text-sm text-gray-500">最長連續</p>
+              <p class="text-sm text-[var(--color-text-muted)]">最長連續</p>
               <p class="text-xl font-bold">{{ maxStreak }}</p>
             </div>
             <div>
-              <p class="text-sm text-gray-500">完成回合</p>
+              <p class="text-sm text-[var(--color-text-muted)]">完成回合</p>
               <p class="text-xl font-bold">{{ correctRounds }}/{{ currentRound - 1 }}</p>
             </div>
           </div>
