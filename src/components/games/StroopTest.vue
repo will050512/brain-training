@@ -125,20 +125,28 @@ const colors: ColorOption[] = [
   { name: 'yellow', label: '黃色', value: '#eab308' },
 ]
 
+// 難度配置類型
+interface DifficultyConfig {
+  rounds: number
+  timePerRound: number
+  congruentChance: number
+  mode: 'ink' | 'meaning' | 'mixed'
+}
+
 // 難度設定（根據難度自動決定遊戲模式）
-const difficultyConfig = computed(() => {
-  const defaults = {
+const difficultyConfig = computed<DifficultyConfig>(() => {
+  const defaults: Record<string, DifficultyConfig> = {
     // easy: 固定詢問「墨水顏色」
-    easy: { rounds: 10, timePerRound: 8, congruentChance: 0.5, mode: 'ink' as const },
+    easy: { rounds: 10, timePerRound: 8, congruentChance: 0.5, mode: 'ink' },
     // medium: 固定詢問「文字意思」（反直覺挑戰）
-    medium: { rounds: 15, timePerRound: 6, congruentChance: 0.3, mode: 'meaning' as const },
+    medium: { rounds: 15, timePerRound: 6, congruentChance: 0.3, mode: 'meaning' },
     // hard: 隨機切換詢問類型（mixed 模式）
-    hard: { rounds: 20, timePerRound: 4, congruentChance: 0.2, mode: 'mixed' as const },
+    hard: { rounds: 20, timePerRound: 4, congruentChance: 0.2, mode: 'mixed' },
   }
   return {
     ...defaults[props.difficulty],
     ...props.settings,
-  } as typeof defaults.easy
+  } as DifficultyConfig
 })
 
 // 遊戲模式說明

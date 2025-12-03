@@ -194,7 +194,9 @@ function getDimensionName(dimension: CognitiveDimension): string {
 function primaryDimension(game: GameDefinition): CognitiveDimension | null {
   const weights = Object.entries(game.cognitiveWeights) as [CognitiveDimension, number][]
   if (weights.length === 0) return null
-  return weights.sort((a, b) => b[1] - a[1])[0][0]
+  const sorted = weights.sort((a, b) => b[1] - a[1])
+  const first = sorted[0]
+  return first ? first[0] : null
 }
 
 // 取得分數顏色 class
