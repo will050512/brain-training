@@ -13,12 +13,18 @@
   --color-bg-muted: #e2e8f0;
   --color-surface: #ffffff;
   --color-surface-elevated: #ffffff;
+  --color-surface-alt: #f8fafc;
   --color-text: #1f2937;
   --color-text-secondary: #4b5563;
   --color-text-muted: #6b7280;
   --color-text-inverse: #ffffff;
   --color-border: #e2e8f0;
   --color-border-light: #f1f5f9;
+  
+  /* 覆蓋層與焦點 */
+  --color-overlay: rgba(0, 0, 0, 0.6);
+  --color-focus-ring: rgba(59, 130, 246, 0.5);
+  --color-skeleton: #e2e8f0;
   
   /* 顏色主題 */
   --color-primary: #3b82f6;
@@ -41,6 +47,20 @@
   --color-cognition: #22c55e;
   --color-coordination: #f59e0b;
   --color-attention: #ec4899;
+  
+  /* 遊戲專用變數 */
+  --game-area-bg: #f1f5f9;
+  --game-card-bg: #ffffff;
+  --game-card-front: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+  --game-card-back: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --game-button-bg: #ffffff;
+  --game-button-hover: #f1f5f9;
+  --game-button-active: #e2e8f0;
+  --game-correct: #22c55e;
+  --game-wrong: #ef4444;
+  --game-highlight: #3b82f6;
+  --game-maze-wall: #374151;
+  --game-maze-path: #fef3c7;
   
   /* 字體大小（長者友善） */
   --font-size-base: 18px;
@@ -89,12 +109,18 @@
   --color-bg-muted: #334155;
   --color-surface: #1e293b;
   --color-surface-elevated: #334155;
+  --color-surface-alt: #263449;
   --color-text: #f1f5f9;
   --color-text-secondary: #cbd5e1;
   --color-text-muted: #94a3b8;
   --color-text-inverse: #0f172a;
   --color-border: #334155;
   --color-border-light: #475569;
+  
+  /* 覆蓋層與焦點 */
+  --color-overlay: rgba(0, 0, 0, 0.8);
+  --color-focus-ring: rgba(96, 165, 250, 0.5);
+  --color-skeleton: #334155;
   
   /* 調整主題色以適應深色背景 */
   --color-primary: #60a5fa;
@@ -105,6 +131,20 @@
   --color-warning-bg: rgba(234, 179, 8, 0.15);
   --color-danger-bg: rgba(239, 68, 68, 0.15);
   --color-info-bg: rgba(6, 182, 212, 0.15);
+  
+  /* 遊戲專用變數（深色） */
+  --game-area-bg: #1e293b;
+  --game-card-bg: #334155;
+  --game-card-front: linear-gradient(135deg, #334155 0%, #475569 100%);
+  --game-card-back: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --game-button-bg: #334155;
+  --game-button-hover: #475569;
+  --game-button-active: #1e293b;
+  --game-correct: #4ade80;
+  --game-wrong: #f87171;
+  --game-highlight: #60a5fa;
+  --game-maze-wall: #1e293b;
+  --game-maze-path: #fef3c7;
   
   /* 深色模式陰影（更柔和） */
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
