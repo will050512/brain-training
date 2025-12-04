@@ -57,6 +57,18 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/games/:gameId/preview',
+    name: 'GamePreview',
+    component: () => import('@/views/GamePreviewView.vue'),
+    meta: { 
+      requiresAuth: true, 
+      requiresAssessment: true,
+      layout: 'fullscreen',
+      title: '遊戲預覽',
+    },
+    props: true,
+  },
+  {
     path: '/games/:gameId',
     name: 'GamePlay',
     component: () => import('@/views/GamePlayView.vue'),

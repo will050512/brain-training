@@ -110,13 +110,10 @@
             </div>
             <button
               @click="settingsStore.toggleSound()"
-              class="w-14 h-7 rounded-full transition-colors relative"
-              :class="settingsStore.soundEnabled ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-bg-muted)]'"
+              class="toggle-switch"
+              :class="{ 'toggle-on': settingsStore.soundEnabled }"
             >
-              <span
-                class="absolute top-0.5 w-6 h-6 bg-white rounded-full transition-transform shadow"
-                :class="settingsStore.soundEnabled ? 'translate-x-7' : 'translate-x-0.5'"
-              ></span>
+              <span class="toggle-thumb"></span>
             </button>
           </div>
           
@@ -127,13 +124,10 @@
             </div>
             <button
               @click="settingsStore.toggleMusic()"
-              class="w-14 h-7 rounded-full transition-colors relative"
-              :class="settingsStore.musicEnabled ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-bg-muted)]'"
+              class="toggle-switch"
+              :class="{ 'toggle-on': settingsStore.musicEnabled }"
             >
-              <span
-                class="absolute top-0.5 w-6 h-6 bg-white rounded-full transition-transform shadow"
-                :class="settingsStore.musicEnabled ? 'translate-x-7' : 'translate-x-0.5'"
-              ></span>
+              <span class="toggle-thumb"></span>
             </button>
           </div>
         </div>
@@ -272,3 +266,39 @@ async function confirmClearData(): Promise<void> {
   }
 }
 </script>
+
+<style scoped>
+/* Toggle Switch 開關樣式 */
+.toggle-switch {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  border-radius: 9999px;
+  background-color: var(--color-bg-muted, #e5e7eb);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.toggle-switch.toggle-on {
+  background-color: var(--color-primary, #6366f1);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  background-color: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.toggle-switch.toggle-on .toggle-thumb {
+  transform: translateX(24px);
+}
+</style>

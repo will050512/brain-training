@@ -837,3 +837,136 @@ export async function getUserCognitiveProfile(odId: string): Promise<{
     lastAssessmentDate
   }
 }
+
+/**
+ * 週訓練日期資訊
+ */
+export interface WeekDayInfo {
+  /** 日期字串 (YYYY-MM-DD) */
+  date: string
+  /** 星期標籤 (S, M, T, W, T, F, S) */
+  dayLabel: string
+  /** 日期數字 (1-31) */
+  dayNumber: number
+  /** 是否已完成訓練 */
+  completed: boolean
+  /** 是否為今天 */
+  isToday: boolean
+  /** 訓練時長（分鐘） */
+  minutes: number
+  /** 遊戲次數 */
+  sessions: number
+}
+
+/**
+ * 週訓練完成資訊
+ */
+export interface WeeklyCompletedDaysResult {
+  /** 已完成天數 */
+  completedDays: number
+  /** 總目標天數 */
+  totalDays: number
+  /** 週起始日期 */
+  weekStartDate: string
+  /** 週結束日期 */
+  weekEndDate: string
+  /** 每日詳細資訊 */
+  weekDates: WeekDayInfo[]
+  /** 總訓練分鐘數 */
+  totalMinutes: number
+  /** 總遊戲次數 */
+  totalSessions: number
+}
+
+/**
+ * 取得本週訓練完成天數（獨立 API）
+ * @param odId 用戶 ID
+ * @param weekStartDate 週起始日期（可選，預設為本週日）
+ * @param dailyGoalMinutes 每日目標分鐘數（可選，預設 10 分鐘）
+ */
+export async function getWeeklyCompletedDays(
+  odId: string,
+  weekStartDate?: Date,
+  dailyGoalMinutes: number = 10
+): Promise<WeeklyCompletedDaysResult> {
+  const { getGameSessionsByDate } = await import('@/services/db')
+  
+  // 計算本週起始日（週日）
+  const now = new Date()
+  let weekStart: Date
+  
+  if (weekStartDate) {
+    weekStart = new Date(weekStartDate)
+  } else {
+    weekStart = new Date(now)
+    weekStart.setDate(now.getDate() - now.getDay())
+  }
+  weekStart.setHours(0, 0, 0, 0)
+  
+  // 計算週結束日（週六）
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekStart.getDate() + 6)
+  weekEnd.setHours(23, 59, 59, 999)
+  
+  const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+  const weekDates: WeekDayInfo[] = []
+  let completedDays = 0
+  let totalMinutes = 0
+  let totalSessions = 0
+  
+  // 遍歷本週每一天
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(weekStart)
+    date.setDate(weekStart.getDate() + i)
+    const dateKey = date.toISOString().split('T')[0]
+    
+    if (!dateKey) continue
+    
+    // 查詢該日的遊戲記錄
+    let dayMinutes = 0
+    let daySessions = 0
+    
+    try {
+      const records = await getGameSessionsByDate(odId, dateKey)
+      if (records && records.length > 0) {
+        daySessions = records.length
+        dayMinutes = records.reduce((sum, r) => {
+          const duration = r.result?.duration || 0
+          return sum + Math.round(duration / 60)
+        }, 0)
+      }
+    } catch {
+      // 忽略錯誤
+    }
+    
+    const completed = dayMinutes >= dailyGoalMinutes
+    const isToday = dateKey === now.toISOString().split('T')[0]
+    
+    if (completed) {
+      completedDays++
+    }
+    
+    totalMinutes += dayMinutes
+    totalSessions += daySessions
+    
+    weekDates.push({
+      date: dateKey,
+      dayLabel: dayLabels[i] || 'S',
+      dayNumber: date.getDate(),
+      completed,
+      isToday,
+      minutes: dayMinutes,
+      sessions: daySessions,
+    })
+  }
+  
+  return {
+    completedDays,
+    totalDays: 7,
+    weekStartDate: weekStart.toISOString().split('T')[0] || '',
+    weekEndDate: weekEnd.toISOString().split('T')[0] || '',
+    weekDates,
+    totalMinutes,
+    totalSessions,
+  }
+}

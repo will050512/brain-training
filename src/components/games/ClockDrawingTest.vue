@@ -471,6 +471,12 @@ function handleTouchStart(e: TouchEvent) {
   e.preventDefault()
   e.stopPropagation()
   
+  // 只處理單點觸控，多點觸控時忽略
+  if (e.touches.length > 1) {
+    isDrawing.value = false
+    return
+  }
+  
   const touch = e.touches[0]
   if (!touch) return
   
@@ -492,6 +498,12 @@ function handleTouchStart(e: TouchEvent) {
 function handleTouchMove(e: TouchEvent) {
   e.preventDefault()
   e.stopPropagation()
+  
+  // 多點觸控時停止繪圖
+  if (e.touches.length > 1) {
+    isDrawing.value = false
+    return
+  }
   
   if (!isDrawing.value) return
   const touch = e.touches[0]
@@ -731,6 +743,12 @@ onUnmounted(() => {
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
   document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
   
+  // 清理觸控滾動監聽器
+  if ((window as any).__clockDrawingCleanup) {
+    (window as any).__clockDrawingCleanup()
+    delete (window as any).__clockDrawingCleanup
+  }
+  
   // 清理模擬全螢幕狀態
   if (isPseudoFullscreen.value) {
     document.body.style.overflow = ''
@@ -785,6 +803,10 @@ onUnmounted(() => {
   display: flex;
   justify-content: center;
   margin-bottom: 1rem;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 canvas {

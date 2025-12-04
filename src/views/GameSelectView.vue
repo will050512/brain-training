@@ -224,6 +224,7 @@ function startGame(): void {
   gameStore.selectGame(selectedGame.value.id)
   gameStore.selectDifficulty(selectedDifficulty.value)
   
-  router.push(`/games/${selectedGame.value.id}`)
+  // 導向遊戲預覽頁
+  router.push(`/games/${selectedGame.value.id}/preview`)
 }
 </script>

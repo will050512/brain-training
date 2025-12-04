@@ -114,8 +114,8 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   } | null>(null)
 
-  // 主題設定 - 預設跟隨系統
-  const themeMode = ref<ThemeMode>('system')
+  // 主題設定 - 預設淺色模式
+  const themeMode = ref<ThemeMode>('light')
 
   // 螢幕方向偏好設定
   const orientationPreference = ref<OrientationPreference>('auto')
@@ -166,7 +166,7 @@ export const useSettingsStore = defineStore('settings', () => {
         hasCompletedAssessment.value = data.hasCompletedAssessment ?? false
         assessmentResult.value = data.assessmentResult ?? null
         // 主題設定
-        themeMode.value = data.themeMode ?? 'system'
+        themeMode.value = data.themeMode ?? 'light'
         // 螢幕方向偏好
         orientationPreference.value = data.orientationPreference ?? 'auto'
         // 新增設定

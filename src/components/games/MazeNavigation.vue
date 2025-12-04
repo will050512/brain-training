@@ -2,11 +2,13 @@
 /**
  * 迷宮導航遊戲（重構版）
  * 使用新的遊戲核心架構
+ * 支援觸控滑動手勢控制
  */
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useGameTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
+import { useTouchGesture, type SwipeDirection } from '@/composables/useTouchGesture'
 import {
   generateMaze,
   move,
@@ -87,6 +89,17 @@ const { playCorrect, playWrong, playEnd, preloadDefaultSounds } = useGameAudio()
 // ===== 遊戲資料 =====
 const mazeState = ref<MazeState | null>(null)
 const moves = ref(0)
+const gameAreaRef = ref<HTMLElement | null>(null)
+
+// ===== 觸控手勢偵測 =====
+const { handlers: touchHandlers } = useTouchGesture({
+  threshold: 30,
+  preventDefault: true,
+  onSwipe: (direction: SwipeDirection) => {
+    if (!isPlaying.value || !direction) return
+    handleMove(direction as Direction)
+  },
+})
 
 // ===== 計算屬性 =====
 const gridSize = computed(() => config.value.size)
@@ -107,9 +120,9 @@ const feedbackData = computed(() => {
 // ===== 遊戲說明 =====
 const gameInstructions = [
   '使用方向鍵或點擊按鈕移動',
+  '在螢幕上滑動也可控制方向',
   '從起點（綠色）走到終點（紅色）',
   '規劃最短路線可獲得更高分數',
-  '支援鍵盤 WASD 或方向鍵控制',
 ]
 
 // ===== 遊戲方法 =====
@@ -242,10 +255,12 @@ watch(() => props.difficulty, () => {
         </div>
       </div>
 
-      <!-- 迷宮 -->
+      <!-- 迷宮（含觸控手勢偵測區域） -->
       <div 
-        class="maze-container mt-6 flex justify-center"
+        ref="gameAreaRef"
+        class="maze-container mt-6 flex justify-center touch-area"
         v-if="mazeState"
+        v-on="touchHandlers"
       >
         <div 
           class="maze-grid"
@@ -305,7 +320,7 @@ watch(() => props.difficulty, () => {
           </button>
         </div>
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-          也可使用鍵盤方向鍵或 WASD
+          滑動螢幕或使用鍵盤方向鍵
         </p>
       </div>
 
@@ -335,6 +350,20 @@ watch(() => props.difficulty, () => {
 </template>
 
 <style scoped>
+.maze-container {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.touch-area {
+  min-height: 300px;
+  padding: 1rem;
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+
 .maze-grid {
   display: grid;
   gap: 1px;
@@ -398,5 +427,31 @@ watch(() => props.difficulty, () => {
 .control-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+/* 手機版觸控控制提示 */
+@media (hover: none) and (pointer: coarse) {
+  .touch-area {
+    background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-bg-soft) 100%);
+    border: 2px dashed var(--color-border);
+  }
+  
+  .touch-area::after {
+    content: '👆 滑動控制';
+    display: block;
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+}
+
+/* 響應式控制按鈕 */
+@media (max-width: 640px) {
+  .control-btn {
+    width: 56px;
+    height: 56px;
+    font-size: 1.75rem;
+  }
 }
 </style>

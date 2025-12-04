@@ -803,15 +803,37 @@ defineExpose({
   }
 
   .consent-modal {
-    max-height: 95vh;
+    max-height: 80vh;
     border-radius: 1.5rem 1.5rem 0 0;
+    display: flex;
+    flex-direction: column;
   }
 
-  .consent-header,
-  .consent-content,
+  .consent-header {
+    flex-shrink: 0;
+    padding: 1rem 1.25rem;
+  }
+
+  .consent-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 1rem 1.25rem;
+  }
+
   .consent-footer {
-    padding-left: 1.25rem;
-    padding-right: 1.25rem;
+    flex-shrink: 0;
+    padding: 1rem 1.25rem;
+    position: sticky;
+    bottom: 0;
+    background: #f8fafc;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  :where(.dark, .dark *) .consent-footer {
+    background: #0f172a;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
   }
 
   .consent-required,
@@ -826,13 +848,47 @@ defineExpose({
     font-size: 1.25rem;
   }
 
+  .consent-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .consent-icon svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .consent-section {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .section-title {
+    font-size: 1rem;
+  }
+
+  .consent-label-title {
+    font-size: 0.9375rem;
+  }
+
+  .consent-description {
+    padding-left: 2rem;
+    font-size: 0.8125rem;
+  }
+
   .consent-actions {
     flex-direction: column;
+    gap: 0.75rem;
   }
 
   .btn-primary,
   .btn-secondary {
     width: 100%;
+    padding: 0.75rem 1.5rem;
+  }
+
+  .consent-summary {
+    margin-bottom: 0.75rem;
   }
 }
 
