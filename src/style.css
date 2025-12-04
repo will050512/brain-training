@@ -1342,6 +1342,23 @@ body {
 @media (min-width: 768px) {
   .app-page {
     max-width: 100%;
+    height: auto;
+    min-height: 100%;
+  }
+
+  /* 桌面版時隱藏手機版的 header（由 DesktopLayout 的側邊欄取代） */
+  .layout-desktop .app-header {
+    display: none;
+  }
+
+  /* 桌面版時調整內容區域 */
+  .layout-desktop .app-page {
+    height: auto;
+    overflow: visible;
+  }
+
+  .layout-desktop .app-content-scroll {
+    overflow: visible;
   }
 
   .app-content-scroll,

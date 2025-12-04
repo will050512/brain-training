@@ -107,21 +107,26 @@ provide('layoutInfo', {
 // - 無記錄時需要同意
 // - 版本更新時需要重新同意（CURRENT_CONSENT_VERSION 變更）
 async function checkConsentStatus(): Promise<void> {
-  if (!userStore.currentUser?.id) return
-  
-  const odId = userStore.currentUser.id
+  const odId = userStore.currentUser?.id
+  if (!odId) {
+    console.log('checkConsentStatus: No user ID available')
+    return
+  }
   
   try {
     const consent = await getDataConsent(odId)
+    console.log('checkConsentStatus: Consent record for', odId, ':', consent)
     
     // 沒有同意記錄：需要顯示同意書
     if (!consent) {
+      console.log('checkConsentStatus: No consent record, showing modal')
       showConsentModal.value = true
       return
     }
     
     // 版本更新時需要重新同意
     const needsUpdate = await checkConsentVersionNeedsUpdate(odId)
+    console.log('checkConsentStatus: Needs update:', needsUpdate)
     if (needsUpdate) {
       showConsentModal.value = true
     }
@@ -144,8 +149,11 @@ function handleConsentSkipped(): void {
 
 // 監聽使用者登入狀態變化
 watch(() => userStore.currentUser, (newUser) => {
-  if (newUser) {
-    checkConsentStatus()
+  if (newUser?.id) {
+    // 延遲檢查，確保 ID 已完全載入
+    setTimeout(() => {
+      checkConsentStatus()
+    }, 100)
   }
 }, { immediate: false })
 
@@ -159,8 +167,8 @@ onMounted(async () => {
   // 嘗試恢復登入狀態
   await userStore.restoreSession()
   
-  // 恢復登入後檢查同意狀態
-  if (userStore.currentUser) {
+  // 恢復登入後檢查同意狀態（確保 ID 存在）
+  if (userStore.currentUser?.id) {
     await checkConsentStatus()
   }
 })

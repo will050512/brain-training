@@ -238,7 +238,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { CURRENT_CONSENT_VERSION, defaultDataConsent, type DataConsentOptions } from '@/types/user'
+import { CURRENT_CONSENT_VERSION, type DataConsentOptions } from '@/types/user'
 import { saveDataConsent, getDataConsent, checkConsentVersionNeedsUpdate } from '@/services/db'
 import { useUserStore } from '@/stores/userStore'
 import { useToast } from '@/composables/useToast'
@@ -358,22 +358,34 @@ const handleConfirm = async () => {
     success('已同意所有選項', { duration: 3000, icon: '✅' })
   }
 
-  // Update timestamp and version
-  consent.value.odId = odId
-  consent.value.consentTimestamp = new Date().toISOString()
-  consent.value.consentVersion = CURRENT_CONSENT_VERSION
+  // 建立完整的同意記錄
+  const consentRecord: DataConsentOptions = {
+    odId: odId,
+    essentialConsent: true,
+    analyticsConsent: consent.value.analyticsConsent,
+    behaviorTrackingConsent: consent.value.behaviorTrackingConsent,
+    detailedBehaviorConsent: consent.value.detailedBehaviorConsent,
+    medicalSharingConsent: consent.value.medicalSharingConsent,
+    consentTimestamp: new Date().toISOString(),
+    consentVersion: CURRENT_CONSENT_VERSION
+  }
 
   // Save to IndexedDB
   try {
-    await saveDataConsent(consent.value)
-    console.log('Consent saved successfully for odId:', odId)
+    await saveDataConsent(consentRecord)
+    console.log('Consent saved successfully for odId:', odId, consentRecord)
+    
+    // 驗證保存成功
+    const saved = await getDataConsent(odId)
+    console.log('Verified saved consent:', saved)
+    
     visible.value = false
-    emit('confirmed', { ...consent.value })
+    emit('confirmed', consentRecord)
   } catch (error) {
     console.error('Failed to save consent:', error)
     // Still emit and close, but log the error
     visible.value = false
-    emit('confirmed', { ...consent.value })
+    emit('confirmed', consentRecord)
   }
 }
 
