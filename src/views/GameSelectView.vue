@@ -81,71 +81,6 @@
       </div>
     </div>
 
-    <!-- 遊戲詳情彈窗 -->
-    <Teleport to="body">
-      <div v-if="selectedGame" class="modal-overlay" @click.self="closeGameModal">
-        <div class="modal-content max-w-md animate-slide-up">
-          <!-- 遊戲標題 -->
-          <div class="text-center mb-4">
-            <div class="text-5xl mb-2">{{ selectedGame.icon }}</div>
-            <h2 class="text-xl font-bold text-[var(--color-text)]">{{ selectedGame.name }}</h2>
-            <p class="text-sm text-[var(--color-text-muted)] mt-1">{{ selectedGame.description }}</p>
-          </div>
-
-          <!-- 遊戲說明 -->
-          <div class="mb-4 p-3 bg-[var(--color-surface-alt)] rounded-lg">
-            <h3 class="font-semibold text-sm text-[var(--color-text)] mb-2">遊戲說明</h3>
-            <ul class="list-disc list-inside text-[var(--color-text-secondary)] text-sm space-y-1">
-              <li v-for="(instruction, index) in selectedGame.instructions" :key="index">
-                {{ instruction }}
-              </li>
-            </ul>
-          </div>
-
-          <!-- 難度選擇 -->
-          <div class="mb-4">
-            <h3 class="font-semibold text-sm text-[var(--color-text)] mb-2">選擇難度</h3>
-            <div class="grid grid-cols-3 gap-2">
-              <button
-                v-for="diff in difficulties"
-                :key="diff.id"
-                @click="selectedDifficulty = diff.id"
-                class="py-2 rounded-lg font-medium text-sm transition-all"
-                :class="{
-                  'ring-2 ring-offset-2 dark:ring-offset-slate-800': selectedDifficulty === diff.id,
-                  'ring-green-500': selectedDifficulty === diff.id && diff.id === 'easy',
-                  'ring-yellow-500': selectedDifficulty === diff.id && diff.id === 'medium',
-                  'ring-red-500': selectedDifficulty === diff.id && diff.id === 'hard',
-                }"
-                :style="{ backgroundColor: diff.bgColor, color: diff.color }"
-              >
-                {{ diff.name }}
-              </button>
-            </div>
-          </div>
-
-          <!-- 歷史成績 -->
-          <div class="mb-4 p-3 bg-[var(--color-surface-alt)] rounded-lg text-sm">
-            <div class="flex justify-between">
-              <span class="text-[var(--color-text-muted)]">{{ DIFFICULTIES[selectedDifficulty].name }}最佳</span>
-              <span class="font-bold text-[var(--color-text)]">
-                {{ gameStore.getBestScore(selectedGame.id, selectedDifficulty) || '-' }} 分
-              </span>
-            </div>
-          </div>
-
-          <!-- 按鈕 -->
-          <div class="flex gap-3">
-            <button @click="closeGameModal" class="btn btn-secondary flex-1 py-3">
-              取消
-            </button>
-            <button @click="startGame" class="btn btn-primary flex-1 py-3 shadow-lg">
-              開始遊戲
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
   </div>
 </template>
 
@@ -154,21 +89,16 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStore } from '@/stores'
 import { COGNITIVE_DIMENSIONS, type CognitiveDimension } from '@/types/cognitive'
-import { DIFFICULTIES, type Difficulty, type GameDefinition } from '@/types/game'
+import type { GameDefinition } from '@/types/game'
 
 const router = useRouter()
 const gameStore = useGameStore()
 
 // 狀態
 const selectedDimension = ref<CognitiveDimension | null>(null)
-const selectedGame = ref<GameDefinition | null>(null)
-const selectedDifficulty = ref<Difficulty>('easy')
 
 // 認知維度列表
 const cognitiveDimensions = Object.values(COGNITIVE_DIMENSIONS)
-
-// 難度列表
-const difficulties = Object.values(DIFFICULTIES)
 
 // 篩選後的遊戲列表
 const filteredGames = computed(() => {
@@ -206,25 +136,9 @@ function getScoreClass(score: number): string {
   return 'score-low'
 }
 
-// 開啟遊戲詳情
+// 直接跳轉到遊戲預覽頁
 function openGameModal(game: GameDefinition): void {
-  selectedGame.value = game
-  selectedDifficulty.value = 'easy'
-}
-
-// 關閉遊戲詳情
-function closeGameModal(): void {
-  selectedGame.value = null
-}
-
-// 開始遊戲
-function startGame(): void {
-  if (!selectedGame.value) return
-  
-  gameStore.selectGame(selectedGame.value.id)
-  gameStore.selectDifficulty(selectedDifficulty.value)
-  
-  // 導向遊戲預覽頁
-  router.push(`/games/${selectedGame.value.id}/preview`)
+  gameStore.selectGame(game.id)
+  router.push(`/games/${game.id}/preview`)
 }
 </script>

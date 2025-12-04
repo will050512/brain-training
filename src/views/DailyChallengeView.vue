@@ -125,13 +125,11 @@ async function loadRecommendations() {
   }
 }
 
-// 開始遊戲
+// 開始遊戲 - 跳轉到遊戲預覽頁
 function startGame(gameId: string, difficulty: string) {
-  router.push({
-    name: 'GamePlay',
-    params: { gameId },
-    query: { difficulty },
-  })
+  gameStore.selectGame(gameId)
+  gameStore.selectDifficulty(difficulty as 'easy' | 'medium' | 'hard')
+  router.push(`/games/${gameId}/preview`)
 }
 
 // 取得優先級顏色

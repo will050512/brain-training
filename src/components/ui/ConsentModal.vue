@@ -337,6 +337,15 @@ const handleSkip = () => {
 
 const handleConfirm = async () => {
   if (!canConfirm.value) return
+  
+  // 確保有有效的 odId
+  const odId = currentOdId.value
+  if (!odId) {
+    console.error('No valid odId for consent')
+    visible.value = false
+    emit('skipped')
+    return
+  }
 
   // 如果用戶沒有手動修改過任何選項，則默認全部同意
   if (!hasUserModifiedOptions.value) {
@@ -350,13 +359,14 @@ const handleConfirm = async () => {
   }
 
   // Update timestamp and version
-  consent.value.odId = currentOdId.value
+  consent.value.odId = odId
   consent.value.consentTimestamp = new Date().toISOString()
   consent.value.consentVersion = CURRENT_CONSENT_VERSION
 
   // Save to IndexedDB
   try {
     await saveDataConsent(consent.value)
+    console.log('Consent saved successfully for odId:', odId)
     visible.value = false
     emit('confirmed', { ...consent.value })
   } catch (error) {
