@@ -266,7 +266,6 @@ watch(() => props.difficulty, () => {
       v-if="phase === 'ready'"
       title="瞬間記憶"
       icon="🧠"
-      :rules="gameInstructions"
       :difficulty="difficulty === 'medium' ? 'normal' : difficulty"
       @start="handleStart"
     />

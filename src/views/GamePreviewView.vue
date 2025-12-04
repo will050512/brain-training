@@ -8,49 +8,69 @@
       <div class="gradient-overlay"></div>
     </div>
 
-    <!-- 頂部工具列 -->
-    <header class="preview-header">
-      <button @click="showDifficultyPanel = true" class="difficulty-btn">
-        難度調整
-      </button>
-      <h1 class="game-title">{{ currentGame?.name || '遊戲' }}</h1>
-    </header>
+    <!-- 橫屏並列佈局容器 -->
+    <div class="preview-layout-wrapper">
+      <!-- 左側：資訊區 -->
+      <div class="preview-info-section">
+        <!-- 頂部工具列 -->
+        <header class="preview-header">
+          <button @click="showDifficultyPanel = true" class="difficulty-btn">
+            難度調整
+          </button>
+          <h1 class="game-title">{{ currentGame?.name || '遊戲' }}</h1>
+        </header>
 
-    <!-- 主要內容區 -->
-    <main class="preview-main">
-      <!-- 遊戲圖示與動畫 -->
-      <div class="game-icon-area">
-        <div class="game-icon-wrapper">
-          <span class="game-icon">{{ currentGame?.icon || '🎮' }}</span>
+        <!-- 遊戲圖示與動畫 -->
+        <div class="game-icon-area">
+          <div class="game-icon-wrapper">
+            <span class="game-icon">{{ currentGame?.icon || '🎮' }}</span>
+          </div>
+          <!-- 認知維度標籤 -->
+          <div v-if="primaryDimension" class="dimension-badge" :style="{ backgroundColor: dimensionColor }">
+            {{ dimensionName }}
+          </div>
         </div>
-        <!-- 認知維度標籤 -->
-        <div v-if="primaryDimension" class="dimension-badge" :style="{ backgroundColor: dimensionColor }">
-          {{ dimensionName }}
-        </div>
-      </div>
 
-      <!-- 遊戲說明 -->
-      <div class="game-benefits">
-        <ul>
-          <li v-for="(instruction, index) in currentGame?.instructions?.slice(0, 3)" :key="index">
-            {{ instruction }}
-          </li>
-        </ul>
-      </div>
-
-      <!-- 草地裝飾 -->
-      <div class="ground-decoration">
-        <div class="grass"></div>
-        <div class="bottles">
-          <div class="bottle bottle-1"></div>
-          <div class="bottle bottle-2"></div>
-          <div class="bottle bottle-3"></div>
+        <!-- 遊戲說明 -->
+        <div class="game-benefits">
+          <ul>
+            <li v-for="(instruction, index) in currentGame?.instructions?.slice(0, 3)" :key="index">
+              {{ instruction }}
+            </li>
+          </ul>
         </div>
       </div>
-    </main>
 
-    <!-- 底部按鈕區 -->
-    <footer class="preview-footer">
+      <!-- 右側：操作區 -->
+      <div class="preview-action-section">
+        <!-- 按鈕區 -->
+        <div class="action-buttons-vertical">
+          <button @click="startGame" class="start-btn-large">
+            開始遊戲
+          </button>
+          <button @click="showInstructions = true" class="instruction-btn-outline">
+            查看詳細說明
+          </button>
+          <button @click="goBack" class="back-btn-ghost">
+            <span class="back-icon">↩</span>
+            返回選擇
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 草地裝飾 (豎屏時顯示) -->
+    <div class="ground-decoration portrait-only">
+      <div class="grass"></div>
+      <div class="bottles">
+        <div class="bottle bottle-1"></div>
+        <div class="bottle bottle-2"></div>
+        <div class="bottle bottle-3"></div>
+      </div>
+    </div>
+
+    <!-- 底部按鈕區 (豎屏時顯示) -->
+    <footer class="preview-footer portrait-only">
       <button @click="goBack" class="back-btn">
         <span class="back-icon">↩</span>
         返回
@@ -238,6 +258,140 @@ onMounted(() => {
   overflow: hidden;
 }
 
+/* ===== 響應式佈局容器 ===== */
+.preview-layout-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  z-index: 5;
+}
+
+.preview-info-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.preview-action-section {
+  display: none; /* 豎屏時隱藏，用 footer */
+}
+
+/* 橫屏並列佈局 */
+@media (orientation: landscape) and (max-height: 500px) {
+  .preview-layout-wrapper {
+    flex-direction: row;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  .preview-info-section {
+    flex: 0 0 55%;
+    max-width: 450px;
+    padding: 0.75rem 1rem;
+    justify-content: flex-start;
+    overflow-y: auto;
+  }
+
+  .preview-action-section {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 0.75rem;
+  }
+
+  .portrait-only {
+    display: none !important;
+  }
+
+  .preview-header {
+    padding: 0.5rem 0;
+  }
+
+  .game-title {
+    font-size: 1.25rem !important;
+  }
+
+  .game-icon-wrapper {
+    width: 80px !important;
+    height: 80px !important;
+  }
+
+  .game-icon {
+    font-size: 2.5rem !important;
+  }
+
+  .game-icon-area {
+    margin-bottom: 1rem !important;
+  }
+
+  .game-benefits li {
+    font-size: 0.9375rem !important;
+    padding: 0.25rem 0 !important;
+  }
+}
+
+/* 橫屏操作按鈕區 */
+.action-buttons-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 200px;
+}
+
+.start-btn-large {
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #22c55e, #4ade80);
+  color: white;
+  border: 3px solid #fff;
+  border-radius: 12px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.4);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.start-btn-large:active {
+  transform: scale(0.95);
+}
+
+.instruction-btn-outline {
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.8);
+  color: #65a30d;
+  border: 2px solid #65a30d;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.instruction-btn-outline:hover {
+  background: rgba(255, 255, 255, 1);
+}
+
+.back-btn-ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: none;
+  color: #65a30d;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 /* 背景裝飾 */
 .bg-decoration {
   position: absolute;
@@ -305,6 +459,7 @@ onMounted(() => {
   justify-content: space-between;
   padding: 1rem 1.5rem;
   padding-top: max(1rem, env(safe-area-inset-top));
+  width: 100%;
 }
 
 .difficulty-btn {
@@ -331,18 +486,7 @@ onMounted(() => {
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* 主要內容區 */
-.preview-main {
-  flex: 1;
-  position: relative;
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
-
+/* 遊戲圖示區域 */
 .game-icon-area {
   text-align: center;
   margin-bottom: 2rem;

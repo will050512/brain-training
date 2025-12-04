@@ -234,7 +234,6 @@ watch(() => props.difficulty, () => {
       v-if="phase === 'ready'"
       title="迷宮導航"
       icon="🧭"
-      :rules="gameInstructions"
       :difficulty="difficulty === 'medium' ? 'normal' : difficulty"
       @start="handleStart"
     />

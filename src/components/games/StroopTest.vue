@@ -270,7 +270,6 @@ watch(() => props.difficulty, () => {
       v-if="phase === 'ready'"
       title="Stroop測試"
       icon="🎨"
-      :rules="gameInstructions"
       :difficulty="difficulty === 'medium' ? 'normal' : difficulty"
       @start="handleStart"
     />

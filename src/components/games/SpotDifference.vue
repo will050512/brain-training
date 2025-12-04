@@ -259,7 +259,6 @@ watch(() => props.difficulty, () => {
       v-if="phase === 'ready'"
       title="找不同"
       icon="🔍"
-      :rules="gameInstructions"
       :difficulty="difficulty === 'medium' ? 'normal' : difficulty"
       @start="handleStart"
     />

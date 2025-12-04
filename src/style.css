@@ -1704,3 +1704,195 @@ body {
     height: 4px;
   }
 }
+
+/* ===== 全域橫屏/豎屏響應式佈局系統 ===== */
+
+/* 手機橫屏模式全域優化 (max-height: 500px) */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* 頁面容器禁止滾動 */
+  .page-no-scroll {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 橫屏並列佈局 */
+  .landscape-row {
+    display: flex;
+    flex-direction: row !important;
+    align-items: stretch;
+    gap: var(--spacing-md);
+  }
+
+  .landscape-col-left {
+    flex: 0 0 auto;
+    width: 40%;
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow-y: auto;
+  }
+
+  .landscape-col-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow-y: auto;
+  }
+
+  /* 標題縮小 */
+  .landscape-title-compact {
+    font-size: 1.25rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* 隱藏非必要元素 */
+  .landscape-hide {
+    display: none !important;
+  }
+
+  /* 緊湊間距 */
+  .landscape-compact {
+    padding: var(--spacing-xs) var(--spacing-sm) !important;
+    gap: var(--spacing-xs) !important;
+  }
+
+  /* 按鈕縮小 */
+  .landscape-btn-small {
+    min-height: 44px !important;
+    padding: var(--spacing-xs) var(--spacing-md) !important;
+    font-size: 0.9375rem !important;
+  }
+
+  /* 全螢幕遊戲區域 */
+  .game-area-fullscreen {
+    height: 100vh;
+    height: 100dvh;
+    width: 100vw;
+    width: 100dvw;
+    overflow: hidden;
+    padding: var(--spacing-xs);
+  }
+}
+
+/* 平板橫屏 (min-height: 501px, max-width: 1024px) */
+@media (orientation: landscape) and (min-height: 501px) and (max-width: 1024px) {
+  .tablet-landscape-row {
+    display: flex;
+    flex-direction: row;
+    gap: var(--spacing-lg);
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .tablet-landscape-col {
+    flex: 1;
+  }
+}
+
+/* 豎屏模式強調全寬度 */
+@media (orientation: portrait) {
+  .portrait-full-width {
+    width: 100%;
+    max-width: none;
+  }
+
+  .portrait-stack {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* 視窗高度過小時的緊急佈局 (超扁橫屏) */
+@media (max-height: 400px) {
+  .ultra-compact-layout {
+    padding: 4px !important;
+    gap: 4px !important;
+  }
+
+  .ultra-compact-layout h1,
+  .ultra-compact-layout h2,
+  .ultra-compact-layout h3 {
+    font-size: 1rem !important;
+    margin: 0 !important;
+  }
+
+  .ultra-compact-layout .btn,
+  .ultra-compact-layout button {
+    min-height: 36px !important;
+    padding: 0.25rem 0.75rem !important;
+    font-size: 0.875rem !important;
+  }
+}
+
+/* 評估/測驗頁面專用 - 防止滾動 */
+.assessment-page-fixed {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.assessment-content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 評估頁面橫屏佈局 */
+@media (orientation: landscape) and (max-height: 600px) {
+  .assessment-page-fixed {
+    flex-direction: row;
+  }
+
+  .assessment-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--color-border);
+    overflow-y: auto;
+  }
+
+  .assessment-main {
+    flex: 1;
+    overflow-y: auto;
+  }
+}
+
+/* 遊戲預覽頁橫屏並列佈局 */
+.preview-landscape-container {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .preview-landscape-container {
+    flex-direction: row;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .preview-info-section {
+    flex: 0 0 45%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--spacing-md);
+    overflow-y: auto;
+  }
+
+  .preview-action-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: var(--spacing-md);
+  }
+}

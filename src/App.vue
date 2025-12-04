@@ -103,7 +103,9 @@ provide('layoutInfo', {
 
 // ===== 同意對話框邏輯 =====
 
-// 檢查是否需要顯示同意對話框（每位用戶只需同意一次）
+// 檢查是否需要顯示同意對話框
+// - 無記錄時需要同意
+// - 版本更新時需要重新同意（CURRENT_CONSENT_VERSION 變更）
 async function checkConsentStatus(): Promise<void> {
   if (!userStore.currentUser?.id) return
   
@@ -112,12 +114,17 @@ async function checkConsentStatus(): Promise<void> {
   try {
     const consent = await getDataConsent(odId)
     
-    // 只有完全沒有同意記錄時才需要顯示對話框
-    // 用戶同意過一次後，即使版本更新也不再強制顯示
+    // 沒有同意記錄：需要顯示同意書
     if (!consent) {
       showConsentModal.value = true
+      return
     }
-    // 版本更新時不再自動彈出，用戶可在設定中查看
+    
+    // 版本更新時需要重新同意
+    const needsUpdate = await checkConsentVersionNeedsUpdate(odId)
+    if (needsUpdate) {
+      showConsentModal.value = true
+    }
   } catch (error) {
     console.error('Failed to check consent status:', error)
   }

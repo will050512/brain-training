@@ -775,4 +775,272 @@ watch(stage, (newStage) => {
     width: 100%;
   }
 }
+
+/* 手機橫屏優化 */
+@media (orientation: landscape) and (max-height: 500px) {
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* 頭部壓縮 */
+  .container.mx-auto.px-4.py-4 {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .container.mx-auto.px-4.py-8 {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    overflow-y: auto;
+    max-height: calc(100vh - 60px);
+    max-height: calc(100dvh - 60px);
+  }
+
+  /* 選擇頁面橫屏並列 */
+  .max-w-3xl.mx-auto .text-center.mb-8 {
+    margin-bottom: 0.75rem;
+  }
+
+  .max-w-3xl.mx-auto .text-center.mb-8 .text-6xl {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .max-w-3xl.mx-auto .text-center.mb-8 .text-2xl {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .grid.md\\:grid-cols-2 {
+    display: flex !important;
+    flex-direction: row;
+    gap: 1rem;
+  }
+
+  .assessment-card {
+    padding: 1rem;
+    flex: 1;
+  }
+
+  .card-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .card-title {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .card-description {
+    font-size: 0.8125rem;
+    margin-bottom: 0.75rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .card-features {
+    margin-bottom: 0.75rem;
+  }
+
+  .card-features li {
+    padding: 0.25rem 0;
+    font-size: 0.75rem;
+  }
+
+  .card-action {
+    padding-top: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .card-badge {
+    top: 0.5rem;
+    right: 0.5rem;
+    font-size: 0.625rem;
+    padding: 0.125rem 0.5rem;
+  }
+
+  .language-selector {
+    margin-top: 0.75rem;
+  }
+
+  .language-selector label {
+    font-size: 0.75rem;
+  }
+
+  .language-select {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .recent-result-banner {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .banner-icon {
+    font-size: 1.5rem;
+  }
+
+  .banner-title {
+    font-size: 0.875rem;
+  }
+
+  .banner-date {
+    font-size: 0.75rem;
+  }
+
+  .banner-action {
+    width: auto;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  /* 說明頁橫屏 */
+  .max-w-2xl.mx-auto .card.text-center {
+    padding: 1rem;
+    max-height: calc(100vh - 80px);
+    max-height: calc(100dvh - 80px);
+    overflow-y: auto;
+  }
+
+  .max-w-2xl.mx-auto .card.text-center .text-6xl {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .max-w-2xl.mx-auto .card.text-center .text-2xl {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .max-w-2xl.mx-auto .card.text-center .text-lg {
+    font-size: 0.9375rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .bg-blue-50,
+  .bg-orange-50,
+  .bg-amber-50,
+  .dark\\:bg-blue-900\\/30,
+  .dark\\:bg-orange-900\\/30,
+  .dark\\:bg-amber-900\\/30 {
+    padding: 0.75rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .bg-blue-50 .font-bold,
+  .bg-orange-50 .font-medium {
+    font-size: 0.9375rem;
+  }
+
+  .bg-blue-50 li,
+  .bg-orange-50 .text-sm,
+  .bg-amber-50 p {
+    font-size: 0.8125rem;
+  }
+
+  .btn.btn-primary.btn-lg {
+    padding: 0.75rem 2rem !important;
+    font-size: 1rem !important;
+  }
+
+  .btn.btn-secondary {
+    padding: 0.5rem 1.5rem !important;
+    margin-top: 0.5rem !important;
+  }
+
+  /* 測試進行中頁面 */
+  .max-w-2xl.mx-auto .mb-6 {
+    margin-bottom: 0.5rem;
+  }
+
+  .max-w-2xl.mx-auto .mb-8 {
+    margin-bottom: 0.75rem;
+  }
+
+  .progress-bar.h-3 {
+    height: 0.5rem;
+  }
+
+  .max-w-2xl.mx-auto .card {
+    padding: 1rem;
+  }
+
+  .text-6xl.font-bold {
+    font-size: 2.5rem !important;
+    padding: 1rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .text-5xl.font-bold {
+    font-size: 2rem !important;
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .text-4xl.text-center {
+    font-size: 1.75rem;
+  }
+
+  .grid.grid-cols-2.gap-4 {
+    gap: 0.5rem;
+  }
+
+  .grid.grid-cols-2.gap-4 .btn {
+    padding: 0.75rem !important;
+    font-size: 1rem !important;
+    min-height: 48px;
+  }
+
+  .mt-6.text-center .inline-flex {
+    padding: 0.375rem 0.75rem;
+  }
+
+  /* 結果頁面 */
+  .grid.grid-cols-3.gap-4 {
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .grid.grid-cols-3.gap-4 > div {
+    padding: 0.75rem;
+  }
+
+  .grid.grid-cols-3.gap-4 .text-3xl {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .grid.grid-cols-3.gap-4 .text-2xl {
+    font-size: 1.25rem;
+  }
+
+  .grid.grid-cols-3.gap-4 .text-sm {
+    font-size: 0.75rem;
+  }
+
+  .bg-green-50 {
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .bg-green-50 .text-3xl {
+    font-size: 1.5rem;
+  }
+
+  .flex.gap-4.justify-center {
+    gap: 0.75rem;
+  }
+
+  .flex.gap-4.justify-center .btn {
+    padding: 0.625rem 1.25rem !important;
+    font-size: 0.9375rem !important;
+  }
+}
 </style>

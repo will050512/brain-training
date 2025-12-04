@@ -236,7 +236,6 @@ watch(() => props.difficulty, () => {
       v-if="phase === 'ready'"
       title="加減乘除"
       icon="🧮"
-      :rules="gameInstructions"
       :difficulty="difficulty === 'medium' ? 'normal' : difficulty"
       @start="handleStart"
     />

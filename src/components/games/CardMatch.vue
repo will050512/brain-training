@@ -337,7 +337,6 @@ watch(() => game.timer.isTimeUp.value, (isUp) => {
       v-if="phase === 'ready'"
       title="翻牌配對"
       icon="🃏"
-      :rules="gameInstructions"
       :difficulty="difficulty === 'medium' ? 'normal' : difficulty"
       @start="handleStart"
     />

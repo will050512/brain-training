@@ -9,6 +9,30 @@ import type { CognitiveScores } from './cognitive'
 /** 目前同意條款版本 */
 export const CURRENT_CONSENT_VERSION = '1.1'
 
+/** 同意條款版本歷史 */
+export const CONSENT_VERSION_HISTORY = [
+  {
+    version: '1.0',
+    date: '2024-11-01',
+    changes: [
+      '初始版本',
+      '基本功能資料同意',
+      '匿名分析資料同意',
+      '行為追蹤資料同意',
+      '醫療資料分享同意',
+    ],
+  },
+  {
+    version: '1.1',
+    date: '2024-12-01',
+    changes: [
+      '新增精細行為分析選項（思考時間、操作取消、答案反悔等）',
+      '更新隱私保護說明',
+      '優化同意書介面',
+    ],
+  },
+] as const
+
 /** 資料使用同意選項 */
 export interface DataConsentOptions {
   /** 使用者 ID */

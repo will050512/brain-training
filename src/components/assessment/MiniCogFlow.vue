@@ -1354,33 +1354,272 @@ onUnmounted(() => {
   }
 }
 
-/* 橫向模式優化（手機橫放） */
-@media (max-height: 500px) and (orientation: landscape) {
+/* 橫向模式優化（手機橫放）- 增強版 */
+@media (orientation: landscape) and (max-height: 500px) {
   .mini-cog-flow {
-    padding: 0.75rem;
-  }
-
-  .step-content {
-    padding: 1rem 1.5rem;
-    min-height: auto;
+    padding: 0.5rem;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
   .progress-bar {
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .progress-steps {
+    gap: 0.5rem;
+  }
+
+  .step-circle {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.75rem;
+  }
+
+  .step-label {
+    display: none;
+  }
+
+  .step-content {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    min-height: auto;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 說明頁橫屏並列 */
+  .intro-step {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .intro-step .intro-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0;
+  }
+
+  .intro-step h2 {
+    font-size: 1.25rem !important;
+    margin-bottom: 0.25rem;
+    width: 100%;
+    text-align: center;
+  }
+
+  .intro-description {
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+    width: 100%;
+  }
+
+  .info-cards {
+    flex-direction: row;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    width: 100%;
+  }
+
+  .info-card {
+    padding: 0.5rem;
+    flex: 1;
+  }
+
+  .info-icon {
+    font-size: 1rem;
+  }
+
+  .info-text strong {
+    font-size: 0.75rem;
+  }
+
+  .info-text span {
+    font-size: 0.625rem;
+  }
+
+  .disclaimer {
+    padding: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.75rem;
+    width: 100%;
+  }
+
+  /* 詞語記憶頁橫屏 */
+  .words-step h2 {
+    font-size: 1.125rem !important;
+    margin-bottom: 0.25rem;
+  }
+
+  .words-step .instruction {
+    font-size: 0.9375rem;
+    margin-bottom: 0.75rem;
   }
 
   .word-display {
-    padding: 1rem;
+    margin-bottom: 0.75rem;
   }
 
-  .word-list {
+  .words-container {
+    gap: 0.75rem;
+  }
+
+  .word-card {
+    padding: 0.75rem 1.25rem;
+    font-size: 1.125rem;
+  }
+
+  .countdown {
+    font-size: 2rem;
+  }
+
+  .timer-display {
+    font-size: 0.875rem;
+  }
+
+  /* 時鐘繪圖頁橫屏 */
+  .clock-step h2 {
+    font-size: 1.125rem !important;
+    margin-bottom: 0.25rem;
+  }
+
+  .clock-step .instruction {
+    font-size: 0.9375rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* 詞語回憶頁橫屏 */
+  .recall-step h2 {
+    font-size: 1.125rem !important;
+    margin-bottom: 0.25rem;
+  }
+
+  .recall-step .instruction {
+    font-size: 0.9375rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .recall-options {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+  }
+
+  .recall-option {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.9375rem;
+    min-height: 44px;
+  }
+
+  .selection-count {
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  /* 結果頁橫屏並列 */
+  .results-step {
+    display: flex;
     flex-direction: row;
     flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-start;
     justify-content: center;
   }
 
+  .results-header {
+    flex: 0 0 auto;
+    margin-bottom: 0;
+  }
+
+  .score-circle {
+    width: 80px;
+    height: 80px;
+  }
+
+  .score-value {
+    font-size: 1.75rem;
+  }
+
+  .score-max {
+    font-size: 0.75rem;
+  }
+
+  .results-header h2 {
+    font-size: 1rem !important;
+  }
+
+  .score-breakdown {
+    flex-direction: row;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .score-item {
+    gap: 0.25rem;
+  }
+
+  .score-label {
+    font-size: 0.75rem;
+  }
+
+  .score-badge {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .interpretation-card {
+    padding: 0.75rem;
+    flex: 1 1 auto;
+    min-width: 250px;
+  }
+
+  .interpretation-icon {
+    font-size: 1.5rem;
+  }
+
+  .interpretation-content h3 {
+    font-size: 0.9375rem;
+  }
+
+  .interpretation-content p {
+    font-size: 0.8125rem;
+  }
+
+  .warning-card {
+    padding: 0.75rem;
+    width: 100%;
+  }
+
+  .warning-card h4 {
+    font-size: 0.875rem;
+  }
+
+  .warning-card p {
+    font-size: 0.8125rem;
+  }
+
+  .result-actions {
+    width: 100%;
+    flex-direction: row;
+    gap: 0.75rem;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    min-height: 44px;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9375rem;
+  }
+
   .btn-primary.btn-large {
-    padding: 0.875rem 2rem;
+    padding: 0.625rem 1.5rem;
+    font-size: 1rem;
   }
 }
 

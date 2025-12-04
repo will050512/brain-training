@@ -8,9 +8,9 @@ import { ref, watch, onUnmounted } from 'vue'
 interface Props {
   /** 遊戲名稱 */
   title: string
-  /** 遊戲說明 */
+  /** 遊戲說明 - 已移至 GamePreviewView 統一顯示 */
   description?: string
-  /** 遊戲規則列表 */
+  /** 遊戲規則列表 - 已移至 GamePreviewView 統一顯示 */
   rules?: string[]
   /** 遊戲圖示 */
   icon?: string
@@ -115,17 +115,10 @@ onUnmounted(() => {
         {{ difficultyLabel || difficultyDisplay[difficulty]?.label }}
       </div>
 
-      <!-- 說明 -->
-      <p v-if="description" class="game-description">
-        {{ description }}
+      <!-- 準備提示 -->
+      <p class="game-ready-hint">
+        準備好了嗎？點擊下方按鈕開始遊戲
       </p>
-
-      <!-- 規則列表 -->
-      <ul v-if="rules && rules.length > 0" class="game-rules">
-        <li v-for="(rule, index) in rules" :key="index">
-          {{ rule }}
-        </li>
-      </ul>
 
       <!-- 開始按鈕 -->
       <button 
@@ -139,7 +132,7 @@ onUnmounted(() => {
 
       <!-- 提示 -->
       <p class="hint">
-        點擊按鈕{{ showCountdown ? `後將倒數 ${countdownFrom} 秒` : '開始遊戲' }}
+        {{ showCountdown ? `點擊後將倒數 ${countdownFrom} 秒` : '' }}
       </p>
     </div>
   </div>
@@ -208,26 +201,11 @@ onUnmounted(() => {
   color: white;
 }
 
-.game-description {
+.game-ready-hint {
   color: var(--color-text-secondary);
   line-height: 1.6;
-  margin: 0;
-}
-
-.game-rules {
-  text-align: left;
-  padding-left: 1.5rem;
   margin: 0.5rem 0;
-  color: var(--color-text-secondary);
-}
-
-.game-rules li {
-  margin-bottom: 0.5rem;
-  line-height: 1.4;
-}
-
-.game-rules li:last-child {
-  margin-bottom: 0;
+  font-size: 1rem;
 }
 
 /* 開始按鈕 */
