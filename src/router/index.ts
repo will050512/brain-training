@@ -4,70 +4,121 @@
 
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
+// 導入佈局類型（會自動擴展 RouteMeta）
+import '@/types/layout'
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Home',
     component: () => import('@/views/HomeView.vue'),
+    meta: { 
+      layout: 'default',
+      title: '首頁',
+    },
   },
   {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/LoginView.vue'),
+    meta: { 
+      layout: 'fullscreen',
+      title: '登入',
+    },
   },
   {
     path: '/onboarding',
     name: 'Onboarding',
     component: () => import('@/views/OnboardingView.vue'),
+    meta: { 
+      layout: 'fullscreen',
+      title: '歡迎',
+    },
   },
   {
     path: '/assessment',
     name: 'Assessment',
     component: () => import('@/views/AssessmentView.vue'),
-    meta: { requiresAuth: true },
+    meta: { 
+      requiresAuth: true,
+      layout: 'app',
+      title: '能力評估',
+    },
   },
   {
     path: '/games',
     name: 'GameSelect',
     component: () => import('@/views/GameSelectView.vue'),
-    meta: { requiresAuth: true, requiresAssessment: true },
+    meta: { 
+      requiresAuth: true, 
+      requiresAssessment: true,
+      layout: 'default',
+      title: '選擇遊戲',
+    },
   },
   {
     path: '/games/:gameId',
     name: 'GamePlay',
     component: () => import('@/views/GamePlayView.vue'),
-    meta: { requiresAuth: true, requiresAssessment: true },
+    meta: { 
+      requiresAuth: true, 
+      requiresAssessment: true,
+      layout: 'game',
+      title: '遊戲中',
+      isGame: true,
+      hideBottomNav: true,
+    },
     props: true,
   },
   {
     path: '/daily-challenge',
     name: 'DailyChallenge',
     component: () => import('@/views/DailyChallengeView.vue'),
-    meta: { requiresAuth: true, requiresAssessment: true },
+    meta: { 
+      requiresAuth: true, 
+      requiresAssessment: true,
+      layout: 'default',
+      title: '每日挑戰',
+    },
   },
   {
     path: '/report',
     name: 'Report',
     component: () => import('@/views/ReportView.vue'),
-    meta: { requiresAuth: true },
+    meta: { 
+      requiresAuth: true,
+      layout: 'default',
+      title: '訓練報告',
+    },
   },
   {
     path: '/weekly-report',
     name: 'WeeklyReport',
     component: () => import('@/views/WeeklyReportView.vue'),
-    meta: { requiresAuth: true },
+    meta: { 
+      requiresAuth: true,
+      layout: 'default',
+      title: '週報告',
+    },
   },
   {
     path: '/nutrition',
     name: 'Nutrition',
     component: () => import('@/views/NutritionView.vue'),
-    meta: { requiresAuth: true },
+    meta: { 
+      requiresAuth: true,
+      layout: 'default',
+      title: '營養建議',
+    },
   },
   {
     path: '/settings',
     name: 'Settings',
     component: () => import('@/views/SettingsView.vue'),
+    meta: { 
+      layout: 'default',
+      title: '設定',
+    },
   },
   {
     path: '/:pathMatch(.*)*',

@@ -10,3 +10,6 @@ export { useGameState, type UseGameStateOptions, type UseGameStateReturn } from 
 export { useGameTimer, useRoundTimer, type UseGameTimerOptions, type UseGameTimerReturn, type UseRoundTimerReturn } from './useGameTimer'
 export { useGameScore, type UseGameScoreOptions, type UseGameScoreReturn } from './useGameScore'
 export { useGameAudio, getGlobalAudioManager, type UseGameAudioOptions, type UseGameAudioReturn } from './useGameAudio'
+
+// 統一遊戲 Composable
+export { useGame, type UseGameOptions, type UseGameReturn } from './useGame'

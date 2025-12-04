@@ -43,6 +43,10 @@ const props = withDefaults(defineProps<Props>(), {
   defaultCollapsed: false,
 })
 
+const emit = defineEmits<{
+  (e: 'update:collapsed', value: boolean): void
+}>()
+
 const router = useRouter()
 const route = useRoute()
 const { isTablet } = useResponsive()
@@ -57,6 +61,11 @@ watch(isTablet, (val) => {
     isCollapsed.value = true
   }
 }, { immediate: true })
+
+// 當收合狀態改變時通知父元件
+watch(isCollapsed, (val) => {
+  emit('update:collapsed', val)
+})
 
 // 實際顯示狀態（hover 時展開）
 const showExpanded = computed(() => !isCollapsed.value || isHovering.value)

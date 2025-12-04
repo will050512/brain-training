@@ -20,6 +20,21 @@ export type ThemeMode = 'light' | 'dark' | 'system'
 // 螢幕方向偏好
 export type OrientationPreference = 'portrait' | 'landscape' | 'auto'
 
+// 遊戲難度
+export type GameDifficulty = 'easy' | 'medium' | 'hard'
+
+// 遊戲子難度（細分調整）
+export type GameSubDifficulty = 1 | 2 | 3
+
+// 單款遊戲難度設定
+export interface GameDifficultySetting {
+  difficulty: GameDifficulty
+  subDifficulty: GameSubDifficulty
+}
+
+// 所有遊戲難度設定映射
+export type GameDifficultySettings = Record<string, GameDifficultySetting>
+
 export const FONT_SIZE_MAP: Record<FontSize, number> = {
   small: 14,
   medium: 16,
@@ -107,6 +122,14 @@ export const useSettingsStore = defineStore('settings', () => {
   const enableVoicePrompts = ref(false) // 語音提示
   const enableHapticFeedback = ref(true) // 震動反饋
 
+  // ===== 佈局設定 =====
+  const sidebarCollapsed = ref(false) // 側邊欄預設展開
+
+  // ===== 遊戲難度設定 =====
+  const defaultDifficulty = ref<GameDifficulty>('easy') // 全域預設難度
+  const defaultSubDifficulty = ref<GameSubDifficulty>(2) // 全域預設子難度
+  const gameDifficultySettings = ref<GameDifficultySettings>({}) // 每款遊戲獨立難度
+
   // 計算屬性
   const fontSizePx = computed(() => FONT_SIZE_MAP[fontSize.value])
   
@@ -139,6 +162,12 @@ export const useSettingsStore = defineStore('settings', () => {
         highContrast.value = data.highContrast ?? false
         enableVoicePrompts.value = data.enableVoicePrompts ?? false
         enableHapticFeedback.value = data.enableHapticFeedback ?? true
+        // 佈局設定
+        sidebarCollapsed.value = data.sidebarCollapsed ?? false
+        // 遊戲難度設定
+        defaultDifficulty.value = data.defaultDifficulty ?? 'easy'
+        defaultSubDifficulty.value = data.defaultSubDifficulty ?? 2
+        gameDifficultySettings.value = data.gameDifficultySettings ?? {}
       } catch {
         // 忽略解析錯誤
       }
@@ -173,6 +202,12 @@ export const useSettingsStore = defineStore('settings', () => {
       highContrast: highContrast.value,
       enableVoicePrompts: enableVoicePrompts.value,
       enableHapticFeedback: enableHapticFeedback.value,
+      // 佈局設定
+      sidebarCollapsed: sidebarCollapsed.value,
+      // 遊戲難度設定
+      defaultDifficulty: defaultDifficulty.value,
+      defaultSubDifficulty: defaultSubDifficulty.value,
+      gameDifficultySettings: gameDifficultySettings.value,
     }
     localStorage.setItem('brain-training-settings', JSON.stringify(data))
   }
@@ -194,7 +229,8 @@ export const useSettingsStore = defineStore('settings', () => {
   watch(
     [soundEnabled, musicEnabled, soundVolume, musicVolume, hasSeenWelcome, fontSize, 
      hasCompletedAssessment, assessmentResult, themeMode, orientationPreference, declineDetectionMode, dailyTrainingDuration,
-     enableBehaviorTracking, reduceMotion, highContrast, enableVoicePrompts, enableHapticFeedback],
+     enableBehaviorTracking, reduceMotion, highContrast, enableVoicePrompts, enableHapticFeedback,
+     sidebarCollapsed, defaultDifficulty, defaultSubDifficulty, gameDifficultySettings],
     () => saveToStorage(),
     { deep: true }
   )
@@ -305,6 +341,60 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
+  // ===== 佈局相關方法 =====
+  
+  /** 設定側邊欄收合狀態 */
+  function setSidebarCollapsed(collapsed: boolean): void {
+    sidebarCollapsed.value = collapsed
+  }
+
+  /** 切換側邊欄收合狀態 */
+  function toggleSidebar(): void {
+    sidebarCollapsed.value = !sidebarCollapsed.value
+  }
+
+  // ===== 遊戲難度相關方法 =====
+
+  /** 設定全域預設難度 */
+  function setDefaultDifficulty(difficulty: GameDifficulty, subDifficulty?: GameSubDifficulty): void {
+    defaultDifficulty.value = difficulty
+    if (subDifficulty !== undefined) {
+      defaultSubDifficulty.value = subDifficulty
+    }
+  }
+
+  /** 取得指定遊戲的難度設定，若無則返回全域預設 */
+  function getGameDifficulty(gameId: string): GameDifficultySetting {
+    return gameDifficultySettings.value[gameId] ?? {
+      difficulty: defaultDifficulty.value,
+      subDifficulty: defaultSubDifficulty.value,
+    }
+  }
+
+  /** 設定指定遊戲的難度 */
+  function setGameDifficulty(gameId: string, settings: Partial<GameDifficultySetting>): void {
+    const current = getGameDifficulty(gameId)
+    gameDifficultySettings.value[gameId] = {
+      ...current,
+      ...settings,
+    }
+  }
+
+  /** 重置指定遊戲的難度為全域預設 */
+  function resetGameDifficulty(gameId: string): void {
+    delete gameDifficultySettings.value[gameId]
+  }
+
+  /** 重置所有遊戲難度為全域預設 */
+  function resetAllGameDifficulties(): void {
+    gameDifficultySettings.value = {}
+  }
+
+  /** 檢查遊戲是否有自訂難度 */
+  function hasCustomDifficulty(gameId: string): boolean {
+    return gameId in gameDifficultySettings.value
+  }
+
   // 載入設定（別名）
   async function loadSettings(): Promise<void> {
     initFromStorage()
@@ -338,6 +428,12 @@ export const useSettingsStore = defineStore('settings', () => {
     enableVoicePrompts,
     enableHapticFeedback,
     currentDeclineConfig,
+    // 佈局狀態
+    sidebarCollapsed,
+    // 遊戲難度狀態
+    defaultDifficulty,
+    defaultSubDifficulty,
+    gameDifficultySettings,
 
     // 動作
     toggleSound,
@@ -360,5 +456,15 @@ export const useSettingsStore = defineStore('settings', () => {
     setAccessibilityOption,
     initFromStorage,
     loadSettings,
+    // 佈局動作
+    setSidebarCollapsed,
+    toggleSidebar,
+    // 遊戲難度動作
+    setDefaultDifficulty,
+    getGameDifficulty,
+    setGameDifficulty,
+    resetGameDifficulty,
+    resetAllGameDifficulties,
+    hasCustomDifficulty,
   }
 })

@@ -1,20 +1,26 @@
 <script setup lang="ts">
 /**
- * 卡片配對遊戲（重構版）
- * 使用新的遊戲核心架構
+ * 卡片配對遊戲（重構版 v2）
+ * 
+ * 三層分離架構：
+ * - UI 層：本元件，負責渲染與使用者互動
+ * - 邏輯層：@/games/logic/cardMatch.ts，純函數處理遊戲邏輯
+ * - 音效/狀態層：@/games/core/useGame.ts，統一管理狀態與音效
  */
 import { ref, computed, watch, onMounted } from 'vue'
-import { useGameState } from '@/games/core/useGameState'
-import { useGameTimer } from '@/games/core/useGameTimer'
-import { useGameAudio } from '@/games/core/useGameAudio'
+import { useGame } from '@/games/core/useGame'
+import type { DifficultyConfig } from '@/games/core/gameTypes'
 import {
   generateCards,
   checkMatch,
   summarizeResult,
+  showAllCards,
+  hideUnmatchedCards,
   CARD_MATCH_CONFIGS,
   type Card,
   type CardMatchConfig
 } from '@/games/logic/cardMatch'
+import type { GameDifficulty } from '@/stores/settingsStore'
 
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
@@ -24,78 +30,76 @@ import GameFeedback from './ui/GameFeedback.vue'
 
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
-  difficulty?: 'easy' | 'medium' | 'hard'
+  difficulty?: GameDifficulty
+  settings?: Record<string, unknown>
 }>(), {
   difficulty: 'easy'
 })
 
 const emit = defineEmits<{
   'game:start': []
-  'game:end': [result: any]
+  'game:end': [result: ReturnType<typeof summarizeResult>]
   'score:update': [score: number]
   'state:change': [phase: string]
 }>()
 
-// ===== 遊戲配置 =====
-const config = computed<CardMatchConfig>(() => CARD_MATCH_CONFIGS[props.difficulty])
-
-// ===== 遊戲狀態 =====
-const {
-  phase,
-  score,
-  progress,
-  feedback,
-  showFeedback,
-  isPlaying,
-  startGame: startGameState,
-  finishGame: finishGameState,
-  setFeedback,
-  clearFeedback,
-  resetGame,
-  addScore,
-} = useGameState({
-  totalRounds: config.value.pairs,
-  timeLimit: config.value.timeLimit,
-})
-
-function startGame() {
-  startGameState()
-  emit('game:start')
+// ===== 難度配置轉換 =====
+interface CardMatchDifficultyConfig extends DifficultyConfig {
+  pairs: number
+  previewTime: number
+  gridCols: number
 }
 
-function finishGame() {
-  finishGameState()
-}
+const difficultyConfigs = {
+  easy: {
+    timeLimit: CARD_MATCH_CONFIGS.easy.timeLimit || 120,
+    totalRounds: CARD_MATCH_CONFIGS.easy.pairs,
+    baseScore: 10,
+    pairs: CARD_MATCH_CONFIGS.easy.pairs,
+    previewTime: CARD_MATCH_CONFIGS.easy.previewTime,
+    gridCols: CARD_MATCH_CONFIGS.easy.gridCols,
+  },
+  medium: {
+    timeLimit: CARD_MATCH_CONFIGS.medium.timeLimit,
+    totalRounds: CARD_MATCH_CONFIGS.medium.pairs,
+    baseScore: 15,
+    pairs: CARD_MATCH_CONFIGS.medium.pairs,
+    previewTime: CARD_MATCH_CONFIGS.medium.previewTime,
+    gridCols: CARD_MATCH_CONFIGS.medium.gridCols,
+  },
+  hard: {
+    timeLimit: CARD_MATCH_CONFIGS.hard.timeLimit,
+    totalRounds: CARD_MATCH_CONFIGS.hard.pairs,
+    baseScore: 20,
+    pairs: CARD_MATCH_CONFIGS.hard.pairs,
+    previewTime: CARD_MATCH_CONFIGS.hard.previewTime,
+    gridCols: CARD_MATCH_CONFIGS.hard.gridCols,
+  },
+} satisfies Record<GameDifficulty, CardMatchDifficultyConfig>
 
-// ===== 計時器（正計時模式） =====
-const {
-  time: elapsedTime,
-  start: startTimer,
-  stop: stopTimer,
-  reset: resetTimer,
-} = useGameTimer({
-  mode: 'stopwatch',
-  initialTime: 0,
+// ===== 使用統一遊戲 Composable =====
+const game = useGame<CardMatchDifficultyConfig>({
+  gameId: 'card-match',
+  difficultyConfigs,
+  timerMode: 'stopwatch', // 正計時，除非有時間限制
+  audioFolder: 'card-match',
+  preloadAudio: true,
+  onPhaseChange: (phase) => {
+    emit('state:change', phase)
+  },
+  onGameEnd: (result) => {
+    // 轉換為 CardMatch 專用結果格式
+    const cardResult = summarizeResult(
+      matchedPairs.value,
+      totalPairs.value,
+      moves.value,
+      result.duration
+    )
+    emit('game:end', cardResult)
+  },
 })
 
-// ===== 倒數計時器（有時間限制時） =====
-const {
-  time: countdownTime,
-  isWarning: timerWarning,
-  start: startCountdown,
-  stop: stopCountdown,
-  reset: resetCountdown,
-} = useGameTimer({
-  mode: 'countdown',
-  initialTime: config.value.timeLimit || 120,
-  warningTime: 15,
-  onTimeUp: () => handleTimeUp(),
-})
-
-// ===== 音效 =====
-const { playCorrect, playWrong, playEnd, playFlip, playMatch, preloadDefaultSounds } = useGameAudio()
-
-// ===== 遊戲資料 =====
+// ===== 遊戲專屬狀態 =====
 const cards = ref<Card[]>([])
 const flippedIndices = ref<number[]>([])
 const matchedPairs = ref(0)
@@ -103,21 +107,32 @@ const moves = ref(0)
 const isChecking = ref(false)
 const isPreviewing = ref(false)
 
-const displayTime = computed(() => 
-  config.value.timeLimit > 0 ? countdownTime.value : elapsedTime.value
+// ===== 計算屬性 =====
+const config = computed(() => game.currentConfig.value)
+const totalPairs = computed(() => config.value.pairs)
+const gridCols = computed(() => config.value.gridCols)
+const phase = computed(() => game.state.phase.value)
+const score = computed(() => game.state.score.value)
+const isPlaying = computed(() => game.state.isPlaying.value)
+
+const displayTime = computed(() => {
+  if (config.value.timeLimit > 0) {
+    return game.timer.time.value
+  }
+  return game.timer.time.value
+})
+
+const timerWarning = computed(() => 
+  config.value.timeLimit > 0 && game.timer.isWarning.value
 )
 
-const totalPairs = computed(() => config.value.pairs)
-
-const gridCols = computed(() => config.value.gridCols)
-
-// ===== 回饋映射 =====
 const feedbackData = computed(() => {
-  if (!feedback.value) return undefined
+  const fb = game.state.feedback.value
+  if (!fb) return undefined
   return {
-    type: feedback.value.type,
-    show: showFeedback.value,
-    message: feedback.value.message,
+    type: fb.type,
+    show: game.state.showFeedback.value,
+    message: fb.message,
   }
 })
 
@@ -130,37 +145,46 @@ const gameInstructions = [
 ]
 
 // ===== 遊戲方法 =====
+
+/** 開始遊戲 */
 function handleStart() {
-  // 生成卡片
-  cards.value = generateCards(config.value)
+  // 初始化遊戲狀態
   flippedIndices.value = []
   matchedPairs.value = 0
   moves.value = 0
   isChecking.value = false
   
-  // 開始遊戲
-  startGame()
+  // 載入難度並設置
+  game.setDifficulty(props.difficulty)
   
-  // 預覽階段
+  // 生成卡片
+  const currentConfig = CARD_MATCH_CONFIGS[props.difficulty]
+  cards.value = generateCards(currentConfig)
+  
+  // 開始遊戲狀態
+  game.state.startGame()
+  emit('game:start')
+  
+  // 預覽階段 - 顯示所有卡片
   isPreviewing.value = true
-  cards.value = cards.value.map(c => ({ ...c, isFlipped: true }))
+  cards.value = showAllCards(cards.value)
   
+  // 預覽結束後隱藏卡片並開始計時
   setTimeout(() => {
-    // 隱藏所有卡片
-    cards.value = cards.value.map(c => ({ ...c, isFlipped: false }))
+    cards.value = hideUnmatchedCards(cards.value)
     isPreviewing.value = false
     
-    // 開始計時
-    if (config.value.timeLimit > 0) {
-      resetCountdown(config.value.timeLimit)
-      startCountdown()
+    // 根據是否有時間限制選擇計時模式
+    if (currentConfig.timeLimit > 0) {
+      game.timer.reset(currentConfig.timeLimit)
     } else {
-      resetTimer()
-      startTimer()
+      game.timer.reset(0)
     }
-  }, config.value.previewTime)
+    game.timer.start()
+  }, currentConfig.previewTime)
 }
 
+/** 處理卡片點擊 */
 function handleCardClick(index: number) {
   if (!isPlaying.value || isPreviewing.value || isChecking.value) return
   
@@ -168,8 +192,8 @@ function handleCardClick(index: number) {
   if (!card || card.isFlipped || card.isMatched) return
   if (flippedIndices.value.length >= 2) return
   
-  // 翻開卡片
-  playFlip()
+  // 翻開卡片（UI 更新 + 音效）
+  game.audio.playFlip()
   cards.value[index] = { ...card, isFlipped: true }
   flippedIndices.value.push(index)
   
@@ -183,60 +207,73 @@ function handleCardClick(index: number) {
     const card1 = cards.value[idx1]!
     const card2 = cards.value[idx2]!
     
+    // 呼叫邏輯層檢查配對
     if (checkMatch(card1, card2)) {
-      // 配對成功
-      setTimeout(() => {
-        playMatch()
-        cards.value[idx1] = { ...card1, isMatched: true }
-        cards.value[idx2] = { ...card2, isMatched: true }
-        matchedPairs.value++
-        
-        const matchScore = 10
-        addScore(matchScore)
-        setFeedback('correct', '配對成功！')
-        
-        setTimeout(() => {
-          clearFeedback()
-          flippedIndices.value = []
-          isChecking.value = false
-          
-          // 檢查是否完成
-          if (matchedPairs.value >= totalPairs.value) {
-            handleGameEnd()
-          }
-        }, 300)
-      }, 300)
+      handleMatchSuccess(idx1, idx2, card1, card2)
     } else {
-      // 配對失敗
-      setTimeout(() => {
-        playWrong()
-        setFeedback('wrong')
-        
-        setTimeout(() => {
-          cards.value[idx1] = { ...card1, isFlipped: false }
-          cards.value[idx2] = { ...card2, isFlipped: false }
-          clearFeedback()
-          flippedIndices.value = []
-          isChecking.value = false
-        }, 500)
-      }, 500)
+      handleMatchFailure(idx1, idx2, card1, card2)
     }
   }
 }
 
-function handleTimeUp() {
-  handleGameEnd()
+/** 配對成功處理 */
+function handleMatchSuccess(idx1: number, idx2: number, card1: Card, card2: Card) {
+  setTimeout(() => {
+    // 播放配對成功音效
+    game.audio.playMatch()
+    
+    // 更新卡片狀態
+    cards.value[idx1] = { ...card1, isMatched: true }
+    cards.value[idx2] = { ...card2, isMatched: true }
+    matchedPairs.value++
+    
+    // 計算並添加分數
+    const matchScore = config.value.baseScore
+    game.state.addScore(matchScore)
+    emit('score:update', game.state.score.value)
+    
+    // 顯示回饋
+    game.showFeedback('correct', '配對成功！', matchScore)
+    
+    setTimeout(() => {
+      game.hideFeedback()
+      flippedIndices.value = []
+      isChecking.value = false
+      
+      // 檢查是否完成
+      if (matchedPairs.value >= totalPairs.value) {
+        handleGameComplete()
+      }
+    }, 300)
+  }, 300)
 }
 
-function handleGameEnd() {
-  stopTimer()
-  stopCountdown()
-  playEnd()
+/** 配對失敗處理 */
+function handleMatchFailure(idx1: number, idx2: number, card1: Card, card2: Card) {
+  setTimeout(() => {
+    // 播放錯誤音效
+    game.audio.playWrong()
+    game.showFeedback('wrong', '再試一次')
+    
+    setTimeout(() => {
+      // 翻回卡片
+      cards.value[idx1] = { ...card1, isFlipped: false }
+      cards.value[idx2] = { ...card2, isFlipped: false }
+      game.hideFeedback()
+      flippedIndices.value = []
+      isChecking.value = false
+    }, 500)
+  }, 500)
+}
+
+/** 遊戲完成處理 */
+function handleGameComplete() {
+  game.timer.stop()
+  game.audio.playEnd()
   
-  const duration = config.value.timeLimit > 0
-    ? config.value.timeLimit - countdownTime.value
-    : elapsedTime.value
+  const duration = game.timer.getElapsedTime()
   
+  // 計算最終結果
   const result = summarizeResult(
     matchedPairs.value,
     totalPairs.value,
@@ -244,34 +281,51 @@ function handleGameEnd() {
     duration
   )
   
-  finishGame()
+  // 儲存難度設定
+  game.saveDifficulty()
+  
+  // 結束遊戲
+  game.state.finishGame()
   emit('game:end', result)
 }
 
+/** 時間到處理 */
+function handleTimeUp() {
+  handleGameComplete()
+}
+
+/** 重新開始 */
 function handleRestart() {
-  stopTimer()
-  stopCountdown()
-  resetGame()
+  game.timer.stop()
+  game.state.resetGame()
   handleStart()
 }
 
+/** 退出遊戲 */
 function handleQuit() {
-  stopTimer()
-  stopCountdown()
-  resetGame()
+  game.timer.stop()
+  game.state.resetGame()
 }
 
 // ===== 生命週期 =====
 onMounted(() => {
-  preloadDefaultSounds()
+  // 載入儲存的難度設定
+  game.loadDifficulty()
 })
 
-// 監聽難度變化
-watch(() => props.difficulty, () => {
+// 監聽 props.difficulty 變化
+watch(() => props.difficulty, (newDifficulty) => {
   if (phase.value !== 'ready') {
-    stopTimer()
-    stopCountdown()
-    resetGame()
+    game.timer.stop()
+    game.state.resetGame()
+  }
+  game.setDifficulty(newDifficulty)
+})
+
+// 監聯計時器時間到
+watch(() => game.timer.isTimeUp.value, (isUp) => {
+  if (isUp && isPlaying.value) {
+    handleTimeUp()
   }
 })
 </script>
@@ -362,9 +416,9 @@ watch(() => props.difficulty, () => {
     <GameResultScreen
       v-else-if="phase === 'finished' || phase === 'result'"
       :score="score"
-      :max-score="totalPairs * 10"
+      :max-score="totalPairs * config.baseScore"
       :accuracy="matchedPairs / totalPairs"
-      :duration="config.timeLimit > 0 ? config.timeLimit - countdownTime : elapsedTime"
+      :duration="game.timer.getElapsedTime()"
       :stats="[
         { label: '配對', value: `${matchedPairs}/${totalPairs}`, icon: '🎴' },
         { label: '步數', value: moves, icon: '👆' },
