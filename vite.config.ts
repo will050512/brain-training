@@ -11,7 +11,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'robots.txt'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'robots.txt', 'offline.html'],
       manifest: {
         name: '健腦訓練 - 認知能力評估與訓練',
         short_name: '健腦訓練',
@@ -42,13 +42,15 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,mp3,wav,ogg,webp,jpg,jpeg,gif,json}'],
         // 確保樣式變更能即時生效
         skipWaiting: true,
         clientsClaim: true,
         // 導航回退設定
         navigateFallback: '/brain-training/index.html',
         navigateFallbackAllowlist: [/^\/brain-training\/.*/],
+        // 離線回退頁面
+        offlineGoogleAnalytics: false,
         runtimeCaching: [
           {
             // CSS 和 JS 使用 StaleWhileRevalidate 確保更新即時生效
@@ -59,6 +61,36 @@ export default defineConfig({
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+              }
+            }
+          },
+          {
+            // 圖片資源使用 CacheFirst 策略
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            // 音訊資源使用 CacheFirst 策略
+            urlPattern: /\.(?:mp3|wav|ogg|m4a)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'audio-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
               }
             }
           },

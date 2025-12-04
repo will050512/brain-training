@@ -118,6 +118,15 @@
             </router-link>
           </section>
 
+          <!-- Mini-Cog 與遊戲分數關聯分析 -->
+          <section class="mobile-card">
+            <h3 class="card-title">📐 關聯分析</h3>
+            <MiniCogCorrelationChart 
+              :mini-cog-results="miniCogHistory"
+              :game-sessions="gameStore.recentSessions"
+            />
+          </section>
+
           <!-- 訓練建議卡片 -->
           <section class="mobile-card">
             <h3 class="card-title">💡 訓練建議</h3>
@@ -515,6 +524,18 @@
               </div>
             </section>
 
+            <!-- Mini-Cog 與遊戲分數關聯分析 -->
+            <section id="correlation" class="card">
+              <h3 class="text-lg font-bold text-[var(--color-text)] mb-2">📐 Mini-Cog 與遊戲表現關聯分析</h3>
+              <p class="text-sm text-[var(--color-text-muted)] mb-4">
+                此圖表顯示 Mini-Cog 評估分數與遊戲平均表現之間的統計關聯，使用 Pearson 相關係數進行分析。
+              </p>
+              <MiniCogCorrelationChart 
+                :mini-cog-results="miniCogHistory"
+                :game-sessions="gameStore.recentSessions"
+              />
+            </section>
+
             <!-- 各遊戲表現 -->
             <section id="games" class="card">
               <h3 class="text-lg font-bold text-[var(--color-text)] mb-6">各遊戲表現</h3>
@@ -641,6 +662,7 @@ import {
 } from '@/services/miniCogService'
 import RadarChart from '@/components/charts/RadarChart.vue'
 import TrendChart from '@/components/charts/TrendChart.vue'
+import MiniCogCorrelationChart from '@/components/charts/MiniCogCorrelationChart.vue'
 import { ResponsiveContainer } from '@/components/layout'
 
 const userStore = useUserStore()
@@ -664,6 +686,7 @@ const reportSections = [
   { id: 'trends', name: '歷史趨勢', icon: '📈' },
   { id: 'statistics', name: '訓練統計', icon: '📋' },
   { id: 'mini-cog', name: 'Mini-Cog', icon: '🧪' },
+  { id: 'correlation', name: '關聯分析', icon: '📐' },
   { id: 'games', name: '遊戲表現', icon: '🎮' },
   { id: 'suggestions', name: '訓練建議', icon: '💡' },
   { id: 'recent', name: '最近記錄', icon: '🕐' },

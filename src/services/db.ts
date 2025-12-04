@@ -465,6 +465,20 @@ export async function getGameSessionsByDateRange(
 }
 
 /**
+ * 取得使用者特定日期的遊戲會話（以 YYYY-MM-DD 格式）
+ */
+export async function getGameSessionsByDate(
+  odId: string,
+  dateKey: string
+): Promise<GameSession[]> {
+  const sessions = await getUserGameSessions(odId)
+  return sessions.filter(s => {
+    const sessionDate = new Date(s.createdAt).toISOString().split('T')[0]
+    return sessionDate === dateKey
+  })
+}
+
+/**
  * 刪除遊戲會話
  */
 export async function deleteGameSession(id: string): Promise<void> {

@@ -299,14 +299,30 @@ const difficultyReasonText = computed(() => {
 const gameComponent = computed(() => {
   if (!gameId.value) return null
   
-  // 根據遊戲 ID 載入對應元件
+  // 根據遊戲 ID 載入對應元件 - 完整 15 款遊戲
   const componentMap: Record<string, ReturnType<typeof defineAsyncComponent>> = {
+    // 注意力訓練
     'whack-a-mole': defineAsyncComponent(() => import('@/components/games/WhackAMole.vue')),
-    'balance-scale': defineAsyncComponent(() => import('@/components/games/BalanceScale.vue')),
-    'card-match': defineAsyncComponent(() => import('@/components/games/CardMatch.vue')),
-    'stroop-test': defineAsyncComponent(() => import('@/components/games/StroopTest.vue')),
-    'maze-navigation': defineAsyncComponent(() => import('@/components/games/MazeNavigation.vue')),
     'spot-difference': defineAsyncComponent(() => import('@/components/games/SpotDifference.vue')),
+    'number-connect': defineAsyncComponent(() => import('@/components/games/NumberConnect.vue')),
+    // 記憶力訓練
+    'card-match': defineAsyncComponent(() => import('@/components/games/CardMatch.vue')),
+    'instant-memory': defineAsyncComponent(() => import('@/components/games/InstantMemory.vue')),
+    'poker-memory': defineAsyncComponent(() => import('@/components/games/PokerMemory.vue')),
+    'audio-memory': defineAsyncComponent(() => import('@/components/games/AudioMemory.vue')),
+    'gesture-memory': defineAsyncComponent(() => import('@/components/games/GestureMemory.vue')),
+    // 執行功能訓練
+    'balance-scale': defineAsyncComponent(() => import('@/components/games/BalanceScale.vue')),
+    'maze-navigation': defineAsyncComponent(() => import('@/components/games/MazeNavigation.vue')),
+    'math-calc': defineAsyncComponent(() => import('@/components/games/MathCalc.vue')),
+    // 視覺空間訓練
+    'clock-drawing': defineAsyncComponent(() => import('@/components/games/ClockDrawingTest.vue')),
+    'pattern-reasoning': defineAsyncComponent(() => import('@/components/games/PatternReasoning.vue')),
+    // 反應能力訓練
+    'rock-paper-scissors': defineAsyncComponent(() => import('@/components/games/RockPaperScissors.vue')),
+    'rhythm-mimic': defineAsyncComponent(() => import('@/components/games/RhythmMimic.vue')),
+    // 其他測試
+    'stroop-test': defineAsyncComponent(() => import('@/components/games/StroopTest.vue')),
   }
   
   return componentMap[gameId.value] || null

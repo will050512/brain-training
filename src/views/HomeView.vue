@@ -7,6 +7,32 @@
       @enable-sound="handleEnableSound"
     />
 
+    <!-- 訓練目標設定彈窗 -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div 
+          v-if="showGoalSettings" 
+          class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          @click.self="showGoalSettings = false"
+        >
+          <div class="bg-[var(--color-surface)] rounded-2xl w-full max-w-md max-h-[85vh] overflow-y-auto">
+            <TrainingGoalSettings 
+              :show-save-button="true"
+              @save="showGoalSettings = false"
+            />
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- 訓練歷史彈窗 -->
+    <TrainingHistoryModal
+      :is-open="showHistoryModal"
+      :date="selectedHistoryDate"
+      :sessions="selectedDateSessions"
+      @close="showHistoryModal = false"
+    />
+
     <!-- APP 頭部 -->
     <header class="app-header">
       <div class="app-header-action">
@@ -59,38 +85,82 @@
         </div>
       </div>
 
-      <!-- 每日訓練卡片（精簡版） -->
+      <!-- 訓練目標卡片（新增：圓形進度 + 目標設定） -->
       <div v-if="userStore.isLoggedIn" class="mb-6">
-        <div class="bg-gradient-to-r from-[var(--color-primary)] to-purple-500 dark:from-indigo-600 dark:to-purple-600 rounded-2xl p-4 text-white shadow-lg">
-          <div class="flex items-center justify-between mb-3">
+        <div class="bg-gradient-to-r from-[var(--color-primary)] to-purple-500 dark:from-indigo-600 dark:to-purple-600 rounded-2xl p-5 text-white shadow-lg">
+          <!-- 標題與設定按鈕 -->
+          <div class="flex items-center justify-between mb-4">
             <div>
-              <h2 class="font-bold">今日訓練</h2>
-              <p class="text-blue-100 text-sm">{{ settingsStore.dailyTrainingDuration }} 分鐘挑戰</p>
+              <h2 class="font-bold text-lg">訓練目標</h2>
+              <p class="text-blue-100 text-sm">每週 {{ settingsStore.weeklyTrainingGoal }} 天 · {{ settingsStore.dailyTrainingDuration }} 分鐘/天</p>
             </div>
-            <span class="text-3xl">{{ dailyProgress.completed ? '✅' : '🎯' }}</span>
+            <button 
+              @click="showGoalSettings = true"
+              class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </button>
           </div>
-          
-          <!-- 進度條 -->
-          <div class="mb-3">
-            <div class="h-2 bg-white/20 rounded-full overflow-hidden">
-              <div 
-                class="h-full bg-white rounded-full transition-all duration-500"
-                :style="{ width: dailyProgress.percentage + '%' }"
-              ></div>
+
+          <!-- 圓形進度與週訓練統計 -->
+          <div class="flex items-center justify-around">
+            <!-- 圓形進度 -->
+            <CircularProgress
+              :value="weeklyProgress.completedDays"
+              :max="settingsStore.weeklyTrainingGoal"
+              :size="120"
+              :stroke-width="10"
+              progress-color="#ffffff"
+              track-color="rgba(255,255,255,0.3)"
+              :show-percentage="false"
+            >
+              <div class="text-center">
+                <span class="text-3xl font-bold">{{ weeklyProgress.completedDays }}</span>
+                <span class="text-sm opacity-80">/{{ settingsStore.weeklyTrainingGoal }}</span>
+                <span class="block text-xs opacity-70">天</span>
+              </div>
+            </CircularProgress>
+
+            <!-- 週統計 -->
+            <div class="space-y-3">
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">⏱️</span>
+                <div>
+                  <p class="text-xl font-bold">{{ weeklyProgress.totalMinutes }}</p>
+                  <p class="text-xs opacity-70">本週訓練分鐘</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">🎮</span>
+                <div>
+                  <p class="text-xl font-bold">{{ weeklyProgress.totalSessions }}</p>
+                  <p class="text-xs opacity-70">遊戲次數</p>
+                </div>
+              </div>
             </div>
-            <p class="text-right text-xs text-blue-100 mt-1">
-              {{ dailyProgress.completed ? '已完成！' : `${dailyProgress.percentage}%` }}
-            </p>
           </div>
-          
+
+          <!-- 開始訓練按鈕 -->
           <router-link 
             to="/daily-challenge" 
-            class="block w-full py-2.5 bg-white text-blue-600 rounded-xl font-semibold text-center
-                   hover:bg-blue-50 transition-colors shadow-md text-sm"
+            class="block w-full py-3 mt-4 bg-white text-blue-600 rounded-xl font-semibold text-center
+                   hover:bg-blue-50 transition-colors shadow-md"
           >
-            {{ dailyProgress.completed ? '再次挑戰' : '開始訓練' }}
+            {{ dailyProgress.completed ? '繼續訓練' : '開始今日訓練' }}
           </router-link>
         </div>
+      </div>
+
+      <!-- 週曆 -->
+      <div v-if="userStore.isLoggedIn" class="mb-6">
+        <WeekCalendar
+          :training-data="weeklyTrainingData"
+          @date-select="handleDateSelect"
+          @week-change="handleWeekChange"
+        />
       </div>
 
       <!-- 認知趨勢概覽（精簡版） -->
@@ -232,8 +302,14 @@ import { useRouter } from 'vue-router'
 import { useUserStore, useSettingsStore } from '@/stores'
 import { COGNITIVE_DIMENSIONS, type CognitiveDimensionInfo, type CognitiveDimension } from '@/types/cognitive'
 import WelcomeModal from '@/components/ui/WelcomeModal.vue'
+import CircularProgress from '@/components/ui/CircularProgress.vue'
+import WeekCalendar from '@/components/ui/WeekCalendar.vue'
+import TrainingGoalSettings from '@/components/ui/TrainingGoalSettings.vue'
+import TrainingHistoryModal from '@/components/ui/TrainingHistoryModal.vue'
 import { getOverallDeclineSummary } from '@/services/declineDetectionService'
-import { getTodayTrainingStatus } from '@/services/dailyTrainingService'
+import { getTodayTrainingStatus, getTrainingStats } from '@/services/dailyTrainingService'
+import { getGameSessionsByDate } from '@/services/db'
+import type { GameSession } from '@/types/game'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -245,8 +321,22 @@ const cognitiveDimensions = Object.values(COGNITIVE_DIMENSIONS) as CognitiveDime
 // 是否顯示歡迎彈窗
 const showWelcome = computed(() => !settingsStore.hasSeenWelcome)
 
+// 目標設定彈窗
+const showGoalSettings = ref(false)
+
+// 歷史紀錄彈窗
+const showHistoryModal = ref(false)
+const selectedHistoryDate = ref('')
+const selectedDateSessions = ref<Array<{ gameId: string; score?: number; duration?: number; timestamp: string | number }>>([])
+
 // 每日訓練進度
 const dailyProgress = ref({ percentage: 0, completed: false })
+
+// 週訓練進度
+const weeklyProgress = ref({ completedDays: 0, totalMinutes: 0, totalSessions: 0 })
+
+// 週曆訓練資料
+const weeklyTrainingData = ref<Record<string, { minutes: number; completed: boolean; sessions: number }>>({})
 
 // 認知趨勢資料
 const cognitiveTrend = ref<{
@@ -369,6 +459,115 @@ async function loadDailyProgress(): Promise<void> {
     }
   } catch (error) {
     console.error('載入每日進度失敗:', error)
+  }
+}
+
+// 載入週訓練資料
+async function loadWeeklyData(): Promise<void> {
+  try {
+    const odId = userStore.currentUser?.id
+    if (!odId) return
+    
+    // 獲取本週狀態（使用 getTrainingStats）
+    const stats = await getTrainingStats(odId, 7)
+    weeklyProgress.value = {
+      completedDays: stats.completedDays,
+      totalMinutes: 0, // 將從每日資料中計算
+      totalSessions: stats.totalGames
+    }
+    
+    // 建構週曆資料
+    const today = new Date()
+    const weekStart = new Date(today)
+    weekStart.setDate(today.getDate() - today.getDay())
+    weekStart.setHours(0, 0, 0, 0)
+    
+    const trainingData: Record<string, { minutes: number; completed: boolean; sessions: number }> = {}
+    let totalMinutes = 0
+    
+    // 獲取本週每天的訓練記錄
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStart)
+      date.setDate(date.getDate() + i)
+      const dateKey = date.toISOString().split('T')[0]
+      if (!dateKey) continue
+      
+      // 從資料庫查詢該日的訓練記錄
+      const records: GameSession[] = await getGameSessionsByDate(odId, dateKey)
+      
+      if (records && records.length > 0) {
+        const dayMinutes = records.reduce((sum: number, r: GameSession) => sum + Math.round((r.result?.duration || 0) / 60), 0)
+        totalMinutes += dayMinutes
+        trainingData[dateKey] = {
+          minutes: dayMinutes,
+          completed: dayMinutes >= settingsStore.dailyTrainingDuration,
+          sessions: records.length
+        }
+      }
+    }
+    
+    // 更新總分鐘數
+    weeklyProgress.value.totalMinutes = totalMinutes
+    weeklyTrainingData.value = trainingData
+  } catch (error) {
+    console.error('載入週訓練資料失敗:', error)
+  }
+}
+
+// 處理週曆日期選擇
+async function handleDateSelect(dateKey: string): Promise<void> {
+  try {
+    selectedHistoryDate.value = dateKey
+    const odId = userStore.currentUser?.id
+    if (!odId) return
+    
+    // 載入該日期的訓練記錄
+    const records: GameSession[] = await getGameSessionsByDate(odId, dateKey)
+    
+    selectedDateSessions.value = records.map((r: GameSession) => ({
+      gameId: r.gameId,
+      score: r.result?.score,
+      duration: r.result?.duration,
+      timestamp: r.createdAt ? new Date(r.createdAt).toISOString() : dateKey
+    }))
+    
+    showHistoryModal.value = true
+  } catch (error) {
+    console.error('載入訓練記錄失敗:', error)
+    selectedDateSessions.value = []
+  }
+}
+
+// 處理週曆週變更
+async function handleWeekChange(startDate: string, endDate: string): Promise<void> {
+  try {
+    // 重新載入該週的訓練資料
+    const trainingData: Record<string, { minutes: number; completed: boolean; sessions: number }> = {}
+    const odId = userStore.currentUser?.id
+    if (!odId) return
+    
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateKey = d.toISOString().split('T')[0]
+      if (!dateKey) continue
+      
+      const records: GameSession[] = await getGameSessionsByDate(odId, dateKey)
+      
+      if (records && records.length > 0) {
+        const totalMinutes = records.reduce((sum: number, r: GameSession) => sum + Math.round((r.result?.duration || 0) / 60), 0)
+        trainingData[dateKey] = {
+          minutes: totalMinutes,
+          completed: totalMinutes >= settingsStore.dailyTrainingDuration,
+          sessions: records.length
+        }
+      }
+    }
+    
+    weeklyTrainingData.value = trainingData
+  } catch (error) {
+    console.error('載入週資料失敗:', error)
   }
 }
 

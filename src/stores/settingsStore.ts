@@ -14,6 +14,9 @@ export type DeclineDetectionMode = 'professional' | 'general'
 // 每日訓練時長選項
 export type DailyTrainingDuration = 10 | 15 | 20 | 30
 
+// 每週訓練天數目標
+export type WeeklyTrainingGoal = 1 | 2 | 3 | 4 | 5 | 6 | 7
+
 // 主題模式
 export type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -81,6 +84,17 @@ export const DAILY_TRAINING_OPTIONS: { value: DailyTrainingDuration; label: stri
   { value: 30, label: '30 分鐘', games: '6-8 款遊戲' },
 ]
 
+// 每週訓練天數選項設定
+export const WEEKLY_TRAINING_OPTIONS: { value: WeeklyTrainingGoal; label: string; description: string }[] = [
+  { value: 1, label: '每週 1 天', description: '輕鬆起步' },
+  { value: 2, label: '每週 2 天', description: '初學者' },
+  { value: 3, label: '每週 3 天', description: '建立習慣' },
+  { value: 4, label: '每週 4 天', description: '適度鍛鍊' },
+  { value: 5, label: '每週 5 天', description: '積極進取' },
+  { value: 6, label: '每週 6 天', description: '高強度' },
+  { value: 7, label: '每天', description: '最佳效果' },
+]
+
 export const useSettingsStore = defineStore('settings', () => {
   // 狀態（全域設定，不依賴使用者）
   const soundEnabled = ref(false)      // 音效預設關閉
@@ -116,6 +130,7 @@ export const useSettingsStore = defineStore('settings', () => {
   // 新增：退化檢測與訓練設定
   const declineDetectionMode = ref<DeclineDetectionMode>('general') // 預設一般模式
   const dailyTrainingDuration = ref<DailyTrainingDuration>(15) // 預設 15 分鐘
+  const weeklyTrainingGoal = ref<WeeklyTrainingGoal>(5) // 預設每週 5 天
   const enableBehaviorTracking = ref(true) // 預設開啟行為追蹤
   const reduceMotion = ref(false) // 減少動畫
   const highContrast = ref(false) // 高對比模式
@@ -157,6 +172,7 @@ export const useSettingsStore = defineStore('settings', () => {
         // 新增設定
         declineDetectionMode.value = data.declineDetectionMode ?? 'general'
         dailyTrainingDuration.value = data.dailyTrainingDuration ?? 15
+        weeklyTrainingGoal.value = data.weeklyTrainingGoal ?? 5
         enableBehaviorTracking.value = data.enableBehaviorTracking ?? true
         reduceMotion.value = data.reduceMotion ?? false
         highContrast.value = data.highContrast ?? false
@@ -197,6 +213,7 @@ export const useSettingsStore = defineStore('settings', () => {
       // 新增設定
       declineDetectionMode: declineDetectionMode.value,
       dailyTrainingDuration: dailyTrainingDuration.value,
+      weeklyTrainingGoal: weeklyTrainingGoal.value,
       enableBehaviorTracking: enableBehaviorTracking.value,
       reduceMotion: reduceMotion.value,
       highContrast: highContrast.value,
@@ -228,7 +245,7 @@ export const useSettingsStore = defineStore('settings', () => {
   // 監聽變化自動儲存
   watch(
     [soundEnabled, musicEnabled, soundVolume, musicVolume, hasSeenWelcome, fontSize, 
-     hasCompletedAssessment, assessmentResult, themeMode, orientationPreference, declineDetectionMode, dailyTrainingDuration,
+     hasCompletedAssessment, assessmentResult, themeMode, orientationPreference, declineDetectionMode, dailyTrainingDuration, weeklyTrainingGoal,
      enableBehaviorTracking, reduceMotion, highContrast, enableVoicePrompts, enableHapticFeedback,
      sidebarCollapsed, defaultDifficulty, defaultSubDifficulty, gameDifficultySettings],
     () => saveToStorage(),
@@ -288,6 +305,11 @@ export const useSettingsStore = defineStore('settings', () => {
   // 新增：設定每日訓練時長
   function setDailyTrainingDuration(duration: DailyTrainingDuration): void {
     dailyTrainingDuration.value = duration
+  }
+
+  // 新增：設定每週訓練目標天數
+  function setWeeklyTrainingGoal(goal: WeeklyTrainingGoal): void {
+    weeklyTrainingGoal.value = goal
   }
 
   // 新增：切換行為追蹤
@@ -422,6 +444,7 @@ export const useSettingsStore = defineStore('settings', () => {
     // 新增狀態
     declineDetectionMode,
     dailyTrainingDuration,
+    weeklyTrainingGoal,
     enableBehaviorTracking,
     reduceMotion,
     highContrast,
@@ -452,6 +475,7 @@ export const useSettingsStore = defineStore('settings', () => {
     // 新增動作
     setDeclineDetectionMode,
     setDailyTrainingDuration,
+    setWeeklyTrainingGoal,
     toggleBehaviorTracking,
     setAccessibilityOption,
     initFromStorage,

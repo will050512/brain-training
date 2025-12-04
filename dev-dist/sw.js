@@ -82,7 +82,7 @@ define(['./workbox-bf3571c7'], (function (workbox) { 'use strict';
     "revision": "0069240704f8ea44c26cfc342a71c899"
   }, {
     "url": "/brain-training/index.html",
-    "revision": "0.dhjjauj7lug"
+    "revision": "0.4d8u4lrqm3o"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/brain-training/index.html"), {
@@ -93,6 +93,24 @@ define(['./workbox-bf3571c7'], (function (workbox) { 'use strict';
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 50,
       maxAgeSeconds: 604800
+    })]
+  }), 'GET');
+  workbox.registerRoute(/\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i, new workbox.CacheFirst({
+    "cacheName": "images-cache",
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 100,
+      maxAgeSeconds: 2592000
+    }), new workbox.CacheableResponsePlugin({
+      statuses: [0, 200]
+    })]
+  }), 'GET');
+  workbox.registerRoute(/\.(?:mp3|wav|ogg|m4a)$/i, new workbox.CacheFirst({
+    "cacheName": "audio-cache",
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 50,
+      maxAgeSeconds: 2592000
+    }), new workbox.CacheableResponsePlugin({
+      statuses: [0, 200]
     })]
   }), 'GET');
   workbox.registerRoute(/^https:\/\/fonts\.googleapis\.com\/.*/i, new workbox.CacheFirst({
