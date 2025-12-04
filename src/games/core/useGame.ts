@@ -350,5 +350,3 @@ export function useGame<T extends DifficultyConfig = DifficultyConfig>(
     hideFeedback,
   }
 }
-
-export type { UseGameOptions, UseGameReturn }

@@ -86,8 +86,8 @@ describe('打地鼠遊戲邏輯', () => {
       const holes = createInitialHoles(4)
       const spawned = spawnAtHole(holes, 0, 'mole')
       const hidden = hideHole(spawned, 0)
-      expect(hidden[0].active).toBe(false)
-      expect(hidden[0].type).toBeNull()
+      expect(hidden[0]!.active).toBe(false)
+      expect(hidden[0]!.type).toBeNull()
     })
   })
 
@@ -134,8 +134,8 @@ describe('打地鼠遊戲邏輯', () => {
       let holes = createInitialHoles(4)
       holes = spawnAtHole(holes, 0, 'mole')
       const cleared = clearHoleAfterHit(holes, 0)
-      expect(cleared[0].active).toBe(false)
-      expect(cleared[0].showScore).toBe(false)
+      expect(cleared[0]!.active).toBe(false)
+      expect(cleared[0]!.showScore).toBe(false)
     })
   })
 

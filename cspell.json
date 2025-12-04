@@ -29,7 +29,8 @@
     "Levenshtein",
     "Noto",
     "infocard",
-    "wordcard"
+    "wordcard",
+    "unflip"
   ],
   "ignorePaths": [
     "node_modules",
