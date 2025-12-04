@@ -812,7 +812,7 @@ watch(stage, (newStage) => {
     margin-bottom: 0.25rem;
   }
 
-  .grid.md\\:grid-cols-2 {
+  .grid[class*="grid-cols-2"] {
     display: flex !important;
     flex-direction: row;
     gap: 1rem;
@@ -927,9 +927,9 @@ watch(stage, (newStage) => {
   .bg-blue-50,
   .bg-orange-50,
   .bg-amber-50,
-  .dark\\:bg-blue-900\\/30,
-  .dark\\:bg-orange-900\\/30,
-  .dark\\:bg-amber-900\\/30 {
+  [class*="bg-blue-900"],
+  [class*="bg-orange-900"],
+  [class*="bg-amber-900"] {
     padding: 0.75rem !important;
     margin-bottom: 0.5rem !important;
   }
