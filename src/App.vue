@@ -6,6 +6,7 @@ import { useTheme } from '@/composables/useTheme'
 import { useResponsive } from '@/composables/useResponsive'
 import AppShell from '@/components/layout/AppShell.vue'
 import DesktopLayout from '@/components/layout/DesktopLayout.vue'
+import MobileBottomNav from '@/components/ui/MobileBottomNav.vue'
 import InstallPrompt from '@/components/ui/InstallPrompt.vue'
 import ConsentModal from '@/components/ui/ConsentModal.vue'
 import ToastNotification from '@/components/ui/ToastNotification.vue'
@@ -64,6 +65,21 @@ const isFullscreenLayout = computed(() =>
 )
 
 /**
+ * 是否顯示手機底部導航
+ * 只在手機 APP 佈局且非遊戲頁面時顯示
+ */
+const showMobileBottomNav = computed(() => {
+  // 只在 AppShell 佈局時顯示
+  if (!useAppShell.value) return false
+  
+  // 特定頁面不顯示底部導航
+  const hiddenRoutes = ['game-play', 'game-preview', 'onboarding', 'login', 'assessment']
+  if (hiddenRoutes.includes(route.name as string)) return false
+  
+  return true
+})
+
+/**
  * 當前頁面標題
  */
 const pageTitle = computed(() => route.meta.title as string || '')
@@ -87,7 +103,7 @@ provide('layoutInfo', {
 
 // ===== 同意對話框邏輯 =====
 
-// 檢查是否需要顯示同意對話框
+// 檢查是否需要顯示同意對話框（每位用戶只需同意一次）
 async function checkConsentStatus(): Promise<void> {
   if (!userStore.currentUser?.id) return
   
@@ -96,17 +112,12 @@ async function checkConsentStatus(): Promise<void> {
   try {
     const consent = await getDataConsent(odId)
     
-    // 沒有同意記錄，需要顯示對話框
+    // 只有完全沒有同意記錄時才需要顯示對話框
+    // 用戶同意過一次後，即使版本更新也不再強制顯示
     if (!consent) {
       showConsentModal.value = true
-      return
     }
-    
-    // 檢查版本是否需要更新
-    const needsUpdate = await checkConsentVersionNeedsUpdate(odId)
-    if (needsUpdate) {
-      showConsentModal.value = true
-    }
+    // 版本更新時不再自動彈出，用戶可在設定中查看
   } catch (error) {
     console.error('Failed to check consent status:', error)
   }
@@ -179,6 +190,7 @@ onMounted(async () => {
       :title="pageTitle"
       :show-back="!!route.meta.showBack"
       :scrollable="true"
+      :has-bottom-nav="showMobileBottomNav"
     >
       <router-view v-slot="{ Component, route: currentRoute }">
         <transition 
@@ -189,6 +201,9 @@ onMounted(async () => {
         </transition>
       </router-view>
     </AppShell>
+    
+    <!-- 手機底部導航列 -->
+    <MobileBottomNav v-if="showMobileBottomNav" />
     
     <!-- 全螢幕/遊戲佈局（無外層包裝） -->
     <template v-else>

@@ -207,7 +207,11 @@ function startGame(): void {
   gameStore.selectGame(currentGame.value.id)
   gameStore.selectDifficulty(selectedDifficulty.value)
   
-  router.push(`/games/${currentGame.value.id}`)
+  // 帶上 autoStart 參數讓遊戲頁面自動開始
+  router.push({
+    path: `/games/${currentGame.value.id}`,
+    query: { autoStart: 'true' }
+  })
 }
 
 // 初始化

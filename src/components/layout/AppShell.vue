@@ -21,6 +21,8 @@ interface Props {
   safeArea?: boolean
   /** 頭部背景樣式 */
   headerVariant?: 'default' | 'transparent' | 'primary'
+  /** 是否有底部導航列（預留空間） */
+  hasBottomNav?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -29,6 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
   scrollable: true,
   safeArea: true,
   headerVariant: 'default',
+  hasBottomNav: false,
 })
 
 const emit = defineEmits<{
@@ -67,7 +70,10 @@ const headerClass = computed(() => {
 <template>
   <div 
     class="app-shell"
-    :class="{ 'with-safe-area': safeArea }"
+    :class="{ 
+      'with-safe-area': safeArea,
+      'has-bottom-nav': hasBottomNav
+    }"
   >
     <!-- 頭部 -->
     <header :class="headerClass">
@@ -126,6 +132,16 @@ const headerClass = computed(() => {
 .with-safe-area {
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 有底部導航列時，預留底部空間 */
+.has-bottom-nav {
+  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+}
+
+.has-bottom-nav.with-safe-area {
+  /* 覆蓋 with-safe-area 的 padding-bottom */
+  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
 }
 
 /* 頭部 */

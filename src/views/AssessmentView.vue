@@ -121,6 +121,13 @@
               </li>
             </ul>
           </div>
+
+          <div class="bg-orange-50 dark:bg-orange-900/30 rounded-xl p-4 mb-4 text-orange-800 dark:text-orange-300">
+            <p class="font-medium">⏰ 倒數計時說明</p>
+            <p class="text-sm mt-1">每道題目有固定的作答時間限制，畫面上會顯示剩餘秒數。</p>
+            <p class="text-sm mt-1">當剩餘時間少於 3 秒時，計時器會變成紅色提醒您加快作答。</p>
+            <p class="text-sm mt-1">若時間到未作答，系統將自動跳至下一題。</p>
+          </div>
           
           <div class="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-4 mb-8 text-amber-800 dark:text-amber-300">
             <p>⏱️ 預計時間：約 3 分鐘</p>

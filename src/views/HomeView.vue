@@ -270,22 +270,7 @@
         </div>
       </div>
 
-      <!-- 認知維度說明（可水平滾動） -->
-      <div class="mb-6">
-        <h2 class="text-sm font-semibold text-[var(--color-text-muted)] mb-3">六大認知能力</h2>
-        <div class="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-          <div 
-            v-for="dim in cognitiveDimensions" 
-            :key="dim.id" 
-            class="flex-shrink-0 w-28 text-center p-3 bg-[var(--color-surface)] rounded-xl"
-          >
-            <div class="text-2xl mb-1">{{ dim.icon }}</div>
-            <h3 class="font-semibold text-sm" :style="{ color: dim.color }">
-              {{ dim.name }}
-            </h3>
-          </div>
-        </div>
-      </div>
+
       </div>
     </div>
 

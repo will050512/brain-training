@@ -1,57 +1,61 @@
 <template>
-  <div class="min-h-screen bg-[var(--color-bg)]">
-    <!-- 遊戲頭部 -->
-    <div class="bg-[var(--color-surface)] shadow-sm py-4 px-6 border-b border-[var(--color-border)]">
-      <div class="container mx-auto flex items-center justify-between">
-        <button @click="handleBack" class="btn btn-secondary">
-          ← 返回
+  <div class="game-wrapper min-h-screen bg-[var(--color-bg)]">
+    <!-- 遊戲頭部 - 響應式 -->
+    <div 
+      class="game-header bg-[var(--color-surface)] shadow-sm border-b border-[var(--color-border)]"
+      :class="{ 'game-header-compact': isMobile, 'game-header-landscape': isLandscape }"
+    >
+      <div class="container mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
+        <button @click="handleBack" class="btn btn-secondary btn-sm lg:btn-md">
+          ← <span class="hidden sm:inline">返回</span>
         </button>
         
-        <div class="text-center">
-          <h1 class="text-xl font-bold text-[var(--color-text)]">{{ currentGame?.name || '遊戲' }}</h1>
+        <div class="text-center flex-1 mx-2">
+          <h1 class="text-base lg:text-xl font-bold text-[var(--color-text)] truncate">
+            {{ currentGame?.name || '遊戲' }}
+          </h1>
           <span 
-            class="difficulty-badge"
+            class="difficulty-badge text-xs"
             :class="`difficulty-${gameStore.currentDifficulty}`"
           >
             {{ DIFFICULTIES[gameStore.currentDifficulty].name }}
           </span>
         </div>
         
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 lg:gap-4">
           <!-- 分數顯示 -->
-          <div class="text-right">
-            <div class="text-sm text-[var(--color-text-secondary)]">分數</div>
-            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ currentScore }}</div>
+          <div class="text-right game-stats-landscape">
+            <div class="text-xs lg:text-sm text-[var(--color-text-secondary)] hide-landscape">分數</div>
+            <div class="text-lg lg:text-2xl font-bold text-blue-600 dark:text-blue-400 stat-value">{{ currentScore }}</div>
           </div>
           
           <!-- 計時器 -->
-          <div class="text-right">
-            <div class="text-sm text-[var(--color-text-secondary)]">時間</div>
-            <div class="text-2xl font-bold text-[var(--color-text)]">{{ formatTime(elapsedTime) }}</div>
+          <div class="text-right game-stats-landscape">
+            <div class="text-xs lg:text-sm text-[var(--color-text-secondary)] hide-landscape">時間</div>
+            <div class="text-lg lg:text-2xl font-bold text-[var(--color-text)] stat-value">{{ formatTime(elapsedTime) }}</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 遊戲區域 -->
-    <div class="container mx-auto py-8 px-4">
-      <!-- 遊戲準備畫面 -->
+    <!-- 遊戲區域 - 響應式 -->
+    <div class="game-play-area container mx-auto py-4 lg:py-8 px-3 lg:px-4">
+      <!-- 遊戲準備畫面 - 簡化版（從 GamePreviewView 進入會自動跳過） -->
       <div v-if="gameState === 'ready'" class="max-w-lg mx-auto text-center">
         <div class="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 shadow-lg">
-          <div class="text-6xl mb-6">{{ currentGame?.icon }}</div>
+          <div class="text-6xl mb-4">{{ currentGame?.icon }}</div>
           <h2 class="text-xl font-bold mb-4 text-[var(--color-text)]">{{ currentGame?.name }}</h2>
           
-          <div class="text-left mb-6">
-            <h3 class="font-semibold mb-2 text-[var(--color-text)]">遊戲說明</h3>
-            <ul class="list-disc list-inside text-[var(--color-text-secondary)] space-y-1">
-              <li v-for="(instruction, index) in currentGame?.instructions" :key="index">
-                {{ instruction }}
-              </li>
-            </ul>
-          </div>
+          <p class="text-[var(--color-text-secondary)] mb-6">
+            準備好了嗎？點擊下方按鈕開始遊戲！
+          </p>
           
           <button @click="startGame" class="btn btn-primary btn-xl w-full">
-            開始遊戲 →
+            開始遊戲 🎮
+          </button>
+          
+          <button @click="goBack" class="btn btn-secondary w-full mt-3">
+            ← 返回選擇難度
           </button>
         </div>
       </div>
@@ -213,6 +217,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, defineAsyncComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useGameStore, useUserStore } from '@/stores'
+import { useResponsive } from '@/composables/useResponsive'
 import { DIFFICULTIES, type GameResult, type GameState } from '@/types/game'
 import { calculateDifficultyAdjustment, applyDifficultyAdjustment, getFullDifficultyLabel, type DifficultyAdjustment } from '@/services/adaptiveDifficultyService'
 
@@ -220,6 +225,14 @@ const route = useRoute()
 const router = useRouter()
 const gameStore = useGameStore()
 const userStore = useUserStore()
+const { isMobile } = useResponsive()
+
+// 檢測橫屏
+const isLandscape = ref(false)
+
+function checkOrientation() {
+  isLandscape.value = window.innerHeight < 500 && window.innerWidth > window.innerHeight
+}
 
 // 遊戲狀態
 const gameState = ref<GameState>('ready')
@@ -446,6 +459,15 @@ function handleBack(): void {
   }
 }
 
+// 返回選擇難度頁面
+function goBack(): void {
+  if (gameId.value) {
+    router.push(`/games/preview/${gameId.value}`)
+  } else {
+    router.push('/games')
+  }
+}
+
 // 監聽路由變化，選擇遊戲
 watch(gameId, (newId) => {
   if (newId && !gameStore.currentGame) {
@@ -458,12 +480,27 @@ onUnmounted(() => {
   if (timerInterval) {
     clearInterval(timerInterval)
   }
+  window.removeEventListener('resize', checkOrientation)
+  window.removeEventListener('orientationchange', checkOrientation)
 })
 
 // 初始化
 onMounted(() => {
   if (gameId.value) {
     gameStore.selectGame(gameId.value)
+  }
+  // 初始化橫屏檢測
+  checkOrientation()
+  window.addEventListener('resize', checkOrientation)
+  window.addEventListener('orientationchange', checkOrientation)
+  
+  // 檢查是否從 GamePreviewView 進入 - 若是則自動開始遊戲
+  const autoStart = route.query.autoStart === 'true'
+  if (autoStart && gameStore.currentGame) {
+    // 短暫延遲讓畫面載入完成後再開始
+    setTimeout(() => {
+      startGame()
+    }, 100)
   }
 })
 </script>
