@@ -101,6 +101,9 @@ export const useUserStore = defineStore('user', () => {
       currentSettings.value = await getUserSettings(odId) || defaultUserSettings(odId)
       currentStats.value = await getUserStats(odId) || defaultUserStats(odId)
 
+      // 保存到 localStorage 以便下次恢復 session
+      localStorage.setItem('brain-training-last-user', odId)
+
       return true
     } catch (e) {
       error.value = e instanceof Error ? e.message : '登入失敗'
@@ -117,6 +120,7 @@ export const useUserStore = defineStore('user', () => {
     currentUser.value = null
     currentSettings.value = null
     currentStats.value = null
+    localStorage.removeItem('brain-training-last-user')
   }
 
   /**
@@ -233,6 +237,9 @@ export const useUserStore = defineStore('user', () => {
       currentUser.value = user
       currentSettings.value = await getUserSettings(odId) || defaultUserSettings(odId)
       currentStats.value = await getUserStats(odId) || defaultUserStats(odId)
+
+      // 保存到 localStorage 以便下次恢復 session
+      localStorage.setItem('brain-training-last-user', odId)
 
       return true
     } catch (e) {

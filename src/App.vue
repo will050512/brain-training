@@ -221,7 +221,7 @@ onMounted(async () => {
     <MobileBottomNav v-if="showMobileBottomNav" />
     
     <!-- 全螢幕/遊戲佈局（無外層包裝） -->
-    <template v-else>
+    <template v-if="isFullscreenLayout">
       <router-view v-slot="{ Component, route: currentRoute }">
         <transition 
           :name="currentRoute.meta.transition as string || 'fade'" 
