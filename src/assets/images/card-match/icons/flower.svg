@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
+  <defs>
+    <linearGradient id="flowerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F472B6"/>
+      <stop offset="100%" style="stop-color:#EC4899"/>
+    </linearGradient>
+  </defs>
+  <!-- 莖 -->
+  <path d="M40 45Q38 60 40 75" stroke="#22C55E" stroke-width="4" fill="none"/>
+  <!-- 葉子 -->
+  <path d="M40 55Q30 50 28 58Q32 62 40 58" fill="#22C55E"/>
+  <path d="M40 62Q50 57 52 65Q48 69 40 65" fill="#22C55E"/>
+  <!-- 花瓣 -->
+  <ellipse cx="40" cy="20" rx="8" ry="14" fill="url(#flowerGradient)"/>
+  <ellipse cx="40" cy="20" rx="8" ry="14" fill="url(#flowerGradient)" transform="rotate(72, 40, 32)"/>
+  <ellipse cx="40" cy="20" rx="8" ry="14" fill="url(#flowerGradient)" transform="rotate(144, 40, 32)"/>
+  <ellipse cx="40" cy="20" rx="8" ry="14" fill="url(#flowerGradient)" transform="rotate(216, 40, 32)"/>
+  <ellipse cx="40" cy="20" rx="8" ry="14" fill="url(#flowerGradient)" transform="rotate(288, 40, 32)"/>
+  <!-- 花心 -->
+  <circle cx="40" cy="32" r="8" fill="#FBBF24"/>
+  <circle cx="38" cy="30" r="2" fill="#F59E0B"/>
+  <circle cx="42" cy="34" r="1.5" fill="#F59E0B"/>
+</svg>

@@ -1,495 +1,509 @@
 <script setup lang="ts">
 /**
- * 聽覺記憶遊戲
- * 訓練維度：記憶力 + 注意力
- * 玩法：聽取一系列聲音後，按順序選擇對應的圖案
+ * 聲音記憶遊戲（重構版）
+ * 使用新的遊戲核心架構
  */
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import type { Difficulty, SubDifficulty } from '@/types/game'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useGameState } from '@/games/core/useGameState'
+import { useGameAudio } from '@/games/core/useGameAudio'
+import {
+  createGameState,
+  addUserInput,
+  isInputComplete,
+  validateAnswer,
+  calculateRoundScore,
+  getNextLength,
+  createNextRound,
+  calculateGrade,
+  summarizeResult,
+  getSoundPool,
+  DIFFICULTY_CONFIGS,
+  type AudioMemoryState,
+  type SoundItem,
+  type AudioMemoryConfig,
+} from '@/games/logic/audioMemory'
 
-// Props
-interface Props {
-  difficulty?: Difficulty
-  subDifficulty?: SubDifficulty
-}
+// UI 元件
+import GameReadyScreen from './ui/GameReadyScreen.vue'
+import GameResultScreen from './ui/GameResultScreen.vue'
+import GameStatusBar from './ui/GameStatusBar.vue'
+import GameFeedback from './ui/GameFeedback.vue'
 
-const props = withDefaults(defineProps<Props>(), {
-  difficulty: 'medium',
-  subDifficulty: 2
+// ===== Props & Emits =====
+const props = withDefaults(defineProps<{
+  difficulty?: 'easy' | 'medium' | 'hard'
+}>(), {
+  difficulty: 'easy'
 })
 
-// Emits
 const emit = defineEmits<{
-  (e: 'complete', result: {
-    score: number
-    accuracy: number
-    maxLevel: number
-    totalRounds: number
-    correctRounds: number
-  }): void
-  (e: 'progress', progress: number): void
+  'game:start': []
+  'game:end': [result: any]
+  'score:update': [score: number]
+  'state:change': [phase: string]
 }>()
 
-// 聲音類型
-interface SoundItem {
-  id: string
-  name: string
-  icon: string
-  frequency: number  // 用於產生音調
-  color: string
+// ===== 遊戲配置 =====
+const config = computed<AudioMemoryConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+
+// ===== 遊戲狀態 =====
+const {
+  phase,
+  score,
+  currentRound,
+  totalRounds,
+  correctCount,
+  wrongCount,
+  progress,
+  feedback,
+  showFeedback,
+  isPlaying,
+  startGame: startGameState,
+  finishGame: finishGameState,
+  nextRound,
+  setFeedback,
+  clearFeedback,
+  resetGame,
+  addScore,
+} = useGameState({
+  totalRounds: config.value.totalRounds,
+})
+
+function startGame() {
+  startGameState()
+  emit('game:start')
 }
 
-// 可用聲音
-const SOUNDS: SoundItem[] = [
-  { id: 'do', name: 'Do', icon: '🔴', frequency: 261.63, color: '#ef4444' },
-  { id: 're', name: 'Re', icon: '🟠', frequency: 293.66, color: '#f97316' },
-  { id: 'mi', name: 'Mi', icon: '🟡', frequency: 329.63, color: '#eab308' },
-  { id: 'fa', name: 'Fa', icon: '🟢', frequency: 349.23, color: '#22c55e' },
-  { id: 'sol', name: 'Sol', icon: '🔵', frequency: 392.00, color: '#3b82f6' },
-  { id: 'la', name: 'La', icon: '🟣', frequency: 440.00, color: '#a855f7' },
-  { id: 'si', name: 'Si', icon: '⚪', frequency: 493.88, color: '#6b7280' },
-  { id: 'do2', name: 'Do\'', icon: '💗', frequency: 523.25, color: '#ec4899' }
-]
+function finishGame() {
+  finishGameState()
+}
 
-// 遊戲配置
-const gameConfig = computed(() => {
-  const configs = {
-    easy: {
-      startLength: 2,
-      maxLength: 5,
-      soundPool: 4,
-      totalRounds: 8,
-      playbackSpeed: 800
-    },
-    medium: {
-      startLength: 3,
-      maxLength: 7,
-      soundPool: 6,
-      totalRounds: 10,
-      playbackSpeed: 600
-    },
-    hard: {
-      startLength: 4,
-      maxLength: 9,
-      soundPool: 8,
-      totalRounds: 12,
-      playbackSpeed: 500
-    }
-  }
+// ===== 音效 =====
+const { playCorrect, playWrong, playEnd, preloadDefaultSounds } = useGameAudio()
 
-  const base = configs[props.difficulty]
-  
-  // 根據子難度微調
-  const subAdjust = props.subDifficulty - 2
-  
+// ===== 遊戲資料 =====
+const gameState = ref<AudioMemoryState | null>(null)
+const soundPool = ref<SoundItem[]>([])
+const maxLength = ref(config.value.startLength)
+const gamePhase = ref<'listening' | 'input' | 'result'>('listening')
+const currentPlayingIndex = ref(-1)
+const streak = ref(0)
+const maxStreak = ref(0)
+let audioContext: AudioContext | null = null
+
+// ===== 計算屬性 =====
+const userInput = computed(() => gameState.value?.userInput || [])
+const sequence = computed(() => gameState.value?.sequence || [])
+const currentLength = computed(() => gameState.value?.currentLength || config.value.startLength)
+
+// ===== 回饋映射 =====
+const feedbackData = computed(() => {
+  if (!feedback.value) return undefined
   return {
-    ...base,
-    maxLength: base.maxLength + subAdjust,
-    playbackSpeed: base.playbackSpeed - subAdjust * 50
+    type: feedback.value.type,
+    show: showFeedback.value,
+    message: feedback.value.message,
+    score: feedback.value.score,
   }
 })
 
-// 遊戲狀態
-type GamePhase = 'ready' | 'playing' | 'input' | 'result' | 'gameover'
+// ===== 遊戲說明 =====
+const gameInstructions = [
+  '仔細聆聽播放的聲音序列',
+  '記住聲音出現的順序',
+  '按照相同順序點擊對應聲音',
+  '連續答對可增加序列長度',
+]
 
-const phase = ref<GamePhase>('ready')
-const currentRound = ref(0)
-const sequence = ref<SoundItem[]>([])
-const playingIndex = ref(-1)
-const userInput = ref<SoundItem[]>([])
-const isCorrect = ref<boolean | null>(null)
-const score = ref(0)
-const correctRounds = ref(0)
-const sequenceLength = ref(2)
-const maxLevelReached = ref(2)
-
-// 可用聲音池
-const soundPool = computed(() => 
-  SOUNDS.slice(0, gameConfig.value.soundPool)
-)
-
-// Web Audio API
-let audioContext: AudioContext | null = null
-
-// 初始化 Audio Context
-function initAudio(): void {
+// ===== 音效生成 =====
+function initAudioContext() {
   if (!audioContext) {
     audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
   }
+  return audioContext
 }
 
-// 播放音調
-function playTone(frequency: number, duration: number = 300): Promise<void> {
-  return new Promise((resolve) => {
-    if (!audioContext) {
-      initAudio()
-    }
-    
-    if (!audioContext) {
-      resolve()
-      return
-    }
-
-    const oscillator = audioContext.createOscillator()
-    const gainNode = audioContext.createGain()
-    
-    oscillator.connect(gainNode)
-    gainNode.connect(audioContext.destination)
-    
-    oscillator.type = 'sine'
-    oscillator.frequency.value = frequency
-    
-    // 淡入淡出效果
-    gainNode.gain.setValueAtTime(0, audioContext.currentTime)
-    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05)
-    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration / 1000)
-    
-    oscillator.start(audioContext.currentTime)
-    oscillator.stop(audioContext.currentTime + duration / 1000)
-    
-    setTimeout(resolve, duration)
-  })
+// 為每個聲音類別分配不同頻率
+const SOUND_FREQUENCIES: Record<string, number> = {
+  dog: 200, cat: 400, bird: 800, cow: 150, pig: 250, rooster: 600,
+  piano: 440, guitar: 330, drum: 100, violin: 550, trumpet: 466, bell: 880,
+  rain: 300, thunder: 80, wind: 200, wave: 250,
+  doorbell: 523, phone: 440, clock: 261, whistle: 700,
 }
 
-// 產生隨機序列
-function generateSequence(length: number): SoundItem[] {
-  const result: SoundItem[] = []
-  const pool = [...soundPool.value]
+function playSoundById(soundId: string) {
+  const ctx = initAudioContext()
+  if (!ctx) return
+
+  const frequency = SOUND_FREQUENCIES[soundId] || 440
   
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * pool.length)
-    const sound = pool[randomIndex]
-    if (sound) {
-      result.push(sound)
-    }
-  }
+  const oscillator = ctx.createOscillator()
+  const gainNode = ctx.createGain()
   
-  return result
+  oscillator.connect(gainNode)
+  gainNode.connect(ctx.destination)
+  
+  oscillator.type = 'sine'
+  oscillator.frequency.value = frequency
+  
+  gainNode.gain.setValueAtTime(0.5, ctx.currentTime)
+  gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5)
+  
+  oscillator.start(ctx.currentTime)
+  oscillator.stop(ctx.currentTime + 0.5)
 }
 
-// 開始遊戲
-function startGame(): void {
-  initAudio()
-  phase.value = 'ready'
-  currentRound.value = 0
-  score.value = 0
-  correctRounds.value = 0
-  sequenceLength.value = gameConfig.value.startLength
-  maxLevelReached.value = gameConfig.value.startLength
+// ===== 遊戲方法 =====
+function handleStart() {
+  soundPool.value = getSoundPool(config.value.soundPoolSize)
+  maxLength.value = config.value.startLength
+  streak.value = 0
+  maxStreak.value = 0
   
-  setTimeout(() => startRound(), 1000)
+  // 初始化音頻
+  initAudioContext()
+  
+  startGame()
+  startNewRound()
 }
 
-// 開始新一輪
-function startRound(): void {
-  currentRound.value++
-  
-  if (currentRound.value > gameConfig.value.totalRounds) {
-    endGame()
-    return
-  }
-
-  // 產生新序列
-  sequence.value = generateSequence(sequenceLength.value)
-  userInput.value = []
-  isCorrect.value = null
-  playingIndex.value = -1
-  
-  phase.value = 'playing'
-  
-  emit('progress', ((currentRound.value - 1) / gameConfig.value.totalRounds) * 100)
+function startNewRound() {
+  gameState.value = createGameState(config.value)
+  gamePhase.value = 'listening'
+  currentPlayingIndex.value = -1
   
   // 開始播放序列
   playSequence()
 }
 
-// 播放序列
-async function playSequence(): Promise<void> {
+async function playSequence() {
+  if (!gameState.value) return
+  
+  const interval = config.value.interval
+  
   for (let i = 0; i < sequence.value.length; i++) {
-    if (phase.value !== 'playing') break
-    
-    playingIndex.value = i
-    const currentSound = sequence.value[i]
-    if (currentSound) {
-      await playTone(currentSound.frequency, gameConfig.value.playbackSpeed * 0.8)
+    currentPlayingIndex.value = i
+    const sound = sequence.value[i]
+    if (sound) {
+      playSoundById(sound.id)
     }
-    await new Promise(resolve => setTimeout(resolve, gameConfig.value.playbackSpeed * 0.3))
+    await delay(interval)
+    currentPlayingIndex.value = -1
+    await delay(200) // 間隔
   }
   
-  playingIndex.value = -1
-  
-  if (phase.value === 'playing') {
-    phase.value = 'input'
-  }
+  // 進入輸入階段
+  gamePhase.value = 'input'
 }
 
-// 重新播放
-function replaySequence(): void {
-  if (phase.value !== 'input') return
-  
-  phase.value = 'playing'
-  userInput.value = []
-  playSequence()
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-// 使用者選擇聲音
-async function selectSound(sound: SoundItem): Promise<void> {
-  if (phase.value !== 'input') return
+function handleSoundClick(sound: SoundItem) {
+  if (!isPlaying.value || gamePhase.value !== 'input' || !gameState.value) return
   
-  // 播放選擇的音調
-  playTone(sound.frequency, 200)
+  // 播放選中的聲音
+  playSoundById(sound.id)
   
-  userInput.value.push(sound)
+  gameState.value = addUserInput(gameState.value, sound)
   
   // 檢查是否輸入完成
-  if (userInput.value.length >= sequence.value.length) {
+  if (isInputComplete(gameState.value)) {
     checkAnswer()
   }
 }
 
-// 檢查答案
-function checkAnswer(): void {
-  phase.value = 'result'
+function checkAnswer() {
+  if (!gameState.value) return
   
-  // 比對序列
-  const correct = userInput.value.every((sound, index) => 
-    sound.id === sequence.value[index]?.id
-  )
+  gamePhase.value = 'result'
+  const isCorrect = validateAnswer(gameState.value)
   
-  isCorrect.value = correct
-  
-  if (correct) {
-    correctRounds.value++
+  if (isCorrect) {
+    streak.value++
+    if (streak.value > maxStreak.value) {
+      maxStreak.value = streak.value
+    }
     
-    // 計算分數
-    const baseScore = sequenceLength.value * 15
-    score.value += baseScore
+    const earnedScore = calculateRoundScore(currentLength.value, isCorrect, streak.value)
+    addScore(earnedScore)
+    playCorrect()
+    setFeedback('correct', `正確！+${earnedScore}分`, earnedScore)
     
-    // 增加序列長度
-    if (sequenceLength.value < gameConfig.value.maxLength) {
-      sequenceLength.value++
-      if (sequenceLength.value > maxLevelReached.value) {
-        maxLevelReached.value = sequenceLength.value
-      }
+    // 更新最大長度
+    if (currentLength.value > maxLength.value) {
+      maxLength.value = currentLength.value
     }
   } else {
-    // 降低序列長度
-    if (sequenceLength.value > gameConfig.value.startLength) {
-      sequenceLength.value--
-    }
+    streak.value = 0
+    playWrong()
+    setFeedback('wrong', '順序錯誤')
   }
   
-  // 延遲後進入下一輪
+  // 延遲後進入下一回合或結束
   setTimeout(() => {
-    startRound()
-  }, 2000)
+    clearFeedback()
+    
+    if (currentRound.value < totalRounds - 1) {
+      nextRound()
+      // 建立新回合
+      if (gameState.value) {
+        gameState.value = createNextRound(gameState.value, isCorrect, streak.value, config.value)
+      }
+      gamePhase.value = 'listening'
+      currentPlayingIndex.value = -1
+      playSequence()
+    } else {
+      handleGameEnd()
+    }
+  }, 1500)
 }
 
-// 結束遊戲
-function endGame(): void {
-  phase.value = 'gameover'
+function replaySequence() {
+  if (gamePhase.value !== 'input' || !gameState.value) return
   
-  const accuracy = currentRound.value > 1 
-    ? (correctRounds.value / (currentRound.value - 1)) * 100 
-    : 0
-  
-  emit('complete', {
-    score: score.value,
-    accuracy: Math.round(accuracy),
-    maxLevel: maxLevelReached.value,
-    totalRounds: currentRound.value - 1,
-    correctRounds: correctRounds.value
-  })
+  gamePhase.value = 'listening'
+  // 清空使用者輸入
+  gameState.value = {
+    ...gameState.value,
+    userInput: [],
+  }
+  playSequence()
 }
 
-// 清理
-function cleanup(): void {
+function handleGameEnd() {
+  playEnd()
+  
+  const result = summarizeResult(
+    score.value,
+    correctCount.value,
+    config.value.totalRounds,
+    maxStreak.value,
+    maxLength.value
+  )
+  
+  finishGame()
+  emit('game:end', result)
+}
+
+function handleRestart() {
+  resetGame()
+  handleStart()
+}
+
+function handleQuit() {
+  resetGame()
+}
+
+// ===== 生命週期 =====
+onMounted(() => {
+  preloadDefaultSounds()
+})
+
+onBeforeUnmount(() => {
   if (audioContext) {
     audioContext.close()
     audioContext = null
   }
-}
-
-// 生命週期
-onMounted(() => {
-  startGame()
-})
-
-onUnmounted(() => {
-  cleanup()
 })
 
 // 監聽難度變化
-watch([() => props.difficulty, () => props.subDifficulty], () => {
-  cleanup()
-  startGame()
+watch(() => props.difficulty, () => {
+  if (phase.value !== 'ready') {
+    resetGame()
+  }
 })
 </script>
 
 <template>
-  <div class="audio-memory p-4">
-    <!-- 遊戲資訊 -->
-    <div class="flex justify-between items-center mb-6">
-      <div class="flex gap-4">
-        <div class="text-sm">
-          <span class="text-[var(--color-text-muted)]">回合</span>
-          <span class="font-bold ml-1">{{ currentRound }}/{{ gameConfig.totalRounds }}</span>
-        </div>
-        <div class="text-sm">
-          <span class="text-[var(--color-text-muted)]">分數</span>
-          <span class="font-bold ml-1 text-blue-600 dark:text-blue-400">{{ score }}</span>
-        </div>
-        <div class="text-sm">
-          <span class="text-[var(--color-text-muted)]">正確</span>
-          <span class="font-bold ml-1 text-green-600 dark:text-green-400">{{ correctRounds }}</span>
-        </div>
-      </div>
-      <div class="text-sm text-[var(--color-text-muted)]">
-        音符數: {{ sequenceLength }}
-      </div>
-    </div>
+  <div class="audio-memory-game w-full max-w-2xl mx-auto p-4">
+    <!-- 準備畫面 -->
+    <GameReadyScreen
+      v-if="phase === 'ready'"
+      title="聲音記憶"
+      icon="🔊"
+      :rules="gameInstructions"
+      :difficulty="difficulty === 'medium' ? 'normal' : difficulty"
+      @start="handleStart"
+    />
 
-    <!-- 遊戲區域 -->
-    <div class="game-area min-h-[400px] flex flex-col items-center justify-center">
-      <!-- 準備階段 -->
-      <div v-if="phase === 'ready'" class="text-center">
-        <div class="text-6xl mb-4">🎵</div>
-        <p class="text-xl text-[var(--color-text-secondary)]">準備開始...</p>
-        <p class="text-sm text-[var(--color-text-muted)] mt-2">仔細聽聲音的順序！</p>
-      </div>
+    <!-- 遊戲進行中 -->
+    <template v-else-if="phase === 'playing' || phase === 'paused'">
+      <!-- 狀態列 -->
+      <GameStatusBar
+        :score="score"
+        :progress="progress"
+        show-score
+        show-progress
+      />
 
-      <!-- 播放階段 -->
-      <div v-if="phase === 'playing'" class="text-center">
-        <p class="text-lg text-[var(--color-text-muted)] mb-6">請仔細聆聽...</p>
-        
-        <!-- 播放進度指示 -->
-        <div class="flex justify-center items-center gap-2 mb-8">
-          <div 
-            v-for="(_, index) in sequence" 
-            :key="index"
-            class="w-4 h-4 rounded-full transition-all duration-200"
-            :class="index === playingIndex 
-              ? 'bg-blue-500 scale-150 animate-pulse' 
-              : index < playingIndex 
-                ? 'bg-gray-400 dark:bg-gray-500' 
-                : 'bg-gray-200 dark:bg-gray-600'"
-          ></div>
+      <!-- 遊戲資訊 -->
+      <div class="game-info text-center mt-4">
+        <div class="text-sm text-gray-500 dark:text-gray-400">
+          第 {{ currentRound + 1 }} / {{ totalRounds }} 回合
         </div>
-        
-        <!-- 當前播放的音符 -->
-        <div v-if="playingIndex >= 0" class="text-8xl animate-bounce">
-          {{ sequence[playingIndex]?.icon }}
-        </div>
-      </div>
-
-      <!-- 輸入階段 -->
-      <div v-if="phase === 'input'" class="w-full">
-        <p class="text-lg text-center text-[var(--color-text-secondary)] mb-4">
-          請按順序選擇音符 ({{ userInput.length }}/{{ sequence.length }})
-        </p>
-        
-        <!-- 重新播放按鈕 -->
-        <div class="text-center mb-4">
-          <button 
-            @click="replaySequence"
-            class="text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 underline"
-          >
-            🔊 重新播放
-          </button>
-        </div>
-        
-        <!-- 已輸入的音符 -->
-        <div class="flex justify-center gap-2 mb-6 min-h-[50px]">
-          <div 
-            v-for="(sound, index) in userInput" 
-            :key="index"
-            class="text-3xl"
-          >
-            {{ sound.icon }}
+        <div class="flex justify-center gap-4 mt-2 text-sm">
+          <div>
+            <span class="text-gray-500 dark:text-gray-400">序列長度：</span>
+            <span class="font-bold text-blue-500">{{ currentLength }}</span>
           </div>
-          <div 
-            v-for="i in (sequence.length - userInput.length)" 
-            :key="'empty-' + i"
-            class="w-10 h-10 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-full"
-          ></div>
-        </div>
-
-        <!-- 音符選擇區 -->
-        <div class="grid grid-cols-4 gap-3 max-w-sm mx-auto">
-          <button
-            v-for="sound in soundPool"
-            :key="sound.id"
-            @click="selectSound(sound)"
-            class="sound-btn aspect-square text-3xl rounded-xl shadow-md
-                   hover:shadow-lg hover:scale-105 active:scale-95 transition-all
-                   flex flex-col items-center justify-center gap-1"
-            :style="{ backgroundColor: sound.color + '20', borderColor: sound.color }"
-            style="border-width: 2px"
-          >
-            {{ sound.icon }}
-            <span class="text-xs text-[var(--color-text-secondary)]">{{ sound.name }}</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 結果階段 -->
-      <div v-if="phase === 'result'" class="text-center">
-        <div class="text-8xl mb-4">
-          {{ isCorrect ? '✅' : '❌' }}
-        </div>
-        <p class="text-2xl font-bold mb-4" :class="isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
-          {{ isCorrect ? '正確！' : '錯誤' }}
-        </p>
-        
-        <!-- 顯示正確答案 -->
-        <div v-if="!isCorrect" class="mt-4">
-          <p class="text-sm text-[var(--color-text-muted)] mb-2">正確順序：</p>
-          <div class="flex justify-center gap-2">
-            <span v-for="(sound, index) in sequence" :key="index" class="text-3xl">
-              {{ sound.icon }}
-            </span>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400">連續正確：</span>
+            <span class="font-bold text-orange-500">{{ streak }}</span>
           </div>
         </div>
       </div>
 
-      <!-- 遊戲結束 -->
-      <div v-if="phase === 'gameover'" class="text-center">
-        <div class="text-6xl mb-4">🎉</div>
-        <p class="text-2xl font-bold text-[var(--color-text)] mb-4">遊戲結束！</p>
-        <div class="bg-[var(--color-bg-soft)] rounded-xl p-6 max-w-sm mx-auto">
-          <div class="grid grid-cols-2 gap-4 text-left">
-            <div>
-              <p class="text-sm text-[var(--color-text-muted)]">最終分數</p>
-              <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ score }}</p>
+      <!-- 顯示區域 -->
+      <div class="display-area mt-8">
+        <!-- 聆聽階段 -->
+        <div 
+          v-if="gamePhase === 'listening'"
+          class="listening-phase text-center"
+        >
+          <div class="text-lg font-medium mb-4">
+            🎵 仔細聆聽...
+          </div>
+          <div class="sound-indicator flex justify-center gap-3 flex-wrap">
+            <div
+              v-for="(sound, index) in sequence"
+              :key="index"
+              class="sound-dot w-12 h-12 rounded-full transition-all duration-200 flex items-center justify-center text-2xl"
+              :class="{
+                'bg-blue-500 scale-125 shadow-lg shadow-blue-500/50': currentPlayingIndex === index,
+                'bg-gray-300 dark:bg-gray-600': currentPlayingIndex !== index,
+              }"
+            >
+              {{ currentPlayingIndex === index ? sound.emoji : '' }}
             </div>
-            <div>
-              <p class="text-sm text-[var(--color-text-muted)]">正確率</p>
-              <p class="text-2xl font-bold text-green-600 dark:text-green-400">
-                {{ Math.round((correctRounds / (currentRound - 1)) * 100) }}%
-              </p>
+          </div>
+        </div>
+
+        <!-- 輸入階段 -->
+        <div 
+          v-else-if="gamePhase === 'input'"
+          class="input-phase"
+        >
+          <div class="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
+            按順序點擊聲音
+          </div>
+          
+          <!-- 輸入進度 -->
+          <div class="input-progress flex justify-center gap-2 mb-6 min-h-14 flex-wrap">
+            <div
+              v-for="(sound, index) in userInput"
+              :key="index"
+              class="sound-icon w-12 h-12 flex items-center justify-center text-2xl bg-blue-100 dark:bg-blue-900 rounded-full"
+            >
+              {{ sound.emoji }}
             </div>
-            <div>
-              <p class="text-sm text-[var(--color-text-muted)]">最高等級</p>
-              <p class="text-xl font-bold">{{ maxLevelReached }} 音符</p>
+            <div
+              v-for="i in (currentLength - userInput.length)"
+              :key="'placeholder-' + i"
+              class="sound-placeholder w-12 h-12 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-full"
+            >
+              ?
             </div>
-            <div>
-              <p class="text-sm text-[var(--color-text-muted)]">完成回合</p>
-              <p class="text-xl font-bold">{{ correctRounds }}/{{ currentRound - 1 }}</p>
+          </div>
+
+          <!-- 重播按鈕 -->
+          <div class="text-center mb-4">
+            <button
+              class="replay-btn px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              @click="replaySequence"
+            >
+              🔁 重播聲音
+            </button>
+          </div>
+
+          <!-- 聲音選擇區 -->
+          <div class="sound-grid grid grid-cols-3 md:grid-cols-4 gap-3 max-w-lg mx-auto">
+            <button
+              v-for="sound in soundPool"
+              :key="sound.id"
+              class="sound-btn p-4 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900 transition-all transform hover:scale-105 active:scale-95"
+              @click="handleSoundClick(sound)"
+            >
+              <div class="text-3xl">{{ sound.emoji }}</div>
+              <div class="text-xs mt-1">{{ sound.name }}</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 結果階段 -->
+        <div 
+          v-else-if="gamePhase === 'result'"
+          class="result-phase text-center"
+        >
+          <div class="sequence-compare">
+            <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">正確順序</div>
+            <div class="correct-sequence flex justify-center gap-2 mb-4 flex-wrap">
+              <div
+                v-for="(sound, index) in sequence"
+                :key="index"
+                class="w-12 h-12 flex items-center justify-center text-2xl bg-green-100 dark:bg-green-900 rounded-full"
+              >
+                {{ sound.emoji }}
+              </div>
+            </div>
+            <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">你的順序</div>
+            <div class="user-sequence flex justify-center gap-2 flex-wrap">
+              <div
+                v-for="(sound, index) in userInput"
+                :key="index"
+                class="w-12 h-12 flex items-center justify-center text-2xl rounded-full"
+                :class="{
+                  'bg-green-100 dark:bg-green-900': sound.id === sequence[index]?.id,
+                  'bg-red-100 dark:bg-red-900': sound.id !== sequence[index]?.id,
+                }"
+              >
+                {{ sound.emoji }}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <!-- 回饋動畫 -->
+      <GameFeedback
+        v-if="feedbackData"
+        :type="feedbackData.type"
+        :show="feedbackData.show"
+        :message="feedbackData.message"
+        :score="feedbackData.score"
+      />
+    </template>
+
+    <!-- 結果畫面 -->
+    <GameResultScreen
+      v-else-if="phase === 'finished' || phase === 'result'"
+      :score="score"
+      :correct-count="correctCount"
+      :wrong-count="wrongCount"
+      :total-count="config.totalRounds"
+      :grade="calculateGrade(correctCount / config.totalRounds * 100) as 'S' | 'A' | 'B' | 'C' | 'D' | 'F'"
+      :custom-stats="[
+        { label: '正確', value: correctCount, icon: '✅' },
+        { label: '最長連續', value: maxStreak, icon: '🔥' },
+        { label: '最大長度', value: maxLength, icon: '📏' },
+      ]"
+      @replay="handleRestart"
+      @back="handleQuit"
+    />
   </div>
 </template>
 
 <style scoped>
-.audio-memory {
-  max-width: 500px;
-  margin: 0 auto;
+.sound-btn:active {
+  transform: scale(0.9);
 }
 
-.sound-btn {
-  min-height: 70px;
+.sound-dot {
+  box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5);
+}
+
+.sound-dot.bg-blue-500 {
+  box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.3);
 }
 </style>

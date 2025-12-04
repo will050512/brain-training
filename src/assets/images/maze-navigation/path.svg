@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FEF3C7"/>
+      <stop offset="100%" style="stop-color:#FDE68A"/>
+    </linearGradient>
+  </defs>
+  <!-- 通道背景 -->
+  <rect width="32" height="32" fill="url(#pathGradient)"/>
+  <!-- 點綴 -->
+  <circle cx="8" cy="8" r="1" fill="#D97706" opacity="0.3"/>
+  <circle cx="24" cy="12" r="1" fill="#D97706" opacity="0.3"/>
+  <circle cx="16" cy="24" r="1" fill="#D97706" opacity="0.3"/>
+  <circle cx="28" cy="28" r="1" fill="#D97706" opacity="0.3"/>
+</svg>

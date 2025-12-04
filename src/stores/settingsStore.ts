@@ -95,7 +95,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const orientationSupported = computed(() => {
     return typeof screen !== 'undefined' && 
            'orientation' in screen && 
-           typeof screen.orientation?.lock === 'function'
+           typeof (screen.orientation as ScreenOrientation & { lock?: (type: string) => Promise<void> })?.lock === 'function'
   })
 
   // 新增：退化檢測與訓練設定
@@ -272,7 +272,8 @@ export const useSettingsStore = defineStore('settings', () => {
     if (orientationSupported.value && preference !== 'auto') {
       try {
         const lockType = preference === 'portrait' ? 'portrait-primary' : 'landscape-primary'
-        await screen.orientation.lock(lockType)
+        const orientation = screen.orientation as ScreenOrientation & { lock: (type: string) => Promise<void> }
+        await orientation.lock(lockType)
       } catch (error) {
         // 方向鎖定失敗（可能在桌面瀏覽器或未全螢幕），僅記錄偏好
         console.info('螢幕方向鎖定不可用，已儲存偏好設定')

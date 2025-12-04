@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" fill="none">
+  <defs>
+    <linearGradient id="nodeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#818CF8"/>
+      <stop offset="100%" style="stop-color:#6366F1"/>
+    </linearGradient>
+  </defs>
+  <!-- 節點圓 -->
+  <circle cx="25" cy="25" r="22" fill="url(#nodeGradient)" stroke="#4F46E5" stroke-width="3"/>
+  <!-- 內圈 -->
+  <circle cx="25" cy="25" r="16" fill="#FFFFFF" opacity="0.9"/>
+</svg>

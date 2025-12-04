@@ -1,341 +1,396 @@
-<template>
-  <div class="game-area">
-    <!-- 遊戲說明 -->
-    <div v-if="!isPlaying && !isFinished" class="text-center mb-6">
-      <p class="text-lg text-[var(--color-text-secondary)]">哪邊比較重？點選較重的一側！</p>
-      <p class="text-sm text-[var(--color-text-muted)]">觀察物品數量和大小來判斷</p>
-    </div>
-
-    <!-- 遊戲狀態 -->
-    <div class="flex justify-between items-center mb-4">
-      <div class="text-lg">
-        <span class="text-[var(--color-text-muted)]">第</span>
-        <span class="font-bold text-blue-600 dark:text-blue-400">{{ currentRound }}/{{ totalRounds }}</span>
-        <span class="text-[var(--color-text-muted)]">題</span>
-      </div>
-      <div class="text-lg">
-        <span class="text-[var(--color-text-muted)]">正確：</span>
-        <span class="font-bold text-green-500 dark:text-green-400">{{ correctCount }}</span>
-      </div>
-      <div class="text-lg">
-        <span class="text-[var(--color-text-muted)]">剩餘：</span>
-        <span class="font-bold text-[var(--color-text)]">{{ remainingTime }}秒</span>
-      </div>
-    </div>
-
-    <!-- 天平 -->
-    <div class="scale-container relative" v-if="isPlaying || isFinished">
-      <!-- 天平支架 -->
-      <div class="scale-stand">
-        <div class="stand-base"></div>
-        <div class="stand-pole"></div>
-        <div class="stand-top"></div>
-      </div>
-
-      <!-- 天平臂 -->
-      <div 
-        class="scale-arm"
-        :style="{ transform: `rotate(${armRotation}deg)` }"
-      >
-        <!-- 左盤 -->
-        <div 
-          class="scale-pan left cursor-pointer hover:ring-4 hover:ring-blue-300 transition-all"
-          :class="{ 
-            'ring-4 ring-green-400': showResult && leftWeight > rightWeight,
-            'ring-4 ring-red-400': showResult && leftWeight < rightWeight && selectedSide === 'left'
-          }"
-          @click="selectSide('left')"
-        >
-          <div class="pan-items">
-            <span v-for="(item, i) in leftItems" :key="i" class="text-3xl md:text-4xl">
-              {{ item.emoji }}
-            </span>
-          </div>
-          <div class="pan-base"></div>
-        </div>
-
-        <!-- 右盤 -->
-        <div 
-          class="scale-pan right cursor-pointer hover:ring-4 hover:ring-blue-300 transition-all"
-          :class="{ 
-            'ring-4 ring-green-400': showResult && rightWeight > leftWeight,
-            'ring-4 ring-red-400': showResult && rightWeight < leftWeight && selectedSide === 'right'
-          }"
-          @click="selectSide('right')"
-        >
-          <div class="pan-items">
-            <span v-for="(item, i) in rightItems" :key="i" class="text-3xl md:text-4xl">
-              {{ item.emoji }}
-            </span>
-          </div>
-          <div class="pan-base"></div>
-        </div>
-      </div>
-
-      <!-- 結果提示 -->
-      <transition name="fade">
-        <div 
-          v-if="showResult"
-          class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-5xl"
-        >
-          {{ isCorrect ? '✅' : '❌' }}
-        </div>
-      </transition>
-    </div>
-
-    <!-- 開始按鈕 -->
-    <div class="mt-6 text-center">
-      <button
-        v-if="!isPlaying && !isFinished"
-        @click="startGame"
-        class="btn btn-primary btn-xl"
-      >
-        開始遊戲 ⚖️
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
-import type { Difficulty, GameResult } from '@/types/game'
+/**
+ * 天平秤重遊戲（重構版）
+ * 使用新的遊戲核心架構
+ */
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useGameState } from '@/games/core/useGameState'
+import { useRoundTimer } from '@/games/core/useGameTimer'
+import { useGameAudio } from '@/games/core/useGameAudio'
+import {
+  generateRound,
+  validateAnswer,
+  calculateArmRotation,
+  summarizeResult,
+  calculateGrade,
+  DIFFICULTY_CONFIGS,
+  WEIGHT_ITEMS,
+  type RoundData,
+  type BalanceScaleConfig,
+} from '@/games/logic/balanceScale'
 
-// Props
-const props = defineProps<{
-  difficulty: Difficulty
-  settings: Record<string, number | string | boolean>
-}>()
+// UI 元件
+import GameReadyScreen from './ui/GameReadyScreen.vue'
+import GameResultScreen from './ui/GameResultScreen.vue'
+import GameStatusBar from './ui/GameStatusBar.vue'
+import GameFeedback from './ui/GameFeedback.vue'
 
-// Emits
-const emit = defineEmits<{
-  'score-change': [score: number]
-  'game-end': [result: GameResult]
-}>()
-
-// 物品定義
-interface WeightItem {
-  emoji: string
-  weight: number
-}
-
-const weightItems: WeightItem[] = [
-  { emoji: '🍎', weight: 1 },
-  { emoji: '🍊', weight: 1 },
-  { emoji: '🍋', weight: 1 },
-  { emoji: '🍇', weight: 2 },
-  { emoji: '🍉', weight: 3 },
-  { emoji: '🥝', weight: 1 },
-  { emoji: '🍓', weight: 1 },
-  { emoji: '🥕', weight: 1 },
-  { emoji: '🥔', weight: 2 },
-  { emoji: '🎃', weight: 4 },
-  { emoji: '🏀', weight: 3 },
-  { emoji: '⚽', weight: 2 },
-  { emoji: '🎱', weight: 2 },
-]
-
-// 難度設定
-const difficultyConfig = computed(() => {
-  const defaults = {
-    easy: { rounds: 8, maxItems: 4, timePerRound: 10, showWeightHint: true },
-    medium: { rounds: 12, maxItems: 5, timePerRound: 8, showWeightHint: false },
-    hard: { rounds: 15, maxItems: 6, timePerRound: 6, showWeightHint: false },
-  }
-  return {
-    ...defaults[props.difficulty],
-    ...props.settings,
-  } as typeof defaults.easy
+// ===== Props & Emits =====
+const props = withDefaults(defineProps<{
+  difficulty?: 'easy' | 'medium' | 'hard'
+}>(), {
+  difficulty: 'easy'
 })
 
-// 遊戲狀態
-const isPlaying = ref(false)
-const isFinished = ref(false)
-const currentRound = ref(0)
-const totalRounds = computed(() => difficultyConfig.value.rounds)
-const correctCount = ref(0)
-const remainingTime = ref(0)
+const emit = defineEmits<{
+  'game:start': []
+  'game:end': [result: any]
+  'score:update': [score: number]
+  'state:change': [phase: string]
+}>()
 
-const leftItems = ref<WeightItem[]>([])
-const rightItems = ref<WeightItem[]>([])
-const leftWeight = ref(0)
-const rightWeight = ref(0)
+// ===== 遊戲配置 =====
+const config = computed<BalanceScaleConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+
+// ===== 遊戲狀態 =====
+const {
+  phase,
+  score,
+  currentRound,
+  totalRounds,
+  correctCount,
+  wrongCount,
+  progress,
+  feedback,
+  showFeedback,
+  isPlaying,
+  startGame: startGameState,
+  finishGame: finishGameState,
+  nextRound,
+  recordAnswer,
+  setFeedback,
+  clearFeedback,
+  resetGame,
+  getCurrentReactionTime,
+} = useGameState({
+  totalRounds: config.value.rounds,
+})
+
+function startGame() {
+  startGameState()
+  emit('game:start')
+}
+
+function finishGame() {
+  finishGameState()
+}
+
+// ===== 回合計時器 =====
+const {
+  roundTime,
+  formattedRoundTime,
+  startRound,
+  stopRound,
+  resetRound,
+} = useRoundTimer({
+  timePerRound: config.value.timePerRound,
+  onRoundTimeUp: () => handleRoundTimeout(),
+})
+
+// ===== 音效 =====
+const { playCorrect, playWrong, playEnd, preloadDefaultSounds } = useGameAudio()
+
+// ===== 遊戲資料 =====
+const currentRoundData = ref<RoundData | null>(null)
 const selectedSide = ref<'left' | 'right' | null>(null)
 const showResult = ref(false)
 const isCorrect = ref(false)
-
 const reactionTimes = ref<number[]>([])
-let roundStartTime = 0
+const isAnswering = ref(false)
 
-// 天平臂旋轉角度
+// ===== 計算屬性 =====
 const armRotation = computed(() => {
-  if (showResult.value) {
-    const diff = leftWeight.value - rightWeight.value
-    return Math.max(-15, Math.min(15, diff * 3))
-  }
-  return 0
+  if (!currentRoundData.value || !showResult.value) return 0
+  return calculateArmRotation(
+    currentRoundData.value.leftWeight,
+    currentRoundData.value.rightWeight,
+    true
+  )
 })
 
-// 計時器
-let countdownTimer: ReturnType<typeof setInterval> | null = null
+// ===== 回饋映射 =====
+const feedbackData = computed(() => {
+  if (!feedback.value) return undefined
+  return {
+    type: feedback.value.type,
+    show: showFeedback.value,
+    message: feedback.value.message,
+  }
+})
 
-// 生成題目
-function generateRound(): void {
-  const config = difficultyConfig.value
+// ===== 遊戲說明 =====
+const gameInstructions = [
+  '觀察天平兩側的物品',
+  '判斷哪一側比較重',
+  '點擊你認為較重的那一側',
+  '注意物品的數量和大小都會影響重量',
+]
+
+// ===== 遊戲方法 =====
+function handleStart() {
+  reactionTimes.value = []
+  isAnswering.value = false
   
-  // 隨機生成左右物品
-  const leftCount = Math.floor(Math.random() * config.maxItems) + 1
-  const rightCount = Math.floor(Math.random() * config.maxItems) + 1
-
-  leftItems.value = []
-  rightItems.value = []
-
-  for (let i = 0; i < leftCount; i++) {
-    const item = weightItems[Math.floor(Math.random() * weightItems.length)]
-    if (item) leftItems.value.push(item)
-  }
-
-  for (let i = 0; i < rightCount; i++) {
-    const item = weightItems[Math.floor(Math.random() * weightItems.length)]
-    if (item) rightItems.value.push(item)
-  }
-
-  // 計算重量
-  leftWeight.value = leftItems.value.reduce((sum, item) => sum + item.weight, 0)
-  rightWeight.value = rightItems.value.reduce((sum, item) => sum + item.weight, 0)
-
-  // 確保有明確的重量差異
-  if (leftWeight.value === rightWeight.value) {
-    // 添加一個額外物品到較少的一側
-    const extraItem = weightItems[0]
-    if (extraItem) {
-      if (leftCount <= rightCount) {
-        leftItems.value.push(extraItem)
-        leftWeight.value += extraItem.weight
-      } else {
-        rightItems.value.push(extraItem)
-        rightWeight.value += extraItem.weight
-      }
-    }
-  }
-
-  selectedSide.value = null
-  showResult.value = false
-  remainingTime.value = config.timePerRound
-  roundStartTime = Date.now()
+  startGame()
+  generateNextRound()
 }
 
-// 選擇一側
-function selectSide(side: 'left' | 'right'): void {
-  if (!isPlaying.value || showResult.value) return
+function generateNextRound() {
+  currentRoundData.value = generateRound(config.value)
+  selectedSide.value = null
+  showResult.value = false
+  isCorrect.value = false
+  startRound()
+}
 
+function handleSelectSide(side: 'left' | 'right') {
+  if (!isPlaying.value || showResult.value || isAnswering.value) return
+  if (!currentRoundData.value) return
+  
+  isAnswering.value = true
+  stopRound()
+  
   selectedSide.value = side
   showResult.value = true
-
-  const reactionTime = Date.now() - roundStartTime
+  
+  const reactionTime = getCurrentReactionTime()
   reactionTimes.value.push(reactionTime)
-
-  // 判斷是否正確
-  if (side === 'left') {
-    isCorrect.value = leftWeight.value > rightWeight.value
-  } else {
-    isCorrect.value = rightWeight.value > leftWeight.value
-  }
-
+  
+  isCorrect.value = validateAnswer(side, currentRoundData.value)
+  
+  // 記錄答案
+  const earnedScore = isCorrect.value ? 10 : 0
+  recordAnswer(isCorrect.value, side, currentRoundData.value.correctAnswer, earnedScore)
+  
+  // 顯示回饋
   if (isCorrect.value) {
-    correctCount.value++
-    emit('score-change', correctCount.value)
+    playCorrect()
+    setFeedback('correct', '正確！')
+  } else {
+    playWrong()
+    const correctLabel = currentRoundData.value.correctAnswer === 'left' ? '左邊' : '右邊'
+    setFeedback('wrong', `答案是${correctLabel}`)
   }
-
-  // 清除倒數
-  if (countdownTimer) clearInterval(countdownTimer)
-
-  // 下一題
+  
+  // 延遲後進入下一題或結束
   setTimeout(() => {
-    if (currentRound.value < totalRounds.value) {
+    clearFeedback()
+    isAnswering.value = false
+    
+    if (currentRound.value < totalRounds - 1) {
       nextRound()
+      generateNextRound()
     } else {
-      endGame()
+      handleGameEnd()
     }
   }, 1200)
 }
 
-// 開始遊戲
-function startGame(): void {
-  isPlaying.value = true
-  isFinished.value = false
-  currentRound.value = 0
-  correctCount.value = 0
-  reactionTimes.value = []
+function handleRoundTimeout() {
+  if (!currentRoundData.value) return
   
-  nextRound()
-}
-
-// 下一題
-function nextRound(): void {
-  currentRound.value++
-  generateRound()
-
-  // 開始倒數
-  countdownTimer = setInterval(() => {
-    remainingTime.value--
-    if (remainingTime.value <= 0) {
-      // 時間到，自動跳過
-      showResult.value = true
-      isCorrect.value = false
-      if (countdownTimer) clearInterval(countdownTimer)
-      
-      setTimeout(() => {
-        if (currentRound.value < totalRounds.value) {
-          nextRound()
-        } else {
-          endGame()
-        }
-      }, 1000)
+  // 超時視為答錯
+  showResult.value = true
+  isCorrect.value = false
+  
+  recordAnswer(false, null, currentRoundData.value.correctAnswer, 0)
+  
+  playWrong()
+  const correctLabel = currentRoundData.value.correctAnswer === 'left' ? '左邊' : '右邊'
+  setFeedback('wrong', `時間到！答案是${correctLabel}`)
+  
+  setTimeout(() => {
+    clearFeedback()
+    
+    if (currentRound.value < totalRounds - 1) {
+      nextRound()
+      generateNextRound()
+    } else {
+      handleGameEnd()
     }
   }, 1000)
 }
 
-// 結束遊戲
-function endGame(): void {
-  isPlaying.value = false
-  isFinished.value = true
-
-  if (countdownTimer) clearInterval(countdownTimer)
-
-  const accuracy = totalRounds.value > 0 ? correctCount.value / totalRounds.value : 0
-  const avgReactionTime = reactionTimes.value.length > 0
-    ? Math.round(reactionTimes.value.reduce((a, b) => a + b, 0) / reactionTimes.value.length)
-    : 0
-
-  // 計算分數（滿分 100）
-  const accuracyScore = accuracy * 80
-  const speedBonus = avgReactionTime > 0 && avgReactionTime < 3000
-    ? Math.min(20, (3000 - avgReactionTime) / 150)
-    : 0
+function handleGameEnd() {
+  stopRound()
+  playEnd()
   
-  const finalScore = Math.round(Math.min(100, accuracyScore + speedBonus))
-
-  const result: GameResult = {
-    gameId: 'balance-scale',
-    difficulty: props.difficulty,
-    score: finalScore,
-    maxScore: 100,
-    correctCount: correctCount.value,
-    totalCount: totalRounds.value,
-    accuracy,
-    avgReactionTime,
-    duration: totalRounds.value * difficultyConfig.value.timePerRound,
-    timestamp: new Date(),
-  }
-
-  emit('game-end', result)
+  const result = summarizeResult(
+    correctCount.value,
+    correctCount.value + wrongCount.value,
+    reactionTimes.value,
+    config.value
+  )
+  
+  finishGame()
+  emit('game:end', result)
 }
 
-// 清理
-onUnmounted(() => {
-  if (countdownTimer) clearInterval(countdownTimer)
+function handleRestart() {
+  stopRound()
+  resetGame()
+  handleStart()
+}
+
+function handleQuit() {
+  stopRound()
+  resetGame()
+}
+
+// ===== 生命週期 =====
+onMounted(() => {
+  preloadDefaultSounds()
+})
+
+// 監聽難度變化
+watch(() => props.difficulty, () => {
+  if (phase.value !== 'ready') {
+    stopRound()
+    resetGame()
+  }
 })
 </script>
+
+<template>
+  <div class="balance-scale-game w-full max-w-2xl mx-auto p-4">
+    <!-- 準備畫面 -->
+    <GameReadyScreen
+      v-if="phase === 'ready'"
+      title="天平比重"
+      icon="⚖️"
+      :rules="gameInstructions"
+      :difficulty="difficulty === 'medium' ? 'normal' : difficulty"
+      @start="handleStart"
+    />
+
+    <!-- 遊戲進行中 -->
+    <template v-else-if="phase === 'playing' || phase === 'paused'">
+      <!-- 狀態列 -->
+      <GameStatusBar
+        :time="roundTime"
+        :score="score"
+        :progress="progress"
+        :is-warning="roundTime <= 3"
+        show-timer
+        show-score
+        show-progress
+      />
+
+      <!-- 題目資訊 -->
+      <div class="question-info text-center mt-4">
+        <div class="text-sm text-gray-500 dark:text-gray-400">
+          第 {{ currentRound + 1 }} / {{ totalRounds }} 題
+        </div>
+        <div class="text-lg font-medium mt-2">
+          哪一邊比較重？
+        </div>
+      </div>
+
+      <!-- 天平 -->
+      <div class="scale-container relative mt-6" v-if="currentRoundData">
+        <!-- 天平支架 -->
+        <div class="scale-stand">
+          <div class="stand-base"></div>
+          <div class="stand-pole"></div>
+          <div class="stand-top"></div>
+        </div>
+
+        <!-- 天平臂 -->
+        <div 
+          class="scale-arm"
+          :style="{ transform: `rotate(${armRotation}deg)` }"
+        >
+          <!-- 左盤 -->
+          <div 
+            class="scale-pan left cursor-pointer hover:ring-4 hover:ring-blue-300 transition-all"
+            :class="{ 
+              'ring-4 ring-green-400': showResult && currentRoundData.leftWeight > currentRoundData.rightWeight,
+              'ring-4 ring-red-400': showResult && currentRoundData.leftWeight < currentRoundData.rightWeight && selectedSide === 'left'
+            }"
+            @click="handleSelectSide('left')"
+          >
+            <div class="pan-items">
+              <span 
+                v-for="(item, i) in currentRoundData.leftItems" 
+                :key="i" 
+                class="text-3xl md:text-4xl"
+              >
+                {{ item.emoji }}
+              </span>
+            </div>
+            <div class="pan-base"></div>
+          </div>
+
+          <!-- 右盤 -->
+          <div 
+            class="scale-pan right cursor-pointer hover:ring-4 hover:ring-blue-300 transition-all"
+            :class="{ 
+              'ring-4 ring-green-400': showResult && currentRoundData.rightWeight > currentRoundData.leftWeight,
+              'ring-4 ring-red-400': showResult && currentRoundData.rightWeight < currentRoundData.leftWeight && selectedSide === 'right'
+            }"
+            @click="handleSelectSide('right')"
+          >
+            <div class="pan-items">
+              <span 
+                v-for="(item, i) in currentRoundData.rightItems" 
+                :key="i" 
+                class="text-3xl md:text-4xl"
+              >
+                {{ item.emoji }}
+              </span>
+            </div>
+            <div class="pan-base"></div>
+          </div>
+        </div>
+
+        <!-- 結果提示 -->
+        <Transition name="fade">
+          <div 
+            v-if="showResult"
+            class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-5xl z-10"
+          >
+            {{ isCorrect ? '✅' : '❌' }}
+          </div>
+        </Transition>
+      </div>
+
+      <!-- 重量提示（簡單模式） -->
+      <div 
+        v-if="config.showWeightHint && currentRoundData" 
+        class="weight-hint text-center mt-4 text-sm text-gray-500 dark:text-gray-400"
+      >
+        <span>左邊: {{ currentRoundData.leftWeight }} 重量單位</span>
+        <span class="mx-4">|</span>
+        <span>右邊: {{ currentRoundData.rightWeight }} 重量單位</span>
+      </div>
+
+      <!-- 回饋動畫 -->
+      <GameFeedback
+        v-if="feedbackData"
+        :type="feedbackData.type"
+        :show="feedbackData.show"
+        :message="feedbackData.message"
+      />
+    </template>
+
+    <!-- 結果畫面 -->
+    <GameResultScreen
+      v-else-if="phase === 'finished' || phase === 'result'"
+      :score="score"
+      :correct-count="correctCount"
+      :wrong-count="wrongCount"
+      :total-count="correctCount + wrongCount"
+      :grade="calculateGrade(score) as 'S' | 'A' | 'B' | 'C' | 'D' | 'F'"
+      :custom-stats="[
+        { label: '正確', value: correctCount, icon: '✅' },
+        { label: '錯誤', value: wrongCount, icon: '❌' },
+        { label: '正確率', value: `${Math.round(correctCount / (correctCount + wrongCount) * 100)}%`, icon: '🎯' },
+      ]"
+      @replay="handleRestart"
+      @back="handleQuit"
+    />
+  </div>
+</template>
 
 <style scoped>
 .scale-container {

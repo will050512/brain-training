@@ -1,325 +1,398 @@
-<template>
-  <div class="game-area">
-    <!-- 遊戲說明 -->
-    <div v-if="!isPlaying && !isFinished" class="text-center mb-6">
-      <p class="text-lg text-[var(--color-text-secondary)]">快速點擊出現的地鼠！</p>
-      <p class="text-sm text-[var(--color-text-muted)]">小心不要點到炸彈 💣</p>
-    </div>
-
-    <!-- 遊戲狀態 -->
-    <div class="flex justify-between items-center mb-4">
-      <div class="text-lg">
-        <span class="text-[var(--color-text-muted)]">得分：</span>
-        <span class="font-bold text-blue-600 dark:text-blue-400">{{ score }}</span>
-      </div>
-      <div class="text-lg">
-        <span class="text-[var(--color-text-muted)]">剩餘：</span>
-        <span class="font-bold text-[var(--color-text)]">{{ remainingTime }}秒</span>
-      </div>
-      <div class="text-lg">
-        <span class="text-[var(--color-text-muted)]">連擊：</span>
-        <span class="font-bold text-orange-500 dark:text-orange-400">{{ combo }}x</span>
-      </div>
-    </div>
-
-    <!-- 遊戲場地 -->
-    <div 
-      class="grid gap-4 p-6 bg-gradient-to-b from-green-100 to-green-200 rounded-2xl"
-      :class="gridClass"
-    >
-      <div
-        v-for="(hole, index) in holes"
-        :key="index"
-        class="hole relative aspect-square flex items-center justify-center cursor-pointer select-none"
-        @click="handleHoleClick(index)"
-      >
-        <!-- 洞 -->
-        <div class="absolute inset-0 bg-gradient-to-b from-amber-800 to-amber-900 rounded-full shadow-inner"></div>
-        
-        <!-- 地鼠/炸彈 -->
-        <transition name="pop">
-          <div
-            v-if="hole.active"
-            class="absolute text-5xl md:text-6xl transform transition-transform"
-            :class="{ 
-              'animate-pulse': hole.type === 'mole',
-              'scale-110': hole.hit,
-              'opacity-50': hole.hit 
-            }"
-          >
-            {{ hole.type === 'mole' ? '🐹' : '💣' }}
-          </div>
-        </transition>
-        
-        <!-- 得分提示 -->
-        <transition name="fade">
-          <div
-            v-if="hole.showScore"
-            class="absolute -top-4 font-bold text-xl"
-            :class="hole.scoreClass"
-          >
-            {{ hole.scoreText }}
-          </div>
-        </transition>
-      </div>
-    </div>
-
-    <!-- 開始/結束按鈕 -->
-    <div class="mt-6 text-center">
-      <button
-        v-if="!isPlaying && !isFinished"
-        @click="startGame"
-        class="btn btn-primary btn-xl"
-      >
-        開始遊戲 🎮
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
-import type { Difficulty, GameResult } from '@/types/game'
+/**
+ * 打地鼠遊戲（重構版）
+ * 使用新的遊戲核心架構
+ */
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useGameState } from '@/games/core/useGameState'
+import { useGameTimer } from '@/games/core/useGameTimer'
+import { useGameAudio } from '@/games/core/useGameAudio'
+import {
+  createInitialHoles,
+  findInactiveHoles,
+  determineSpawnType,
+  spawnAtHole,
+  processHoleClick,
+  clearHoleAfterHit,
+  hideHole,
+  summarizeResult,
+  calculateGrade,
+  DIFFICULTY_CONFIGS,
+  type Hole,
+  type WhackAMoleConfig,
+} from '@/games/logic/whackAMole'
 
-// Props
-const props = defineProps<{
-  difficulty: Difficulty
-  settings: Record<string, number | string | boolean>
-}>()
+// UI 元件
+import GameReadyScreen from './ui/GameReadyScreen.vue'
+import GameResultScreen from './ui/GameResultScreen.vue'
+import GameStatusBar from './ui/GameStatusBar.vue'
+import GameFeedback from './ui/GameFeedback.vue'
 
-// Emits
+// ===== Props & Emits =====
+const props = withDefaults(defineProps<{
+  difficulty?: 'easy' | 'medium' | 'hard'
+}>(), {
+  difficulty: 'easy'
+})
+
 const emit = defineEmits<{
-  'score-change': [score: number]
-  'game-end': [result: GameResult]
+  'game:start': []
+  'game:end': [result: any]
+  'score:update': [score: number]
+  'state:change': [phase: string]
 }>()
 
-// 難度設定
-const difficultyConfig = computed(() => {
-  const defaults = {
-    easy: { interval: 2000, duration: 1500, holes: 6, bombChance: 0.1, gameTime: 30 },
-    medium: { interval: 1500, duration: 1200, holes: 9, bombChance: 0.15, gameTime: 45 },
-    hard: { interval: 1000, duration: 800, holes: 9, bombChance: 0.2, gameTime: 60 },
-  }
-  return {
-    ...defaults[props.difficulty],
-    ...props.settings,
-  } as typeof defaults.easy
+// ===== 遊戲配置 =====
+const config = computed<WhackAMoleConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+
+// ===== 遊戲狀態 =====
+const {
+  phase,
+  score,
+  combo,
+  maxCombo,
+  feedback,
+  showFeedback,
+  isPlaying,
+  startGame: startGameState,
+  finishGame: finishGameState,
+  setFeedback,
+  clearFeedback,
+  resetGame,
+  addScore,
+} = useGameState({
+  totalRounds: 0, // 打地鼠沒有回合數限制
+  timeLimit: config.value.gameTime,
 })
 
-// 格線 class
-const gridClass = computed(() => {
-  const holes = difficultyConfig.value.holes
-  if (holes <= 6) return 'grid-cols-3'
-  return 'grid-cols-3'
-})
-
-// 遊戲狀態
-interface Hole {
-  active: boolean
-  type: 'mole' | 'bomb'
-  hit: boolean
-  showScore: boolean
-  scoreText: string
-  scoreClass: string
+function startGame() {
+  startGameState()
+  emit('game:start')
 }
 
-const holes = ref<Hole[]>([])
-const isPlaying = ref(false)
-const isFinished = ref(false)
-const score = ref(0)
-const combo = ref(0)
-const remainingTime = ref(0)
+function finishGame() {
+  finishGameState()
+}
 
-// 統計數據
-const totalMoles = ref(0)
+// ===== 倒數計時器 =====
+const {
+  time: timeLeft,
+  isWarning: timerWarning,
+  start: startTimer,
+  stop: stopTimer,
+  reset: resetTimer,
+} = useGameTimer({
+  mode: 'countdown',
+  initialTime: config.value.gameTime,
+  warningTime: 10,
+  onTimeUp: () => handleTimeUp(),
+})
+
+// ===== 音效 =====
+const { playCorrect, playWrong, playEnd, preloadDefaultSounds } = useGameAudio()
+
+// ===== 遊戲資料 =====
+const holes = ref<Hole[]>([])
+const currentCombo = ref(0)
+const currentMaxCombo = ref(0)
 const hitMoles = ref(0)
+const totalMoles = ref(0)
 const hitBombs = ref(0)
 const reactionTimes = ref<number[]>([])
 let lastMoleTime = 0
-
-// 計時器
-let gameTimer: ReturnType<typeof setInterval> | null = null
 let spawnTimer: ReturnType<typeof setInterval> | null = null
-let countdownTimer: ReturnType<typeof setInterval> | null = null
 
-// 初始化洞
-function initHoles(): void {
-  const count = difficultyConfig.value.holes
-  holes.value = Array(count).fill(null).map(() => ({
-    active: false,
-    type: 'mole',
-    hit: false,
-    showScore: false,
-    scoreText: '',
-    scoreClass: '',
-  }))
-}
+// ===== 計算屬性 =====
+const gridClass = computed(() => {
+  const holeCount = config.value.holes
+  if (holeCount <= 6) return 'grid-cols-3'
+  return 'grid-cols-3'
+})
 
-// 開始遊戲
-function startGame(): void {
-  initHoles()
-  isPlaying.value = true
-  isFinished.value = false
-  score.value = 0
-  combo.value = 0
-  totalMoles.value = 0
+const displayScore = computed(() => score.value)
+
+// ===== 回饋映射 =====
+const feedbackData = computed(() => {
+  if (!feedback.value) return undefined
+  return {
+    type: feedback.value.type,
+    show: showFeedback.value,
+    message: feedback.value.message,
+    score: feedback.value.score,
+    combo: feedback.value.combo,
+  }
+})
+
+// ===== 遊戲說明 =====
+const gameInstructions = [
+  '點擊「開始遊戲」按鈕',
+  '當地鼠 🐹 出現時，快速點擊它',
+  '小心避開炸彈 💣，點到會扣分',
+  '連續擊中可獲得連擊加成',
+]
+
+// ===== 遊戲方法 =====
+function handleStart() {
+  // 初始化狀態
+  holes.value = createInitialHoles(config.value.holes)
+  currentCombo.value = 0
+  currentMaxCombo.value = 0
   hitMoles.value = 0
+  totalMoles.value = 0
   hitBombs.value = 0
   reactionTimes.value = []
-  remainingTime.value = difficultyConfig.value.gameTime
-
-  // 倒數計時
-  countdownTimer = setInterval(() => {
-    remainingTime.value--
-    if (remainingTime.value <= 0) {
-      endGame()
-    }
-  }, 1000)
-
-  // 生成地鼠
+  lastMoleTime = Date.now()
+  
+  // 開始遊戲
+  startGame()
+  resetTimer(config.value.gameTime)
+  startTimer()
+  
+  // 開始生成地鼠
   spawnMole()
-  spawnTimer = setInterval(spawnMole, difficultyConfig.value.interval)
+  spawnTimer = setInterval(spawnMole, config.value.interval)
 }
 
-// 生成地鼠
-function spawnMole(): void {
+function spawnMole() {
   if (!isPlaying.value) return
-
-  // 找出未激活的洞
-  const inactiveIndices = holes.value
-    .map((h, i) => (!h.active ? i : -1))
-    .filter(i => i !== -1)
   
+  const inactiveIndices = findInactiveHoles(holes.value)
   if (inactiveIndices.length === 0) return
-
-  // 隨機選擇一個洞
+  
   const randomIdx = inactiveIndices[Math.floor(Math.random() * inactiveIndices.length)]
   if (randomIdx === undefined) return
   
-  const hole = holes.value[randomIdx]
-  if (!hole) return
-
-  // 決定是地鼠還是炸彈
-  const isBomb = Math.random() < difficultyConfig.value.bombChance
+  const spawnType = determineSpawnType(config.value.bombChance)
+  holes.value = spawnAtHole(holes.value, randomIdx, spawnType)
   
-  hole.active = true
-  hole.type = isBomb ? 'bomb' : 'mole'
-  hole.hit = false
-
-  if (!isBomb) {
+  if (spawnType === 'mole') {
     totalMoles.value++
     lastMoleTime = Date.now()
   }
-
+  
   // 自動消失
   setTimeout(() => {
-    if (hole.active && !hole.hit) {
-      hole.active = false
+    const hole = holes.value[randomIdx]
+    if (hole && hole.active && !hole.hit) {
+      holes.value = hideHole(holes.value, randomIdx)
       if (hole.type === 'mole') {
-        combo.value = 0  // 漏掉地鼠，連擊歸零
+        currentCombo.value = 0 // 漏掉地鼠，連擊歸零
       }
     }
-  }, difficultyConfig.value.duration)
+  }, config.value.duration)
 }
 
-// 點擊洞
-function handleHoleClick(index: number): void {
+function handleHoleClick(index: number) {
   if (!isPlaying.value) return
-
+  
   const hole = holes.value[index]
   if (!hole || !hole.active || hole.hit) return
-
-  hole.hit = true
+  
   const reactionTime = Date.now() - lastMoleTime
-
-  if (hole.type === 'mole') {
-    // 打中地鼠
+  
+  const result = processHoleClick(
+    holes.value,
+    index,
+    config.value,
+    currentCombo.value
+  )
+  
+  holes.value = result.holes
+  currentCombo.value = result.newCombo
+  
+  if (result.isMoleHit) {
     hitMoles.value++
-    combo.value++
     reactionTimes.value.push(reactionTime)
+    addScore(result.scoreChange)
+    playCorrect()
     
-    // 計算分數（連擊加成）
-    const baseScore = 10
-    const comboBonus = Math.min(combo.value, 5)
-    const points = baseScore + comboBonus * 2
-    score.value += points
-
-    hole.showScore = true
-    hole.scoreText = `+${points}`
-    hole.scoreClass = 'text-green-500'
+    if (currentCombo.value > currentMaxCombo.value) {
+      currentMaxCombo.value = currentCombo.value
+    }
     
-    emit('score-change', score.value)
-  } else {
-    // 打中炸彈
+    if (currentCombo.value >= 3) {
+      setFeedback('combo', `${currentCombo.value}x 連擊！`, result.scoreChange)
+    } else {
+      setFeedback('correct', undefined, result.scoreChange)
+    }
+  } else if (result.isBombHit) {
     hitBombs.value++
-    combo.value = 0
-    score.value = Math.max(0, score.value - 20)
-
-    hole.showScore = true
-    hole.scoreText = '-20'
-    hole.scoreClass = 'text-red-500'
-    
-    emit('score-change', score.value)
+    addScore(result.scoreChange)
+    playWrong()
+    setFeedback('wrong', '💣 炸彈！', result.scoreChange)
   }
-
-  // 隱藏得分提示
+  
+  // 清除得分顯示
   setTimeout(() => {
-    hole.showScore = false
-    hole.active = false
+    holes.value = clearHoleAfterHit(holes.value, index)
+    clearFeedback()
   }, 300)
 }
 
-// 結束遊戲
-function endGame(): void {
-  isPlaying.value = false
-  isFinished.value = true
-
-  // 清除計時器
-  if (countdownTimer) clearInterval(countdownTimer)
-  if (spawnTimer) clearInterval(spawnTimer)
-  if (gameTimer) clearInterval(gameTimer)
-
-  // 計算最終分數（滿分 100）
-  const accuracy = totalMoles.value > 0 ? hitMoles.value / totalMoles.value : 0
-  const avgReactionTime = reactionTimes.value.length > 0
-    ? Math.round(reactionTimes.value.reduce((a, b) => a + b, 0) / reactionTimes.value.length)
-    : 0
-
-  // 分數計算：正確率 60% + 反應時間 30% + 連擊 10%
-  const accuracyScore = accuracy * 60
-  const reactionScore = avgReactionTime > 0 
-    ? Math.max(0, 30 - (avgReactionTime - 300) / 50)
-    : 0
-  const comboScore = Math.min(10, hitMoles.value / 2)
-  
-  const finalScore = Math.round(Math.min(100, accuracyScore + reactionScore + comboScore))
-
-  const result: GameResult = {
-    gameId: 'whack-a-mole',
-    difficulty: props.difficulty,
-    score: finalScore,
-    maxScore: 100,
-    correctCount: hitMoles.value,
-    totalCount: totalMoles.value,
-    accuracy,
-    avgReactionTime,
-    duration: difficultyConfig.value.gameTime,
-    timestamp: new Date(),
-  }
-
-  emit('game-end', result)
+function handleTimeUp() {
+  handleGameEnd()
 }
 
-// 清理
-onUnmounted(() => {
-  if (countdownTimer) clearInterval(countdownTimer)
-  if (spawnTimer) clearInterval(spawnTimer)
-  if (gameTimer) clearInterval(gameTimer)
+function handleGameEnd() {
+  stopTimer()
+  if (spawnTimer) {
+    clearInterval(spawnTimer)
+    spawnTimer = null
+  }
+  playEnd()
+  
+  const result = summarizeResult(
+    hitMoles.value,
+    totalMoles.value,
+    hitBombs.value,
+    reactionTimes.value,
+    currentMaxCombo.value,
+    config.value.gameTime
+  )
+  
+  finishGame()
+  emit('game:end', result)
+}
+
+function handleRestart() {
+  stopTimer()
+  if (spawnTimer) {
+    clearInterval(spawnTimer)
+    spawnTimer = null
+  }
+  resetGame()
+  handleStart()
+}
+
+function handleQuit() {
+  stopTimer()
+  if (spawnTimer) {
+    clearInterval(spawnTimer)
+    spawnTimer = null
+  }
+  resetGame()
+}
+
+// ===== 生命週期 =====
+onMounted(() => {
+  preloadDefaultSounds()
 })
 
-// 初始化
-initHoles()
+onUnmounted(() => {
+  if (spawnTimer) {
+    clearInterval(spawnTimer)
+  }
+})
+
+// 監聽難度變化
+watch(() => props.difficulty, () => {
+  if (phase.value !== 'ready') {
+    stopTimer()
+    if (spawnTimer) {
+      clearInterval(spawnTimer)
+      spawnTimer = null
+    }
+    resetGame()
+  }
+})
 </script>
+
+<template>
+  <div class="whack-a-mole-game w-full max-w-2xl mx-auto p-4">
+    <!-- 準備畫面 -->
+    <GameReadyScreen
+      v-if="phase === 'ready'"
+      title="打地鼠"
+      icon="🐹"
+      :rules="gameInstructions"
+      :difficulty="difficulty === 'medium' ? 'normal' : difficulty"
+      @start="handleStart"
+    />
+
+    <!-- 遊戲進行中 -->
+    <template v-else-if="phase === 'playing' || phase === 'paused'">
+      <!-- 狀態列 -->
+      <GameStatusBar
+        :time="timeLeft"
+        :score="displayScore"
+        :combo="currentCombo"
+        :is-warning="timerWarning"
+        show-timer
+        show-score
+      />
+
+      <!-- 遊戲場地 -->
+      <div 
+        class="game-field grid gap-4 p-6 bg-gradient-to-b from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 rounded-2xl mt-4"
+        :class="gridClass"
+      >
+        <div
+          v-for="(hole, index) in holes"
+          :key="index"
+          class="hole relative aspect-square flex items-center justify-center cursor-pointer select-none"
+          @click="handleHoleClick(index)"
+        >
+          <!-- 洞 -->
+          <div class="absolute inset-0 bg-gradient-to-b from-amber-800 to-amber-900 rounded-full shadow-inner"></div>
+          
+          <!-- 地鼠/炸彈 -->
+          <Transition name="pop">
+            <div
+              v-if="hole.active"
+              class="absolute text-5xl md:text-6xl transform transition-transform"
+              :class="{ 
+                'animate-pulse': hole.type === 'mole',
+                'scale-110': hole.hit,
+                'opacity-50': hole.hit 
+              }"
+            >
+              {{ hole.type === 'mole' ? '🐹' : '💣' }}
+            </div>
+          </Transition>
+          
+          <!-- 得分提示 -->
+          <Transition name="fade">
+            <div
+              v-if="hole.showScore"
+              class="absolute -top-4 font-bold text-xl"
+              :class="hole.scoreClass"
+            >
+              {{ hole.scoreText }}
+            </div>
+          </Transition>
+        </div>
+      </div>
+
+      <!-- 回饋動畫 -->
+      <GameFeedback
+        v-if="feedbackData"
+        :type="feedbackData.type"
+        :show="feedbackData.show"
+        :message="feedbackData.message"
+        :score="feedbackData.score"
+        :combo="feedbackData.combo"
+      />
+    </template>
+
+    <!-- 結果畫面 -->
+    <GameResultScreen
+      v-else-if="phase === 'finished' || phase === 'result'"
+      :score="displayScore"
+      :correct-count="hitMoles"
+      :total-count="totalMoles"
+      :time-spent="config.gameTime"
+      :max-combo="currentMaxCombo"
+      :grade="calculateGrade(displayScore) as 'S' | 'A' | 'B' | 'C' | 'D' | 'F'"
+      :custom-stats="[
+        { label: '命中', value: `${hitMoles}/${totalMoles}`, icon: '🐹' },
+        { label: '炸彈', value: hitBombs, icon: '💣' },
+        { label: '最高連擊', value: `${currentMaxCombo}x`, icon: '🔥' },
+      ]"
+      @replay="handleRestart"
+      @back="handleQuit"
+    />
+  </div>
+</template>
 
 <style scoped>
 .hole {

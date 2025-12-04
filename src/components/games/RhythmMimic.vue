@@ -1,609 +1,517 @@
 <script setup lang="ts">
 /**
- * 節奏模仿遊戲
- * 訓練維度：協調力 + 反應力
- * 玩法：觀察節奏模式後，在正確的時機點擊來模仿
+ * 節奏模仿遊戲（重構版）
+ * 使用新的遊戲核心架構
  */
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import type { Difficulty, SubDifficulty } from '@/types/game'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useGameState } from '@/games/core/useGameState'
+import { useGameAudio } from '@/games/core/useGameAudio'
+import {
+  generateRoundPatterns,
+  evaluateRound,
+  getPatternDuration,
+  calculateScore,
+  calculateGrade,
+  summarizeResult,
+  DIFFICULTY_CONFIGS,
+  type RhythmPattern,
+  type RoundResult,
+  type RhythmMimicConfig,
+} from '@/games/logic/rhythmMimic'
 
-// Props
-interface Props {
-  difficulty?: Difficulty
-  subDifficulty?: SubDifficulty
-}
+// UI 元件
+import GameReadyScreen from './ui/GameReadyScreen.vue'
+import GameResultScreen from './ui/GameResultScreen.vue'
+import GameStatusBar from './ui/GameStatusBar.vue'
+import GameFeedback from './ui/GameFeedback.vue'
 
-const props = withDefaults(defineProps<Props>(), {
-  difficulty: 'medium',
-  subDifficulty: 2
+// ===== Props & Emits =====
+const props = withDefaults(defineProps<{
+  difficulty?: 'easy' | 'medium' | 'hard'
+}>(), {
+  difficulty: 'easy'
 })
 
-// Emits
 const emit = defineEmits<{
-  (e: 'complete', result: {
-    score: number
-    accuracy: number
-    maxLevel: number
-    totalRounds: number
-    correctRounds: number
-    avgTimingError: number
-  }): void
-  (e: 'progress', progress: number): void
+  'game:start': []
+  'game:end': [result: any]
+  'score:update': [score: number]
+  'state:change': [phase: string]
 }>()
 
-// 節拍類型
-interface Beat {
-  time: number  // 相對時間（毫秒）
-  hit: boolean  // 是否已正確擊中
+// ===== 遊戲配置 =====
+const config = computed<RhythmMimicConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+
+// ===== 遊戲狀態 =====
+const {
+  phase,
+  score,
+  currentRound,
+  totalRounds,
+  correctCount,
+  wrongCount,
+  progress,
+  feedback,
+  showFeedback,
+  isPlaying,
+  startGame: startGameState,
+  finishGame: finishGameState,
+  nextRound,
+  setFeedback,
+  clearFeedback,
+  resetGame,
+  addScore,
+} = useGameState({
+  totalRounds: config.value.totalRounds,
+})
+
+function startGame() {
+  startGameState()
+  emit('game:start')
 }
 
-// 遊戲配置
-const gameConfig = computed(() => {
-  const configs = {
-    easy: {
-      startBeats: 3,
-      maxBeats: 6,
-      tempo: 800,      // 基本節拍間隔
-      tolerance: 300,  // 時間容錯
-      totalRounds: 8
-    },
-    medium: {
-      startBeats: 4,
-      maxBeats: 8,
-      tempo: 600,
-      tolerance: 200,
-      totalRounds: 10
-    },
-    hard: {
-      startBeats: 5,
-      maxBeats: 10,
-      tempo: 450,
-      tolerance: 150,
-      totalRounds: 12
-    }
-  }
+function finishGame() {
+  finishGameState()
+}
 
-  const base = configs[props.difficulty]
-  
-  // 根據子難度微調
-  const subAdjust = props.subDifficulty - 2
-  
+// ===== 音效 =====
+const { playCorrect, playWrong, playEnd, preloadDefaultSounds } = useGameAudio()
+
+// ===== 遊戲資料 =====
+const patterns = ref<RhythmPattern[]>([])
+const currentPattern = computed(() => patterns.value[currentRound.value])
+const gamePhase = ref<'listening' | 'input' | 'result'>('listening')
+const currentBeatIndex = ref(-1)
+const userTaps = ref<number[]>([])
+const roundResults = ref<RoundResult[]>([])
+const streak = ref(0)
+const maxStreak = ref(0)
+const isTapping = ref(false)
+let audioContext: AudioContext | null = null
+let inputStartTime = 0
+let playCount = 0
+
+// ===== 計算屬性 =====
+const currentBeats = computed(() => currentPattern.value?.beats || [])
+const currentAccuracy = computed(() => {
+  if (roundResults.value.length === 0) return 0
+  const lastResult = roundResults.value[roundResults.value.length - 1]
+  return lastResult?.accuracy || 0
+})
+
+// ===== 回饋映射 =====
+const feedbackData = computed(() => {
+  if (!feedback.value) return undefined
   return {
-    ...base,
-    tempo: base.tempo - subAdjust * 50,
-    tolerance: base.tolerance - subAdjust * 30,
-    maxBeats: base.maxBeats + subAdjust
+    type: feedback.value.type,
+    show: showFeedback.value,
+    message: feedback.value.message,
+    score: feedback.value.score,
   }
 })
 
-// 遊戲狀態
-type GamePhase = 'ready' | 'demo' | 'countdown' | 'play' | 'result' | 'gameover'
+// ===== 遊戲說明 =====
+const gameInstructions = [
+  '仔細聆聽節奏模式',
+  '記住每個敲擊的時間間隔',
+  '盡可能精確地複製節奏',
+  '越接近原始節奏分數越高',
+]
 
-const phase = ref<GamePhase>('ready')
-const currentRound = ref(0)
-const pattern = ref<Beat[]>([])
-const patternIndex = ref(-1)
-const userHits = ref<number[]>([])
-const countdown = ref(3)
-const score = ref(0)
-const correctRounds = ref(0)
-const beatCount = ref(3)
-const maxLevelReached = ref(3)
-const timingErrors = ref<number[]>([])
-const playStartTime = ref(0)
-const lastTapFeedback = ref<'perfect' | 'good' | 'miss' | null>(null)
-
-// Web Audio API
-let audioContext: AudioContext | null = null
-
-// 計時器
-let demoTimer: ReturnType<typeof setTimeout> | null = null
-let playTimer: ReturnType<typeof setInterval> | null = null
-
-// 初始化 Audio
-function initAudio(): void {
+// ===== 音效生成 =====
+function initAudioContext() {
   if (!audioContext) {
     audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
   }
+  return audioContext
 }
 
-// 播放節拍音效
-function playBeatSound(type: 'beat' | 'hit' | 'miss' = 'beat'): void {
-  if (!audioContext) initAudio()
-  if (!audioContext) return
-
-  const oscillator = audioContext.createOscillator()
-  const gainNode = audioContext.createGain()
+function playBeat() {
+  const ctx = initAudioContext()
+  if (!ctx) return
+  
+  const oscillator = ctx.createOscillator()
+  const gainNode = ctx.createGain()
   
   oscillator.connect(gainNode)
-  gainNode.connect(audioContext.destination)
+  gainNode.connect(ctx.destination)
   
-  switch (type) {
-    case 'beat':
-      oscillator.type = 'sine'
-      oscillator.frequency.value = 880
-      break
-    case 'hit':
-      oscillator.type = 'triangle'
-      oscillator.frequency.value = 660
-      break
-    case 'miss':
-      oscillator.type = 'sawtooth'
-      oscillator.frequency.value = 220
-      break
-  }
+  oscillator.type = 'sine'
+  oscillator.frequency.value = 800
   
-  gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
-  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1)
+  gainNode.gain.setValueAtTime(0.8, ctx.currentTime)
+  gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1)
   
-  oscillator.start(audioContext.currentTime)
-  oscillator.stop(audioContext.currentTime + 0.1)
+  oscillator.start(ctx.currentTime)
+  oscillator.stop(ctx.currentTime + 0.1)
 }
 
-// 產生節奏模式
-function generatePattern(beats: number): Beat[] {
-  const result: Beat[] = []
-  const { tempo } = gameConfig.value
+// ===== 遊戲方法 =====
+function handleStart() {
+  patterns.value = generateRoundPatterns(config.value.totalRounds, props.difficulty)
+  roundResults.value = []
+  streak.value = 0
+  maxStreak.value = 0
   
-  // 基本節拍 + 一些變化
-  for (let i = 0; i < beats; i++) {
-    // 隨機添加一些節奏變化
-    let interval = tempo
-    
-    // 30% 機率產生半拍
-    if (i > 0 && Math.random() < 0.3) {
-      interval = tempo * 0.5
-    }
-    // 20% 機率產生 1.5 拍
-    else if (i > 0 && Math.random() < 0.2) {
-      interval = tempo * 1.5
-    }
-    
-    const lastBeat = result[result.length - 1]
-    const lastTime = lastBeat ? lastBeat.time : 0
-    result.push({
-      time: lastTime + (i === 0 ? 0 : interval),
-      hit: false
-    })
-  }
+  // 初始化音頻
+  initAudioContext()
   
-  return result
+  startGame()
+  startNewRound()
 }
 
-// 開始遊戲
-function startGame(): void {
-  initAudio()
-  phase.value = 'ready'
-  currentRound.value = 0
-  score.value = 0
-  correctRounds.value = 0
-  beatCount.value = gameConfig.value.startBeats
-  maxLevelReached.value = gameConfig.value.startBeats
-  timingErrors.value = []
+function startNewRound() {
+  gamePhase.value = 'listening'
+  currentBeatIndex.value = -1
+  userTaps.value = []
+  playCount = 0
   
-  setTimeout(() => startRound(), 1000)
-}
-
-// 開始新一輪
-function startRound(): void {
-  currentRound.value++
-  
-  if (currentRound.value > gameConfig.value.totalRounds) {
-    endGame()
-    return
-  }
-
-  // 產生新模式
-  pattern.value = generatePattern(beatCount.value)
-  userHits.value = []
-  patternIndex.value = -1
-  lastTapFeedback.value = null
-  
-  emit('progress', ((currentRound.value - 1) / gameConfig.value.totalRounds) * 100)
-  
-  // 開始示範
-  phase.value = 'demo'
-  playDemo()
-}
-
-// 播放示範
-function playDemo(): void {
-  let currentIndex = 0
-  
-  function playNextBeat(): void {
-    if (currentIndex >= pattern.value.length) {
-      // 示範結束，開始倒數
-      setTimeout(() => startCountdown(), 500)
-      return
-    }
-    
-    patternIndex.value = currentIndex
-    playBeatSound('beat')
-    
-    const currentBeat = pattern.value[currentIndex]
-    const nextBeat = pattern.value[currentIndex + 1]
-    const nextDelay = currentIndex < pattern.value.length - 1 && nextBeat && currentBeat
-      ? nextBeat.time - currentBeat.time
-      : 0
-    
-    currentIndex++
-    
-    if (nextDelay > 0) {
-      demoTimer = setTimeout(playNextBeat, nextDelay)
-    } else {
-      playNextBeat()
-    }
-  }
-  
-  playNextBeat()
-}
-
-// 開始倒數
-function startCountdown(): void {
-  phase.value = 'countdown'
-  countdown.value = 3
-  patternIndex.value = -1
-  
-  const countdownInterval = setInterval(() => {
-    countdown.value--
-    
-    if (countdown.value <= 0) {
-      clearInterval(countdownInterval)
-      startPlay()
-    }
-  }, 800)
-}
-
-// 開始玩家輸入
-function startPlay(): void {
-  phase.value = 'play'
-  playStartTime.value = Date.now()
-  
-  // 設定結束時間（最後一拍時間 + 容錯時間 + 緩衝）
-  const lastBeat = pattern.value[pattern.value.length - 1]
-  const totalDuration = (lastBeat?.time ?? 0) + gameConfig.value.tolerance + 500
-  
-  playTimer = setTimeout(() => {
-    checkResult()
-  }, totalDuration)
-}
-
-// 玩家點擊
-function handleTap(): void {
-  if (phase.value !== 'play') return
-  
-  const tapTime = Date.now() - playStartTime.value
-  userHits.value.push(tapTime)
-  
-  // 找到最近的預期拍子
-  let nearestBeat: Beat | null = null
-  let nearestDist = Infinity
-  
-  for (const beat of pattern.value) {
-    if (!beat.hit) {
-      const dist = Math.abs(tapTime - beat.time)
-      if (dist < nearestDist) {
-        nearestDist = dist
-        nearestBeat = beat
-      }
-    }
-  }
-  
-  // 判斷是否命中
-  if (nearestBeat && nearestDist <= gameConfig.value.tolerance) {
-    nearestBeat.hit = true
-    timingErrors.value.push(nearestDist)
-    
-    if (nearestDist <= gameConfig.value.tolerance * 0.3) {
-      lastTapFeedback.value = 'perfect'
-      playBeatSound('hit')
-    } else {
-      lastTapFeedback.value = 'good'
-      playBeatSound('hit')
-    }
-    
-    // 短暫顯示反饋後清除
-    setTimeout(() => {
-      lastTapFeedback.value = null
-    }, 300)
-    
-    // 檢查是否全部完成
-    if (pattern.value.every(b => b.hit)) {
-      if (playTimer) {
-        clearTimeout(playTimer)
-        playTimer = null
-      }
-      setTimeout(() => checkResult(), 500)
-    }
-  } else {
-    lastTapFeedback.value = 'miss'
-    playBeatSound('miss')
-    
-    setTimeout(() => {
-      lastTapFeedback.value = null
-    }, 300)
-  }
-}
-
-// 檢查結果
-function checkResult(): void {
-  phase.value = 'result'
-  
-  const hitCount = pattern.value.filter(b => b.hit).length
-  const hitRate = hitCount / pattern.value.length
-  
-  // 80% 以上算通過
-  const passed = hitRate >= 0.8
-  
-  if (passed) {
-    correctRounds.value++
-    
-    // 計算分數
-    const baseScore = beatCount.value * 20
-    const accuracyBonus = Math.round(hitRate * 50)
-    score.value += baseScore + accuracyBonus
-    
-    // 增加節拍數
-    if (beatCount.value < gameConfig.value.maxBeats && hitRate >= 0.9) {
-      beatCount.value++
-      if (beatCount.value > maxLevelReached.value) {
-        maxLevelReached.value = beatCount.value
-      }
-    }
-  } else {
-    // 降低節拍數
-    if (beatCount.value > gameConfig.value.startBeats) {
-      beatCount.value--
-    }
-  }
-  
-  // 延遲後進入下一輪
+  // 延遲後開始播放
   setTimeout(() => {
-    startRound()
+    playPattern()
+  }, 1000)
+}
+
+async function playPattern() {
+  if (!currentPattern.value) return
+  
+  const beats = currentBeats.value
+  
+  for (let i = 0; i < beats.length; i++) {
+    currentBeatIndex.value = i
+    playBeat()
+    
+    // 等待到下一個節拍
+    if (i < beats.length - 1) {
+      const currentBeat = beats[i]
+      const nextBeat = beats[i + 1]
+      if (currentBeat && nextBeat) {
+        const interval = nextBeat.time - currentBeat.time
+        await delay(interval)
+      }
+    }
+  }
+  
+  currentBeatIndex.value = -1
+  playCount++
+  
+  // 檢查是否需要再播放一次
+  if (playCount < config.value.playCount) {
+    await delay(config.value.waitTime)
+    playPattern()
+  } else {
+    // 進入輸入階段
+    await delay(500)
+    gamePhase.value = 'input'
+    inputStartTime = Date.now()
+  }
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+function handleTap() {
+  if (!isPlaying.value || gamePhase.value !== 'input') return
+  
+  // 播放敲擊聲音
+  playBeat()
+  
+  // 觸發視覺效果
+  isTapping.value = true
+  setTimeout(() => { isTapping.value = false }, 100)
+  
+  // 記錄敲擊時間
+  const timestamp = Date.now() - inputStartTime
+  userTaps.value.push(timestamp)
+  
+  // 檢查是否輸入完成
+  if (userTaps.value.length >= currentBeats.value.length) {
+    handleInputComplete()
+  }
+}
+
+function handleInputComplete() {
+  if (!currentPattern.value) return
+  
+  gamePhase.value = 'result'
+  
+  // 評估結果
+  const result = evaluateRound(userTaps.value, currentPattern.value, config.value)
+  roundResults.value.push(result)
+  
+  const isGood = result.accuracy >= 60
+  
+  if (isGood) {
+    streak.value++
+    if (streak.value > maxStreak.value) {
+      maxStreak.value = streak.value
+    }
+    
+    addScore(result.score)
+    playCorrect()
+    setFeedback('correct', `準確度 ${result.accuracy}%！+${result.score}分`, result.score)
+  } else {
+    streak.value = 0
+    playWrong()
+    setFeedback('wrong', `準確度僅 ${result.accuracy}%`)
+  }
+  
+  // 延遲後進入下一回合或結束
+  setTimeout(() => {
+    clearFeedback()
+    
+    if (currentRound.value < totalRounds - 1) {
+      nextRound()
+      startNewRound()
+    } else {
+      handleGameEnd()
+    }
   }, 2000)
 }
 
-// 結束遊戲
-function endGame(): void {
-  phase.value = 'gameover'
+function skipInput() {
+  if (gamePhase.value !== 'input') return
   
-  const accuracy = currentRound.value > 1 
-    ? (correctRounds.value / (currentRound.value - 1)) * 100 
-    : 0
-  
-  const avgTimingError = timingErrors.value.length > 0
-    ? timingErrors.value.reduce((a, b) => a + b, 0) / timingErrors.value.length
-    : 0
-  
-  emit('complete', {
-    score: score.value,
-    accuracy: Math.round(accuracy),
-    maxLevel: maxLevelReached.value,
-    totalRounds: currentRound.value - 1,
-    correctRounds: correctRounds.value,
-    avgTimingError: Math.round(avgTimingError)
-  })
+  // 如果敲擊數量不足，補上空敲
+  while (userTaps.value.length < currentBeats.value.length) {
+    handleTap()
+  }
 }
 
-// 清理
-function cleanup(): void {
-  if (demoTimer) {
-    clearTimeout(demoTimer)
-    demoTimer = null
-  }
-  if (playTimer) {
-    clearTimeout(playTimer)
-    playTimer = null
-  }
+function handleGameEnd() {
+  playEnd()
+  
+  const result = summarizeResult(roundResults.value)
+  
+  finishGame()
+  emit('game:end', result)
+}
+
+function handleRestart() {
+  resetGame()
+  handleStart()
+}
+
+function handleQuit() {
+  resetGame()
+}
+
+// ===== 生命週期 =====
+onMounted(() => {
+  preloadDefaultSounds()
+})
+
+onBeforeUnmount(() => {
   if (audioContext) {
     audioContext.close()
     audioContext = null
   }
-}
-
-// 生命週期
-onMounted(() => {
-  startGame()
-})
-
-onUnmounted(() => {
-  cleanup()
 })
 
 // 監聽難度變化
-watch([() => props.difficulty, () => props.subDifficulty], () => {
-  cleanup()
-  startGame()
-})
-
-// 計算進度
-const hitProgress = computed(() => {
-  if (pattern.value.length === 0) return 0
-  return (pattern.value.filter(b => b.hit).length / pattern.value.length) * 100
+watch(() => props.difficulty, () => {
+  if (phase.value !== 'ready') {
+    resetGame()
+  }
 })
 </script>
 
 <template>
-  <div class="rhythm-mimic p-4">
-    <!-- 遊戲資訊 -->
-    <div class="flex justify-between items-center mb-6">
-      <div class="flex gap-4">
-        <div class="text-sm">
-          <span class="text-[var(--color-text-muted)]">回合</span>
-          <span class="font-bold ml-1">{{ currentRound }}/{{ gameConfig.totalRounds }}</span>
-        </div>
-        <div class="text-sm">
-          <span class="text-[var(--color-text-muted)]">分數</span>
-          <span class="font-bold ml-1 text-blue-600 dark:text-blue-400">{{ score }}</span>
-        </div>
-        <div class="text-sm">
-          <span class="text-[var(--color-text-muted)]">正確</span>
-          <span class="font-bold ml-1 text-green-600 dark:text-green-400">{{ correctRounds }}</span>
-        </div>
-      </div>
-      <div class="text-sm text-[var(--color-text-muted)]">
-        節拍數: {{ beatCount }}
-      </div>
-    </div>
+  <div class="rhythm-mimic-game w-full max-w-2xl mx-auto p-4">
+    <!-- 準備畫面 -->
+    <GameReadyScreen
+      v-if="phase === 'ready'"
+      title="節奏模仿"
+      icon="🥁"
+      :rules="gameInstructions"
+      :difficulty="difficulty === 'medium' ? 'normal' : difficulty"
+      @start="handleStart"
+    />
 
-    <!-- 遊戲區域 -->
-    <div class="game-area min-h-[400px] flex flex-col items-center justify-center">
-      <!-- 準備階段 -->
-      <div v-if="phase === 'ready'" class="text-center">
-        <div class="text-6xl mb-4">🎶</div>
-        <p class="text-xl text-[var(--color-text-secondary)]">準備開始...</p>
-        <p class="text-sm text-[var(--color-text-muted)] mt-2">觀察節奏後跟著敲擊！</p>
-      </div>
+    <!-- 遊戲進行中 -->
+    <template v-else-if="phase === 'playing' || phase === 'paused'">
+      <!-- 狀態列 -->
+      <GameStatusBar
+        :score="score"
+        :progress="progress"
+        show-score
+        show-progress
+      />
 
-      <!-- 示範階段 -->
-      <div v-if="phase === 'demo'" class="text-center">
-        <p class="text-lg text-[var(--color-text-muted)] mb-4">觀察節奏...</p>
-        
-        <!-- 節拍顯示 -->
-        <div class="flex justify-center gap-3 mb-6">
-          <div 
-            v-for="(beat, index) in pattern" 
-            :key="index"
-            class="w-10 h-10 rounded-full transition-all duration-100"
-            :class="index === patternIndex 
-              ? 'bg-blue-500 scale-125 shadow-lg' 
-              : 'bg-gray-200 dark:bg-gray-600'"
-          ></div>
+      <!-- 遊戲資訊 -->
+      <div class="game-info text-center mt-4">
+        <div class="text-sm text-gray-500 dark:text-gray-400">
+          第 {{ currentRound + 1 }} / {{ totalRounds }} 回合
         </div>
-        
-        <!-- 動畫鼓 -->
-        <div 
-          class="drum text-8xl transition-transform duration-100"
-          :class="patternIndex >= 0 ? 'scale-110' : ''"
-        >
-          🥁
+        <div class="text-sm mt-1">
+          <span class="text-gray-500 dark:text-gray-400">模式：</span>
+          <span class="font-medium">{{ currentPattern?.name || '' }}</span>
         </div>
-      </div>
-
-      <!-- 倒數階段 -->
-      <div v-if="phase === 'countdown'" class="text-center">
-        <p class="text-lg text-[var(--color-text-muted)] mb-4">準備...</p>
-        <div class="text-8xl font-bold text-blue-500 animate-pulse">
-          {{ countdown }}
-        </div>
-      </div>
-
-      <!-- 玩家輸入階段 -->
-      <div v-if="phase === 'play'" class="text-center w-full">
-        <p class="text-lg text-[var(--color-text-muted)] mb-4">現在輪到你！</p>
-        
-        <!-- 進度條 -->
-        <div class="w-full max-w-xs mx-auto h-3 bg-[var(--color-bg-soft)] rounded-full mb-6">
-          <div 
-            class="h-full bg-green-500 rounded-full transition-all duration-300"
-            :style="{ width: hitProgress + '%' }"
-          ></div>
-        </div>
-        
-        <!-- 節拍狀態 -->
-        <div class="flex justify-center gap-3 mb-8">
-          <div 
-            v-for="(beat, index) in pattern" 
-            :key="index"
-            class="w-8 h-8 rounded-full transition-all"
-            :class="beat.hit ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'"
-          ></div>
-        </div>
-        
-        <!-- 敲擊區域 -->
-        <button
-          @click="handleTap"
-          class="tap-area w-48 h-48 rounded-full mx-auto flex items-center justify-center
-                 bg-gradient-to-br from-blue-400 to-blue-600 text-white
-                 shadow-xl active:scale-95 transition-transform cursor-pointer"
-          :class="[
-            lastTapFeedback === 'perfect' ? 'ring-4 ring-yellow-400' : '',
-            lastTapFeedback === 'good' ? 'ring-4 ring-green-400' : '',
-            lastTapFeedback === 'miss' ? 'ring-4 ring-red-400' : ''
-          ]"
-        >
-          <span class="text-6xl">👆</span>
-        </button>
-        
-        <!-- 反饋提示 -->
-        <div class="h-8 mt-4">
-          <p v-if="lastTapFeedback === 'perfect'" class="text-yellow-500 font-bold animate-bounce">
-            完美！
-          </p>
-          <p v-else-if="lastTapFeedback === 'good'" class="text-green-500 font-bold">
-            不錯！
-          </p>
-          <p v-else-if="lastTapFeedback === 'miss'" class="text-red-500 font-bold">
-            錯過了
-          </p>
-        </div>
-      </div>
-
-      <!-- 結果階段 -->
-      <div v-if="phase === 'result'" class="text-center">
-        <div class="text-8xl mb-4">
-          {{ pattern.filter(b => b.hit).length >= pattern.length * 0.8 ? '✅' : '❌' }}
-        </div>
-        <p class="text-2xl font-bold mb-2" 
-           :class="pattern.filter(b => b.hit).length >= pattern.length * 0.8 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
-          {{ pattern.filter(b => b.hit).length >= pattern.length * 0.8 ? '通過！' : '再加油！' }}
-        </p>
-        <p class="text-[var(--color-text-muted)]">
-          命中 {{ pattern.filter(b => b.hit).length }}/{{ pattern.length }} 拍
-        </p>
-      </div>
-
-      <!-- 遊戲結束 -->
-      <div v-if="phase === 'gameover'" class="text-center">
-        <div class="text-6xl mb-4">🎉</div>
-        <p class="text-2xl font-bold text-[var(--color-text)] mb-4">遊戲結束！</p>
-        <div class="bg-[var(--color-bg-soft)] rounded-xl p-6 max-w-sm mx-auto">
-          <div class="grid grid-cols-2 gap-4 text-left">
-            <div>
-              <p class="text-sm text-[var(--color-text-muted)]">最終分數</p>
-              <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ score }}</p>
-            </div>
-            <div>
-              <p class="text-sm text-[var(--color-text-muted)]">通過率</p>
-              <p class="text-2xl font-bold text-green-600 dark:text-green-400">
-                {{ Math.round((correctRounds / (currentRound - 1)) * 100) }}%
-              </p>
-            </div>
-            <div>
-              <p class="text-sm text-[var(--color-text-muted)]">最高等級</p>
-              <p class="text-xl font-bold">{{ maxLevelReached }} 拍</p>
-            </div>
-            <div>
-              <p class="text-sm text-[var(--color-text-muted)]">平均誤差</p>
-              <p class="text-xl font-bold">
-                {{ timingErrors.length > 0 
-                   ? Math.round(timingErrors.reduce((a, b) => a + b, 0) / timingErrors.length) 
-                   : 0 }}ms
-              </p>
-            </div>
+        <div class="flex justify-center gap-4 mt-2 text-sm">
+          <div>
+            <span class="text-gray-500 dark:text-gray-400">節拍數：</span>
+            <span class="font-bold text-blue-500">{{ currentBeats.length }}</span>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400">連續正確：</span>
+            <span class="font-bold text-orange-500">{{ streak }}</span>
           </div>
         </div>
       </div>
-    </div>
+
+      <!-- 顯示區域 -->
+      <div class="display-area mt-8">
+        <!-- 聆聽階段 -->
+        <div 
+          v-if="gamePhase === 'listening'"
+          class="listening-phase text-center"
+        >
+          <div class="text-lg font-medium mb-6">
+            🎵 仔細聆聽節奏...
+          </div>
+          
+          <!-- 節拍視覺指示 -->
+          <div class="beat-indicator flex justify-center gap-3 flex-wrap">
+            <div
+              v-for="(beat, index) in currentBeats"
+              :key="index"
+              class="beat-dot w-12 h-12 rounded-full transition-all duration-100 flex items-center justify-center text-xl"
+              :class="{
+                'bg-blue-500 scale-125 shadow-lg shadow-blue-500/50': currentBeatIndex === index,
+                'bg-gray-300 dark:bg-gray-600': currentBeatIndex !== index && index > currentBeatIndex,
+                'bg-blue-200 dark:bg-blue-800': currentBeatIndex !== index && index < currentBeatIndex,
+              }"
+            >
+              {{ currentBeatIndex === index ? '🔊' : '' }}
+            </div>
+          </div>
+          
+          <div class="text-sm text-gray-400 mt-4">
+            播放次數：{{ playCount + 1 }} / {{ config.playCount }}
+          </div>
+        </div>
+
+        <!-- 輸入階段 -->
+        <div 
+          v-else-if="gamePhase === 'input'"
+          class="input-phase text-center"
+        >
+          <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            點擊下方按鈕複製節奏
+          </div>
+          
+          <!-- 輸入進度 -->
+          <div class="input-progress flex justify-center gap-3 mb-8 flex-wrap">
+            <div
+              v-for="(tap, index) in userTaps"
+              :key="index"
+              class="tap-dot w-8 h-8 bg-green-500 rounded-full"
+            />
+            <div
+              v-for="i in (currentBeats.length - userTaps.length)"
+              :key="'placeholder-' + i"
+              class="tap-placeholder w-8 h-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-full"
+            />
+          </div>
+
+          <!-- 敲擊按鈕 -->
+          <button
+            class="tap-btn w-40 h-40 rounded-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-6xl shadow-xl transition-all transform"
+            :class="{ 'scale-90 bg-blue-700': isTapping }"
+            @click="handleTap"
+            @touchstart.prevent="handleTap"
+          >
+            👆
+          </button>
+          
+          <div class="text-sm text-gray-500 dark:text-gray-400 mt-6">
+            剩餘 {{ currentBeats.length - userTaps.length }} 次敲擊
+          </div>
+
+          <!-- 跳過按鈕 -->
+          <button
+            class="skip-btn mt-4 px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-sm"
+            @click="skipInput"
+          >
+            完成輸入
+          </button>
+        </div>
+
+        <!-- 結果階段 -->
+        <div 
+          v-else-if="gamePhase === 'result'"
+          class="result-phase text-center"
+        >
+          <div 
+            class="accuracy-display text-4xl font-bold mb-4" 
+            :class="{
+              'text-green-500': currentAccuracy >= 80,
+              'text-yellow-500': currentAccuracy >= 50 && currentAccuracy < 80,
+              'text-red-500': currentAccuracy < 50,
+            }"
+          >
+            {{ currentAccuracy }}%
+          </div>
+          <div class="text-gray-500 dark:text-gray-400">
+            準確度
+          </div>
+        </div>
+      </div>
+
+      <!-- 回饋動畫 -->
+      <GameFeedback
+        v-if="feedbackData"
+        :type="feedbackData.type"
+        :show="feedbackData.show"
+        :message="feedbackData.message"
+        :score="feedbackData.score"
+      />
+    </template>
+
+    <!-- 結果畫面 -->
+    <GameResultScreen
+      v-else-if="phase === 'finished' || phase === 'result'"
+      :score="calculateScore(roundResults)"
+      :correct-count="correctCount"
+      :wrong-count="wrongCount"
+      :total-count="config.totalRounds"
+      :grade="calculateGrade(calculateScore(roundResults)) as 'S' | 'A' | 'B' | 'C' | 'D' | 'F'"
+      :custom-stats="[
+        { label: '正確', value: correctCount, icon: '✅' },
+        { label: '最長連續', value: maxStreak, icon: '🔥' },
+      ]"
+      @replay="handleRestart"
+      @back="handleQuit"
+    />
   </div>
 </template>
 
 <style scoped>
-.rhythm-mimic {
-  max-width: 500px;
-  margin: 0 auto;
+.tap-btn:active {
+  transform: scale(0.9);
 }
 
-.tap-area {
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
+.beat-dot {
+  box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5);
 }
 
-.tap-area:active {
-  transform: scale(0.95);
+.beat-dot.bg-blue-500 {
+  animation: pulse-beat 0.3s ease-out;
 }
 
-.drum {
-  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+@keyframes pulse-beat {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  50% {
+    transform: scale(1.3);
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+  100% {
+    transform: scale(1.25);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
 }
 </style>

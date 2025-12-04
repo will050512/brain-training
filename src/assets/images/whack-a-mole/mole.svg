@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
+  <defs>
+    <linearGradient id="moleBodyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5A2B"/>
+      <stop offset="100%" style="stop-color:#5D3A1A"/>
+    </linearGradient>
+    <linearGradient id="moleBellyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#D4A574"/>
+      <stop offset="100%" style="stop-color:#C4956A"/>
+    </linearGradient>
+  </defs>
+  <!-- 地鼠身體 -->
+  <ellipse cx="40" cy="50" rx="28" ry="24" fill="url(#moleBodyGradient)"/>
+  <!-- 地鼠肚子 -->
+  <ellipse cx="40" cy="55" rx="18" ry="14" fill="url(#moleBellyGradient)"/>
+  <!-- 左耳 -->
+  <circle cx="18" cy="32" r="8" fill="url(#moleBodyGradient)"/>
+  <circle cx="18" cy="32" r="4" fill="#F5D0C5"/>
+  <!-- 右耳 -->
+  <circle cx="62" cy="32" r="8" fill="url(#moleBodyGradient)"/>
+  <circle cx="62" cy="32" r="4" fill="#F5D0C5"/>
+  <!-- 臉部 -->
+  <ellipse cx="40" cy="38" rx="20" ry="16" fill="url(#moleBodyGradient)"/>
+  <!-- 鼻子 -->
+  <ellipse cx="40" cy="42" rx="8" ry="6" fill="#2D1810"/>
+  <ellipse cx="40" cy="40" rx="4" ry="3" fill="#4A3020" opacity="0.5"/>
+  <!-- 左眼 -->
+  <ellipse cx="30" cy="32" rx="6" ry="7" fill="#FFFFFF"/>
+  <circle cx="31" cy="33" r="3" fill="#1F2937"/>
+  <circle cx="32" cy="32" r="1" fill="#FFFFFF"/>
+  <!-- 右眼 -->
+  <ellipse cx="50" cy="32" rx="6" ry="7" fill="#FFFFFF"/>
+  <circle cx="51" cy="33" r="3" fill="#1F2937"/>
+  <circle cx="52" cy="32" r="1" fill="#FFFFFF"/>
+  <!-- 眉毛 -->
+  <path d="M24 26Q30 24 34 26" stroke="#5D3A1A" stroke-width="2" fill="none"/>
+  <path d="M46 26Q50 24 56 26" stroke="#5D3A1A" stroke-width="2" fill="none"/>
+  <!-- 腮紅 -->
+  <ellipse cx="22" cy="40" rx="4" ry="3" fill="#FFB6C1" opacity="0.6"/>
+  <ellipse cx="58" cy="40" rx="4" ry="3" fill="#FFB6C1" opacity="0.6"/>
+  <!-- 嘴巴 -->
+  <path d="M34 48Q40 52 46 48" stroke="#5D3A1A" stroke-width="2" fill="none"/>
+  <!-- 門牙 -->
+  <rect x="37" y="47" width="6" height="5" rx="1" fill="#FFFFFF" stroke="#E5E7EB"/>
+</svg>

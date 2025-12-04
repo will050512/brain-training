@@ -1,431 +1,414 @@
 <script setup lang="ts">
 /**
- * 數字連連看遊戲
- * 訓練維度：注意力 + 認知力
- * 玩法：按順序依次點擊 1, 2, 3... 的數字
+ * 數字連連看遊戲（重構版）
+ * 使用新的遊戲核心架構
  */
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import type { Difficulty, SubDifficulty } from '@/types/game'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useGameState } from '@/games/core/useGameState'
+import { useGameTimer } from '@/games/core/useGameTimer'
+import { useGameAudio } from '@/games/core/useGameAudio'
+import {
+  createGameState,
+  tryConnect,
+  isCompleted,
+  getHintPosition,
+  calculateScore,
+  calculateGrade,
+  summarizeResult,
+  DIFFICULTY_CONFIGS,
+  type NumberConnectState,
+  type NumberNode,
+  type NumberConnectConfig,
+} from '@/games/logic/numberConnect'
 
-// Props
-interface Props {
-  difficulty?: Difficulty
-  subDifficulty?: SubDifficulty
-}
+// UI 元件
+import GameReadyScreen from './ui/GameReadyScreen.vue'
+import GameResultScreen from './ui/GameResultScreen.vue'
+import GameStatusBar from './ui/GameStatusBar.vue'
 
-const props = withDefaults(defineProps<Props>(), {
-  difficulty: 'medium',
-  subDifficulty: 2
+// ===== Props & Emits =====
+const props = withDefaults(defineProps<{
+  difficulty?: 'easy' | 'medium' | 'hard'
+}>(), {
+  difficulty: 'easy'
 })
 
-// Emits
 const emit = defineEmits<{
-  (e: 'complete', result: {
-    score: number
-    accuracy: number
-    totalTime: number
-    avgClickTime: number
-    errors: number
-  }): void
-  (e: 'progress', progress: number): void
+  'game:start': []
+  'game:end': [result: any]
+  'score:update': [score: number]
+  'state:change': [phase: string]
 }>()
 
-// 數字位置
-interface NumberNode {
-  value: number
-  x: number
-  y: number
-  clicked: boolean
-  isWrong: boolean
+// ===== 遊戲配置 =====
+const config = computed<NumberConnectConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+
+// ===== 遊戲狀態 =====
+const {
+  phase,
+  score,
+  feedback,
+  showFeedback,
+  isPlaying,
+  startGame: startGameState,
+  finishGame: finishGameState,
+  setFeedback,
+  clearFeedback,
+  resetGame,
+  addScore,
+} = useGameState({
+  totalRounds: 1,
+})
+
+function startGame() {
+  startGameState()
+  emit('game:start')
 }
 
-// 遊戲配置
-const gameConfig = computed(() => {
-  const configs = {
-    easy: {
-      count: 10,
-      timeLimit: 60,
-      nodeSize: 50,
-      spacing: 80
-    },
-    medium: {
-      count: 15,
-      timeLimit: 90,
-      nodeSize: 45,
-      spacing: 70
-    },
-    hard: {
-      count: 25,
-      timeLimit: 120,
-      nodeSize: 40,
-      spacing: 55
-    }
-  }
+function finishGame() {
+  finishGameState()
+}
 
-  const base = configs[props.difficulty]
-  
-  // 根據子難度微調
-  const subAdjust = props.subDifficulty - 2
-  
+// ===== 計時器 =====
+const { 
+  time: timeRemaining, 
+  start: startTimer, 
+  stop: stopTimer,
+  reset: resetTimer 
+} = useGameTimer({
+  mode: 'countdown',
+  initialTime: 60,
+  onTimeUp: handleTimeout,
+})
+
+// ===== 音效 =====
+const { playCorrect, playWrong, playEnd, preloadDefaultSounds } = useGameAudio()
+
+// ===== 遊戲資料 =====
+const gameState = ref<NumberConnectState | null>(null)
+const canvasRef = ref<HTMLCanvasElement | null>(null)
+const containerRef = ref<HTMLDivElement | null>(null)
+const hintUsed = ref(0)
+const startTime = ref(0)
+
+// ===== 計算屬性 =====
+const nodes = computed(() => gameState.value?.nodes || [])
+const connectedPath = computed(() => gameState.value?.connectedPath || [])
+const currentTarget = computed(() => gameState.value?.currentTarget || 1)
+const errors = computed(() => gameState.value?.errors || 0)
+const connectionCount = computed(() => connectedPath.value.length)
+
+const progress = computed(() => {
+  const total = config.value.count - 1 // N-1 connections needed
+  return Math.round((connectionCount.value / total) * 100)
+})
+
+// ===== 回饋映射 =====
+const feedbackData = computed(() => {
+  if (!feedback.value) return undefined
   return {
-    count: base.count + subAdjust * 2,
-    timeLimit: base.timeLimit - subAdjust * 10,
-    nodeSize: base.nodeSize - subAdjust * 3,
-    spacing: base.spacing - subAdjust * 5
+    type: feedback.value.type,
+    show: showFeedback.value,
+    message: feedback.value.message,
+    score: feedback.value.score,
   }
 })
 
-// 遊戲狀態
-type GamePhase = 'ready' | 'playing' | 'gameover'
+// ===== 遊戲說明 =====
+const gameInstructions = [
+  '找到數字 1 開始',
+  '按順序點擊數字連接它們',
+  '在時間內連接所有數字',
+  '越快完成分數越高',
+]
 
-const phase = ref<GamePhase>('ready')
-const nodes = ref<NumberNode[]>([])
-const currentTarget = ref(1)
-const timeLeft = ref(0)
-const score = ref(0)
-const errors = ref(0)
-const clickTimes = ref<number[]>([])
-const lastClickTime = ref(0)
-const gameAreaRef = ref<HTMLElement | null>(null)
-
-// 計時器
-let gameTimer: ReturnType<typeof setInterval> | null = null
-
-// 產生不重疊的隨機位置
-function generateNodes(): NumberNode[] {
-  const result: NumberNode[] = []
-  const { count, nodeSize, spacing } = gameConfig.value
+// ===== 遊戲方法 =====
+function handleStart() {
+  // 建立遊戲狀態
+  gameState.value = createGameState(config.value)
+  hintUsed.value = 0
+  startTime.value = Date.now()
   
-  // 遊戲區域大小
-  const width = 350
-  const height = 400
+  startGame()
   
-  const padding = nodeSize / 2
-  const maxAttempts = 100
+  // 重置並開始計時
+  resetTimer(config.value.timeLimit)
+  startTimer()
   
-  for (let i = 1; i <= count; i++) {
-    let placed = false
-    let attempts = 0
-    
-    while (!placed && attempts < maxAttempts) {
-      const x = padding + Math.random() * (width - nodeSize - padding * 2)
-      const y = padding + Math.random() * (height - nodeSize - padding * 2)
-      
-      // 檢查與已放置節點的距離
-      const overlaps = result.some(node => {
-        const dx = node.x - x
-        const dy = node.y - y
-        return Math.sqrt(dx * dx + dy * dy) < spacing
-      })
-      
-      if (!overlaps) {
-        result.push({
-          value: i,
-          x,
-          y,
-          clicked: false,
-          isWrong: false
-        })
-        placed = true
-      }
-      
-      attempts++
-    }
-    
-    // 如果多次嘗試後仍無法放置，強制放置
-    if (!placed) {
-      result.push({
-        value: i,
-        x: padding + Math.random() * (width - nodeSize - padding * 2),
-        y: padding + Math.random() * (height - nodeSize - padding * 2),
-        clicked: false,
-        isWrong: false
-      })
-    }
-  }
-  
-  return result
-}
-
-// 開始遊戲
-function startGame(): void {
-  phase.value = 'ready'
-  nodes.value = generateNodes()
-  currentTarget.value = 1
-  timeLeft.value = gameConfig.value.timeLimit
-  score.value = 0
-  errors.value = 0
-  clickTimes.value = []
-  lastClickTime.value = 0
-  
-  setTimeout(() => {
-    phase.value = 'playing'
-    lastClickTime.value = Date.now()
-    startTimer()
-  }, 1000)
-}
-
-// 開始計時
-function startTimer(): void {
-  gameTimer = setInterval(() => {
-    timeLeft.value--
-    
-    if (timeLeft.value <= 0) {
-      endGame()
-    }
-  }, 1000)
-}
-
-// 點擊數字
-function clickNode(node: NumberNode): void {
-  if (phase.value !== 'playing' || node.clicked) return
-  
-  if (node.value === currentTarget.value) {
-    // 正確
-    node.clicked = true
-    
-    // 記錄點擊時間
-    const now = Date.now()
-    if (lastClickTime.value > 0) {
-      clickTimes.value.push(now - lastClickTime.value)
-    }
-    lastClickTime.value = now
-    
-    // 計算分數
-    const baseScore = 10
-    const recentClickTime = clickTimes.value[clickTimes.value.length - 1] ?? 0
-    const speedBonus = Math.max(0, Math.floor((5000 - recentClickTime) / 500))
-    score.value += baseScore + speedBonus
-    
-    currentTarget.value++
-    emit('progress', ((currentTarget.value - 1) / gameConfig.value.count) * 100)
-    
-    // 檢查是否完成
-    if (currentTarget.value > gameConfig.value.count) {
-      endGame()
-    }
-  } else {
-    // 錯誤
-    errors.value++
-    node.isWrong = true
-    
-    // 扣分
-    score.value = Math.max(0, score.value - 5)
-    
-    // 短暫顯示錯誤後恢復
-    setTimeout(() => {
-      node.isWrong = false
-    }, 500)
-  }
-}
-
-// 結束遊戲
-function endGame(): void {
-  phase.value = 'gameover'
-  
-  if (gameTimer) {
-    clearInterval(gameTimer)
-    gameTimer = null
-  }
-  
-  const completed = currentTarget.value - 1
-  const accuracy = completed > 0 
-    ? Math.round((completed / (completed + errors.value)) * 100)
-    : 0
-  
-  const avgClickTime = clickTimes.value.length > 0
-    ? Math.round(clickTimes.value.reduce((a, b) => a + b, 0) / clickTimes.value.length)
-    : 0
-  
-  const totalTime = gameConfig.value.timeLimit - timeLeft.value
-  
-  emit('complete', {
-    score: score.value,
-    accuracy,
-    totalTime,
-    avgClickTime,
-    errors: errors.value
+  // 延遲繪製連線
+  requestAnimationFrame(() => {
+    drawConnections()
   })
 }
 
-// 格式化時間
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${mins}:${secs.toString().padStart(2, '0')}`
-}
-
-// 清理
-function cleanup(): void {
-  if (gameTimer) {
-    clearInterval(gameTimer)
-    gameTimer = null
+function handleNodeClick(node: NumberNode) {
+  if (!isPlaying.value || !gameState.value) return
+  
+  // 嘗試連接
+  const result = tryConnect(gameState.value, node.value)
+  
+  if (result.success) {
+    gameState.value = result.newState
+    playCorrect()
+    
+    // 重繪連線
+    requestAnimationFrame(() => {
+      drawConnections()
+    })
+    
+    // 檢查是否完成
+    if (isCompleted(gameState.value)) {
+      handleGameEnd()
+    }
+  } else {
+    gameState.value = result.newState // 更新錯誤計數
+    playWrong()
+    setFeedback('wrong', `應該連接 ${currentTarget.value}`)
+    setTimeout(clearFeedback, 1000)
   }
 }
 
-// 生命週期
+function showHint() {
+  if (!isPlaying.value || !gameState.value) return
+  
+  hintUsed.value++
+  
+  // 找出下一個應該連接的數字位置
+  const hintPos = getHintPosition(gameState.value)
+  
+  if (hintPos) {
+    setFeedback('correct', `下一個是 ${currentTarget.value}`)
+    setTimeout(clearFeedback, 2000)
+  }
+}
+
+function drawConnections() {
+  const canvas = canvasRef.value
+  const container = containerRef.value
+  if (!canvas || !container) return
+  
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+  
+  // 更新 canvas 尺寸
+  canvas.width = container.clientWidth
+  canvas.height = container.clientHeight
+  
+  // 清除畫布
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  
+  if (connectedPath.value.length < 2) return
+  
+  // 繪製連線
+  ctx.strokeStyle = '#3b82f6'
+  ctx.lineWidth = 3
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  
+  ctx.beginPath()
+  
+  // 轉換遊戲座標到畫布座標
+  const scaleX = canvas.width / config.value.canvasWidth
+  const scaleY = canvas.height / config.value.canvasHeight
+  
+  connectedPath.value.forEach((pos, index) => {
+    const x = pos.x * scaleX
+    const y = pos.y * scaleY
+    
+    if (index === 0) {
+      ctx.moveTo(x, y)
+    } else {
+      ctx.lineTo(x, y)
+    }
+  })
+  
+  ctx.stroke()
+}
+
+function handleTimeout() {
+  handleGameEnd()
+}
+
+function handleGameEnd() {
+  stopTimer()
+  playEnd()
+  
+  const elapsed = (Date.now() - startTime.value) / 1000
+  const finalScore = calculateScore(
+    connectionCount.value,
+    config.value.count,
+    errors.value,
+    elapsed,
+    config.value.timeLimit
+  )
+  
+  addScore(finalScore)
+  
+  const result = gameState.value 
+    ? summarizeResult(gameState.value, elapsed, config.value)
+    : {
+        score: finalScore,
+        completionTime: elapsed,
+        errors: errors.value,
+        completed: false,
+        connectedCount: connectionCount.value,
+        totalCount: config.value.count,
+      }
+  
+  finishGame()
+  emit('game:end', result)
+}
+
+function handleRestart() {
+  stopTimer()
+  resetGame()
+  handleStart()
+}
+
+function handleQuit() {
+  stopTimer()
+  resetGame()
+}
+
+// ===== 視窗大小變化處理 =====
+function handleResize() {
+  drawConnections()
+}
+
+// ===== 生命週期 =====
 onMounted(() => {
-  startGame()
+  preloadDefaultSounds()
+  window.addEventListener('resize', handleResize)
 })
 
-onUnmounted(() => {
-  cleanup()
+onBeforeUnmount(() => {
+  stopTimer()
+  window.removeEventListener('resize', handleResize)
 })
 
 // 監聽難度變化
-watch([() => props.difficulty, () => props.subDifficulty], () => {
-  cleanup()
-  startGame()
+watch(() => props.difficulty, () => {
+  if (phase.value !== 'ready') {
+    stopTimer()
+    resetGame()
+  }
 })
 </script>
 
 <template>
-  <div class="number-connect p-4">
-    <!-- 遊戲資訊 -->
-    <div class="flex justify-between items-center mb-4">
-      <div class="flex gap-4">
-        <div class="text-sm">
-          <span class="text-[var(--color-text-muted)]">分數</span>
-          <span class="font-bold ml-1 text-blue-600 dark:text-blue-400">{{ score }}</span>
-        </div>
-        <div class="text-sm">
-          <span class="text-[var(--color-text-muted)]">進度</span>
-          <span class="font-bold ml-1">{{ currentTarget - 1 }}/{{ gameConfig.count }}</span>
-        </div>
-        <div class="text-sm">
-          <span class="text-[var(--color-text-muted)]">錯誤</span>
-          <span class="font-bold ml-1 text-red-500 dark:text-red-400">{{ errors }}</span>
-        </div>
-      </div>
-      <div class="text-lg font-mono font-bold" :class="timeLeft <= 10 ? 'text-red-500 dark:text-red-400 animate-pulse' : 'text-[var(--color-text)]'">
-        {{ formatTime(timeLeft) }}
-      </div>
-    </div>
+  <div class="number-connect-game w-full max-w-2xl mx-auto p-4">
+    <!-- 準備畫面 -->
+    <GameReadyScreen
+      v-if="phase === 'ready'"
+      title="數字連連看"
+      icon="🔢"
+      :rules="gameInstructions"
+      :difficulty="difficulty === 'medium' ? 'normal' : difficulty"
+      @start="handleStart"
+    />
 
-    <!-- 目標提示 -->
-    <div class="text-center mb-4 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-      <span class="text-[var(--color-text-secondary)]">找到數字：</span>
-      <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ currentTarget }}</span>
-    </div>
+    <!-- 遊戲進行中 -->
+    <template v-else-if="phase === 'playing' || phase === 'paused'">
+      <!-- 狀態列 -->
+      <GameStatusBar
+        :score="score"
+        :time="timeRemaining"
+        :progress="progress"
+        show-time
+        show-progress
+      />
 
-    <!-- 遊戲區域 -->
-    <div 
-      ref="gameAreaRef"
-      class="game-area relative bg-[var(--game-area-bg)] rounded-xl overflow-hidden mx-auto"
-      style="width: 350px; height: 400px;"
-    >
-      <!-- 準備階段 -->
-      <div v-if="phase === 'ready'" class="absolute inset-0 flex items-center justify-center bg-[var(--color-surface)]/80">
-        <div class="text-center">
-          <div class="text-6xl mb-4">🔢</div>
-          <p class="text-xl text-[var(--color-text-secondary)]">準備開始...</p>
-          <p class="text-sm text-[var(--color-text-muted)] mt-2">依序點擊 1 到 {{ gameConfig.count }}</p>
-        </div>
-      </div>
-
-      <!-- 數字節點 -->
-      <template v-if="phase !== 'ready'">
+      <!-- 工具列 -->
+      <div class="toolbar flex justify-center gap-4 mt-4">
         <button
-          v-for="node in nodes"
-          :key="node.value"
-          @click="clickNode(node)"
-          :disabled="node.clicked"
-          class="number-node absolute flex items-center justify-center rounded-full
-                 font-bold transition-all duration-200 select-none"
-          :class="[
-            node.clicked 
-              ? 'bg-green-500 text-white scale-75 opacity-50' 
-              : node.isWrong 
-                ? 'bg-red-500 text-white animate-shake'
-                : 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-md hover:shadow-lg hover:scale-110 cursor-pointer',
-            node.value === currentTarget && !node.clicked ? 'ring-2 ring-blue-400 ring-offset-2' : ''
-          ]"
-          :style="{
-            left: `${node.x}px`,
-            top: `${node.y}px`,
-            width: `${gameConfig.nodeSize}px`,
-            height: `${gameConfig.nodeSize}px`,
-            fontSize: `${gameConfig.nodeSize * 0.4}px`
-          }"
+          class="tool-btn px-4 py-2 rounded-lg bg-yellow-200 dark:bg-yellow-700 hover:bg-yellow-300 dark:hover:bg-yellow-600 transition-colors"
+          @click="showHint"
         >
-          {{ node.value }}
+          💡 提示
         </button>
-      </template>
+      </div>
 
-      <!-- 連線 -->
-      <svg 
-        v-if="phase !== 'ready'" 
-        class="absolute inset-0 pointer-events-none"
-        style="width: 350px; height: 400px;"
+      <!-- 遊戲資訊 -->
+      <div class="game-info text-center mt-4 text-sm text-gray-500 dark:text-gray-400">
+        <span>下一個：{{ currentTarget }}</span>
+        <span class="mx-2">|</span>
+        <span>連接：{{ connectionCount }} / {{ config.count - 1 }}</span>
+        <span class="mx-2">|</span>
+        <span>錯誤：{{ errors }}</span>
+      </div>
+
+      <!-- 遊戲區域 -->
+      <div 
+        ref="containerRef"
+        class="game-area relative mt-6 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden"
+        :style="{ 
+          width: '100%',
+          aspectRatio: `${config.canvasWidth}/${config.canvasHeight}` 
+        }"
       >
-        <template v-for="(node, index) in nodes.filter(n => n.clicked)" :key="'line-' + node.value">
-          <line
-            v-if="index > 0"
-            :x1="(nodes.filter(n => n.clicked)[index - 1]?.x ?? 0) + gameConfig.nodeSize / 2"
-            :y1="(nodes.filter(n => n.clicked)[index - 1]?.y ?? 0) + gameConfig.nodeSize / 2"
-            :x2="node.x + gameConfig.nodeSize / 2"
-            :y2="node.y + gameConfig.nodeSize / 2"
-            stroke="#22c55e"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-        </template>
-      </svg>
+        <!-- Canvas 層 - 繪製連線 -->
+        <canvas
+          ref="canvasRef"
+          class="absolute inset-0 w-full h-full pointer-events-none"
+        />
 
-      <!-- 遊戲結束 -->
-      <div v-if="phase === 'gameover'" class="absolute inset-0 flex items-center justify-center bg-[var(--color-surface)]/90">
-        <div class="text-center p-6">
-          <div class="text-6xl mb-4">
-            {{ currentTarget > gameConfig.count ? '🎉' : '⏱️' }}
-          </div>
-          <p class="text-2xl font-bold text-[var(--color-text)] mb-2">
-            {{ currentTarget > gameConfig.count ? '完美完成！' : '時間到！' }}
-          </p>
-          <div class="bg-[var(--color-bg-soft)] rounded-xl p-4 mt-4">
-            <div class="grid grid-cols-2 gap-3 text-left text-sm">
-              <div>
-                <p class="text-[var(--color-text-muted)]">最終分數</p>
-                <p class="text-xl font-bold text-blue-600 dark:text-blue-400">{{ score }}</p>
-              </div>
-              <div>
-                <p class="text-[var(--color-text-muted)]">完成數量</p>
-                <p class="text-xl font-bold">{{ currentTarget - 1 }}/{{ gameConfig.count }}</p>
-              </div>
-              <div>
-                <p class="text-[var(--color-text-muted)]">平均速度</p>
-                <p class="font-bold">
-                  {{ clickTimes.length > 0 ? Math.round(clickTimes.reduce((a, b) => a + b, 0) / clickTimes.length) : 0 }}ms
-                </p>
-              </div>
-              <div>
-                <p class="text-[var(--color-text-muted)]">錯誤次數</p>
-                <p class="font-bold text-red-500 dark:text-red-400">{{ errors }}</p>
-              </div>
-            </div>
-          </div>
+        <!-- 節點層 -->
+        <div class="nodes-layer absolute inset-0">
+          <button
+            v-for="node in nodes"
+            :key="node.value"
+            class="node-btn absolute w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all transform hover:scale-110"
+            :class="{
+              'bg-green-500 text-white': node.connected,
+              'bg-blue-500 text-white ring-2 ring-blue-300 animate-pulse': !node.connected && node.value === currentTarget,
+              'bg-white dark:bg-gray-700 shadow-md': !node.connected && node.value !== currentTarget,
+            }"
+            :style="{
+              left: `${(node.position.x / config.canvasWidth) * 100}%`,
+              top: `${(node.position.y / config.canvasHeight) * 100}%`,
+              transform: 'translate(-50%, -50%)',
+            }"
+            @click="handleNodeClick(node)"
+          >
+            {{ node.display }}
+          </button>
         </div>
       </div>
-    </div>
+
+      <!-- 回饋訊息 -->
+      <div
+        v-if="feedbackData?.show"
+        class="feedback-toast fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-6 py-3 rounded-xl text-lg font-medium z-50"
+        :class="{
+          'bg-green-500 text-white': feedbackData.type === 'correct',
+          'bg-red-500 text-white': feedbackData.type === 'wrong',
+        }"
+      >
+        {{ feedbackData.message }}
+      </div>
+    </template>
+
+    <!-- 結果畫面 -->
+    <GameResultScreen
+      v-else-if="phase === 'finished' || phase === 'result'"
+      :score="score"
+      :correct-count="connectionCount"
+      :wrong-count="errors"
+      :total-count="config.count - 1"
+      :grade="calculateGrade(score) as 'S' | 'A' | 'B' | 'C' | 'D' | 'F'"
+      :custom-stats="[
+        { label: '完成連接', value: connectionCount, icon: '🔗' },
+        { label: '錯誤次數', value: errors, icon: '❌' },
+        { label: '提示使用', value: hintUsed, icon: '💡' },
+      ]"
+      @replay="handleRestart"
+      @back="handleQuit"
+    />
   </div>
 </template>
 
 <style scoped>
-.number-connect {
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-.number-node {
-  transform-origin: center;
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
-}
-
-.animate-shake {
-  animation: shake 0.3s ease-in-out;
+.node-btn:active {
+  transform: translate(-50%, -50%) scale(0.95) !important;
 }
 </style>

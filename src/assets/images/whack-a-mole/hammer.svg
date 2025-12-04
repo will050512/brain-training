@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="hammerHeadGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9CA3AF"/>
+      <stop offset="50%" style="stop-color:#6B7280"/>
+      <stop offset="100%" style="stop-color:#4B5563"/>
+    </linearGradient>
+    <linearGradient id="hammerHandleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#92400E"/>
+      <stop offset="50%" style="stop-color:#78350F"/>
+      <stop offset="100%" style="stop-color:#92400E"/>
+    </linearGradient>
+  </defs>
+  <!-- 槌頭 -->
+  <rect x="8" y="4" width="32" height="20" rx="4" fill="url(#hammerHeadGradient)"/>
+  <!-- 槌頭高光 -->
+  <rect x="10" y="6" width="28" height="6" rx="2" fill="#FFFFFF" opacity="0.3"/>
+  <!-- 槌柄 -->
+  <rect x="20" y="24" width="10" height="36" rx="3" fill="url(#hammerHandleGradient)"/>
+  <!-- 槌柄紋理 -->
+  <line x1="20" y1="32" x2="30" y2="32" stroke="#5D3A1A" stroke-width="1" opacity="0.5"/>
+  <line x1="20" y1="40" x2="30" y2="40" stroke="#5D3A1A" stroke-width="1" opacity="0.5"/>
+  <line x1="20" y1="48" x2="30" y2="48" stroke="#5D3A1A" stroke-width="1" opacity="0.5"/>
+  <!-- 握把 -->
+  <rect x="18" y="52" width="14" height="8" rx="3" fill="#D97706"/>
+</svg>

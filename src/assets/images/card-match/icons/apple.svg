@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
+  <defs>
+    <linearGradient id="appleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#EF4444"/>
+      <stop offset="100%" style="stop-color:#DC2626"/>
+    </linearGradient>
+  </defs>
+  <!-- 蘋果主體 -->
+  <path d="M40 16C25 16 14 30 14 45C14 60 25 70 40 70C55 70 66 60 66 45C66 30 55 16 40 16Z" fill="url(#appleGradient)"/>
+  <!-- 凹陷 -->
+  <path d="M36 18Q40 22 44 18" stroke="#DC2626" stroke-width="3" fill="none"/>
+  <!-- 莖 -->
+  <path d="M40 18Q42 10 46 8" stroke="#78350F" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- 葉子 -->
+  <path d="M46 10Q56 8 52 16Q48 14 46 10Z" fill="#22C55E"/>
+  <!-- 高光 -->
+  <ellipse cx="28" cy="38" rx="6" ry="10" fill="#FFFFFF" opacity="0.3"/>
+</svg>

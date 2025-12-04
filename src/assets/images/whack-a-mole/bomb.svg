@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" fill="none">
+  <defs>
+    <linearGradient id="bombGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#374151"/>
+      <stop offset="100%" style="stop-color:#1F2937"/>
+    </linearGradient>
+    <radialGradient id="bombHighlight" cx="30%" cy="30%" r="50%">
+      <stop offset="0%" style="stop-color:#6B7280"/>
+      <stop offset="100%" style="stop-color:transparent"/>
+    </radialGradient>
+  </defs>
+  <!-- 炸彈主體 -->
+  <circle cx="30" cy="34" r="22" fill="url(#bombGradient)"/>
+  <circle cx="30" cy="34" r="22" fill="url(#bombHighlight)" opacity="0.5"/>
+  <!-- 引信座 -->
+  <rect x="25" y="8" width="10" height="8" rx="2" fill="#6B7280"/>
+  <!-- 引信 -->
+  <path d="M30 8Q35 2 40 4" stroke="#D97706" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- 火花 -->
+  <circle cx="40" cy="4" r="4" fill="#EF4444">
+    <animate attributeName="opacity" values="1;0.5;1" dur="0.3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="42" cy="2" r="2" fill="#F59E0B">
+    <animate attributeName="opacity" values="0.5;1;0.5" dur="0.2s" repeatCount="indefinite"/>
+  </circle>
+  <!-- 高光 -->
+  <ellipse cx="22" cy="28" rx="6" ry="8" fill="#FFFFFF" opacity="0.2"/>
+  <!-- 骷髏標記 -->
+  <circle cx="30" cy="36" r="8" fill="#FFFFFF" opacity="0.15"/>
+</svg>

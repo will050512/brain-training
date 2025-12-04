@@ -1,458 +1,436 @@
 <script setup lang="ts">
 /**
- * 手勢記憶遊戲
- * 訓練維度：記憶力 + 協調力
- * 玩法：觀察一系列手勢動作後按順序重現
+ * 手勢記憶遊戲（重構版）
+ * 使用新的遊戲核心架構
  */
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import type { Difficulty, SubDifficulty } from '@/types/game'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useGameState } from '@/games/core/useGameState'
+import { useGameAudio } from '@/games/core/useGameAudio'
+import {
+  getGesturePool,
+  createRoundState,
+  addUserInput,
+  isInputComplete,
+  validateAnswer,
+  calculateRoundScore,
+  getNextLength,
+  calculateGrade,
+  summarizeResult,
+  DIFFICULTY_CONFIGS,
+  type Gesture,
+  type RoundState,
+  type GestureMemoryConfig,
+} from '@/games/logic/gestureMemory'
 
-// Props
-interface Props {
-  difficulty?: Difficulty
-  subDifficulty?: SubDifficulty
-}
+// UI 元件
+import GameReadyScreen from './ui/GameReadyScreen.vue'
+import GameResultScreen from './ui/GameResultScreen.vue'
+import GameStatusBar from './ui/GameStatusBar.vue'
+import GameFeedback from './ui/GameFeedback.vue'
 
-const props = withDefaults(defineProps<Props>(), {
-  difficulty: 'medium',
-  subDifficulty: 2
+// ===== Props & Emits =====
+const props = withDefaults(defineProps<{
+  difficulty?: 'easy' | 'medium' | 'hard'
+}>(), {
+  difficulty: 'easy'
 })
 
-// Emits
 const emit = defineEmits<{
-  (e: 'complete', result: {
-    score: number
-    accuracy: number
-    maxStreak: number
-    totalRounds: number
-    correctRounds: number
-    avgResponseTime: number
-  }): void
-  (e: 'progress', progress: number): void
+  'game:start': []
+  'game:end': [result: any]
+  'score:update': [score: number]
+  'state:change': [phase: string]
 }>()
 
-// 手勢類型
-interface Gesture {
-  id: string
-  name: string
-  icon: string
-  description: string
+// ===== 遊戲配置 =====
+const config = computed<GestureMemoryConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+
+// ===== 遊戲狀態 =====
+const {
+  phase,
+  score,
+  currentRound,
+  totalRounds,
+  correctCount,
+  wrongCount,
+  progress,
+  feedback,
+  showFeedback,
+  isPlaying,
+  startGame: startGameState,
+  finishGame: finishGameState,
+  nextRound,
+  setFeedback,
+  clearFeedback,
+  resetGame,
+  addScore,
+} = useGameState({
+  totalRounds: config.value.totalRounds,
+})
+
+function startGame() {
+  startGameState()
+  emit('game:start')
 }
 
-// 可用手勢
-const GESTURES: Gesture[] = [
-  { id: 'wave', name: '揮手', icon: '👋', description: '揮手打招呼' },
-  { id: 'thumbsUp', name: '讚', icon: '👍', description: '豎起大拇指' },
-  { id: 'thumbsDown', name: '倒讚', icon: '👎', description: '大拇指向下' },
-  { id: 'peace', name: '勝利', icon: '✌️', description: '比出勝利手勢' },
-  { id: 'ok', name: 'OK', icon: '👌', description: '比出 OK 手勢' },
-  { id: 'fist', name: '拳頭', icon: '✊', description: '握緊拳頭' },
-  { id: 'point', name: '指', icon: '👆', description: '伸出食指' },
-  { id: 'clap', name: '拍手', icon: '👏', description: '拍手鼓掌' },
-  { id: 'pray', name: '合掌', icon: '🙏', description: '雙手合十' },
-  { id: 'muscle', name: '肌肉', icon: '💪', description: '展示肌肉' },
-  { id: 'wave_bye', name: '再見', icon: '🖐️', description: '張開手掌揮手' },
-  { id: 'call', name: '打電話', icon: '🤙', description: '打電話手勢' }
-]
+function finishGame() {
+  finishGameState()
+}
 
-// 遊戲狀態
-type GamePhase = 'ready' | 'showing' | 'input' | 'result' | 'gameover'
+// ===== 音效 =====
+const { playCorrect, playWrong, playEnd, preloadDefaultSounds } = useGameAudio()
 
-// 遊戲參數
-const gameConfig = computed(() => {
-  const configs = {
-    easy: {
-      startLength: 2,
-      maxLength: 4,
-      showTime: 1500,
-      gesturePool: 6,
-      totalRounds: 8
-    },
-    medium: {
-      startLength: 3,
-      maxLength: 6,
-      showTime: 1200,
-      gesturePool: 8,
-      totalRounds: 10
-    },
-    hard: {
-      startLength: 4,
-      maxLength: 8,
-      showTime: 900,
-      gesturePool: 12,
-      totalRounds: 12
-    }
-  }
+// ===== 遊戲資料 =====
+const gesturePool = ref<Gesture[]>([])
+const roundState = ref<RoundState | null>(null)
+const currentLength = ref(config.value.startLength)
+const maxLength = ref(config.value.startLength)
+const showingPhase = ref<'showing' | 'input' | 'result'>('showing')
+const currentShowIndex = ref(-1)
+const streak = ref(0)
+const maxStreak = ref(0)
+const responseTimes = ref<number[]>([])
+let roundStartTime = 0
 
-  const base = configs[props.difficulty]
-  
-  // 根據子難度微調
-  const subAdjust = (props.subDifficulty - 2) * 0.1
-  
+// ===== 計算屬性 =====
+const displayGesture = computed(() => {
+  if (showingPhase.value !== 'showing' || !roundState.value) return null
+  if (currentShowIndex.value < 0 || currentShowIndex.value >= roundState.value.sequence.length) return null
+  return roundState.value.sequence[currentShowIndex.value]
+})
+
+const userInput = computed(() => roundState.value?.userInput || [])
+
+// ===== 回饋映射 =====
+const feedbackData = computed(() => {
+  if (!feedback.value) return undefined
   return {
-    ...base,
-    showTime: Math.round(base.showTime * (1 - subAdjust * 0.5)),
-    maxLength: base.maxLength + (props.subDifficulty - 2)
+    type: feedback.value.type,
+    show: showFeedback.value,
+    message: feedback.value.message,
+    score: feedback.value.score,
   }
 })
 
-// 遊戲狀態
-const phase = ref<GamePhase>('ready')
-const currentRound = ref(0)
-const sequence = ref<Gesture[]>([])
-const currentShowIndex = ref(-1)
-const userInput = ref<Gesture[]>([])
-const isCorrect = ref<boolean | null>(null)
-const score = ref(0)
-const streak = ref(0)
-const maxStreak = ref(0)
-const correctRounds = ref(0)
-const sequenceLength = ref(2)
-const responseTimes = ref<number[]>([])
-const inputStartTime = ref(0)
+// ===== 遊戲說明 =====
+const gameInstructions = [
+  '觀察依序出現的手勢圖案',
+  '記住手勢出現的順序',
+  '按照相同順序點擊對應手勢',
+  '連續答對可增加序列長度',
+]
 
-// 可用手勢池
-const gesturePool = computed(() => 
-  GESTURES.slice(0, gameConfig.value.gesturePool)
-)
-
-// 計時器
-let showTimer: ReturnType<typeof setTimeout> | null = null
-
-// 產生隨機序列
-function generateSequence(length: number): Gesture[] {
-  const result: Gesture[] = []
-  const pool = [...gesturePool.value]
-  
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * pool.length)
-    const gesture = pool[randomIndex]
-    if (gesture) {
-      result.push(gesture)
-    }
-  }
-  
-  return result
-}
-
-// 開始遊戲
-function startGame(): void {
-  phase.value = 'ready'
-  currentRound.value = 0
-  score.value = 0
+// ===== 遊戲方法 =====
+function handleStart() {
+  gesturePool.value = getGesturePool(config.value.gesturePool)
+  currentLength.value = config.value.startLength
+  maxLength.value = config.value.startLength
   streak.value = 0
   maxStreak.value = 0
-  correctRounds.value = 0
-  sequenceLength.value = gameConfig.value.startLength
   responseTimes.value = []
   
-  setTimeout(() => startRound(), 1000)
+  startGame()
+  startNewRound()
 }
 
-// 開始新一輪
-function startRound(): void {
-  currentRound.value++
-  
-  if (currentRound.value > gameConfig.value.totalRounds) {
-    endGame()
-    return
-  }
-
-  // 產生新序列
-  sequence.value = generateSequence(sequenceLength.value)
-  userInput.value = []
-  isCorrect.value = null
+function startNewRound() {
+  roundState.value = createRoundState(currentLength.value, gesturePool.value)
+  showingPhase.value = 'showing'
   currentShowIndex.value = -1
   
-  phase.value = 'showing'
-  
   // 開始顯示序列
-  showNextGesture()
-  
-  emit('progress', (currentRound.value / gameConfig.value.totalRounds) * 100)
+  showSequence()
 }
 
-// 顯示下一個手勢
-function showNextGesture(): void {
-  currentShowIndex.value++
+async function showSequence() {
+  if (!roundState.value) return
   
-  if (currentShowIndex.value >= sequence.value.length) {
-    // 序列顯示完成，進入輸入階段
-    setTimeout(() => {
-      phase.value = 'input'
-      inputStartTime.value = Date.now()
-    }, 500)
-    return
+  const showTime = config.value.showTime
+  
+  for (let i = 0; i < roundState.value.sequence.length; i++) {
+    currentShowIndex.value = i
+    await delay(showTime)
+    currentShowIndex.value = -1
+    await delay(300) // 間隔
   }
   
-  // 繼續顯示下一個
-  showTimer = setTimeout(() => {
-    showNextGesture()
-  }, gameConfig.value.showTime)
+  // 進入輸入階段
+  showingPhase.value = 'input'
+  roundStartTime = Date.now()
 }
 
-// 使用者選擇手勢
-function selectGesture(gesture: Gesture): void {
-  if (phase.value !== 'input') return
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+function handleGestureClick(gesture: Gesture) {
+  if (!isPlaying.value || showingPhase.value !== 'input' || !roundState.value) return
   
-  userInput.value.push(gesture)
-  
-  // 記錄反應時間（第一個手勢）
-  if (userInput.value.length === 1) {
-    responseTimes.value.push(Date.now() - inputStartTime.value)
-  }
+  roundState.value = addUserInput(roundState.value, gesture)
   
   // 檢查是否輸入完成
-  if (userInput.value.length >= sequence.value.length) {
+  if (isInputComplete(roundState.value)) {
     checkAnswer()
   }
 }
 
-// 檢查答案
-function checkAnswer(): void {
-  phase.value = 'result'
+function checkAnswer() {
+  if (!roundState.value) return
   
-  // 比對序列
-  const correct = userInput.value.every((gesture, index) => 
-    gesture.id === sequence.value[index]?.id
-  )
+  showingPhase.value = 'result'
+  const isCorrect = validateAnswer(roundState.value)
+  const responseTime = Date.now() - roundStartTime
+  responseTimes.value.push(responseTime)
   
-  isCorrect.value = correct
-  
-  if (correct) {
-    correctRounds.value++
+  if (isCorrect) {
     streak.value++
     if (streak.value > maxStreak.value) {
       maxStreak.value = streak.value
     }
     
-    // 計算分數（考慮序列長度和連續正確）
-    const baseScore = sequenceLength.value * 10
-    const streakBonus = Math.min(streak.value - 1, 5) * 5
-    score.value += baseScore + streakBonus
+    const earnedScore = calculateRoundScore(currentLength.value, config.value.startLength, streak.value)
+    addScore(earnedScore)
+    playCorrect()
+    setFeedback('correct', `正確！+${earnedScore}分`, earnedScore)
     
-    // 增加序列長度
-    if (sequenceLength.value < gameConfig.value.maxLength && streak.value >= 2) {
-      sequenceLength.value++
+    // 更新最大長度
+    if (currentLength.value > maxLength.value) {
+      maxLength.value = currentLength.value
     }
+    
+    // 增加長度
+    currentLength.value = getNextLength(currentLength.value, true, streak.value, config.value)
   } else {
     streak.value = 0
+    playWrong()
+    setFeedback('wrong', '順序錯誤')
     
-    // 降低序列長度
-    if (sequenceLength.value > gameConfig.value.startLength) {
-      sequenceLength.value--
-    }
+    // 減少長度
+    currentLength.value = getNextLength(currentLength.value, false, streak.value, config.value)
   }
   
-  // 延遲後進入下一輪
+  // 延遲後進入下一回合或結束
   setTimeout(() => {
-    startRound()
-  }, 2000)
+    clearFeedback()
+    
+    if (currentRound.value < totalRounds - 1) {
+      nextRound()
+      if (isCorrect) {
+        // 正確繼續
+      } else {
+        // 錯誤也繼續，但重置長度
+      }
+      startNewRound()
+    } else {
+      handleGameEnd()
+    }
+  }, 1500)
 }
 
-// 結束遊戲
-function endGame(): void {
-  phase.value = 'gameover'
+function handleGameEnd() {
+  playEnd()
   
-  const accuracy = currentRound.value > 1 
-    ? (correctRounds.value / (currentRound.value - 1)) * 100 
-    : 0
+  const result = summarizeResult(
+    score.value,
+    correctCount.value,
+    config.value.totalRounds,
+    maxStreak.value,
+    maxLength.value,
+    responseTimes.value
+  )
   
-  const avgTime = responseTimes.value.length > 0
-    ? responseTimes.value.reduce((a, b) => a + b, 0) / responseTimes.value.length
-    : 0
-  
-  emit('complete', {
-    score: score.value,
-    accuracy: Math.round(accuracy),
-    maxStreak: maxStreak.value,
-    totalRounds: currentRound.value - 1,
-    correctRounds: correctRounds.value,
-    avgResponseTime: Math.round(avgTime)
-  })
+  finishGame()
+  emit('game:end', result)
 }
 
-// 清理
-function cleanup(): void {
-  if (showTimer) {
-    clearTimeout(showTimer)
-    showTimer = null
-  }
+function handleRestart() {
+  resetGame()
+  handleStart()
 }
 
-// 生命週期
+function handleQuit() {
+  resetGame()
+}
+
+// ===== 生命週期 =====
 onMounted(() => {
-  startGame()
-})
-
-onUnmounted(() => {
-  cleanup()
+  preloadDefaultSounds()
 })
 
 // 監聽難度變化
-watch([() => props.difficulty, () => props.subDifficulty], () => {
-  cleanup()
-  startGame()
+watch(() => props.difficulty, () => {
+  if (phase.value !== 'ready') {
+    resetGame()
+  }
 })
 </script>
 
 <template>
-  <div class="gesture-memory p-4">
-    <!-- 遊戲資訊 -->
-    <div class="flex justify-between items-center mb-6">
-      <div class="flex gap-4">
-        <div class="text-sm">
-          <span class="text-[var(--color-text-muted)]">回合</span>
-          <span class="font-bold ml-1">{{ currentRound }}/{{ gameConfig.totalRounds }}</span>
-        </div>
-        <div class="text-sm">
-          <span class="text-[var(--color-text-muted)]">分數</span>
-          <span class="font-bold ml-1 text-blue-600 dark:text-blue-400">{{ score }}</span>
-        </div>
-        <div class="text-sm">
-          <span class="text-[var(--color-text-muted)]">連續</span>
-          <span class="font-bold ml-1 text-green-600 dark:text-green-400">{{ streak }}</span>
-        </div>
-      </div>
-      <div class="text-sm text-[var(--color-text-muted)]">
-        序列長度: {{ sequenceLength }}
-      </div>
-    </div>
+  <div class="gesture-memory-game w-full max-w-2xl mx-auto p-4">
+    <!-- 準備畫面 -->
+    <GameReadyScreen
+      v-if="phase === 'ready'"
+      title="手勢記憶"
+      icon="👋"
+      :rules="gameInstructions"
+      :difficulty="difficulty === 'medium' ? 'normal' : difficulty"
+      @start="handleStart"
+    />
 
-    <!-- 遊戲區域 -->
-    <div class="game-area min-h-[400px] flex flex-col items-center justify-center">
-      <!-- 準備階段 -->
-      <div v-if="phase === 'ready'" class="text-center">
-        <div class="text-6xl mb-4">🎯</div>
-        <p class="text-xl text-[var(--color-text-secondary)]">準備開始...</p>
-        <p class="text-sm text-[var(--color-text-muted)] mt-2">記住手勢的順序！</p>
-      </div>
+    <!-- 遊戲進行中 -->
+    <template v-else-if="phase === 'playing' || phase === 'paused'">
+      <!-- 狀態列 -->
+      <GameStatusBar
+        :score="score"
+        :progress="progress"
+        show-score
+        show-progress
+      />
 
-      <!-- 顯示序列階段 -->
-      <div v-if="phase === 'showing'" class="text-center">
-        <p class="text-lg text-[var(--color-text-muted)] mb-4">請記住順序</p>
-        <div class="gesture-display text-9xl mb-4 animate-pulse">
-          {{ sequence[currentShowIndex]?.icon || '' }}
+      <!-- 遊戲資訊 -->
+      <div class="game-info text-center mt-4">
+        <div class="text-sm text-gray-500 dark:text-gray-400">
+          第 {{ currentRound + 1 }} / {{ totalRounds }} 回合
         </div>
-        <p class="text-xl text-[var(--color-text)]">
-          {{ sequence[currentShowIndex]?.name || '' }}
-        </p>
-        <div class="flex justify-center gap-2 mt-6">
-          <div 
-            v-for="(_, index) in sequence" 
-            :key="index"
-            class="w-3 h-3 rounded-full transition-colors"
-            :class="index <= currentShowIndex ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'"
-          ></div>
+        <div class="flex justify-center gap-4 mt-2 text-sm">
+          <div>
+            <span class="text-gray-500 dark:text-gray-400">序列長度：</span>
+            <span class="font-bold text-blue-500">{{ currentLength }}</span>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400">連續正確：</span>
+            <span class="font-bold text-orange-500">{{ streak }}</span>
+          </div>
         </div>
       </div>
 
-      <!-- 輸入階段 -->
-      <div v-if="phase === 'input'" class="w-full">
-        <p class="text-lg text-center text-[var(--color-text-secondary)] mb-4">
-          請按順序選擇手勢 ({{ userInput.length }}/{{ sequence.length }})
-        </p>
-        
-        <!-- 已輸入的手勢 -->
-        <div class="flex justify-center gap-2 mb-6 min-h-[60px]">
-          <div 
-            v-for="(gesture, index) in userInput" 
-            :key="index"
-            class="text-4xl bg-[var(--color-bg-soft)] rounded-xl p-2"
-          >
-            {{ gesture.icon }}
+      <!-- 顯示區域 -->
+      <div class="display-area mt-8">
+        <!-- 顯示階段 -->
+        <div 
+          v-if="showingPhase === 'showing'"
+          class="showing-phase text-center"
+        >
+          <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            記住手勢順序...
           </div>
           <div 
-            v-for="i in (sequence.length - userInput.length)" 
-            :key="'empty-' + i"
-            class="w-14 h-14 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl"
-          ></div>
-        </div>
-
-        <!-- 手勢選擇區 -->
-        <div class="grid grid-cols-4 gap-3 max-w-md mx-auto">
-          <button
-            v-for="gesture in gesturePool"
-            :key="gesture.id"
-            @click="selectGesture(gesture)"
-            class="gesture-btn aspect-square text-4xl bg-[var(--color-surface)] rounded-xl shadow-md
-                   hover:shadow-lg hover:scale-105 active:scale-95 transition-all
-                   border-2 border-transparent hover:border-blue-300"
+            class="gesture-display text-8xl transition-all duration-200 min-h-32 flex items-center justify-center"
+            :class="{ 'opacity-0 scale-50': displayGesture === null, 'opacity-100 scale-110': displayGesture !== null }"
           >
-            {{ gesture.icon }}
-          </button>
+            {{ displayGesture?.icon ?? '' }}
+          </div>
+          <div class="gesture-name text-xl font-medium mt-2">
+            {{ displayGesture?.name ?? '' }}
+          </div>
         </div>
-      </div>
 
-      <!-- 結果階段 -->
-      <div v-if="phase === 'result'" class="text-center">
-        <div class="text-8xl mb-4">
-          {{ isCorrect ? '✅' : '❌' }}
-        </div>
-        <p class="text-2xl font-bold mb-4" :class="isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
-          {{ isCorrect ? '正確！' : '錯誤' }}
-        </p>
-        
-        <!-- 顯示正確答案 -->
-        <div v-if="!isCorrect" class="mt-4">
-          <p class="text-sm text-[var(--color-text-muted)] mb-2">正確順序：</p>
-          <div class="flex justify-center gap-2">
-            <span v-for="(gesture, index) in sequence" :key="index" class="text-3xl">
+        <!-- 輸入階段 -->
+        <div 
+          v-else-if="showingPhase === 'input'"
+          class="input-phase"
+        >
+          <div class="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
+            按順序點擊手勢
+          </div>
+          
+          <!-- 輸入進度 -->
+          <div class="input-progress flex justify-center gap-2 mb-6 min-h-12">
+            <div
+              v-for="(gesture, index) in userInput"
+              :key="index"
+              class="gesture-icon w-10 h-10 flex items-center justify-center text-2xl bg-blue-100 dark:bg-blue-900 rounded-lg"
+            >
               {{ gesture.icon }}
-            </span>
+            </div>
+            <div
+              v-for="i in (currentLength - userInput.length)"
+              :key="'placeholder-' + i"
+              class="gesture-placeholder w-10 h-10 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg"
+            >
+              ?
+            </div>
+          </div>
+
+          <!-- 手勢選擇區 -->
+          <div class="gesture-grid grid grid-cols-3 md:grid-cols-4 gap-3 max-w-md mx-auto">
+            <button
+              v-for="gesture in gesturePool"
+              :key="gesture.id"
+              class="gesture-btn p-4 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-blue-500 hover:text-white transition-all transform hover:scale-105 active:scale-95"
+              @click="handleGestureClick(gesture)"
+            >
+              <div class="text-3xl">{{ gesture.icon }}</div>
+              <div class="text-xs mt-1">{{ gesture.name }}</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 結果階段 -->
+        <div 
+          v-else-if="showingPhase === 'result'"
+          class="result-phase text-center"
+        >
+          <div class="sequence-compare">
+            <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">正確順序</div>
+            <div class="correct-sequence flex justify-center gap-2 mb-4">
+              <div
+                v-for="(gesture, index) in roundState?.sequence"
+                :key="index"
+                class="w-10 h-10 flex items-center justify-center text-2xl bg-green-100 dark:bg-green-900 rounded-lg"
+              >
+                {{ gesture.icon }}
+              </div>
+            </div>
+            <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">你的順序</div>
+            <div class="user-sequence flex justify-center gap-2">
+              <div
+                v-for="(gesture, index) in roundState?.userInput"
+                :key="index"
+                class="w-10 h-10 flex items-center justify-center text-2xl rounded-lg"
+                :class="{
+                  'bg-green-100 dark:bg-green-900': gesture.id === roundState?.sequence[index]?.id,
+                  'bg-red-100 dark:bg-red-900': gesture.id !== roundState?.sequence[index]?.id,
+                }"
+              >
+                {{ gesture.icon }}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 遊戲結束 -->
-      <div v-if="phase === 'gameover'" class="text-center">
-        <div class="text-6xl mb-4">🎉</div>
-        <p class="text-2xl font-bold text-[var(--color-text)] mb-4">遊戲結束！</p>
-        <div class="bg-[var(--color-bg-soft)] rounded-xl p-6 max-w-sm mx-auto">
-          <div class="grid grid-cols-2 gap-4 text-left">
-            <div>
-              <p class="text-sm text-[var(--color-text-muted)]">最終分數</p>
-              <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ score }}</p>
-            </div>
-            <div>
-              <p class="text-sm text-[var(--color-text-muted)]">正確率</p>
-              <p class="text-2xl font-bold text-green-600 dark:text-green-400">
-                {{ Math.round((correctRounds / (currentRound - 1)) * 100) }}%
-              </p>
-            </div>
-            <div>
-              <p class="text-sm text-[var(--color-text-muted)]">最長連續</p>
-              <p class="text-xl font-bold">{{ maxStreak }}</p>
-            </div>
-            <div>
-              <p class="text-sm text-[var(--color-text-muted)]">完成回合</p>
-              <p class="text-xl font-bold">{{ correctRounds }}/{{ currentRound - 1 }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      <!-- 回饋動畫 -->
+      <GameFeedback
+        v-if="feedbackData"
+        :type="feedbackData.type"
+        :show="feedbackData.show"
+        :message="feedbackData.message"
+        :score="feedbackData.score"
+      />
+    </template>
+
+    <!-- 結果畫面 -->
+    <GameResultScreen
+      v-else-if="phase === 'finished' || phase === 'result'"
+      :score="score"
+      :correct-count="correctCount"
+      :wrong-count="wrongCount"
+      :total-count="config.totalRounds"
+      :grade="calculateGrade(correctCount / config.totalRounds * 100) as 'S' | 'A' | 'B' | 'C' | 'D' | 'F'"
+      :custom-stats="[
+        { label: '正確', value: correctCount, icon: '✅' },
+        { label: '最長連續', value: maxStreak, icon: '🔥' },
+        { label: '最大長度', value: maxLength, icon: '📏' },
+      ]"
+      @replay="handleRestart"
+      @back="handleQuit"
+    />
   </div>
 </template>
 
 <style scoped>
-.gesture-memory {
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.gesture-display {
-  line-height: 1;
-  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.gesture-btn {
-  font-size: 2rem;
-}
-
-@media (max-width: 400px) {
-  .gesture-btn {
-    font-size: 1.5rem;
-  }
+.gesture-btn:active {
+  transform: scale(0.9);
 }
 </style>

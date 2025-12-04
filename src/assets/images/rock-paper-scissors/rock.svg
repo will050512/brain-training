@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="skinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FECACA"/>
+      <stop offset="100%" style="stop-color:#FCA5A5"/>
+    </linearGradient>
+  </defs>
+  <!-- 手腕 -->
+  <rect x="35" y="70" width="30" height="25" rx="8" fill="url(#skinGradient)" stroke="#F87171" stroke-width="2"/>
+  <!-- 拳頭主體 -->
+  <ellipse cx="50" cy="45" rx="28" ry="25" fill="url(#skinGradient)" stroke="#F87171" stroke-width="2"/>
+  <!-- 手指關節（捲曲的手指） -->
+  <path d="M25 35Q22 30 25 25Q30 22 35 28Q38 32 35 38" fill="url(#skinGradient)" stroke="#F87171" stroke-width="1.5"/>
+  <path d="M35 28Q35 22 42 20Q48 20 50 28Q50 35 45 38" fill="url(#skinGradient)" stroke="#F87171" stroke-width="1.5"/>
+  <path d="M50 28Q52 20 58 20Q65 22 65 28Q65 35 60 38" fill="url(#skinGradient)" stroke="#F87171" stroke-width="1.5"/>
+  <path d="M65 28Q70 22 75 25Q78 30 75 35Q72 40 68 38" fill="url(#skinGradient)" stroke="#F87171" stroke-width="1.5"/>
+  <!-- 大拇指 -->
+  <ellipse cx="28" cy="55" rx="8" ry="12" fill="url(#skinGradient)" stroke="#F87171" stroke-width="2" transform="rotate(-20, 28, 55)"/>
+</svg>

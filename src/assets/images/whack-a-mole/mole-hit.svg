@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
+  <defs>
+    <linearGradient id="moleBodyGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5A2B"/>
+      <stop offset="100%" style="stop-color:#5D3A1A"/>
+    </linearGradient>
+    <linearGradient id="moleBellyGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#D4A574"/>
+      <stop offset="100%" style="stop-color:#C4956A"/>
+    </linearGradient>
+  </defs>
+  <!-- 地鼠身體 -->
+  <ellipse cx="40" cy="50" rx="28" ry="24" fill="url(#moleBodyGradient2)"/>
+  <!-- 地鼠肚子 -->
+  <ellipse cx="40" cy="55" rx="18" ry="14" fill="url(#moleBellyGradient2)"/>
+  <!-- 左耳 -->
+  <circle cx="18" cy="32" r="8" fill="url(#moleBodyGradient2)"/>
+  <circle cx="18" cy="32" r="4" fill="#F5D0C5"/>
+  <!-- 右耳 -->
+  <circle cx="62" cy="32" r="8" fill="url(#moleBodyGradient2)"/>
+  <circle cx="62" cy="32" r="4" fill="#F5D0C5"/>
+  <!-- 臉部 -->
+  <ellipse cx="40" cy="38" rx="20" ry="16" fill="url(#moleBodyGradient2)"/>
+  <!-- 鼻子 -->
+  <ellipse cx="40" cy="42" rx="8" ry="6" fill="#2D1810"/>
+  <!-- X X 眼睛 (被擊中) -->
+  <g stroke="#1F2937" stroke-width="3" stroke-linecap="round">
+    <line x1="26" y1="28" x2="34" y2="36"/>
+    <line x1="34" y1="28" x2="26" y2="36"/>
+    <line x1="46" y1="28" x2="54" y2="36"/>
+    <line x1="54" y1="28" x2="46" y2="36"/>
+  </g>
+  <!-- 星星特效 -->
+  <g fill="#FFD700">
+    <path d="M10 20L12 16L14 20L10 18H14Z" transform="rotate(15, 12, 18)"/>
+    <path d="M66 16L68 12L70 16L66 14H70Z" transform="rotate(-10, 68, 14)"/>
+    <path d="M8 45L10 41L12 45L8 43H12Z"/>
+  </g>
+  <!-- 腮紅 -->
+  <ellipse cx="22" cy="40" rx="4" ry="3" fill="#FFB6C1" opacity="0.6"/>
+  <ellipse cx="58" cy="40" rx="4" ry="3" fill="#FFB6C1" opacity="0.6"/>
+  <!-- 嘴巴 (驚嚇) -->
+  <ellipse cx="40" cy="50" rx="6" ry="4" fill="#2D1810"/>
+  <!-- 門牙 -->
+  <rect x="37" y="47" width="6" height="4" rx="1" fill="#FFFFFF"/>
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
+  <defs>
+    <linearGradient id="bananaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FDE047"/>
+      <stop offset="100%" style="stop-color:#EAB308"/>
+    </linearGradient>
+  </defs>
+  <!-- 香蕉主體 -->
+  <path d="M20 55Q15 35 30 20Q45 10 60 15Q55 25 50 40Q45 55 25 60Q20 58 20 55Z" fill="url(#bananaGradient)" stroke="#CA8A04" stroke-width="2"/>
+  <!-- 頭部 -->
+  <ellipse cx="58" cy="17" rx="4" ry="5" fill="#78350F"/>
+  <!-- 尾部 -->
+  <path d="M22 58Q18 62 20 66" stroke="#78350F" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- 斑點 -->
+  <circle cx="35" cy="35" r="2" fill="#92400E" opacity="0.3"/>
+  <circle cx="45" cy="28" r="1.5" fill="#92400E" opacity="0.3"/>
+</svg>

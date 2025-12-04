@@ -1,456 +1,397 @@
-<template>
-  <div class="game-area">
-    <!-- 遊戲說明 -->
-    <div v-if="!isPlaying && !isFinished" class="text-center mb-6">
-      <p class="text-lg text-[var(--color-text-secondary)]">找出兩張圖片的不同之處！</p>
-      <p class="text-sm text-[var(--color-text-muted)]">點擊右圖中不同的位置</p>
-    </div>
-
-    <!-- 遊戲狀態 -->
-    <div class="flex justify-between items-center mb-4">
-      <div class="text-lg">
-        <span class="text-[var(--color-text-muted)]">第</span>
-        <span class="font-bold text-blue-600 dark:text-blue-400">{{ currentRound }}/{{ totalRounds }}</span>
-        <span class="text-[var(--color-text-muted)]">關</span>
-      </div>
-      <div class="text-lg">
-        <span class="text-[var(--color-text-muted)]">找到：</span>
-        <span class="font-bold text-green-500 dark:text-green-400">{{ foundCount }}/{{ differences.length }}</span>
-      </div>
-      <div class="text-lg">
-        <span class="text-[var(--color-text-muted)]">剩餘：</span>
-        <span class="font-bold text-[var(--color-text)]">{{ remainingTime }}秒</span>
-      </div>
-    </div>
-
-    <!-- 找不同區域 -->
-    <div v-if="isPlaying" class="spot-area">
-      <div class="grid md:grid-cols-2 gap-4">
-        <!-- 原圖 -->
-        <div class="image-container">
-          <div class="image-label">原圖</div>
-          <div 
-            class="emoji-grid"
-            :style="{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }"
-          >
-            <div
-              v-for="(item, index) in originalGrid"
-              :key="'orig-' + index"
-              class="emoji-cell"
-            >
-              {{ item }}
-            </div>
-          </div>
-        </div>
-
-        <!-- 比對圖（可點擊） -->
-        <div class="image-container">
-          <div class="image-label">找不同</div>
-          <div 
-            class="emoji-grid cursor-pointer"
-            :style="{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }"
-          >
-            <div
-              v-for="(item, index) in compareGrid"
-              :key="'comp-' + index"
-              class="emoji-cell relative"
-              :class="{ 
-                'found': foundDifferences.includes(index),
-                'hint': showHint && isDifference(index) && !foundDifferences.includes(index)
-              }"
-              @click="handleClick(index)"
-            >
-              {{ item }}
-              <transition name="pop">
-                <span 
-                  v-if="foundDifferences.includes(index)" 
-                  class="found-marker"
-                >
-                  ✓
-                </span>
-              </transition>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 提示按鈕 -->
-      <div class="mt-4 text-center">
-        <button
-          @click="useHint"
-          :disabled="hintsUsed >= maxHints"
-          class="btn btn-secondary"
-        >
-          💡 提示 ({{ maxHints - hintsUsed }} 次)
-        </button>
-      </div>
-    </div>
-
-    <!-- 錯誤提示 -->
-    <transition name="fade">
-      <div 
-        v-if="showWrong" 
-        class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
-               text-6xl pointer-events-none z-50"
-      >
-        ❌
-      </div>
-    </transition>
-
-    <!-- 開始按鈕 -->
-    <div class="mt-6 text-center">
-      <button
-        v-if="!isPlaying && !isFinished"
-        @click="startGame"
-        class="btn btn-primary btn-xl"
-      >
-        開始遊戲 🔍
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
-import type { Difficulty, GameResult } from '@/types/game'
+/**
+ * 找不同遊戲（重構版）
+ * 使用新的遊戲核心架構
+ */
+import { ref, computed, watch, onMounted } from 'vue'
+import { useGameState } from '@/games/core/useGameState'
+import { useRoundTimer } from '@/games/core/useGameTimer'
+import { useGameAudio } from '@/games/core/useGameAudio'
+import {
+  generateRound,
+  processClick,
+  isRoundComplete,
+  summarizeResult,
+  calculateGrade,
+  DIFFICULTY_CONFIGS,
+  type RoundData,
+  type SpotDifferenceConfig,
+} from '@/games/logic/spotDifference'
 
-// Props
-const props = defineProps<{
-  difficulty: Difficulty
-  settings: Record<string, number | string | boolean>
-}>()
+// UI 元件
+import GameReadyScreen from './ui/GameReadyScreen.vue'
+import GameResultScreen from './ui/GameResultScreen.vue'
+import GameStatusBar from './ui/GameStatusBar.vue'
+import GameFeedback from './ui/GameFeedback.vue'
 
-// Emits
-const emit = defineEmits<{
-  'score-change': [score: number]
-  'game-end': [result: GameResult]
-}>()
-
-// Emoji 庫
-const emojiSets = {
-  animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵'],
-  fruits: ['🍎', '🍊', '🍋', '🍇', '🍉', '🍓', '🥝', '🍒', '🍑', '🥭', '🍍', '🥥', '🍌', '🫐', '🍈'],
-  nature: ['🌸', '🌺', '🌻', '🌹', '🌷', '🌼', '🍀', '🌵', '🌲', '🌴', '🍁', '🍂', '🌾', '🌱', '🌿'],
-  objects: ['⭐', '🌙', '☀️', '⚡', '🔥', '💧', '❄️', '🌈', '💎', '🔮', '🎈', '🎁', '🎀', '🎄', '🎃'],
-}
-
-// 難度設定
-const difficultyConfig = computed(() => {
-  const defaults = {
-    easy: { gridSize: 4, diffCount: 2, rounds: 3, timePerRound: 45, maxHints: 3 },
-    medium: { gridSize: 5, diffCount: 3, rounds: 4, timePerRound: 40, maxHints: 2 },
-    hard: { gridSize: 6, diffCount: 4, rounds: 5, timePerRound: 35, maxHints: 1 },
-  }
-  return {
-    ...defaults[props.difficulty],
-    ...props.settings,
-  } as typeof defaults.easy
+// ===== Props & Emits =====
+const props = withDefaults(defineProps<{
+  difficulty?: 'easy' | 'medium' | 'hard'
+}>(), {
+  difficulty: 'easy'
 })
 
-// 遊戲狀態
-const gridSize = computed(() => difficultyConfig.value.gridSize)
-const isPlaying = ref(false)
-const isFinished = ref(false)
-const currentRound = ref(0)
-const totalRounds = computed(() => difficultyConfig.value.rounds)
-const remainingTime = ref(0)
+const emit = defineEmits<{
+  'game:start': []
+  'game:end': [result: any]
+  'score:update': [score: number]
+  'state:change': [phase: string]
+}>()
 
-const originalGrid = ref<string[]>([])
-const compareGrid = ref<string[]>([])
-const differences = ref<number[]>([])
+// ===== 遊戲配置 =====
+const config = computed<SpotDifferenceConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+
+// ===== 遊戲狀態 =====
+const {
+  phase,
+  score,
+  currentRound,
+  totalRounds,
+  progress,
+  feedback,
+  showFeedback,
+  isPlaying,
+  startGame: startGameState,
+  finishGame: finishGameState,
+  nextRound,
+  setFeedback,
+  clearFeedback,
+  resetGame,
+  addScore,
+} = useGameState({
+  totalRounds: config.value.rounds,
+})
+
+function startGame() {
+  startGameState()
+  emit('game:start')
+}
+
+function finishGame() {
+  finishGameState()
+}
+
+// ===== 回合計時器 =====
+const {
+  roundTime,
+  startRound,
+  stopRound,
+  resetRound,
+} = useRoundTimer({
+  timePerRound: config.value.timePerRound,
+  onRoundTimeUp: () => handleRoundTimeout(),
+})
+
+// ===== 音效 =====
+const { playCorrect, playWrong, playEnd, preloadDefaultSounds } = useGameAudio()
+
+// ===== 遊戲資料 =====
+const currentRoundData = ref<RoundData | null>(null)
 const foundDifferences = ref<number[]>([])
-const foundCount = computed(() => foundDifferences.value.length)
-
-const hintsUsed = ref(0)
-const maxHints = computed(() => difficultyConfig.value.maxHints)
-const showHint = ref(false)
-const showWrong = ref(false)
-
 const wrongClicks = ref(0)
-const totalFoundTime = ref(0)
-const roundStartTime = ref(0)
+const totalFound = ref(0)
+const foundTimes = ref<number[]>([])
+const hintsUsed = ref(0)
+let roundStartTime = 0
 
-// 計時器
-let countdownTimer: ReturnType<typeof setInterval> | null = null
+// ===== 計算屬性 =====
+const gridSize = computed(() => config.value.gridSize)
+const diffCount = computed(() => config.value.diffCount)
 
-// 生成關卡
-function generateRound(): void {
-  const config = difficultyConfig.value
-  const size = config.gridSize
-  const totalCells = size * size
-  
-  // 選擇 emoji 集合
-  const setKeys = Object.keys(emojiSets) as (keyof typeof emojiSets)[]
-  const setKeyIdx = Math.floor(Math.random() * setKeys.length)
-  const setKey = setKeys[setKeyIdx]
-  const selectedSet = setKey ? emojiSets[setKey] : emojiSets.animals
-  
-  // 生成原圖
-  originalGrid.value = []
-  for (let i = 0; i < totalCells; i++) {
-    const emoji = selectedSet[Math.floor(Math.random() * selectedSet.length)]
-    if (emoji) originalGrid.value.push(emoji)
+// ===== 回饋映射 =====
+const feedbackData = computed(() => {
+  if (!feedback.value) return undefined
+  return {
+    type: feedback.value.type,
+    show: showFeedback.value,
+    message: feedback.value.message,
   }
+})
 
-  // 複製為比對圖
-  compareGrid.value = [...originalGrid.value]
+// ===== 遊戲說明 =====
+const gameInstructions = [
+  '觀察左右兩張圖片',
+  '點擊右圖中與左圖不同的位置',
+  '找出所有不同點即可過關',
+  '可使用提示功能，但次數有限',
+]
 
-  // 隨機選擇不同的位置
-  differences.value = []
-  while (differences.value.length < config.diffCount) {
-    const pos = Math.floor(Math.random() * totalCells)
-    if (!differences.value.includes(pos)) {
-      differences.value.push(pos)
-      
-      // 替換為不同的 emoji
-      let newEmoji = selectedSet[Math.floor(Math.random() * selectedSet.length)] || '🎈'
-      while (newEmoji === originalGrid.value[pos]) {
-        newEmoji = selectedSet[Math.floor(Math.random() * selectedSet.length)] || '🎈'
-      }
-      compareGrid.value[pos] = newEmoji
-    }
-  }
-
+// ===== 遊戲方法 =====
+function handleStart() {
   foundDifferences.value = []
-  remainingTime.value = config.timePerRound
-  roundStartTime.value = Date.now()
-  showHint.value = false
-}
-
-// 判斷是否為不同點
-function isDifference(index: number): boolean {
-  return differences.value.includes(index)
-}
-
-// 點擊處理
-function handleClick(index: number): void {
-  if (!isPlaying.value) return
-  if (foundDifferences.value.includes(index)) return
-
-  if (isDifference(index)) {
-    // 找到不同
-    foundDifferences.value.push(index)
-    totalFoundTime.value += Date.now() - roundStartTime.value
-    emit('score-change', foundCount.value)
-
-    // 檢查是否全部找到
-    if (foundCount.value === differences.value.length) {
-      // 過關
-      if (countdownTimer) clearInterval(countdownTimer)
-      
-      setTimeout(() => {
-        if (currentRound.value < totalRounds.value) {
-          nextRound()
-        } else {
-          endGame()
-        }
-      }, 800)
-    }
-  } else {
-    // 點錯
-    wrongClicks.value++
-    showWrong.value = true
-    setTimeout(() => {
-      showWrong.value = false
-    }, 500)
-  }
-}
-
-// 使用提示
-function useHint(): void {
-  if (hintsUsed.value >= maxHints.value) return
-  
-  hintsUsed.value++
-  showHint.value = true
-  
-  setTimeout(() => {
-    showHint.value = false
-  }, 1500)
-}
-
-// 開始遊戲
-function startGame(): void {
-  isPlaying.value = true
-  isFinished.value = false
-  currentRound.value = 0
   wrongClicks.value = 0
-  totalFoundTime.value = 0
+  totalFound.value = 0
+  foundTimes.value = []
   hintsUsed.value = 0
   
-  nextRound()
+  startGame()
+  generateNextRound()
 }
 
-// 下一關
-function nextRound(): void {
-  currentRound.value++
-  generateRound()
+function generateNextRound() {
+  currentRoundData.value = generateRound(config.value)
+  foundDifferences.value = []
+  roundStartTime = Date.now()
+  startRound()
+}
 
-  // 開始倒數
-  countdownTimer = setInterval(() => {
-    remainingTime.value--
-    if (remainingTime.value <= 0) {
-      // 時間到
-      if (countdownTimer) clearInterval(countdownTimer)
-      
-      if (currentRound.value < totalRounds.value) {
-        nextRound()
-      } else {
-        endGame()
-      }
+function handleCellClick(index: number) {
+  if (!isPlaying.value || !currentRoundData.value) return
+  
+  const result = processClick(
+    index,
+    currentRoundData.value.differences,
+    foundDifferences.value
+  )
+  
+  if (result.isNewFind) {
+    foundDifferences.value = [...foundDifferences.value, index]
+    totalFound.value++
+    foundTimes.value.push(Date.now() - roundStartTime)
+    
+    playCorrect()
+    addScore(10)
+    setFeedback('correct', '找到了！')
+    
+    setTimeout(() => clearFeedback(), 500)
+    
+    // 檢查是否完成回合
+    if (isRoundComplete(foundDifferences.value.length, diffCount.value)) {
+      handleRoundComplete()
     }
-  }, 1000)
-}
-
-// 結束遊戲
-function endGame(): void {
-  isPlaying.value = false
-  isFinished.value = true
-
-  if (countdownTimer) clearInterval(countdownTimer)
-
-  const totalDiffs = totalRounds.value * difficultyConfig.value.diffCount
-  const totalFound = currentRound.value > 0 
-    ? (currentRound.value - 1) * difficultyConfig.value.diffCount + foundCount.value
-    : 0
-  
-  const accuracy = totalDiffs > 0 ? totalFound / totalDiffs : 0
-  const avgTime = totalFound > 0 ? Math.round(totalFoundTime.value / totalFound) : 0
-
-  // 計算分數
-  const accuracyScore = accuracy * 70
-  const penaltyScore = Math.max(0, 20 - wrongClicks.value * 2)
-  const speedBonus = avgTime > 0 && avgTime < 5000 ? Math.min(10, (5000 - avgTime) / 500) : 0
-  
-  const finalScore = Math.round(Math.min(100, accuracyScore + penaltyScore + speedBonus))
-
-  const result: GameResult = {
-    gameId: 'spot-difference',
-    difficulty: props.difficulty,
-    score: finalScore,
-    maxScore: 100,
-    correctCount: totalFound,
-    totalCount: totalDiffs,
-    accuracy,
-    avgReactionTime: avgTime,
-    duration: totalRounds.value * difficultyConfig.value.timePerRound,
-    timestamp: new Date(),
+  } else if (!result.isCorrect) {
+    wrongClicks.value++
+    playWrong()
+    setFeedback('wrong', '這裡沒有不同')
+    setTimeout(() => clearFeedback(), 500)
   }
-
-  emit('game-end', result)
 }
 
-// 清理
-onUnmounted(() => {
-  if (countdownTimer) clearInterval(countdownTimer)
+function handleRoundComplete() {
+  stopRound()
+  
+  setTimeout(() => {
+    if (currentRound.value < totalRounds - 1) {
+      nextRound()
+      generateNextRound()
+    } else {
+      handleGameEnd()
+    }
+  }, 800)
+}
+
+function handleRoundTimeout() {
+  // 超時，進入下一回合
+  setTimeout(() => {
+    if (currentRound.value < totalRounds - 1) {
+      nextRound()
+      generateNextRound()
+    } else {
+      handleGameEnd()
+    }
+  }, 500)
+}
+
+function handleUseHint() {
+  if (!isPlaying.value || !currentRoundData.value) return
+  if (hintsUsed.value >= config.value.maxHints) return
+  
+  // 找出尚未發現的不同點
+  const unfound = currentRoundData.value.differences.filter(
+    d => !foundDifferences.value.includes(d)
+  )
+  
+  if (unfound.length > 0) {
+    hintsUsed.value++
+    // 顯示提示（閃爍效果由模板處理）
+    const hintIndex = unfound[0]!
+    setFeedback('correct', `提示：注意位置 ${hintIndex + 1}`)
+    setTimeout(() => clearFeedback(), 2000)
+  }
+}
+
+function handleGameEnd() {
+  stopRound()
+  playEnd()
+  
+  const result = summarizeResult(
+    totalFound.value,
+    config.value.rounds,
+    config.value.diffCount,
+    wrongClicks.value,
+    foundTimes.value,
+    config.value
+  )
+  
+  finishGame()
+  emit('game:end', result)
+}
+
+function handleRestart() {
+  stopRound()
+  resetGame()
+  handleStart()
+}
+
+function handleQuit() {
+  stopRound()
+  resetGame()
+}
+
+// ===== 生命週期 =====
+onMounted(() => {
+  preloadDefaultSounds()
+})
+
+// 監聽難度變化
+watch(() => props.difficulty, () => {
+  if (phase.value !== 'ready') {
+    stopRound()
+    resetGame()
+  }
 })
 </script>
 
+<template>
+  <div class="spot-difference-game w-full max-w-4xl mx-auto p-4">
+    <!-- 準備畫面 -->
+    <GameReadyScreen
+      v-if="phase === 'ready'"
+      title="找不同"
+      icon="🔍"
+      :rules="gameInstructions"
+      :difficulty="difficulty === 'medium' ? 'normal' : difficulty"
+      @start="handleStart"
+    />
+
+    <!-- 遊戲進行中 -->
+    <template v-else-if="phase === 'playing' || phase === 'paused'">
+      <!-- 狀態列 -->
+      <GameStatusBar
+        :time="roundTime"
+        :score="score"
+        :progress="progress"
+        :is-warning="roundTime <= 10"
+        show-timer
+        show-score
+        show-progress
+      />
+
+      <!-- 遊戲資訊 -->
+      <div class="game-info flex justify-between items-center mt-4 px-2">
+        <div class="text-sm">
+          <span class="text-gray-500 dark:text-gray-400">第</span>
+          <span class="font-bold mx-1">{{ currentRound + 1 }} / {{ totalRounds }}</span>
+          <span class="text-gray-500 dark:text-gray-400">回合</span>
+        </div>
+        <div class="text-sm">
+          <span class="text-gray-500 dark:text-gray-400">找到：</span>
+          <span class="font-bold text-green-500">{{ foundDifferences.length }}</span>
+          <span class="text-gray-500 dark:text-gray-400"> / {{ diffCount }}</span>
+        </div>
+        <button
+          v-if="config.maxHints > 0"
+          class="hint-btn text-sm px-3 py-1 rounded-lg bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
+          :disabled="hintsUsed >= config.maxHints"
+          @click="handleUseHint"
+        >
+          💡 提示 ({{ config.maxHints - hintsUsed }})
+        </button>
+      </div>
+
+      <!-- 圖片對比區域 -->
+      <div 
+        class="comparison-area mt-6 grid grid-cols-2 gap-4"
+        v-if="currentRoundData"
+      >
+        <!-- 原圖（左邊） -->
+        <div class="image-container">
+          <div class="label text-center text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+            原圖
+          </div>
+          <div 
+            class="image-grid"
+            :style="{ 
+              gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` 
+            }"
+          >
+            <div
+              v-for="(emoji, index) in currentRoundData.originalGrid"
+              :key="`original-${index}`"
+              class="grid-cell aspect-square flex items-center justify-center text-2xl md:text-3xl bg-gray-100 dark:bg-gray-700 rounded"
+            >
+              {{ emoji }}
+            </div>
+          </div>
+        </div>
+
+        <!-- 比對圖（右邊，可點擊） -->
+        <div class="image-container">
+          <div class="label text-center text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+            找出不同（點擊此處）
+          </div>
+          <div 
+            class="image-grid"
+            :style="{ 
+              gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` 
+            }"
+          >
+            <button
+              v-for="(emoji, index) in currentRoundData.compareGrid"
+              :key="`compare-${index}`"
+              class="grid-cell aspect-square flex items-center justify-center text-2xl md:text-3xl rounded cursor-pointer transition-all"
+              :class="{
+                'bg-green-200 dark:bg-green-800 ring-2 ring-green-500': foundDifferences.includes(index),
+                'bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900': !foundDifferences.includes(index),
+              }"
+              :disabled="foundDifferences.includes(index)"
+              @click="handleCellClick(index)"
+            >
+              {{ emoji }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 回饋動畫 -->
+      <GameFeedback
+        v-if="feedbackData"
+        :type="feedbackData.type"
+        :show="feedbackData.show"
+        :message="feedbackData.message"
+      />
+    </template>
+
+    <!-- 結果畫面 -->
+    <GameResultScreen
+      v-else-if="phase === 'finished' || phase === 'result'"
+      :score="score"
+      :grade="calculateGrade(score) as 'S' | 'A' | 'B' | 'C' | 'D' | 'F'"
+      :custom-stats="[
+        { label: '找到', value: totalFound, icon: '✅' },
+        { label: '總數', value: totalRounds * diffCount, icon: '🔍' },
+        { label: '錯誤點擊', value: wrongClicks, icon: '❌' },
+        { label: '使用提示', value: hintsUsed, icon: '💡' },
+      ]"
+      @replay="handleRestart"
+      @back="handleQuit"
+    />
+  </div>
+</template>
+
 <style scoped>
-.spot-area {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.image-container {
-  position: relative;
-  background: var(--color-surface);
-  border-radius: 12px;
-  padding: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.image-label {
-  position: absolute;
-  top: -10px;
-  left: 10px;
-  background: #3b82f6;
-  color: white;
-  padding: 2px 12px;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.emoji-grid {
+.image-grid {
   display: grid;
   gap: 4px;
-  padding: 8px;
 }
 
-.emoji-cell {
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  background: var(--color-bg-soft);
-  border-radius: 8px;
-  transition: all 0.2s ease;
+.grid-cell {
+  min-width: 30px;
+  min-height: 30px;
 }
 
-@media (min-width: 768px) {
-  .emoji-cell {
-    font-size: 2rem;
-  }
-}
-
-.emoji-cell:hover {
-  background: #e5e7eb;
-  transform: scale(1.05);
-}
-
-.emoji-cell.found {
-  background: #bbf7d0;
-  animation: celebrate 0.5s ease;
-}
-
-.emoji-cell.hint {
-  animation: pulse 0.5s ease infinite;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-}
-
-.found-marker {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  background: #22c55e;
-  color: white;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-@keyframes celebrate {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
-  50% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.8); }
-}
-
-.pop-enter-active {
-  animation: pop 0.3s ease;
-}
-
-@keyframes pop {
-  0% { transform: scale(0); }
-  70% { transform: scale(1.2); }
-  100% { transform: scale(1); }
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+.hint-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

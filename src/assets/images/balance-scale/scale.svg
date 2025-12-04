@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 150" fill="none">
+  <defs>
+    <linearGradient id="scaleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F59E0B"/>
+      <stop offset="100%" style="stop-color:#D97706"/>
+    </linearGradient>
+    <linearGradient id="plateGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#9CA3AF"/>
+      <stop offset="100%" style="stop-color:#6B7280"/>
+    </linearGradient>
+  </defs>
+  <!-- 底座 -->
+  <path d="M70 140H130L140 150H60Z" fill="#78350F"/>
+  <!-- 支柱 -->
+  <rect x="95" y="70" width="10" height="70" fill="url(#scaleGradient)"/>
+  <!-- 支點裝飾 -->
+  <circle cx="100" cy="70" r="8" fill="url(#scaleGradient)" stroke="#B45309" stroke-width="2"/>
+  <!-- 橫樑 -->
+  <rect x="20" y="65" width="160" height="10" rx="5" fill="url(#scaleGradient)" stroke="#B45309" stroke-width="2"/>
+  <!-- 左邊繩子 -->
+  <line x1="35" y1="75" x2="35" y2="100" stroke="#78350F" stroke-width="2"/>
+  <line x1="55" y1="75" x2="55" y2="100" stroke="#78350F" stroke-width="2"/>
+  <!-- 右邊繩子 -->
+  <line x1="145" y1="75" x2="145" y2="100" stroke="#78350F" stroke-width="2"/>
+  <line x1="165" y1="75" x2="165" y2="100" stroke="#78350F" stroke-width="2"/>
+  <!-- 左托盤 -->
+  <ellipse cx="45" cy="105" rx="30" ry="8" fill="url(#plateGradient)" stroke="#4B5563" stroke-width="2"/>
+  <!-- 右托盤 -->
+  <ellipse cx="155" cy="105" rx="30" ry="8" fill="url(#plateGradient)" stroke="#4B5563" stroke-width="2"/>
+</svg>

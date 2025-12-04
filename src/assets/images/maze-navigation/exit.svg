@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <linearGradient id="exitGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22C55E"/>
+      <stop offset="100%" style="stop-color:#16A34A"/>
+    </linearGradient>
+  </defs>
+  <!-- 旗桿 -->
+  <rect x="6" y="4" width="3" height="26" rx="1" fill="#78350F"/>
+  <!-- 旗幟 -->
+  <path d="M9 4L28 10L9 16Z" fill="url(#exitGradient)" stroke="#15803D" stroke-width="1"/>
+  <!-- 星星 -->
+  <path d="M18 10L19.5 8L21 10L19 9.5L18 10Z" fill="#FFFFFF"/>
+  <!-- 底座 -->
+  <ellipse cx="8" cy="30" rx="6" ry="2" fill="#5D3A1A"/>
+</svg>

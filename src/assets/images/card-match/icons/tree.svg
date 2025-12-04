@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
+  <defs>
+    <linearGradient id="treeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22C55E"/>
+      <stop offset="100%" style="stop-color:#16A34A"/>
+    </linearGradient>
+    <linearGradient id="trunkGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#92400E"/>
+      <stop offset="50%" style="stop-color:#78350F"/>
+      <stop offset="100%" style="stop-color:#92400E"/>
+    </linearGradient>
+  </defs>
+  <!-- 樹幹 -->
+  <rect x="34" y="50" width="12" height="24" rx="2" fill="url(#trunkGradient)"/>
+  <!-- 樹冠 -->
+  <ellipse cx="40" cy="35" rx="28" ry="30" fill="url(#treeGradient)"/>
+  <!-- 陰影 -->
+  <ellipse cx="45" cy="45" rx="20" ry="18" fill="#16A34A" opacity="0.5"/>
+  <!-- 高光 -->
+  <ellipse cx="30" cy="25" rx="10" ry="12" fill="#4ADE80" opacity="0.5"/>
+  <!-- 小蘋果 -->
+  <circle cx="28" cy="40" r="4" fill="#EF4444"/>
+  <circle cx="52" cy="35" r="3" fill="#EF4444"/>
+</svg>

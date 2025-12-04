@@ -1,714 +1,427 @@
 <script setup lang="ts">
 /**
- * 撲克記憶 (PokerMemory) - 撲克牌翻牌配對遊戲
- * 訓練：短期記憶、視覺空間記憶、注意力
+ * 撲克記憶遊戲（重構版）
+ * 使用新的遊戲核心架構
  */
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import type { Difficulty } from '@/types/game'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useGameState } from '@/games/core/useGameState'
+import { useGameTimer } from '@/games/core/useGameTimer'
+import { useGameAudio } from '@/games/core/useGameAudio'
+import {
+  generateCards,
+  flipAllCards,
+  coverAllCards,
+  flipCard,
+  coverCards,
+  checkMatch,
+  markAsMatched,
+  getFlippedCards,
+  isGameComplete,
+  getMatchedCount,
+  calculatePairScore,
+  calculateCompletionBonus,
+  calculateGrade,
+  summarizeResult,
+  DIFFICULTY_CONFIGS,
+  SUIT_COLORS,
+  type PokerCard,
+  type PokerMemoryConfig,
+  type Suit,
+} from '@/games/logic/pokerMemory'
 
-// 簡化的遊戲結果介面（用於組件內部）
-interface SimpleGameResult {
-  score: number
-  maxScore: number
-  accuracy: number
-  timeSpent: number
-  details: Record<string, unknown>
-}
+// UI 元件
+import GameReadyScreen from './ui/GameReadyScreen.vue'
+import GameResultScreen from './ui/GameResultScreen.vue'
+import GameStatusBar from './ui/GameStatusBar.vue'
+import GameFeedback from './ui/GameFeedback.vue'
 
-const props = defineProps<{
-  difficulty: Difficulty
-}>()
+// ===== Props & Emits =====
+const props = withDefaults(defineProps<{
+  difficulty?: 'easy' | 'medium' | 'hard'
+}>(), {
+  difficulty: 'easy'
+})
 
 const emit = defineEmits<{
-  (e: 'complete', result: SimpleGameResult): void
-  (e: 'scoreUpdate', score: number): void
+  'game:start': []
+  'game:end': [result: any]
+  'score:update': [score: number]
+  'state:change': [phase: string]
 }>()
 
-// 遊戲設定
-const GAME_CONFIG = {
-  easy: {
-    pairs: 6,
-    gridCols: 4,
-    timeLimit: 120,
-    peekTime: 3000,
-    points: 20,
-  },
-  medium: {
-    pairs: 8,
-    gridCols: 4,
-    timeLimit: 120,
-    peekTime: 2000,
-    points: 25,
-  },
-  hard: {
-    pairs: 12,
-    gridCols: 6,
-    timeLimit: 120,
-    peekTime: 1500,
-    points: 30,
-  },
-}
+// ===== 遊戲配置 =====
+const config = computed<PokerMemoryConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
 
-// 撲克牌花色和數字
-const SUITS = ['♠', '♥', '♦', '♣']
-const SUIT_COLORS: Record<string, string> = {
-  '♠': '#1a1a1a',
-  '♥': '#ef4444',
-  '♦': '#ef4444',
-  '♣': '#1a1a1a',
-}
-const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
+// ===== 遊戲狀態 =====
+const {
+  phase,
+  score,
+  feedback,
+  showFeedback,
+  isPlaying,
+  startGame: startGameState,
+  finishGame: finishGameState,
+  setFeedback,
+  clearFeedback,
+  resetGame,
+  addScore,
+} = useGameState({
+  totalRounds: config.value.pairs,
+  timeLimit: config.value.timeLimit,
+})
 
-interface Card {
-  id: number
-  suit: string
-  rank: string
-  isFlipped: boolean
-  isMatched: boolean
-}
-
-// 遊戲狀態
-const config = computed(() => GAME_CONFIG[props.difficulty])
-const gameState = ref<'ready' | 'peek' | 'playing' | 'finished'>('ready')
-const cards = ref<Card[]>([])
-const flippedCards = ref<Card[]>([])
-const matchedPairs = ref(0)
-const moves = ref(0)
-const score = ref(0)
-const timeLeft = ref(0)
-const startTime = ref(0)
-const peekCountdown = ref(0)
-
-let timer: ReturnType<typeof setInterval> | null = null
-let peekTimer: ReturnType<typeof setInterval> | null = null
-
-// 進度
-const progress = computed(() => 
-  (matchedPairs.value / config.value.pairs) * 100
-)
-
-// 產生卡片
-function generateCards() {
-  const totalCards = config.value.pairs * 2
-  const cardPairs: { suit: string; rank: string }[] = []
-  
-  // 隨機選擇花色和數字組合
-  const usedCombos = new Set<string>()
-  while (cardPairs.length < config.value.pairs) {
-    const suitIndex = Math.floor(Math.random() * SUITS.length)
-    const rankIndex = Math.floor(Math.random() * RANKS.length)
-    const suit = SUITS[suitIndex] ?? '♠'
-    const rank = RANKS[rankIndex] ?? 'A'
-    const combo = `${suit}${rank}`
-    
-    if (!usedCombos.has(combo)) {
-      usedCombos.add(combo)
-      cardPairs.push({ suit, rank })
-    }
-  }
-  
-  // 建立成對卡片
-  const newCards: Card[] = []
-  cardPairs.forEach((card, index) => {
-    newCards.push({
-      id: index * 2,
-      suit: card.suit,
-      rank: card.rank,
-      isFlipped: false,
-      isMatched: false,
-    })
-    newCards.push({
-      id: index * 2 + 1,
-      suit: card.suit,
-      rank: card.rank,
-      isFlipped: false,
-      isMatched: false,
-    })
-  })
-  
-  // 洗牌
-  for (let i = newCards.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    const temp = newCards[i]
-    if (newCards[j] !== undefined && temp !== undefined) {
-      newCards[i] = newCards[j]!
-      newCards[j] = temp
-    }
-  }
-  
-  cards.value = newCards
-}
-
-// 開始遊戲
 function startGame() {
-  generateCards()
-  matchedPairs.value = 0
+  startGameState()
+  emit('game:start')
+}
+
+function finishGame() {
+  finishGameState()
+}
+
+// ===== 倒數計時器 =====
+const {
+  time: timeLeft,
+  isWarning: timerWarning,
+  start: startTimer,
+  stop: stopTimer,
+  reset: resetTimer,
+} = useGameTimer({
+  mode: 'countdown',
+  initialTime: config.value.timeLimit,
+  warningTime: 15,
+  onTimeUp: () => handleTimeUp(),
+})
+
+// ===== 音效 =====
+const { playCorrect, playWrong, playEnd, playFlip, playMatch, preloadDefaultSounds } = useGameAudio()
+
+// ===== 遊戲資料 =====
+const cards = ref<PokerCard[]>([])
+const moves = ref(0)
+const isPreviewing = ref(false)
+const isChecking = ref(false)
+const selectedCards = ref<number[]>([])
+
+// ===== 計算屬性 =====
+const gridCols = computed(() => config.value.gridCols)
+const matchedPairs = computed(() => getMatchedCount(cards.value))
+
+// ===== 回饋映射 =====
+const feedbackData = computed(() => {
+  if (!feedback.value) return undefined
+  return {
+    type: feedback.value.type,
+    show: showFeedback.value,
+    message: feedback.value.message,
+    score: feedback.value.score,
+  }
+})
+
+// ===== 遊戲說明 =====
+const gameInstructions = [
+  '開始會短暫顯示所有牌面',
+  '記住每張撲克牌的位置',
+  '翻開兩張相同花色和數字的牌即配對成功',
+  '在時間內完成所有配對',
+]
+
+// ===== 工具函數 =====
+function getSuitColor(suit: string): string {
+  return SUIT_COLORS[suit as Suit] || '#333'
+}
+
+// ===== 遊戲方法 =====
+function handleStart() {
+  // 生成卡片
+  cards.value = generateCards(config.value)
   moves.value = 0
-  score.value = 0
-  timeLeft.value = config.value.timeLimit
-  startTime.value = Date.now()
+  selectedCards.value = []
+  isChecking.value = false
   
-  // 偷看階段
-  gameState.value = 'peek'
-  peekCountdown.value = Math.ceil(config.value.peekTime / 1000)
+  // 開始遊戲
+  startGame()
+  resetTimer(config.value.timeLimit)
   
-  // 翻開所有卡片
-  cards.value.forEach(card => card.isFlipped = true)
+  // 預覽階段
+  isPreviewing.value = true
+  cards.value = flipAllCards(cards.value)
   
-  // 倒數計時
-  peekTimer = setInterval(() => {
-    peekCountdown.value--
-    if (peekCountdown.value <= 0) {
-      clearInterval(peekTimer!)
-      peekTimer = null
-      startPlaying()
-    }
-  }, 1000)
+  setTimeout(() => {
+    // 蓋上所有卡片
+    cards.value = coverAllCards(cards.value)
+    isPreviewing.value = false
+    
+    // 開始計時
+    startTimer()
+  }, config.value.peekTime)
 }
 
-// 開始正式遊戲
-function startPlaying() {
-  // 蓋上所有卡片
-  cards.value.forEach(card => card.isFlipped = false)
-  gameState.value = 'playing'
+function handleCardClick(cardId: number) {
+  if (!isPlaying.value || isPreviewing.value || isChecking.value) return
   
-  // 遊戲計時器
-  timer = setInterval(() => {
-    timeLeft.value--
-    if (timeLeft.value <= 0) {
-      endGame()
-    }
-  }, 1000)
-}
-
-// 翻牌
-function flipCard(card: Card) {
-  if (
-    gameState.value !== 'playing' ||
-    card.isFlipped ||
-    card.isMatched ||
-    flippedCards.value.length >= 2
-  ) {
-    return
-  }
+  const card = cards.value.find(c => c.id === cardId)
+  if (!card || card.isFlipped || card.isMatched) return
+  if (selectedCards.value.length >= 2) return
   
-  card.isFlipped = true
-  flippedCards.value.push(card)
+  // 翻開卡片
+  playFlip()
+  cards.value = flipCard(cards.value, cardId)
+  selectedCards.value = [...selectedCards.value, cardId]
   
-  if (flippedCards.value.length === 2) {
+  // 檢查是否翻開兩張
+  if (selectedCards.value.length === 2) {
     moves.value++
-    checkMatch()
-  }
-}
-
-// 檢查配對
-function checkMatch() {
-  const card1 = flippedCards.value[0]
-  const card2 = flippedCards.value[1]
-  
-  if (!card1 || !card2) return
-  
-  if (card1.suit === card2.suit && card1.rank === card2.rank) {
-    // 配對成功
-    card1.isMatched = true
-    card2.isMatched = true
-    matchedPairs.value++
+    isChecking.value = true
     
-    // 計分：配對成功 + 剩餘時間獎勵
-    const timeBonus = Math.floor(timeLeft.value / 10)
-    const moveBonus = Math.max(0, 10 - Math.floor(moves.value / config.value.pairs))
-    const pairScore = config.value.points + timeBonus + moveBonus
-    score.value += pairScore
-    emit('scoreUpdate', score.value)
+    const card1 = cards.value.find(c => c.id === selectedCards.value[0])
+    const card2 = cards.value.find(c => c.id === selectedCards.value[1])
     
-    flippedCards.value = []
-    
-    // 檢查是否完成
-    if (matchedPairs.value === config.value.pairs) {
-      setTimeout(endGame, 500)
+    if (card1 && card2 && checkMatch(card1, card2)) {
+      // 配對成功
+      setTimeout(() => {
+        playMatch()
+        cards.value = markAsMatched(cards.value, selectedCards.value)
+        
+        const pairScore = calculatePairScore(config.value, timeLeft.value, moves.value)
+        addScore(pairScore)
+        setFeedback('correct', `配對成功！+${pairScore}`, pairScore)
+        
+        setTimeout(() => {
+          clearFeedback()
+          selectedCards.value = []
+          isChecking.value = false
+          
+          // 檢查是否完成
+          if (isGameComplete(cards.value)) {
+            handleGameEnd(true)
+          }
+        }, 300)
+      }, 300)
+    } else {
+      // 配對失敗
+      setTimeout(() => {
+        playWrong()
+        setFeedback('wrong')
+        
+        setTimeout(() => {
+          cards.value = coverCards(cards.value, selectedCards.value)
+          clearFeedback()
+          selectedCards.value = []
+          isChecking.value = false
+        }, 500)
+      }, 500)
     }
-  } else {
-    // 配對失敗，延遲翻回
-    setTimeout(() => {
-      card1.isFlipped = false
-      card2.isFlipped = false
-      flippedCards.value = []
-    }, 800)
   }
 }
 
-// 結束遊戲
-function endGame() {
-  gameState.value = 'finished'
-  if (timer) {
-    clearInterval(timer)
-    timer = null
-  }
-  
-  const timeSpent = config.value.timeLimit - timeLeft.value
-  const accuracy = matchedPairs.value / moves.value || 0
-  const completed = matchedPairs.value === config.value.pairs
+function handleTimeUp() {
+  handleGameEnd(false)
+}
+
+function handleGameEnd(completed: boolean) {
+  stopTimer()
+  playEnd()
   
   // 完成獎勵
   if (completed) {
-    const completionBonus = Math.floor(timeLeft.value * 2)
-    score.value += completionBonus
-    emit('scoreUpdate', score.value)
+    const bonus = calculateCompletionBonus(timeLeft.value)
+    addScore(bonus)
   }
   
-  const result: SimpleGameResult = {
-    score: score.value,
-    maxScore: config.value.pairs * (config.value.points + 20),
-    accuracy,
-    timeSpent,
-    details: {
-      pairs: config.value.pairs,
-      matchedPairs: matchedPairs.value,
-      moves: moves.value,
-      completed,
-      timeLeft: timeLeft.value,
-    },
-  }
+  const result = summarizeResult(
+    score.value,
+    matchedPairs.value,
+    moves.value,
+    timeLeft.value,
+    config.value
+  )
   
-  emit('complete', result)
+  finishGame()
+  emit('game:end', result)
 }
 
-// 格式化時間
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
+function handleRestart() {
+  stopTimer()
+  resetGame()
+  handleStart()
 }
 
-// 清理
-onUnmounted(() => {
-  if (timer) clearInterval(timer)
-  if (peekTimer) clearInterval(peekTimer)
+function handleQuit() {
+  stopTimer()
+  resetGame()
+}
+
+// ===== 生命週期 =====
+onMounted(() => {
+  preloadDefaultSounds()
 })
 
 // 監聽難度變化
 watch(() => props.difficulty, () => {
-  if (gameState.value === 'ready') {
-    generateCards()
+  if (phase.value !== 'ready') {
+    stopTimer()
+    resetGame()
   }
-})
-
-onMounted(() => {
-  generateCards()
 })
 </script>
 
 <template>
-  <div class="poker-memory">
+  <div class="poker-memory-game w-full max-w-3xl mx-auto p-4">
     <!-- 準備畫面 -->
-    <div v-if="gameState === 'ready'" class="ready-screen">
-      <div class="game-icon">🃏</div>
-      <h2>撲克記憶</h2>
-      <p class="description">
-        找出相同的撲克牌配對，訓練視覺空間記憶！
-      </p>
-      <div class="rules">
-        <h3>遊戲規則</h3>
-        <ul>
-          <li>開始會短暫顯示所有牌面</li>
-          <li>記住位置後找出配對</li>
-          <li>共 {{ config.pairs }} 對牌</li>
-          <li>時間限制 {{ formatTime(config.timeLimit) }}</li>
-        </ul>
-      </div>
-      <button class="start-btn" @click="startGame">
-        開始遊戲
-      </button>
-    </div>
-
-    <!-- 偷看階段 -->
-    <div v-else-if="gameState === 'peek'" class="peek-screen">
-      <div class="peek-message">
-        <div class="peek-icon">👀</div>
-        <div class="peek-text">記住這些牌的位置！</div>
-        <div class="peek-countdown">{{ peekCountdown }}</div>
-      </div>
-      
-      <div 
-        class="card-grid"
-        :style="{ gridTemplateColumns: `repeat(${config.gridCols}, 1fr)` }"
-      >
-        <div
-          v-for="card in cards"
-          :key="card.id"
-          class="card flipped"
-        >
-          <div class="card-inner">
-            <div class="card-back">🂠</div>
-            <div class="card-front" :style="{ color: SUIT_COLORS[card.suit] }">
-              <span class="card-rank">{{ card.rank }}</span>
-              <span class="card-suit">{{ card.suit }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <GameReadyScreen
+      v-if="phase === 'ready'"
+      title="撲克記憶"
+      icon="🃏"
+      :rules="gameInstructions"
+      :difficulty="difficulty === 'medium' ? 'normal' : difficulty"
+      @start="handleStart"
+    />
 
     <!-- 遊戲進行中 -->
-    <template v-else-if="gameState === 'playing'">
+    <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 狀態列 -->
-      <div class="status-bar">
+      <GameStatusBar
+        :time="timeLeft"
+        :score="score"
+        :progress="Math.round((matchedPairs / config.pairs) * 100)"
+        :is-warning="timerWarning"
+        show-timer
+        show-score
+        show-progress
+      />
+
+      <!-- 遊戲資訊 -->
+      <div class="game-info flex justify-center gap-6 mt-4 text-sm">
         <div class="stat">
-          <span class="label">時間</span>
-          <span class="value" :class="{ warning: timeLeft <= 10 }">
-            {{ formatTime(timeLeft) }}
-          </span>
+          <span class="text-gray-500 dark:text-gray-400">配對：</span>
+          <span class="font-bold">{{ matchedPairs }} / {{ config.pairs }}</span>
         </div>
         <div class="stat">
-          <span class="label">配對</span>
-          <span class="value">{{ matchedPairs }} / {{ config.pairs }}</span>
-        </div>
-        <div class="stat">
-          <span class="label">步數</span>
-          <span class="value">{{ moves }}</span>
-        </div>
-        <div class="stat">
-          <span class="label">分數</span>
-          <span class="value">{{ score }}</span>
+          <span class="text-gray-500 dark:text-gray-400">翻牌：</span>
+          <span class="font-bold">{{ moves }}</span>
         </div>
       </div>
 
-      <!-- 進度條 -->
-      <div class="progress-bar">
-        <div class="progress-fill" :style="{ width: `${progress}%` }"></div>
-      </div>
-
-      <!-- 卡片區域 -->
+      <!-- 預覽提示 -->
       <div 
-        class="card-grid"
-        :style="{ gridTemplateColumns: `repeat(${config.gridCols}, 1fr)` }"
+        v-if="isPreviewing" 
+        class="preview-hint text-center mt-4 text-lg font-medium text-blue-500"
+      >
+        記住牌面位置...
+      </div>
+
+      <!-- 卡片網格 -->
+      <div 
+        class="card-grid mt-6 grid gap-2 md:gap-3 mx-auto"
+        :style="{ 
+          gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+          maxWidth: `${gridCols * 80}px`
+        }"
       >
         <div
           v-for="card in cards"
           :key="card.id"
-          class="card"
-          :class="{ 
-            flipped: card.isFlipped, 
-            matched: card.isMatched 
+          class="poker-card aspect-[2/3] rounded-lg cursor-pointer transition-all duration-300 transform perspective-1000"
+          :class="{
+            'is-flipped': card.isFlipped,
+            'is-matched': card.isMatched,
+            'hover:scale-105': !card.isFlipped && !card.isMatched && !isChecking && !isPreviewing,
           }"
-          @click="flipCard(card)"
+          @click="handleCardClick(card.id)"
         >
-          <div class="card-inner">
-            <div class="card-back">🂠</div>
-            <div class="card-front" :style="{ color: SUIT_COLORS[card.suit] }">
-              <span class="card-rank">{{ card.rank }}</span>
-              <span class="card-suit">{{ card.suit }}</span>
+          <!-- 卡片內容 -->
+          <div class="card-inner relative w-full h-full">
+            <!-- 卡片背面 -->
+            <div 
+              class="card-back absolute inset-0 rounded-lg flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800"
+              :class="{ 'hidden': card.isFlipped }"
+            >
+              <div class="pattern text-4xl opacity-50">🂠</div>
+            </div>
+            
+            <!-- 卡片正面 -->
+            <div 
+              class="card-front absolute inset-0 rounded-lg flex flex-col items-center justify-center bg-white dark:bg-gray-100 border-2"
+              :class="{ 
+                'hidden': !card.isFlipped,
+                'border-green-500': card.isMatched,
+                'border-gray-300': !card.isMatched,
+              }"
+            >
+              <div 
+                class="rank text-2xl md:text-3xl font-bold"
+                :style="{ color: getSuitColor(card.suit) }"
+              >
+                {{ card.rank }}
+              </div>
+              <div 
+                class="suit text-3xl md:text-4xl"
+                :style="{ color: getSuitColor(card.suit) }"
+              >
+                {{ card.suit }}
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- 回饋動畫 -->
+      <GameFeedback
+        v-if="feedbackData"
+        :type="feedbackData.type"
+        :show="feedbackData.show"
+        :message="feedbackData.message"
+        :score="feedbackData.score"
+      />
     </template>
 
-    <!-- 結束畫面 -->
-    <div v-else class="finished-screen">
-      <div class="result-icon">
-        {{ matchedPairs === config.pairs ? '🎊' : '⏰' }}
-      </div>
-      <h2>{{ matchedPairs === config.pairs ? '恭喜完成！' : '時間到！' }}</h2>
-      <div class="final-score">{{ score }} 分</div>
-      <div class="stats">
-        <div class="stat-item">
-          <span class="stat-label">配對成功</span>
-          <span class="stat-value">{{ matchedPairs }} / {{ config.pairs }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">翻牌次數</span>
-          <span class="stat-value">{{ moves }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">用時</span>
-          <span class="stat-value">{{ formatTime(config.timeLimit - timeLeft) }}</span>
-        </div>
-        <div class="stat-item" v-if="matchedPairs === config.pairs">
-          <span class="stat-label">效率</span>
-          <span class="stat-value">
-            {{ Math.round((matchedPairs / moves) * 100) }}%
-          </span>
-        </div>
-      </div>
-    </div>
+    <!-- 結果畫面 -->
+    <GameResultScreen
+      v-else-if="phase === 'finished' || phase === 'result'"
+      :score="score"
+      :time-spent="config.timeLimit - timeLeft"
+      :grade="calculateGrade(score, config.pairs * config.points) as 'S' | 'A' | 'B' | 'C' | 'D' | 'F'"
+      :custom-stats="[
+        { label: '配對', value: `${matchedPairs}/${config.pairs}`, icon: '🃏' },
+        { label: '翻牌', value: moves, icon: '👆' },
+        { label: '剩餘時間', value: `${timeLeft}秒`, icon: '⏱️' },
+      ]"
+      @replay="handleRestart"
+      @back="handleQuit"
+    />
   </div>
 </template>
 
 <style scoped>
-.poker-memory {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1rem;
-  min-height: 400px;
+.poker-card {
+  min-height: 90px;
 }
 
-/* 準備畫面 */
-.ready-screen {
-  text-align: center;
-  max-width: 400px;
-}
-
-.game-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-}
-
-.ready-screen h2 {
-  font-size: 1.75rem;
-  color: var(--color-text);
-  margin-bottom: 0.5rem;
-}
-
-.description {
-  color: var(--color-text-secondary);
-  margin-bottom: 1.5rem;
-}
-
-.rules {
-  background: var(--color-bg-soft);
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  text-align: left;
-}
-
-.rules h3 {
-  font-size: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.rules ul {
-  list-style: disc;
-  padding-left: 1.5rem;
-  color: var(--color-text-secondary);
-}
-
-.rules li {
-  margin: 0.25rem 0;
-}
-
-.start-btn {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
-  border: none;
-  padding: 1rem 3rem;
-  font-size: 1.25rem;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.start-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
-}
-
-/* 偷看階段 */
-.peek-screen {
-  text-align: center;
-  width: 100%;
-}
-
-.peek-message {
-  margin-bottom: 1.5rem;
-}
-
-.peek-icon {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
-}
-
-.peek-text {
-  font-size: 1.25rem;
-  color: var(--color-heading);
-  margin-bottom: 0.5rem;
-}
-
-.peek-countdown {
-  font-size: 3rem;
-  font-weight: bold;
-  color: #f59e0b;
-  animation: pulse-countdown 1s infinite;
-}
-
-@keyframes pulse-countdown {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-/* 狀態列 */
-.status-bar {
-  display: flex;
-  justify-content: space-around;
-  width: 100%;
-  max-width: 500px;
-  margin-bottom: 1rem;
-}
-
-.stat {
-  text-align: center;
-}
-
-.stat .label {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-}
-
-.stat .value {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: var(--color-text);
-}
-
-.stat .value.warning {
-  color: #ef4444;
-  animation: pulse 1s infinite;
-}
-
-.progress-bar {
-  width: 100%;
-  max-width: 500px;
-  height: 8px;
-  background: var(--color-bg-soft);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 1.5rem;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #f59e0b, #fbbf24);
-  transition: width 0.3s ease;
-}
-
-/* 卡片網格 */
-.card-grid {
-  display: grid;
-  gap: 0.5rem;
-  width: 100%;
-  max-width: 500px;
+.perspective-1000 {
   perspective: 1000px;
 }
 
-.card {
-  aspect-ratio: 2.5/3.5;
-  cursor: pointer;
+.card-inner {
+  transition: transform 0.3s;
   transform-style: preserve-3d;
-  transition: transform 0.4s;
 }
 
-.card.flipped {
+.is-flipped .card-inner {
   transform: rotateY(180deg);
 }
 
-.card.matched {
-  opacity: 0.6;
-  cursor: default;
-}
-
-.card-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-}
-
-.card-front,
-.card-back {
-  position: absolute;
-  width: 100%;
-  height: 100%;
+.card-back,
+.card-front {
   backface-visibility: hidden;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-}
-
-.card-back {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  font-size: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .card-front {
-  background: var(--color-surface);
   transform: rotateY(180deg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  border: 1px solid var(--color-border);
 }
 
-.card-rank {
-  font-size: 1.5rem;
-}
-
-.card-suit {
-  font-size: 1.75rem;
-}
-
-/* 結束畫面 */
-.finished-screen {
-  text-align: center;
-}
-
-.result-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-}
-
-.finished-screen h2 {
-  font-size: 1.5rem;
-  color: var(--color-text);
-  margin-bottom: 0.5rem;
-}
-
-.final-score {
-  font-size: 3rem;
-  font-weight: bold;
-  color: #f59e0b;
-  margin-bottom: 1.5rem;
-}
-
-.stats {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  background: var(--color-bg-soft);
-  padding: 1.5rem;
-  border-radius: 12px;
-  min-width: 250px;
-}
-
-.stat-item {
-  display: flex;
-  justify-content: space-between;
-}
-
-.stat-label {
-  color: var(--color-text-muted);
-}
-
-.stat-value {
-  font-weight: bold;
-}
-
-/* 響應式調整 */
-@media (max-width: 480px) {
-  .card-rank {
-    font-size: 1.25rem;
-  }
-  
-  .card-suit {
-    font-size: 1.5rem;
-  }
-  
-  .card-back {
-    font-size: 1.5rem;
-  }
+.is-matched {
+  opacity: 0.7;
+  transform: scale(0.95);
 }
 </style>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
+  <defs>
+    <linearGradient id="catGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FB923C"/>
+      <stop offset="100%" style="stop-color:#EA580C"/>
+    </linearGradient>
+  </defs>
+  <!-- 耳朵 -->
+  <path d="M20 30L15 10L30 22Z" fill="url(#catGradient)"/>
+  <path d="M60 30L65 10L50 22Z" fill="url(#catGradient)"/>
+  <!-- 內耳 -->
+  <path d="M22 26L19 14L28 22Z" fill="#FED7AA"/>
+  <path d="M58 26L61 14L52 22Z" fill="#FED7AA"/>
+  <!-- 頭部 -->
+  <ellipse cx="40" cy="42" rx="28" ry="24" fill="url(#catGradient)"/>
+  <!-- 臉部白色區域 -->
+  <ellipse cx="40" cy="50" rx="16" ry="12" fill="#FFF7ED"/>
+  <!-- 眼睛 -->
+  <ellipse cx="30" cy="38" rx="6" ry="7" fill="#FFFFFF"/>
+  <ellipse cx="50" cy="38" rx="6" ry="7" fill="#FFFFFF"/>
+  <ellipse cx="31" cy="39" rx="3" ry="4" fill="#22C55E"/>
+  <ellipse cx="51" cy="39" rx="3" ry="4" fill="#22C55E"/>
+  <circle cx="32" cy="38" r="1.5" fill="#000000"/>
+  <circle cx="52" cy="38" r="1.5" fill="#000000"/>
+  <!-- 鼻子 -->
+  <path d="M40 48L37 52L43 52Z" fill="#F472B6"/>
+  <!-- 嘴巴 -->
+  <path d="M40 52Q36 56 34 54" stroke="#EA580C" stroke-width="2" fill="none"/>
+  <path d="M40 52Q44 56 46 54" stroke="#EA580C" stroke-width="2" fill="none"/>
+  <!-- 鬍鬚 -->
+  <line x1="18" y1="48" x2="32" y2="50" stroke="#1F2937" stroke-width="1.5"/>
+  <line x1="18" y1="52" x2="32" y2="52" stroke="#1F2937" stroke-width="1.5"/>
+  <line x1="48" y1="50" x2="62" y2="48" stroke="#1F2937" stroke-width="1.5"/>
+  <line x1="48" y1="52" x2="62" y2="52" stroke="#1F2937" stroke-width="1.5"/>
+</svg>
