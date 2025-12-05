@@ -397,6 +397,45 @@ const difficultyReasonText = computed(() => {
   }
 })
 
+// 遊戲載入中元件
+const GameLoadingComponent = {
+  template: `
+    <div class="flex flex-col items-center justify-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
+      <p class="text-[var(--color-text-secondary)]">遊戲載入中...</p>
+    </div>
+  `
+}
+
+// 遊戲載入錯誤元件
+const GameErrorComponent = {
+  template: `
+    <div class="flex flex-col items-center justify-center py-12 text-center">
+      <div class="text-6xl mb-4">😵</div>
+      <h3 class="text-xl font-bold text-red-500 mb-2">遊戲載入失敗</h3>
+      <p class="text-[var(--color-text-secondary)] mb-4">抱歉，遊戲元件無法載入，請稍後再試。</p>
+      <button 
+        class="btn btn-primary"
+        @click="$emit('retry')"
+      >
+        重新載入
+      </button>
+    </div>
+  `,
+  emits: ['retry']
+}
+
+// 動態載入遊戲元件（含錯誤處理）
+const createGameComponent = (loader: () => Promise<any>) => {
+  return defineAsyncComponent({
+    loader,
+    loadingComponent: GameLoadingComponent,
+    errorComponent: GameErrorComponent,
+    delay: 200,
+    timeout: 30000,
+  })
+}
+
 // 動態載入遊戲元件
 const gameComponent = computed(() => {
   if (!gameId.value) return null
@@ -404,36 +443,37 @@ const gameComponent = computed(() => {
   // 根據遊戲 ID 載入對應元件 - 完整 15 款遊戲
   const componentMap: Record<string, ReturnType<typeof defineAsyncComponent>> = {
     // 注意力訓練
-    'whack-a-mole': defineAsyncComponent(() => import('@/components/games/WhackAMole.vue')),
-    'spot-difference': defineAsyncComponent(() => import('@/components/games/SpotDifference.vue')),
-    'number-connect': defineAsyncComponent(() => import('@/components/games/NumberConnect.vue')),
+    'whack-a-mole': createGameComponent(() => import('@/components/games/WhackAMole.vue')),
+    'spot-difference': createGameComponent(() => import('@/components/games/SpotDifference.vue')),
+    'number-connect': createGameComponent(() => import('@/components/games/NumberConnect.vue')),
     // 記憶力訓練
-    'card-match': defineAsyncComponent(() => import('@/components/games/CardMatch.vue')),
-    'instant-memory': defineAsyncComponent(() => import('@/components/games/InstantMemory.vue')),
-    'poker-memory': defineAsyncComponent(() => import('@/components/games/PokerMemory.vue')),
-    'audio-memory': defineAsyncComponent(() => import('@/components/games/AudioMemory.vue')),
-    'gesture-memory': defineAsyncComponent(() => import('@/components/games/GestureMemory.vue')),
+    'card-match': createGameComponent(() => import('@/components/games/CardMatch.vue')),
+    'instant-memory': createGameComponent(() => import('@/components/games/InstantMemory.vue')),
+    'poker-memory': createGameComponent(() => import('@/components/games/PokerMemory.vue')),
+    'audio-memory': createGameComponent(() => import('@/components/games/AudioMemory.vue')),
+    'gesture-memory': createGameComponent(() => import('@/components/games/GestureMemory.vue')),
     // 執行功能訓練
-    'balance-scale': defineAsyncComponent(() => import('@/components/games/BalanceScale.vue')),
-    'maze-navigation': defineAsyncComponent(() => import('@/components/games/MazeNavigation.vue')),
-    'math-calc': defineAsyncComponent(() => import('@/components/games/MathCalc.vue')),
+    'balance-scale': createGameComponent(() => import('@/components/games/BalanceScale.vue')),
+    'maze-navigation': createGameComponent(() => import('@/components/games/MazeNavigation.vue')),
+    'math-calc': createGameComponent(() => import('@/components/games/MathCalc.vue')),
     // 視覺空間訓練
-    'clock-drawing': defineAsyncComponent(() => import('@/components/games/ClockDrawingTest.vue')),
-    'pattern-reasoning': defineAsyncComponent(() => import('@/components/games/PatternReasoning.vue')),
+    'clock-drawing': createGameComponent(() => import('@/components/games/ClockDrawingTest.vue')),
+    'pattern-reasoning': createGameComponent(() => import('@/components/games/PatternReasoning.vue')),
     // 反應能力訓練
-    'rock-paper-scissors': defineAsyncComponent(() => import('@/components/games/RockPaperScissors.vue')),
-    'rhythm-mimic': defineAsyncComponent(() => import('@/components/games/RhythmMimic.vue')),
+    'rock-paper-scissors': createGameComponent(() => import('@/components/games/RockPaperScissors.vue')),
+    'rhythm-mimic': createGameComponent(() => import('@/components/games/RhythmMimic.vue')),
     // 其他測試
-    'stroop-test': defineAsyncComponent(() => import('@/components/games/StroopTest.vue')),
+    'stroop-test': createGameComponent(() => import('@/components/games/StroopTest.vue')),
   }
   
   return componentMap[gameId.value] || null
 })
 
-// 格式化時間
+// 格式化時間（防止負數）
 function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
+  const safeSeconds = Math.max(0, seconds)
+  const mins = Math.floor(safeSeconds / 60)
+  const secs = safeSeconds % 60
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
@@ -590,7 +630,7 @@ function handleBack(): void {
 // 返回選擇難度頁面
 function goBack(): void {
   if (gameId.value) {
-    router.push(`/games/preview/${gameId.value}`)
+    router.push(`/games/${gameId.value}/preview`)
   } else {
     router.push('/games')
   }

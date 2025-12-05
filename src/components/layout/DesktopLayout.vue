@@ -110,7 +110,11 @@ provide('desktopLayout', {
       <!-- Logo 區域 -->
       <div class="sidebar-header">
         <div class="app-logo">
-          <span class="app-logo-icon">{{ appIcon }}</span>
+          <img 
+            src="/logo.svg" 
+            alt="健腦訓練" 
+            class="app-logo-img"
+          />
           <Transition name="fade">
             <span v-if="showExpanded" class="app-logo-text">{{ appName }}</span>
           </Transition>
@@ -226,6 +230,13 @@ provide('desktopLayout', {
   align-items: center;
   gap: var(--spacing-sm);
   overflow: hidden;
+}
+
+.app-logo-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .app-logo-icon {

@@ -75,6 +75,9 @@ export interface DifficultyConfig {
   settings: Record<string, SettingValue>
 }
 
+// 遊戲時間模式
+export type GameTimeMode = Difficulty | 'mini'
+
 // 遊戲定義（用於 gameRegistry）
 export interface GameDefinition {
   id: string
@@ -84,7 +87,7 @@ export interface GameDefinition {
   icon: string
   category: string
   difficulties: Difficulty[]
-  estimatedTime: Record<Difficulty, number>  // 各難度預估時間
+  estimatedTime: Record<GameTimeMode, number>  // 各難度預估時間（含迷你模式）
   cognitiveWeights: CognitiveWeights
   defaultSettings: Record<Difficulty, Record<string, SettingValue>>
   // 新增：子難度設定調整係數

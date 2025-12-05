@@ -94,7 +94,14 @@ const headerClass = computed(() => {
       <!-- 標題區 -->
       <div class="header-center">
         <slot name="header-title">
-          <h1 v-if="title" class="header-title">{{ title }}</h1>
+          <div class="header-title-wrapper">
+            <img 
+              src="/logo.svg" 
+              alt="健腦訓練" 
+              class="header-logo"
+            />
+            <h1 v-if="title" class="header-title">{{ title }}</h1>
+          </div>
         </slot>
       </div>
 
@@ -196,6 +203,19 @@ const headerClass = computed(() => {
   flex: 1;
   text-align: center;
   overflow: hidden;
+}
+
+.header-title-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+}
+
+.header-logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 
 .header-title {

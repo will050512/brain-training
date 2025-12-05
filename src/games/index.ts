@@ -11,7 +11,7 @@ export function registerAllGames(): void {
     icon: '🐹',
     category: 'reaction',
     difficulties: ['easy', 'medium', 'hard'],
-    estimatedTime: { easy: 30, medium: 45, hard: 60 },
+    estimatedTime: { mini: 20, easy: 30, medium: 45, hard: 60 },
     cognitiveWeights: {
       reaction: 0.8,
       attention: 0.2,
@@ -37,7 +37,7 @@ export function registerAllGames(): void {
     icon: '⚖️',
     category: 'logic',
     difficulties: ['easy', 'medium', 'hard'],
-    estimatedTime: { easy: 60, medium: 90, hard: 120 },
+    estimatedTime: { mini: 40, easy: 60, medium: 90, hard: 120 },
     cognitiveWeights: {
       logic: 0.9,
       cognition: 0.1,
@@ -63,7 +63,7 @@ export function registerAllGames(): void {
     icon: '🃏',
     category: 'memory',
     difficulties: ['easy', 'medium', 'hard'],
-    estimatedTime: { easy: 60, medium: 90, hard: 120 },
+    estimatedTime: { mini: 40, easy: 60, medium: 90, hard: 120 },
     cognitiveWeights: {
       memory: 0.85,
       attention: 0.15,
@@ -89,7 +89,7 @@ export function registerAllGames(): void {
     icon: '🎨',
     category: 'cognition',
     difficulties: ['easy', 'medium', 'hard'],
-    estimatedTime: { easy: 60, medium: 90, hard: 120 },
+    estimatedTime: { mini: 30, easy: 60, medium: 90, hard: 120 },
     cognitiveWeights: {
       cognition: 0.7,
       reaction: 0.3,
@@ -115,7 +115,7 @@ export function registerAllGames(): void {
     icon: '🧭',
     category: 'coordination',
     difficulties: ['easy', 'medium', 'hard'],
-    estimatedTime: { easy: 60, medium: 90, hard: 120 },
+    estimatedTime: { mini: 40, easy: 60, medium: 90, hard: 120 },
     cognitiveWeights: {
       coordination: 0.75,
       logic: 0.25,
@@ -141,7 +141,7 @@ export function registerAllGames(): void {
     icon: '🔍',
     category: 'attention',
     difficulties: ['easy', 'medium', 'hard'],
-    estimatedTime: { easy: 90, medium: 120, hard: 150 },
+    estimatedTime: { mini: 50, easy: 90, medium: 120, hard: 150 },
     cognitiveWeights: {
       attention: 0.8,
       cognition: 0.2,
@@ -167,7 +167,7 @@ export function registerAllGames(): void {
     icon: '🧮',
     category: 'logic',
     difficulties: ['easy', 'medium', 'hard'],
-    estimatedTime: { easy: 90, medium: 90, hard: 90 },
+    estimatedTime: { mini: 45, easy: 90, medium: 90, hard: 90 },
     cognitiveWeights: {
       logic: 0.6,
       attention: 0.3,
@@ -194,7 +194,7 @@ export function registerAllGames(): void {
     icon: '🧠',
     category: 'memory',
     difficulties: ['easy', 'medium', 'hard'],
-    estimatedTime: { easy: 60, medium: 90, hard: 120 },
+    estimatedTime: { mini: 30, easy: 60, medium: 90, hard: 120 },
     cognitiveWeights: {
       memory: 0.8,
       attention: 0.2,
@@ -220,7 +220,7 @@ export function registerAllGames(): void {
     icon: '🃏',
     category: 'memory',
     difficulties: ['easy', 'medium', 'hard'],
-    estimatedTime: { easy: 120, medium: 120, hard: 120 },
+    estimatedTime: { mini: 60, easy: 120, medium: 120, hard: 120 },
     cognitiveWeights: {
       memory: 0.7,
       attention: 0.3,
@@ -246,7 +246,7 @@ export function registerAllGames(): void {
     icon: '✊',
     category: 'reaction',
     difficulties: ['easy', 'medium', 'hard'],
-    estimatedTime: { easy: 60, medium: 75, hard: 90 },
+    estimatedTime: { mini: 30, easy: 60, medium: 75, hard: 90 },
     cognitiveWeights: {
       reaction: 0.5,
       cognition: 0.4,
@@ -273,7 +273,7 @@ export function registerAllGames(): void {
     icon: '👋',
     category: 'memory',
     difficulties: ['easy', 'medium', 'hard'],
-    estimatedTime: { easy: 90, medium: 120, hard: 150 },
+    estimatedTime: { mini: 45, easy: 90, medium: 120, hard: 150 },
     cognitiveWeights: {
       memory: 0.6,
       coordination: 0.4,
@@ -299,7 +299,7 @@ export function registerAllGames(): void {
     icon: '🔢',
     category: 'attention',
     difficulties: ['easy', 'medium', 'hard'],
-    estimatedTime: { easy: 60, medium: 90, hard: 120 },
+    estimatedTime: { mini: 30, easy: 60, medium: 90, hard: 120 },
     cognitiveWeights: {
       attention: 0.6,
       cognition: 0.4,
@@ -325,7 +325,7 @@ export function registerAllGames(): void {
     icon: '🔷',
     category: 'logic',
     difficulties: ['easy', 'medium', 'hard'],
-    estimatedTime: { easy: 90, medium: 120, hard: 150 },
+    estimatedTime: { mini: 50, easy: 90, medium: 120, hard: 150 },
     cognitiveWeights: {
       logic: 0.6,
       cognition: 0.4,
@@ -351,7 +351,7 @@ export function registerAllGames(): void {
     icon: '🎵',
     category: 'memory',
     difficulties: ['easy', 'medium', 'hard'],
-    estimatedTime: { easy: 90, medium: 120, hard: 150 },
+    estimatedTime: { mini: 45, easy: 90, medium: 120, hard: 150 },
     cognitiveWeights: {
       memory: 0.6,
       attention: 0.4,
@@ -377,7 +377,7 @@ export function registerAllGames(): void {
     icon: '🥁',
     category: 'coordination',
     difficulties: ['easy', 'medium', 'hard'],
-    estimatedTime: { easy: 90, medium: 120, hard: 150 },
+    estimatedTime: { mini: 45, easy: 90, medium: 120, hard: 150 },
     cognitiveWeights: {
       coordination: 0.6,
       reaction: 0.4,

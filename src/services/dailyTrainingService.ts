@@ -63,12 +63,16 @@ export interface PersonalizedDifficultyRecommendation {
 }
 
 // 時長對應遊戲數量配置
-// 調整最小遊戲數確保能覆蓋全部 6 個維度
-const DURATION_GAME_CONFIG: Record<DailyTrainingDuration, { min: number; max: number }> = {
-  10: { min: 6, max: 6 },   // 確保至少 6 個遊戲覆蓋 6 維度
-  15: { min: 6, max: 7 },
-  20: { min: 6, max: 8 },
-  30: { min: 6, max: 10 }
+// 10 分鐘使用迷你模式遊戲（平均每個約 40 秒），其他時長使用標準模式
+const DURATION_GAME_CONFIG: Record<DailyTrainingDuration, { 
+  min: number
+  max: number
+  useMiniMode: boolean  // 是否使用迷你模式
+}> = {
+  10: { min: 6, max: 6, useMiniMode: true },   // 迷你模式：6 個遊戲 × 40 秒 ≈ 4 分鐘（含緩衝）
+  15: { min: 6, max: 7, useMiniMode: false },  // 標準模式
+  20: { min: 6, max: 8, useMiniMode: false },
+  30: { min: 6, max: 10, useMiniMode: false }
 }
 
 // Mini-Cog 分數對應基礎難度
@@ -123,7 +127,7 @@ export function selectGamesForTraining(
   duration: DailyTrainingDuration,
   cognitiveScores: CognitiveScores,
   recentGames: string[] = []
-): GameDefinition[] {
+): { games: GameDefinition[]; useMiniMode: boolean } {
   const config = DURATION_GAME_CONFIG[duration]
   const allGames = gameRegistry.getAll()
   const weaknesses = analyzeWeaknesses(cognitiveScores)
@@ -232,7 +236,7 @@ export function selectGamesForTraining(
     }
   }
   
-  return selectedGames
+  return { games: selectedGames, useMiniMode: config.useMiniMode }
 }
 
 /**
@@ -256,7 +260,7 @@ export async function createDailyTrainingPlan(
   const recentGames = recentSessions.slice(0, 5).map(s => s.gameId)
   
   // 選擇遊戲
-  const selectedGames = selectGamesForTraining(duration, cognitiveScores, recentGames)
+  const { games: selectedGames, useMiniMode } = selectGamesForTraining(duration, cognitiveScores, recentGames)
   
   // 建立計畫項目
   const games: TrainingGameItem[] = await Promise.all(
@@ -266,12 +270,15 @@ export async function createDailyTrainingPlan(
       const difficulty = currentDiff?.difficulty || 'easy'
       const subDifficulty = currentDiff?.subDifficulty || 2
       
+      // 根據是否為迷你模式選擇時間
+      const timeMode = useMiniMode ? 'mini' : difficulty
+      
       return {
         gameId: game.id,
         game,
         difficulty,
         subDifficulty,
-        estimatedTime: game.estimatedTime[difficulty],
+        estimatedTime: game.estimatedTime[timeMode],
         targetDimensions: getGameDimensions(game),
         isCompleted: false,
         order: index + 1
@@ -432,20 +439,21 @@ export async function restartTraining(
 ): Promise<DailyTrainingPlan> {
   const today = new Date().toISOString().split('T')[0] || new Date().toLocaleDateString('sv-SE')
   const recentGames = recentSessions.slice(0, 5).map(s => s.gameId)
-  const selectedGames = selectGamesForTraining(duration, cognitiveScores, recentGames)
+  const { games: selectedGames, useMiniMode } = selectGamesForTraining(duration, cognitiveScores, recentGames)
   
   const games: TrainingGameItem[] = await Promise.all(
     selectedGames.map(async (game, index) => {
       const currentDiff = await getCurrentGameDifficulty(odId, game.id)
       const difficulty = currentDiff?.difficulty || 'easy'
       const subDifficulty = currentDiff?.subDifficulty || 2
+      const timeMode = useMiniMode ? 'mini' : difficulty
       
       return {
         gameId: game.id,
         game,
         difficulty,
         subDifficulty,
-        estimatedTime: game.estimatedTime[difficulty],
+        estimatedTime: game.estimatedTime[timeMode],
         targetDimensions: getGameDimensions(game),
         isCompleted: false,
         order: index + 1
@@ -743,7 +751,7 @@ export async function createPersonalizedTrainingPlan(
   const recentGames = recentSessions.slice(0, 5).map(s => s.gameId)
   
   // 選擇遊戲
-  const selectedGames = selectGamesForTraining(duration, cognitiveScores, recentGames)
+  const { games: selectedGames, useMiniMode } = selectGamesForTraining(duration, cognitiveScores, recentGames)
   
   // 為每個遊戲計算個人化難度
   const games: TrainingGameItem[] = await Promise.all(
@@ -760,12 +768,15 @@ export async function createPersonalizedTrainingPlan(
       
       console.log(`[個人化訓練] ${game.name}: ${recommendation.difficulty}-${recommendation.subDifficulty} (${recommendation.reason})`)
       
+      // 根據是否為迷你模式選擇時間
+      const timeMode = useMiniMode ? 'mini' : recommendation.difficulty
+      
       return {
         gameId: game.id,
         game,
         difficulty: recommendation.difficulty,
         subDifficulty: recommendation.subDifficulty,
-        estimatedTime: game.estimatedTime[recommendation.difficulty],
+        estimatedTime: game.estimatedTime[timeMode],
         targetDimensions: getGameDimensions(game),
         isCompleted: false,
         order: index + 1

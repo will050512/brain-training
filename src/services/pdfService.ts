@@ -6,6 +6,23 @@
 
 import jsPDF from 'jspdf'
 
+// 引入 LOGO Base64（由 generate-icons 腳本產生）
+let LOGO_BASE64: string | null = null
+let LOGO_WIDTH = 40
+let LOGO_HEIGHT = 12
+
+// 動態載入 LOGO
+async function loadLogo(): Promise<void> {
+  try {
+    const logoModule = await import('@/assets/logo-base64')
+    LOGO_BASE64 = logoModule.LOGO_BASE64
+    LOGO_WIDTH = logoModule.LOGO_WIDTH / 5  // 縮放至適合 PDF 的大小
+    LOGO_HEIGHT = logoModule.LOGO_HEIGHT / 5
+  } catch {
+    console.warn('無法載入 LOGO，將使用文字標題')
+  }
+}
+
 // ===== 類型定義 =====
 
 export interface ReportUserInfo {
@@ -216,6 +233,9 @@ export async function generateCognitiveReport(
   behaviorSummary: BehaviorSummary | null,
   options: PdfReportOptions = {}
 ): Promise<Blob> {
+  // 載入 LOGO
+  await loadLogo()
+  
   const doc = await initPdfWithFont()
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
@@ -274,7 +294,7 @@ export async function generateCognitiveReport(
 }
 
 /**
- * 繪製報告標題
+ * 繪製報告標題（含 LOGO）
  */
 function drawReportHeader(
   doc: jsPDF, 
@@ -283,6 +303,13 @@ function drawReportHeader(
   margin: number
 ): number {
   let y = startY
+
+  // 嘗試添加 LOGO
+  if (LOGO_BASE64) {
+    const logoX = pageWidth / 2 - LOGO_WIDTH / 2
+    doc.addImage(LOGO_BASE64, 'PNG', logoX, y, LOGO_WIDTH, LOGO_HEIGHT)
+    y += LOGO_HEIGHT + 5
+  }
 
   // 主標題
   doc.setFontSize(FONT_SIZES.title)
