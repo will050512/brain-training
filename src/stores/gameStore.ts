@@ -10,7 +10,8 @@ import type {
   Difficulty,
   SettingValue,
   CognitiveDimension,
-  CognitiveScores 
+  CognitiveScores,
+  GameDefinition
 } from '@/types'
 import { gameRegistry } from '@/core/gameRegistry'
 import { 
@@ -28,12 +29,37 @@ import {
 } from '@/services/scoreCalculator'
 import { useUserStore } from './userStore'
 
+// 每日訓練隊列項目
+export interface TrainingQueueItem {
+  gameId: string
+  game: GameDefinition
+  difficulty: Difficulty
+  isCompleted: boolean
+  score?: number
+  duration?: number
+}
+
+// 當日訓練摘要
+export interface TodayTrainingSummary {
+  completedGames: number
+  totalGames: number
+  averageScore: number
+  totalDuration: number
+  bestGameName?: string
+  bestGameScore?: number
+}
+
 export const useGameStore = defineStore('game', () => {
   // 狀態
   const sessions = ref<GameSession[]>([])
   const currentGameId = ref<string | null>(null)
   const currentDifficulty = ref<Difficulty>('easy')
   const isLoading = ref(false)
+  
+  // 每日訓練相關狀態
+  const dailyTrainingQueue = ref<TrainingQueueItem[]>([])
+  const currentTrainingIndex = ref(0)
+  const isFromDailyTraining = ref(false)
   
   // 計算屬性
   const currentGame = computed(() => {
@@ -200,12 +226,168 @@ export const useGameStore = defineStore('game', () => {
     currentDifficulty.value = 'easy'
   }
 
+  // ===== 每日訓練相關功能 =====
+
+  /**
+   * 設定每日訓練隊列
+   */
+  function setDailyTrainingQueue(games: Array<{ gameId: string; difficulty: Difficulty }>): void {
+    dailyTrainingQueue.value = games.map(item => {
+      const game = gameRegistry.get(item.gameId)
+      return {
+        gameId: item.gameId,
+        game: game!,
+        difficulty: item.difficulty,
+        isCompleted: false
+      }
+    }).filter(item => item.game)
+    currentTrainingIndex.value = 0
+    isFromDailyTraining.value = true
+  }
+
+  /**
+   * 標記當前訓練遊戲完成
+   */
+  function completeCurrentTrainingGame(score: number, duration: number): void {
+    if (currentTrainingIndex.value < dailyTrainingQueue.value.length) {
+      const current = dailyTrainingQueue.value[currentTrainingIndex.value]
+      if (current) {
+        current.isCompleted = true
+        current.score = score
+        current.duration = duration
+      }
+    }
+  }
+
+  /**
+   * 移動到下一個訓練遊戲
+   */
+  function moveToNextTrainingGame(): boolean {
+    if (currentTrainingIndex.value < dailyTrainingQueue.value.length - 1) {
+      currentTrainingIndex.value++
+      return true
+    }
+    return false
+  }
+
+  /**
+   * 取得下一個訓練遊戲
+   */
+  function getNextTrainingGame(): TrainingQueueItem | null {
+    const nextIndex = currentTrainingIndex.value + 1
+    if (nextIndex < dailyTrainingQueue.value.length) {
+      return dailyTrainingQueue.value[nextIndex] || null
+    }
+    return null
+  }
+
+  /**
+   * 取得當前訓練遊戲
+   */
+  function getCurrentTrainingGame(): TrainingQueueItem | null {
+    return dailyTrainingQueue.value[currentTrainingIndex.value] || null
+  }
+
+  /**
+   * 檢查是否完成所有每日訓練
+   */
+  function isAllTrainingCompleted(): boolean {
+    return dailyTrainingQueue.value.length > 0 && 
+           dailyTrainingQueue.value.every(item => item.isCompleted)
+  }
+
+  /**
+   * 取得今日訓練摘要
+   */
+  function getTodayTrainingSummary(): TodayTrainingSummary {
+    const completed = dailyTrainingQueue.value.filter(item => item.isCompleted)
+    const scores = completed.map(item => item.score || 0)
+    const durations = completed.map(item => item.duration || 0)
+    
+    let bestGame: TrainingQueueItem | null = null
+    let bestScore = 0
+    for (const item of completed) {
+      if ((item.score || 0) > bestScore) {
+        bestScore = item.score || 0
+        bestGame = item
+      }
+    }
+
+    return {
+      completedGames: completed.length,
+      totalGames: dailyTrainingQueue.value.length,
+      averageScore: scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0,
+      totalDuration: durations.reduce((a, b) => a + b, 0),
+      bestGameName: bestGame?.game?.name,
+      bestGameScore: bestGame?.score
+    }
+  }
+
+  /**
+   * 清除每日訓練狀態
+   */
+  function clearDailyTraining(): void {
+    dailyTrainingQueue.value = []
+    currentTrainingIndex.value = 0
+    isFromDailyTraining.value = false
+  }
+
+  /**
+   * 取得其他維度的未玩遊戲（用於遊戲結束推薦）
+   */
+  function getUnplayedGamesByOtherDimensions(currentGameId: string, count: number = 4): GameDefinition[] {
+    const currentGame = gameRegistry.get(currentGameId)
+    if (!currentGame) return []
+
+    // 取得當前遊戲的主要維度
+    const currentDimensions = Object.entries(currentGame.cognitiveWeights)
+      .filter(([_, weight]) => (weight as number) > 0.3)
+      .map(([dim]) => dim as CognitiveDimension)
+
+    // 取得今日已玩過的遊戲
+    const today = new Date().toDateString()
+    const todayPlayedIds = new Set(
+      sessions.value
+        .filter(s => new Date(s.createdAt).toDateString() === today)
+        .map(s => s.gameId)
+    )
+    todayPlayedIds.add(currentGameId)
+
+    // 找其他維度的遊戲
+    const allGames = gameRegistry.getAll()
+    const otherDimensionGames: Array<{ game: GameDefinition; score: number }> = []
+
+    for (const game of allGames) {
+      if (todayPlayedIds.has(game.id)) continue
+
+      // 計算與當前遊戲的維度差異分數
+      const gameDimensions = Object.entries(game.cognitiveWeights)
+        .filter(([_, weight]) => (weight as number) > 0.3)
+        .map(([dim]) => dim as CognitiveDimension)
+
+      // 優先推薦不同維度的遊戲
+      const overlap = gameDimensions.filter(d => currentDimensions.includes(d)).length
+      const diversityScore = gameDimensions.length - overlap
+
+      otherDimensionGames.push({ game, score: diversityScore })
+    }
+
+    // 按多樣性分數排序，取前 N 個
+    return otherDimensionGames
+      .sort((a, b) => b.score - a.score)
+      .slice(0, count)
+      .map(item => item.game)
+  }
+
   return {
     // 狀態
     sessions,
     currentGameId,
     currentDifficulty,
     isLoading,
+    dailyTrainingQueue,
+    currentTrainingIndex,
+    isFromDailyTraining,
 
     // 計算屬性
     currentGame,
@@ -226,5 +408,16 @@ export const useGameStore = defineStore('game', () => {
     getGamesByDimension,
     getDifficultySettings,
     clearSelection,
+    
+    // 每日訓練
+    setDailyTrainingQueue,
+    completeCurrentTrainingGame,
+    moveToNextTrainingGame,
+    getNextTrainingGame,
+    getCurrentTrainingGame,
+    isAllTrainingCompleted,
+    getTodayTrainingSummary,
+    clearDailyTraining,
+    getUnplayedGamesByOtherDimensions,
   }
 })

@@ -133,7 +133,26 @@ function getTypeIcon(type: SupplementType | string): string {
     case 'phosphatidylserine': return '🧬'
     case 'coq10': return '⚡'
     case 'curcumin': return '🧡'
+    case 'ginkgoGoldenCordyceps': return '🍄'
+    case 'antrodiaCinnamomea': return '🌰'
     default: return '📦'
+  }
+}
+
+// 開啟合作廠商官網
+function openPartnerUrl(url: string): void {
+  if (url) {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+}
+
+// 開啟商城（預留）
+function openShopUrl(url: string): void {
+  if (url) {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  } else {
+    // 商城尚未上線，顯示提示
+    alert('商城即將上線，敬請期待！')
   }
 }
 
@@ -234,7 +253,13 @@ onMounted(() => {
           v-for="rec in filteredRecommendations"
           :key="rec.id"
           class="recommendation-card"
+          :class="{ 'partner-card': rec.supplement.isPartnerProduct }"
         >
+          <!-- 合作夥伴標籤 -->
+          <div v-if="rec.supplement.isPartnerProduct" class="partner-badge">
+            🤝 合作夥伴
+          </div>
+          
           <!-- 優先級標籤 -->
           <div 
             class="priority-tag"
@@ -248,6 +273,9 @@ onMounted(() => {
             <div class="rec-title-section">
               <h3 class="rec-name">{{ rec.supplement.name }}</h3>
               <span class="rec-type">{{ rec.supplement.nameEn }}</span>
+              <span v-if="rec.supplement.partnerName" class="partner-name">
+                by {{ rec.supplement.partnerName }}
+              </span>
             </div>
           </div>
 
@@ -306,6 +334,24 @@ onMounted(() => {
               </ul>
             </details>
           </div>
+          
+          <!-- 合作廠商操作按鈕 -->
+          <div v-if="rec.supplement.isPartnerProduct" class="partner-actions">
+            <button 
+              v-if="rec.supplement.partnerUrl"
+              class="action-btn learn-more-btn"
+              @click="openPartnerUrl(rec.supplement.partnerUrl)"
+            >
+              🔗 了解更多
+            </button>
+            <button 
+              class="action-btn buy-btn"
+              :class="{ disabled: !rec.supplement.shopUrl }"
+              @click="openShopUrl(rec.supplement.shopUrl || '')"
+            >
+              🛒 {{ rec.supplement.shopUrl ? '立即購買' : '即將上線' }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -315,12 +361,21 @@ onMounted(() => {
           v-for="supplement in filteredSupplements"
           :key="supplement.type"
           class="supplement-card"
+          :class="{ 'partner-card': supplement.isPartnerProduct }"
         >
+          <!-- 合作夥伴標籤 -->
+          <div v-if="supplement.isPartnerProduct" class="partner-badge">
+            🤝 合作夥伴
+          </div>
+          
           <div class="sup-header">
             <span class="sup-icon">{{ getTypeIcon(supplement.type) }}</span>
             <div class="sup-title-section">
               <h3 class="sup-name">{{ supplement.name }}</h3>
               <span class="sup-name-en">{{ supplement.nameEn }}</span>
+              <span v-if="supplement.partnerName" class="partner-name">
+                by {{ supplement.partnerName }}
+              </span>
             </div>
           </div>
 
@@ -372,6 +427,24 @@ onMounted(() => {
                 </li>
               </ul>
             </details>
+          </div>
+          
+          <!-- 合作廠商操作按鈕 -->
+          <div v-if="supplement.isPartnerProduct" class="partner-actions">
+            <button 
+              v-if="supplement.partnerUrl"
+              class="action-btn learn-more-btn"
+              @click="openPartnerUrl(supplement.partnerUrl)"
+            >
+              🔗 了解更多
+            </button>
+            <button 
+              class="action-btn buy-btn"
+              :class="{ disabled: !supplement.shopUrl }"
+              @click="openShopUrl(supplement.shopUrl || '')"
+            >
+              🛒 {{ supplement.shopUrl ? '立即購買' : '即將上線' }}
+            </button>
           </div>
         </div>
       </div>
@@ -798,6 +871,89 @@ onMounted(() => {
   color: var(--color-text-secondary);
 }
 
+/* 合作廠商卡片樣式 */
+.partner-card {
+  border: 2px solid var(--color-primary) !important;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+}
+
+.partner-badge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  z-index: 1;
+}
+
+.recommendation-card,
+.supplement-card {
+  position: relative;
+}
+
+.partner-name {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  margin-top: 0.25rem;
+}
+
+.partner-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.action-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.learn-more-btn {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.learn-more-btn:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.buy-btn {
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  color: white;
+}
+
+.buy-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.buy-btn.disabled {
+  background: var(--color-text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.buy-btn.disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 /* 底部提醒 */
 .bottom-reminder {
   margin-top: 2rem;
@@ -822,6 +978,10 @@ onMounted(() => {
   }
   
   .toggle-section {
+    flex-direction: column;
+  }
+  
+  .partner-actions {
     flex-direction: column;
   }
 }

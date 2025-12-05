@@ -195,21 +195,82 @@
           </div>
           
           <!-- 按鈕 -->
-          <div class="flex gap-3">
-            <button @click="playAgain" class="btn btn-primary btn-lg flex-1">
-              再玩一次
-            </button>
-            <router-link to="/games" class="btn btn-secondary btn-lg flex-1">
-              選擇其他遊戲
-            </router-link>
-          </div>
+          <!-- 每日訓練模式 -->
+          <template v-if="isFromDailyTraining">
+            <div class="flex gap-3 mb-4">
+              <button @click="playAgain" class="btn btn-secondary btn-lg flex-1">
+                🔄 再玩一次
+              </button>
+              <button 
+                v-if="gameStore.getNextTrainingGame()"
+                @click="continueToNextGame" 
+                class="btn btn-primary btn-lg flex-1"
+              >
+                ➡️ 下一個遊戲
+              </button>
+              <router-link 
+                v-else
+                to="/report" 
+                class="btn btn-primary btn-lg flex-1"
+              >
+                📊 查看報告
+              </router-link>
+            </div>
+            
+            <!-- 訓練進度 -->
+            <div class="text-sm text-[var(--color-text-secondary)] mb-4">
+              訓練進度：{{ gameStore.currentTrainingIndex + 1 }} / {{ gameStore.dailyTrainingQueue.length }}
+            </div>
+          </template>
           
-          <router-link to="/report" class="btn btn-secondary w-full mt-4">
+          <!-- 普通遊戲模式 - 2x2 推薦網格 -->
+          <template v-else>
+            <button @click="playAgain" class="btn btn-primary btn-lg w-full mb-4">
+              🔄 再玩一次
+            </button>
+            
+            <!-- 推薦其他遊戲 -->
+            <div v-if="recommendedGames.length > 0" class="mt-6">
+              <h3 class="text-sm font-medium text-[var(--color-text-secondary)] mb-3 text-left">
+                🎯 試試其他維度的訓練
+              </h3>
+              <div class="grid grid-cols-2 gap-3">
+                <button
+                  v-for="game in recommendedGames"
+                  :key="game.id"
+                  @click="startRecommendedGame(game)"
+                  class="recommended-game-card"
+                >
+                  <span class="text-2xl mb-1">{{ game.icon }}</span>
+                  <span class="text-sm font-medium text-[var(--color-text)] truncate w-full">
+                    {{ game.name }}
+                  </span>
+                  <span class="text-xs text-[var(--color-text-muted)]">
+                    {{ game.primaryDimension }}
+                  </span>
+                </button>
+              </div>
+            </div>
+            
+            <router-link to="/games" class="btn btn-secondary w-full mt-4">
+              🎮 更多遊戲
+            </router-link>
+          </template>
+          
+          <router-link to="/report" class="btn btn-ghost w-full mt-2 text-sm">
             📊 查看報告
           </router-link>
         </div>
       </div>
     </div>
+    
+    <!-- 完成慶祝動畫 -->
+    <TrainingCompleteModal
+      v-if="showCompletionModal"
+      :summary="gameStore.getTodayTrainingSummary()"
+      @close="handleCompletionClose"
+      @skip="handleCompletionClose"
+    />
   </div>
 </template>
 
@@ -218,8 +279,9 @@ import { ref, computed, onMounted, onUnmounted, watch, defineAsyncComponent } fr
 import { useRoute, useRouter } from 'vue-router'
 import { useGameStore, useUserStore } from '@/stores'
 import { useResponsive } from '@/composables/useResponsive'
-import { DIFFICULTIES, type GameResult, type GameState } from '@/types/game'
+import { DIFFICULTIES, type GameResult, type GameState, type GameDefinition } from '@/types/game'
 import { calculateDifficultyAdjustment, applyDifficultyAdjustment, getFullDifficultyLabel, type DifficultyAdjustment } from '@/services/adaptiveDifficultyService'
+import TrainingCompleteModal from '@/components/ui/TrainingCompleteModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -241,6 +303,15 @@ const elapsedTime = ref(0)
 const gameResult = ref<GameResult | null>(null)
 const difficultyAdjustment = ref<DifficultyAdjustment | null>(null)
 let timerInterval: ReturnType<typeof setInterval> | null = null
+
+// 每日訓練相關
+const showCompletionModal = ref(false)
+const recommendedGames = ref<GameDefinition[]>([])
+
+// 判斷是否從每日訓練進入
+const isFromDailyTraining = computed(() => {
+  return route.query.fromDaily === 'true' || gameStore.isFromDailyTraining
+})
 
 // 取得遊戲 ID
 const gameId = computed(() => route.params.gameId as string)
@@ -420,6 +491,20 @@ async function handleGameEnd(result: GameResult): Promise<void> {
   // 記錄遊戲結果
   await gameStore.recordGameResult(result)
   
+  // 如果是每日訓練，標記完成並更新狀態
+  if (isFromDailyTraining.value) {
+    gameStore.completeCurrentTrainingGame(result.score, result.duration)
+    
+    // 檢查是否完成所有訓練
+    if (gameStore.isAllTrainingCompleted()) {
+      // 顯示慶祝動畫
+      showCompletionModal.value = true
+    }
+  } else {
+    // 從普通遊戲選擇進入，載入推薦遊戲
+    recommendedGames.value = gameStore.getUnplayedGamesByOtherDimensions(gameId.value, 4)
+  }
+  
   // 計算難度調整
   try {
     const odId = userStore.currentUser?.id || ''
@@ -448,6 +533,31 @@ function playAgain(): void {
   elapsedTime.value = 0
   gameResult.value = null
   difficultyAdjustment.value = null
+  recommendedGames.value = []
+}
+
+// 繼續下一個訓練遊戲
+function continueToNextGame(): void {
+  const nextGame = gameStore.getNextTrainingGame()
+  if (nextGame) {
+    gameStore.moveToNextTrainingGame()
+    gameStore.selectGame(nextGame.gameId)
+    gameStore.selectDifficulty(nextGame.difficulty)
+    router.push(`/games/${nextGame.gameId}?autoStart=true&fromDaily=true`)
+  }
+}
+
+// 開始推薦遊戲
+function startRecommendedGame(game: GameDefinition): void {
+  gameStore.selectGame(game.id)
+  gameStore.selectDifficulty('easy')
+  router.push(`/games/${game.id}/preview`)
+}
+
+// 關閉完成動畫
+function handleCompletionClose(): void {
+  showCompletionModal.value = false
+  gameStore.clearDailyTraining()
 }
 
 // 處理返回
@@ -504,3 +614,52 @@ onMounted(() => {
   }
 })
 </script>
+
+<style scoped>
+/* 推薦遊戲卡片 - 2x2 網格 */
+.recommended-game-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 100px;
+}
+
+.recommended-game-card:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.recommended-game-card:hover .text-\[var\(--color-text\)\] {
+  color: white;
+}
+
+.recommended-game-card:hover .text-\[var\(--color-text-muted\)\] {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.recommended-game-card:active {
+  transform: translateY(0);
+}
+
+/* 響應式調整 */
+@media (max-width: 400px) {
+  .recommended-game-card {
+    padding: 0.75rem;
+    min-height: 80px;
+  }
+  
+  .recommended-game-card span:first-child {
+    font-size: 1.5rem;
+  }
+}
+</style>

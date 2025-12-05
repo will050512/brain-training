@@ -11,7 +11,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'robots.txt', 'offline.html'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'robots.txt', 'offline.html', 'pwa-icon.png'],
       manifest: {
         name: '健腦訓練 - 認知能力評估與訓練',
         short_name: '健腦訓練',
@@ -24,19 +24,19 @@ export default defineConfig({
         start_url: '/brain-training/',
         icons: [
           {
-            src: 'pwa-192x192.svg',
+            src: 'pwa-icon.png',
             sizes: '192x192',
-            type: 'image/svg+xml'
+            type: 'image/png'
           },
           {
-            src: 'pwa-512x512.svg',
+            src: 'pwa-icon.png',
             sizes: '512x512',
-            type: 'image/svg+xml'
+            type: 'image/png'
           },
           {
-            src: 'pwa-512x512.svg',
+            src: 'pwa-icon.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any maskable'
           }
         ]

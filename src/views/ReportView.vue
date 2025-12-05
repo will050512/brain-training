@@ -150,27 +150,10 @@
           <section class="mobile-disclaimer">
             <p>⚠️ 本報告僅供參考，不可作為醫療診斷依據。如有疑慮，請諮詢專業醫師。</p>
           </section>
+          
+          <!-- 底部留白，避免被全域導覽遮擋 -->
+          <div class="h-20"></div>
         </main>
-
-        <!-- 手機版底部快速導覽 -->
-        <nav class="mobile-bottom-nav">
-          <router-link to="/" class="nav-item">
-            <span class="nav-icon">🏠</span>
-            <span class="nav-label">首頁</span>
-          </router-link>
-          <router-link to="/weekly-report" class="nav-item">
-            <span class="nav-icon">📅</span>
-            <span class="nav-label">週報告</span>
-          </router-link>
-          <router-link to="/games" class="nav-item">
-            <span class="nav-icon">🎮</span>
-            <span class="nav-label">遊戲</span>
-          </router-link>
-          <router-link to="/settings" class="nav-item">
-            <span class="nav-icon">⚙️</span>
-            <span class="nav-label">設定</span>
-          </router-link>
-        </nav>
       </div>
     </template>
 

@@ -23,6 +23,8 @@ export type SupplementType =
   | 'phosphatidylserine'  // 磷脂醯絲胺酸 (PS)
   | 'coq10'               // 輔酶 Q10
   | 'curcumin'            // 薑黃素
+  | 'ginkgoGoldenCordyceps' // 銀杏果黃金蟲草（合作廠商：宏潤生技）
+  | 'antrodiaCinnamomea'    // 牛樟芝（合作廠商：神農真菌）
 
 /** 觸發條件類型 */
 export type TriggerCondition = 
@@ -69,12 +71,22 @@ export interface SupplementInfo {
   benefits: string[]
   /** 相關認知維度 */
   relatedDimensions: CognitiveDimension[]
+  /** 認知維度權重（0-1） */
+  dimensionWeights?: Partial<Record<CognitiveDimension, number>>
   /** 建議劑量範圍 */
   dosageRange: string
   /** 注意事項 */
   precautions: string[]
   /** 可能的交互作用 */
   interactions: string[]
+  /** 是否為合作廠商產品 */
+  isPartnerProduct?: boolean
+  /** 合作廠商名稱 */
+  partnerName?: string
+  /** 合作廠商官網 */
+  partnerUrl?: string
+  /** 商城購買連結（預留） */
+  shopUrl?: string
 }
 
 /** 營養品建議 */
@@ -207,11 +219,79 @@ export const SUPPLEMENT_INFO: Record<SupplementType, SupplementInfo> = {
     precautions: ['可能影響膽囊功能', '手術前應停止服用'],
     interactions: ['可能增強抗凝血藥物效果'],
   },
+  
+  // ===== 合作廠商產品 =====
+  
+  ginkgoGoldenCordyceps: {
+    type: 'ginkgoGoldenCordyceps',
+    name: '銀杏果黃金蟲草',
+    nameEn: 'Ginkgo Golden Cordyceps',
+    description: '宏潤生技專利研發，全球唯一以銀杏果培養的黃金蟲草子實體。富含高濃度蟲草素，具有卓越的食用、保健價值。2020年取得經濟部智慧財產局發明專利。',
+    benefits: [
+      '富含高濃度蟲草素，超越傳統冬蟲夏草',
+      '結合銀杏果與蟲草雙重營養價值',
+      '支持認知功能與記憶力維持',
+      '有助於維持腦部健康與反應力',
+      '台灣專利技術，品質有保障'
+    ],
+    relatedDimensions: ['memory', 'cognition', 'reaction', 'attention'],
+    dimensionWeights: {
+      memory: 0.9,
+      cognition: 0.8,
+      attention: 0.6,
+      reaction: 0.5
+    },
+    dosageRange: '依產品標示建議',
+    precautions: ['孕婦及哺乳期婦女應先諮詢醫師', '服用其他藥物者建議諮詢專業人員'],
+    interactions: ['建議與其他保健品間隔服用'],
+    isPartnerProduct: true,
+    partnerName: '宏潤生物科技',
+    partnerUrl: 'https://www.twmit.com/',
+    shopUrl: '', // 預留商城連結
+  },
+  
+  antrodiaCinnamomea: {
+    type: 'antrodiaCinnamomea',
+    name: '牛樟芝',
+    nameEn: 'Antrodia Cinnamomea',
+    description: '神農真菌生技公司提供的台灣特有珍貴真菌，採用100%子實體與固態培育技術。通過衛福部備查的90天毒理實驗，具有高度保健價值。',
+    benefits: [
+      '台灣特有珍貴真菌，營養價值極高',
+      '100%子實體，品質純正',
+      '支持認知功能與注意力',
+      '抗氧化保護，維持腦部健康',
+      '通過多項安全檢驗認證'
+    ],
+    relatedDimensions: ['cognition', 'memory', 'attention'],
+    dimensionWeights: {
+      cognition: 0.7,
+      memory: 0.6,
+      attention: 0.5
+    },
+    dosageRange: '依產品標示建議',
+    precautions: ['孕婦及哺乳期婦女應先諮詢醫師', '肝腎功能異常者請諮詢專業人員'],
+    interactions: ['服用西藥者建議間隔服用'],
+    isPartnerProduct: true,
+    partnerName: '神農真菌生技',
+    partnerUrl: 'https://www.snzjbio.com/',
+    shopUrl: '', // 預留商城連結
+  },
 }
 
 // ===== 預設觸發條件（Placeholder） =====
 
 export const DEFAULT_TRIGGERS: NutritionTrigger[] = [
+  // 記憶力相關觸發（加入合作產品）
+  {
+    id: 'memory_low_partner',
+    dimension: 'memory',
+    condition: 'consecutive_low',
+    threshold: 60,
+    consecutiveDays: 5,
+    supplementTypes: ['ginkgoGoldenCordyceps', 'antrodiaCinnamomea', 'omega3'],
+    priority: 'medium',
+    enabled: true,
+  },
   {
     id: 'memory_low_omega3',
     dimension: 'memory',
@@ -220,6 +300,17 @@ export const DEFAULT_TRIGGERS: NutritionTrigger[] = [
     consecutiveDays: 7,
     supplementTypes: ['omega3', 'phosphatidylserine'],
     priority: 'medium',
+    enabled: true,
+  },
+  // 認知力相關觸發（加入合作產品）
+  {
+    id: 'cognition_decline_partner',
+    dimension: 'cognition',
+    condition: 'declining_trend',
+    threshold: 55,
+    dropPercentage: 10,
+    supplementTypes: ['ginkgoGoldenCordyceps', 'antrodiaCinnamomea', 'vitaminB'],
+    priority: 'high',
     enabled: true,
   },
   {
@@ -232,6 +323,16 @@ export const DEFAULT_TRIGGERS: NutritionTrigger[] = [
     priority: 'medium',
     enabled: true,
   },
+  // 注意力相關觸發（加入合作產品）
+  {
+    id: 'attention_low_partner',
+    dimension: 'attention',
+    condition: 'below_threshold',
+    threshold: 55,
+    supplementTypes: ['ginkgoGoldenCordyceps', 'antrodiaCinnamomea', 'ginkgo'],
+    priority: 'medium',
+    enabled: true,
+  },
   {
     id: 'attention_low_ginkgo',
     dimension: 'attention',
@@ -239,6 +340,17 @@ export const DEFAULT_TRIGGERS: NutritionTrigger[] = [
     threshold: 50,
     supplementTypes: ['ginkgo', 'vitaminB'],
     priority: 'low',
+    enabled: true,
+  },
+  // 反應力相關觸發（加入合作產品）
+  {
+    id: 'reaction_decline_partner',
+    dimension: 'reaction',
+    condition: 'declining_trend',
+    threshold: 50,
+    dropPercentage: 15,
+    supplementTypes: ['ginkgoGoldenCordyceps', 'coq10', 'vitaminB'],
+    priority: 'high',
     enabled: true,
   },
   {
@@ -257,7 +369,7 @@ export const DEFAULT_TRIGGERS: NutritionTrigger[] = [
     condition: 'consecutive_low',
     threshold: 50,
     consecutiveDays: 14,
-    supplementTypes: ['omega3', 'lecithin', 'curcumin'],
+    supplementTypes: ['ginkgoGoldenCordyceps', 'omega3', 'lecithin', 'curcumin'],
     priority: 'high',
     enabled: true,
   },
@@ -412,10 +524,26 @@ export function checkNutritionTriggers(
     }
   }
 
-  // 依優先級排序
+  // 依優先級排序，合作產品加權提升優先級
   return recommendations.sort((a, b) => {
     const priorityOrder = { high: 0, medium: 1, low: 2 }
-    return priorityOrder[a.priority] - priorityOrder[b.priority]
+    let scoreA = priorityOrder[a.priority]
+    let scoreB = priorityOrder[b.priority]
+    
+    // 合作產品加權 -1（優先顯示）
+    if (a.supplement.isPartnerProduct) scoreA -= 1
+    if (b.supplement.isPartnerProduct) scoreB -= 1
+    
+    // 根據維度權重進一步排序
+    const weightA = a.supplement.dimensionWeights?.[a.dimension] || 0
+    const weightB = b.supplement.dimensionWeights?.[b.dimension] || 0
+    
+    if (scoreA !== scoreB) {
+      return scoreA - scoreB
+    }
+    
+    // 同優先級時，權重高的排前面
+    return weightB - weightA
   })
 }
 

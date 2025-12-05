@@ -63,11 +63,12 @@ export interface PersonalizedDifficultyRecommendation {
 }
 
 // 時長對應遊戲數量配置
+// 調整最小遊戲數確保能覆蓋全部 6 個維度
 const DURATION_GAME_CONFIG: Record<DailyTrainingDuration, { min: number; max: number }> = {
-  10: { min: 3, max: 4 },
-  15: { min: 4, max: 5 },
-  20: { min: 5, max: 6 },
-  30: { min: 6, max: 8 }
+  10: { min: 6, max: 6 },   // 確保至少 6 個遊戲覆蓋 6 維度
+  15: { min: 6, max: 7 },
+  20: { min: 6, max: 8 },
+  30: { min: 6, max: 10 }
 }
 
 // Mini-Cog 分數對應基礎難度
@@ -172,21 +173,42 @@ export function selectGamesForTraining(
   let totalTime = 0
   const avgTimePerGame = duration * 60 / ((config.min + config.max) / 2) // 秒
   
-  // 第一輪：確保覆蓋所有維度
+  // 第一輪：確保覆蓋所有 6 個維度（強制）
   for (const dim of allDimensions) {
     if (coveredDimensions.has(dim)) continue
     
+    // 找出能覆蓋此維度且尚未選擇的遊戲，按分數排序
     const candidateGames = scoredGames.filter(({ game }) => {
       const dims = getGameDimensions(game)
       return dims.includes(dim) && !selectedGames.includes(game)
     })
     
-    if (candidateGames.length > 0 && selectedGames.length < config.max) {
+    // 強制選擇一個遊戲來覆蓋此維度
+    if (candidateGames.length > 0) {
       const best = candidateGames[0]?.game
       if (best) {
         selectedGames.push(best)
         getGameDimensions(best).forEach(d => coveredDimensions.add(d))
         totalTime += best.estimatedTime.medium
+      }
+    }
+  }
+  
+  // 檢查是否覆蓋所有維度，如果沒有則嘗試用備選遊戲
+  for (const dim of allDimensions) {
+    if (coveredDimensions.has(dim)) continue
+    
+    // 降低閾值尋找可覆蓋此維度的遊戲
+    const backupGames = allGames.filter(game => {
+      const weight = game.cognitiveWeights[dim] as number || 0
+      return weight > 0.1 && !selectedGames.includes(game)
+    })
+    
+    if (backupGames.length > 0) {
+      const backup = backupGames[0]
+      if (backup) {
+        selectedGames.push(backup)
+        getGameDimensions(backup).forEach(d => coveredDimensions.add(d))
       }
     }
   }
