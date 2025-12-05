@@ -3,8 +3,8 @@
     <div class="modal-content max-w-md animate-slide-up">
       <!-- 圖示 -->
       <div class="text-center mb-6">
-        <div class="text-7xl mb-4 drop-shadow-lg">🧠</div>
-        <h2 class="text-2xl font-bold text-[var(--color-text)]">歡迎使用健腦訓練！</h2>
+        <img src="/pwa-icon.png" alt="愛健腦" class="w-24 h-24 mx-auto mb-4 drop-shadow-lg" />
+        <h2 class="text-2xl font-bold text-[var(--color-text)]">歡迎使用愛健腦！</h2>
       </div>
 
       <!-- 說明文字 -->

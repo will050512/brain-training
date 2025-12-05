@@ -160,3 +160,35 @@ export interface GameContext {
   settings: Record<string, number | string | boolean>
   callbacks: GameCallbacks
 }
+
+// 遊戲狀態更新（統一由遊戲元件 emit 給 GamePlayView）
+export interface GameStatusUpdate {
+  /** 剩餘時間（秒） */
+  timeLeft?: number
+  /** 總時間（秒） */
+  totalTime?: number
+  /** 當前分數 */
+  score?: number
+  /** 正確數 */
+  correctCount?: number
+  /** 錯誤數 */
+  wrongCount?: number
+  /** 連擊數 */
+  combo?: number
+  /** 當前回合 */
+  currentRound?: number
+  /** 總回合數 */
+  totalRounds?: number
+  /** 是否顯示計時器（預設 true） */
+  showTimer?: boolean
+  /** 是否顯示分數（預設 true） */
+  showScore?: boolean
+  /** 是否顯示正確/錯誤計數 */
+  showCounts?: boolean
+  /** 是否顯示連擊 */
+  showCombo?: boolean
+  /** 是否顯示進度 */
+  showProgress?: boolean
+  /** 自訂狀態文字 */
+  statusText?: string
+}

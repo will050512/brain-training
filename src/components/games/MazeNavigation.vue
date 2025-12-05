@@ -4,11 +4,13 @@
  * 使用新的遊戲核心架構
  * 支援觸控滑動手勢控制
  */
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useGameTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
 import { useTouchGesture, type SwipeDirection } from '@/composables/useTouchGesture'
+import { useThrottledEmit } from '@/composables/useThrottledEmit'
+import type { GameStatusUpdate } from '@/types'
 import {
   generateMaze,
   move,
@@ -26,7 +28,6 @@ import {
 
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
-import GameStatusBar from './ui/GameStatusBar.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 
 // ===== Props & Emits =====
@@ -41,7 +42,14 @@ const emit = defineEmits<{
   'game:end': [result: any]
   'score:update': [score: number]
   'state:change': [phase: string]
+  'status-update': [status: GameStatusUpdate]
 }>()
+
+// 節流 emit 狀態更新
+const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
+  (event, data) => emit('status-update', data),
+  100
+)
 
 // ===== 遊戲配置 =====
 const config = computed<MazeConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
@@ -202,8 +210,22 @@ onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
 })
 
+// 監聽狀態變化，節流 emit 給父層
+watchEffect(() => {
+  if (phase.value === 'playing') {
+    throttledEmit({
+      timeLeft: elapsedTime.value,
+      score: score.value,
+      showTimer: true,
+      showScore: false,
+      showProgress: false
+    })
+  }
+})
+
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
+  cleanupThrottle()
 })
 
 // 監聽難度變化
@@ -228,12 +250,6 @@ watch(() => props.difficulty, () => {
 
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
-      <!-- 狀態列 -->
-      <GameStatusBar
-        :time="elapsedTime"
-        show-timer
-      />
-
       <!-- 遊戲資訊 -->
       <div class="game-info flex justify-center gap-6 mt-4 text-sm">
         <div class="stat">

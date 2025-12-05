@@ -17,15 +17,34 @@
     <div class="instructions" v-if="!isComplete">
       <h3>🕐 時鐘繪圖測試</h3>
       <p class="target-time">
-        請在下方畫布上畫一個時鐘，並將指針指向 
+        請{{ currentMode === 'draw' ? '在下方畫布上畫' : '組裝' }}一個時鐘，並將指針指向 
         <strong>{{ actualTargetTime }}</strong>
         <span class="time-hint">（{{ targetTimeDescription }}）</span>
       </p>
-      <p class="hint">提示：先畫圓形，再填入數字 1-12，最後畫指針</p>
+      <p class="hint" v-if="currentMode === 'draw'">提示：先畫圓形，再填入數字 1-12，最後畫指針</p>
+      <p class="hint" v-else>提示：拖放數字到正確位置，然後旋轉指針設定時間</p>
+      
+      <!-- 模式切換按鈕 -->
+      <div class="mode-toggle">
+        <button 
+          class="mode-btn" 
+          :class="{ active: currentMode === 'draw' }"
+          @click="switchMode('draw')"
+        >
+          🖊️ 繪製模式
+        </button>
+        <button 
+          class="mode-btn" 
+          :class="{ active: currentMode === 'assemble' }"
+          @click="switchMode('assemble')"
+        >
+          🧩 組裝模式
+        </button>
+      </div>
     </div>
 
     <!-- Canvas 繪圖區域 -->
-    <div class="canvas-container" v-if="!isComplete">
+    <div class="canvas-container" v-if="!isComplete && currentMode === 'draw'">
       <canvas
         ref="canvasRef"
         :width="responsiveCanvasSize"
@@ -40,8 +59,92 @@
       />
     </div>
 
-    <!-- 繪圖工具列 -->
-    <div class="toolbar" v-if="!isComplete">
+    <!-- 組裝模式區域 -->
+    <div 
+      class="assemble-container" 
+      v-if="!isComplete && currentMode === 'assemble'"
+      ref="assembleContainerRef"
+    >
+      <!-- 時鐘面盤 -->
+      <div 
+        class="clock-face"
+        :style="{ width: clockFaceSize + 'px', height: clockFaceSize + 'px' }"
+      >
+        <!-- 吸附區域指示器（可選） -->
+        <div 
+          v-for="pos in snapPositions" 
+          :key="pos.number"
+          class="snap-indicator"
+          :style="{ left: pos.x + 'px', top: pos.y + 'px' }"
+          :class="{ 'occupied': isPositionOccupied(pos.number) }"
+        >
+          {{ pos.number }}
+        </div>
+
+        <!-- 可拖放的數字 -->
+        <div 
+          v-for="num in assembleNumbers"
+          :key="num.id"
+          class="draggable-number"
+          :class="{ 
+            'dragging': num.isDragging,
+            'snapped': num.snapped,
+            'correct': num.isCorrect
+          }"
+          :style="{ 
+            left: num.x + 'px', 
+            top: num.y + 'px',
+            transform: num.isDragging ? 'scale(1.2)' : 'scale(1)'
+          }"
+          @mousedown="startDragNumber($event, num)"
+          @touchstart.prevent="startDragNumberTouch($event, num)"
+        >
+          {{ num.value }}
+        </div>
+
+        <!-- 時針 -->
+        <div 
+          class="clock-hand hour-hand"
+          :style="{ transform: `rotate(${hourHandAngle}deg)` }"
+          @mousedown="startRotateHand('hour', $event)"
+          @touchstart.prevent="startRotateHandTouch('hour', $event)"
+        >
+          <div class="hand-grip">🔴</div>
+        </div>
+
+        <!-- 分針 -->
+        <div 
+          class="clock-hand minute-hand"
+          :style="{ transform: `rotate(${minuteHandAngle}deg)` }"
+          @mousedown="startRotateHand('minute', $event)"
+          @touchstart.prevent="startRotateHandTouch('minute', $event)"
+        >
+          <div class="hand-grip">🔵</div>
+        </div>
+
+        <!-- 中心點 -->
+        <div class="clock-center"></div>
+      </div>
+
+      <!-- 數字備用區 -->
+      <div class="number-pool" v-if="unplacedNumbers.length > 0">
+        <p class="pool-hint">拖放下方數字到時鐘上：</p>
+        <div class="pool-numbers">
+          <div 
+            v-for="num in unplacedNumbers"
+            :key="'pool-' + num.id"
+            class="pool-number"
+            @mousedown="startDragNumber($event, num)"
+            @touchstart.prevent="startDragNumberTouch($event, num)"
+          >
+            {{ num.value }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 繪圖工具列（僅繪製模式） -->
+    <div class="toolbar" v-if="!isComplete && currentMode === 'draw'">
       <div class="brush-size">
         <label>筆刷粗細：</label>
         <input 
@@ -85,6 +188,34 @@
       <button class="complete-btn" @click="showSelfAssessment">
         ✅ 完成繪圖
       </button>
+    </div>
+
+    <!-- 組裝模式工具列 -->
+    <div class="toolbar assemble-toolbar" v-if="!isComplete && currentMode === 'assemble'">
+      <div class="assemble-info">
+        <span class="info-item">
+          📍 已放置：{{ placedNumbersCount }}/12 個數字
+        </span>
+        <span class="info-item">
+          🕐 時針：{{ Math.round(hourHandAngle) }}°
+        </span>
+        <span class="info-item">
+          🕐 分針：{{ Math.round(minuteHandAngle) }}°
+        </span>
+      </div>
+      
+      <div class="assemble-actions">
+        <button class="tool-btn reset-btn" @click="resetAssemble">
+          🔄 重置
+        </button>
+        <button 
+          class="complete-btn" 
+          @click="completeAssemble"
+          :disabled="placedNumbersCount < 12"
+        >
+          ✅ 完成組裝
+        </button>
+      </div>
     </div>
 
     <!-- 自評量表 -->
@@ -323,6 +454,7 @@ function handleResize() {
 // Refs
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const containerRef = ref<HTMLElement | null>(null)
+const assembleContainerRef = ref<HTMLElement | null>(null)
 const isDrawing = ref(false)
 const currentTool = ref<'pen' | 'eraser'>('pen')
 const brushSize = ref(4)
@@ -330,6 +462,439 @@ const showAssessment = ref(false)
 const isComplete = ref(false)
 const previewImageUrl = ref<string>('')
 const startTime = ref<number>(0)
+
+// ===== 模式切換 =====
+type ClockMode = 'draw' | 'assemble'
+const currentMode = ref<ClockMode>('draw')
+
+// 偵測裝置類型，行動裝置預設組裝模式
+function detectDefaultMode(): ClockMode {
+  const isMobile = window.innerWidth < 768 || 'ontouchstart' in window
+  return isMobile ? 'assemble' : 'draw'
+}
+
+function switchMode(mode: ClockMode) {
+  currentMode.value = mode
+  if (mode === 'assemble') {
+    initAssembleMode()
+  }
+}
+
+// ===== 組裝模式狀態 =====
+interface AssembleNumber {
+  id: number
+  value: number
+  x: number
+  y: number
+  isDragging: boolean
+  snapped: boolean
+  snappedTo: number | null  // 吸附到哪個位置（1-12）
+  isCorrect: boolean
+}
+
+const assembleNumbers = ref<AssembleNumber[]>([])
+const hourHandAngle = ref(0)  // 時針角度（0 = 12點方向）
+const minuteHandAngle = ref(0)  // 分針角度
+const clockFaceSize = ref(300)
+const draggingNumber = ref<AssembleNumber | null>(null)
+const rotatingHand = ref<'hour' | 'minute' | null>(null)
+
+// 12 個數字的正確位置（圓周上等分）
+const snapPositions = computed(() => {
+  const size = clockFaceSize.value
+  const centerX = size / 2
+  const centerY = size / 2
+  const radius = size / 2 - 40  // 距離邊緣留白
+  
+  return Array.from({ length: 12 }, (_, i) => {
+    const number = i === 0 ? 12 : i
+    // 從 12 點方向開始（-90度），順時針
+    const angle = ((i * 30) - 90) * (Math.PI / 180)
+    return {
+      number,
+      x: centerX + radius * Math.cos(angle) - 15,  // -15 居中調整
+      y: centerY + radius * Math.sin(angle) - 15,
+      angle: i * 30
+    }
+  })
+})
+
+// 未放置的數字
+const unplacedNumbers = computed(() => 
+  assembleNumbers.value.filter(n => !n.snapped)
+)
+
+// 已放置數字計數
+const placedNumbersCount = computed(() => 
+  assembleNumbers.value.filter(n => n.snapped).length
+)
+
+// 檢查位置是否已被佔用
+function isPositionOccupied(posNumber: number): boolean {
+  return assembleNumbers.value.some(n => n.snappedTo === posNumber)
+}
+
+// 初始化組裝模式
+function initAssembleMode() {
+  const size = Math.min(window.innerWidth - 40, 350)
+  clockFaceSize.value = size
+  
+  // 初始化 12 個數字，打亂順序放在備用區
+  const numbers = Array.from({ length: 12 }, (_, i) => i + 1)
+  const shuffled = numbers.sort(() => Math.random() - 0.5)
+  
+  assembleNumbers.value = shuffled.map((value, index) => ({
+    id: index,
+    value,
+    x: -100,  // 初始放在畫面外（備用區）
+    y: -100,
+    isDragging: false,
+    snapped: false,
+    snappedTo: null,
+    isCorrect: false
+  }))
+  
+  // 初始化指針角度
+  hourHandAngle.value = 0
+  minuteHandAngle.value = 0
+  
+  startTime.value = Date.now()
+}
+
+// 開始拖動數字（滑鼠）
+function startDragNumber(event: MouseEvent, num: AssembleNumber) {
+  event.preventDefault()
+  draggingNumber.value = num
+  num.isDragging = true
+  
+  const container = assembleContainerRef.value
+  if (!container) return
+  
+  const rect = container.getBoundingClientRect()
+  num.x = event.clientX - rect.left - 15
+  num.y = event.clientY - rect.top - 15
+  
+  // 如果從吸附位置拖出，解除吸附
+  if (num.snapped) {
+    num.snapped = false
+    num.snappedTo = null
+    num.isCorrect = false
+  }
+  
+  document.addEventListener('mousemove', handleDragMove)
+  document.addEventListener('mouseup', handleDragEnd)
+}
+
+// 開始拖動數字（觸控）
+function startDragNumberTouch(event: TouchEvent, num: AssembleNumber) {
+  const touch = event.touches[0]
+  if (!touch) return
+  
+  draggingNumber.value = num
+  num.isDragging = true
+  
+  const container = assembleContainerRef.value
+  if (!container) return
+  
+  const rect = container.getBoundingClientRect()
+  num.x = touch.clientX - rect.left - 15
+  num.y = touch.clientY - rect.top - 15
+  
+  if (num.snapped) {
+    num.snapped = false
+    num.snappedTo = null
+    num.isCorrect = false
+  }
+  
+  document.addEventListener('touchmove', handleDragMoveTouch, { passive: false })
+  document.addEventListener('touchend', handleDragEndTouch)
+}
+
+// 拖動中（滑鼠）
+function handleDragMove(event: MouseEvent) {
+  if (!draggingNumber.value) return
+  
+  const container = assembleContainerRef.value
+  if (!container) return
+  
+  const rect = container.getBoundingClientRect()
+  draggingNumber.value.x = event.clientX - rect.left - 15
+  draggingNumber.value.y = event.clientY - rect.top - 15
+}
+
+// 拖動中（觸控）
+function handleDragMoveTouch(event: TouchEvent) {
+  event.preventDefault()
+  const touch = event.touches[0]
+  if (!touch || !draggingNumber.value) return
+  
+  const container = assembleContainerRef.value
+  if (!container) return
+  
+  const rect = container.getBoundingClientRect()
+  draggingNumber.value.x = touch.clientX - rect.left - 15
+  draggingNumber.value.y = touch.clientY - rect.top - 15
+}
+
+// 拖動結束
+function handleDragEnd() {
+  if (draggingNumber.value) {
+    checkSnapPosition(draggingNumber.value)
+    draggingNumber.value.isDragging = false
+    draggingNumber.value = null
+  }
+  
+  document.removeEventListener('mousemove', handleDragMove)
+  document.removeEventListener('mouseup', handleDragEnd)
+}
+
+function handleDragEndTouch() {
+  if (draggingNumber.value) {
+    checkSnapPosition(draggingNumber.value)
+    draggingNumber.value.isDragging = false
+    draggingNumber.value = null
+  }
+  
+  document.removeEventListener('touchmove', handleDragMoveTouch)
+  document.removeEventListener('touchend', handleDragEndTouch)
+}
+
+// 檢查是否吸附到正確位置
+function checkSnapPosition(num: AssembleNumber) {
+  const SNAP_RADIUS = 40  // 40px 吸附容差
+  
+  for (const pos of snapPositions.value) {
+    // 檢查該位置是否已被其他數字佔用
+    if (isPositionOccupied(pos.number)) continue
+    
+    const distance = Math.hypot(num.x - pos.x, num.y - pos.y)
+    
+    if (distance <= SNAP_RADIUS) {
+      // 吸附到該位置
+      num.x = pos.x
+      num.y = pos.y
+      num.snapped = true
+      num.snappedTo = pos.number
+      num.isCorrect = num.value === pos.number
+      
+      // 震動回饋
+      if ('vibrate' in navigator) {
+        navigator.vibrate(10)
+      }
+      
+      return
+    }
+  }
+  
+  // 沒有吸附，放回備用區
+  num.x = -100
+  num.y = -100
+  num.snapped = false
+  num.snappedTo = null
+  num.isCorrect = false
+}
+
+// 開始旋轉指針（滑鼠）
+function startRotateHand(hand: 'hour' | 'minute', event: MouseEvent) {
+  event.preventDefault()
+  rotatingHand.value = hand
+  
+  document.addEventListener('mousemove', handleRotateMove)
+  document.addEventListener('mouseup', handleRotateEnd)
+}
+
+// 開始旋轉指針（觸控）
+function startRotateHandTouch(hand: 'hour' | 'minute', event: TouchEvent) {
+  rotatingHand.value = hand
+  
+  document.addEventListener('touchmove', handleRotateMoveTouch, { passive: false })
+  document.addEventListener('touchend', handleRotateEndTouch)
+}
+
+// 計算旋轉角度
+function calculateAngle(clientX: number, clientY: number): number {
+  const container = assembleContainerRef.value
+  if (!container) return 0
+  
+  const rect = container.getBoundingClientRect()
+  const clockFace = container.querySelector('.clock-face')
+  if (!clockFace) return 0
+  
+  const clockRect = (clockFace as HTMLElement).getBoundingClientRect()
+  const centerX = clockRect.left + clockRect.width / 2
+  const centerY = clockRect.top + clockRect.height / 2
+  
+  // 計算角度（以12點方向為0度）
+  const angle = Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI) + 90
+  return (angle + 360) % 360
+}
+
+// 旋轉中（滑鼠）
+function handleRotateMove(event: MouseEvent) {
+  if (!rotatingHand.value) return
+  
+  const angle = calculateAngle(event.clientX, event.clientY)
+  
+  if (rotatingHand.value === 'hour') {
+    hourHandAngle.value = angle
+  } else {
+    minuteHandAngle.value = angle
+  }
+}
+
+// 旋轉中（觸控）
+function handleRotateMoveTouch(event: TouchEvent) {
+  event.preventDefault()
+  const touch = event.touches[0]
+  if (!touch || !rotatingHand.value) return
+  
+  const angle = calculateAngle(touch.clientX, touch.clientY)
+  
+  if (rotatingHand.value === 'hour') {
+    hourHandAngle.value = angle
+  } else {
+    minuteHandAngle.value = angle
+  }
+}
+
+// 旋轉結束
+function handleRotateEnd() {
+  rotatingHand.value = null
+  document.removeEventListener('mousemove', handleRotateMove)
+  document.removeEventListener('mouseup', handleRotateEnd)
+}
+
+function handleRotateEndTouch() {
+  rotatingHand.value = null
+  document.removeEventListener('touchmove', handleRotateMoveTouch)
+  document.removeEventListener('touchend', handleRotateEndTouch)
+}
+
+// 重置組裝
+function resetAssemble() {
+  initAssembleMode()
+}
+
+// 完成組裝，進行評分
+function completeAssemble() {
+  // 計算數字位置正確率
+  const correctNumbers = assembleNumbers.value.filter(n => n.isCorrect).length
+  const numbersScore = correctNumbers / 12
+  
+  // 計算指針角度正確性
+  const [targetHour = 0, targetMinute = 0] = actualTargetTime.value.split(':').map(Number)
+  
+  // 目標時針角度：每小時30度 + 每分鐘0.5度
+  const targetHourAngle = ((targetHour % 12) * 30 + targetMinute * 0.5) % 360
+  // 目標分針角度：每分鐘6度
+  const targetMinuteAngle = (targetMinute * 6) % 360
+  
+  // 角度誤差（考慮360度環繞）
+  const hourError = Math.min(
+    Math.abs(hourHandAngle.value - targetHourAngle),
+    360 - Math.abs(hourHandAngle.value - targetHourAngle)
+  )
+  const minuteError = Math.min(
+    Math.abs(minuteHandAngle.value - targetMinuteAngle),
+    360 - Math.abs(minuteHandAngle.value - targetMinuteAngle)
+  )
+  
+  // 時針容許誤差 15 度，分針容許誤差 20 度
+  const hourCorrect = hourError <= 15
+  const minuteCorrect = minuteError <= 20
+  const handsCorrect = hourCorrect && minuteCorrect
+  
+  // 設定自評結果
+  selfAssessment.value = {
+    hasCompleteCircle: true,  // 組裝模式圓形一定完整
+    hasCorrectNumbers: numbersScore >= 0.75,  // 75% 以上數字正確
+    hasCorrectHands: handsCorrect
+  }
+  
+  // 產生預覽圖（從組裝模式）
+  generateAssemblePreview()
+  
+  showAssessment.value = true
+}
+
+// 產生組裝模式的預覽圖
+function generateAssemblePreview() {
+  const canvas = document.createElement('canvas')
+  const size = 300
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+  
+  // 白色背景
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, size, size)
+  
+  // 畫圓形
+  ctx.beginPath()
+  ctx.arc(size / 2, size / 2, size / 2 - 10, 0, Math.PI * 2)
+  ctx.strokeStyle = '#1f2937'
+  ctx.lineWidth = 3
+  ctx.stroke()
+  
+  // 畫數字
+  ctx.font = 'bold 20px sans-serif'
+  ctx.fillStyle = '#1f2937'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  
+  for (const num of assembleNumbers.value) {
+    if (num.snapped && num.snappedTo) {
+      const pos = snapPositions.value.find(p => p.number === num.snappedTo)
+      if (pos) {
+        ctx.fillText(
+          num.value.toString(), 
+          pos.x + 15 + (size - clockFaceSize.value) / 2, 
+          pos.y + 15 + (size - clockFaceSize.value) / 2
+        )
+      }
+    }
+  }
+  
+  // 畫指針
+  const centerX = size / 2
+  const centerY = size / 2
+  
+  // 時針
+  const hourRad = (hourHandAngle.value - 90) * Math.PI / 180
+  const hourLen = size * 0.25
+  ctx.beginPath()
+  ctx.moveTo(centerX, centerY)
+  ctx.lineTo(
+    centerX + Math.cos(hourRad) * hourLen,
+    centerY + Math.sin(hourRad) * hourLen
+  )
+  ctx.strokeStyle = '#1f2937'
+  ctx.lineWidth = 6
+  ctx.lineCap = 'round'
+  ctx.stroke()
+  
+  // 分針
+  const minRad = (minuteHandAngle.value - 90) * Math.PI / 180
+  const minLen = size * 0.35
+  ctx.beginPath()
+  ctx.moveTo(centerX, centerY)
+  ctx.lineTo(
+    centerX + Math.cos(minRad) * minLen,
+    centerY + Math.sin(minRad) * minLen
+  )
+  ctx.strokeStyle = '#3b82f6'
+  ctx.lineWidth = 4
+  ctx.stroke()
+  
+  // 中心點
+  ctx.beginPath()
+  ctx.arc(centerX, centerY, 6, 0, Math.PI * 2)
+  ctx.fillStyle = '#1f2937'
+  ctx.fill()
+  
+  previewImageUrl.value = canvas.toDataURL('image/png')
+}
 
 // 全螢幕相關狀態
 const isFullscreen = ref(false)
@@ -723,6 +1288,9 @@ onMounted(() => {
   // 初始化目標時間（支援隨機化）
   initializeTargetTime()
   
+  // 偵測預設模式（行動裝置預設組裝模式）
+  currentMode.value = detectDefaultMode()
+  
   // 初始計算響應式尺寸
   responsiveCanvasSize.value = calculateResponsiveSize()
   
@@ -733,8 +1301,12 @@ onMounted(() => {
   document.addEventListener('fullscreenchange', handleFullscreenChange)
   document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
   
-  // 初始化畫布
-  setTimeout(initCanvas, 0)
+  // 根據模式初始化
+  if (currentMode.value === 'draw') {
+    setTimeout(initCanvas, 0)
+  } else {
+    initAssembleMode()
+  }
 })
 
 onUnmounted(() => {
@@ -797,6 +1369,250 @@ onUnmounted(() => {
   font-size: 0.875rem;
   color: var(--color-text-muted);
   margin-top: 0.5rem;
+}
+
+/* ===== 模式切換按鈕 ===== */
+.mode-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.mode-btn {
+  padding: 0.5rem 1rem;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-btn:hover {
+  background: var(--color-bg-soft);
+}
+
+.mode-btn.active {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+/* ===== 組裝模式樣式 ===== */
+.assemble-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.clock-face {
+  position: relative;
+  background: #ffffff;
+  border: 3px solid var(--color-border);
+  border-radius: 50%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.snap-indicator {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: #d1d5db;
+  border: 2px dashed #e5e7eb;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.snap-indicator.occupied {
+  border-color: transparent;
+  color: transparent;
+}
+
+.draggable-number {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #1f2937;
+  background: #ffffff;
+  border: 2px solid #667eea;
+  border-radius: 50%;
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.1s, box-shadow 0.2s;
+  z-index: 10;
+}
+
+.draggable-number:hover {
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.draggable-number.dragging {
+  cursor: grabbing;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+}
+
+.draggable-number.snapped {
+  border-color: #22c55e;
+  background: #f0fdf4;
+}
+
+.draggable-number.correct {
+  border-color: #22c55e;
+  background: #22c55e;
+  color: white;
+}
+
+/* 時鐘指針 */
+.clock-hand {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  transform-origin: bottom center;
+  cursor: pointer;
+  z-index: 20;
+}
+
+.hour-hand {
+  width: 8px;
+  height: 30%;
+  background: linear-gradient(to top, #1f2937, #374151);
+  border-radius: 4px;
+  margin-left: -4px;
+}
+
+.minute-hand {
+  width: 5px;
+  height: 40%;
+  background: linear-gradient(to top, #3b82f6, #60a5fa);
+  border-radius: 3px;
+  margin-left: -2.5px;
+}
+
+.hand-grip {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1rem;
+  cursor: grab;
+}
+
+.hand-grip:active {
+  cursor: grabbing;
+}
+
+.clock-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  background: #1f2937;
+  border-radius: 50%;
+  z-index: 30;
+}
+
+/* 數字備用區 */
+.number-pool {
+  width: 100%;
+  max-width: 350px;
+  padding: 1rem;
+  background: var(--color-bg-soft);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.pool-hint {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.pool-numbers {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.pool-number {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #1f2937;
+  background: #ffffff;
+  border: 2px solid #667eea;
+  border-radius: 50%;
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.pool-number:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* 組裝工具列 */
+.assemble-toolbar {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.assemble-info {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.info-item {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.assemble-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.reset-btn {
+  flex: 1;
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+.reset-btn:hover {
+  background: var(--color-bg-soft);
+}
+
+.assemble-actions .complete-btn {
+  flex: 2;
+}
+
+.assemble-actions .complete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .canvas-container {

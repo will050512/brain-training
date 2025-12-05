@@ -9,7 +9,7 @@
       <div class="max-w-md mx-auto">
         <!-- 標題 -->
         <div class="text-center mb-8">
-          <div class="text-5xl mb-4 drop-shadow-lg">👤</div>
+          <img src="/logo-64.png" alt="愛健腦" class="w-16 h-16 mx-auto mb-4 drop-shadow-lg" />
           <h1 class="text-2xl md:text-3xl font-bold text-[var(--color-text)]">登入 / 建立帳號</h1>
           <p class="text-[var(--color-text-muted)] mt-2">
             輸入您的姓名和生日即可開始

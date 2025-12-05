@@ -3,10 +3,12 @@
  * 打地鼠遊戲（重構版）
  * 使用新的遊戲核心架構
  */
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useGameTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
+import { useThrottledEmit } from '@/composables/useThrottledEmit'
+import type { GameStatusUpdate } from '@/types'
 import {
   createInitialHoles,
   findInactiveHoles,
@@ -24,7 +26,6 @@ import {
 
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
-import GameStatusBar from './ui/GameStatusBar.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 
 // ===== Props & Emits =====
@@ -39,7 +40,14 @@ const emit = defineEmits<{
   'game:end': [result: any]
   'score:update': [score: number]
   'state:change': [phase: string]
+  'status-update': [status: GameStatusUpdate]
 }>()
+
+// 節流 emit 狀態更新
+const { throttledEmit, immediateEmit, cleanup: cleanupThrottle } = useThrottledEmit(
+  (event, data) => emit('status-update', data),
+  100
+)
 
 // ===== 遊戲配置 =====
 const config = computed<WhackAMoleConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
@@ -109,6 +117,23 @@ const gridClass = computed(() => {
 })
 
 const displayScore = computed(() => score.value)
+
+// 監聽狀態變化，節流 emit 給父層
+watchEffect(() => {
+  if (phase.value === 'playing') {
+    throttledEmit({
+      timeLeft: timeLeft.value,
+      score: score.value,
+      combo: currentCombo.value,
+      correctCount: hitMoles.value,
+      wrongCount: hitBombs.value,
+      showTimer: true,
+      showScore: true,
+      showCounts: true,
+      showCombo: currentCombo.value > 1
+    })
+  }
+})
 
 // ===== 回饋映射 =====
 const feedbackData = computed(() => {
@@ -262,6 +287,7 @@ onUnmounted(() => {
   if (spawnTimer) {
     clearInterval(spawnTimer)
   }
+  cleanupThrottle()
 })
 
 // 監聽難度變化
@@ -290,16 +316,6 @@ watch(() => props.difficulty, () => {
 
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
-      <!-- 狀態列 -->
-      <GameStatusBar
-        :time="timeLeft"
-        :score="displayScore"
-        :combo="currentCombo"
-        :is-warning="timerWarning"
-        show-timer
-        show-score
-      />
-
       <!-- 遊戲場地 -->
       <div 
         class="game-field grid gap-4 p-6 bg-gradient-to-b from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 rounded-2xl mt-4"

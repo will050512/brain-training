@@ -74,7 +74,7 @@ const currentGame = computed(() => {
 // 步驟標題
 const stepTitle = computed(() => {
   switch (currentStep.value) {
-    case 'welcome': return '歡迎使用腦力訓練'
+    case 'welcome': return '歡迎使用愛健腦'
     case 'profile': return '建立您的資料'
     case 'settings': return '設定訓練偏好'
     case 'assessment': return '初始能力評估'
@@ -228,8 +228,8 @@ function startTraining(): void {
 
       <!-- 歡迎頁 -->
       <div v-if="currentStep === 'welcome'" class="text-center py-12">
-        <div class="text-8xl mb-6 animate-bounce">🧠</div>
-        <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-4">歡迎使用腦力訓練</h1>
+        <img src="/pwa-icon.png" alt="愛健腦" class="w-24 h-24 mx-auto mb-6 drop-shadow-lg" />
+        <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-4">歡迎使用愛健腦</h1>
         <p class="text-gray-600 dark:text-slate-300 mb-8 leading-relaxed">
           透過有趣的遊戲訓練您的認知能力<br>
           包含記憶力、反應力、注意力等多種維度

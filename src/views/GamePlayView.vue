@@ -23,16 +23,65 @@
         </div>
         
         <div class="flex items-center gap-1 sm:gap-2 lg:gap-4 flex-shrink-0">
+          <!-- 進度顯示 -->
+          <div 
+            v-if="gameStatus.showProgress !== false && gameStatus.totalRounds" 
+            class="text-right game-stats-landscape"
+          >
+            <div class="text-xs lg:text-sm text-[var(--color-text-secondary)] hide-landscape">進度</div>
+            <div class="text-base sm:text-lg lg:text-2xl font-bold text-purple-600 dark:text-purple-400 stat-value">
+              {{ gameStatus.currentRound || 0 }}/{{ gameStatus.totalRounds }}
+            </div>
+          </div>
+
+          <!-- 正確/錯誤計數 -->
+          <div 
+            v-if="gameStatus.showCounts !== false && (gameStatus.correctCount !== undefined || gameStatus.wrongCount !== undefined)" 
+            class="text-right game-stats-landscape"
+          >
+            <div class="text-xs lg:text-sm text-[var(--color-text-secondary)] hide-landscape">對/錯</div>
+            <div class="text-base sm:text-lg lg:text-2xl font-bold stat-value">
+              <span class="text-green-600 dark:text-green-400">{{ gameStatus.correctCount || 0 }}</span>
+              <span class="text-[var(--color-text-muted)]">/</span>
+              <span class="text-red-500 dark:text-red-400">{{ gameStatus.wrongCount || 0 }}</span>
+            </div>
+          </div>
+
+          <!-- 連擊顯示 -->
+          <div 
+            v-if="gameStatus.showCombo && gameStatus.combo && gameStatus.combo > 1" 
+            class="text-right game-stats-landscape"
+          >
+            <div class="text-xs lg:text-sm text-[var(--color-text-secondary)] hide-landscape">連擊</div>
+            <div class="text-base sm:text-lg lg:text-2xl font-bold text-orange-500 dark:text-orange-400 stat-value">🔥{{ gameStatus.combo }}x</div>
+          </div>
+
           <!-- 分數顯示 -->
-          <div class="text-right game-stats-landscape">
+          <div 
+            v-if="gameStatus.showScore !== false" 
+            class="text-right game-stats-landscape"
+          >
             <div class="text-xs lg:text-sm text-[var(--color-text-secondary)] hide-landscape">分數</div>
-            <div class="text-base sm:text-lg lg:text-2xl font-bold text-blue-600 dark:text-blue-400 stat-value">{{ currentScore }}</div>
+            <div class="text-base sm:text-lg lg:text-2xl font-bold text-blue-600 dark:text-blue-400 stat-value">{{ gameStatus.score ?? currentScore }}</div>
           </div>
           
           <!-- 計時器 -->
-          <div class="text-right game-stats-landscape">
-            <div class="text-xs lg:text-sm text-[var(--color-text-secondary)] hide-landscape">時間</div>
-            <div class="text-base sm:text-lg lg:text-2xl font-bold text-[var(--color-text)] stat-value">{{ formatTime(elapsedTime) }}</div>
+          <div 
+            v-if="gameStatus.showTimer !== false" 
+            class="text-right game-stats-landscape"
+          >
+            <div class="text-xs lg:text-sm text-[var(--color-text-secondary)] hide-landscape">
+              {{ gameStatus.timeLeft !== undefined ? '剩餘' : '用時' }}
+            </div>
+            <div 
+              class="text-base sm:text-lg lg:text-2xl font-bold stat-value"
+              :class="{
+                'text-red-500 dark:text-red-400 animate-pulse': gameStatus.timeLeft !== undefined && gameStatus.timeLeft <= 10,
+                'text-[var(--color-text)]': gameStatus.timeLeft === undefined || gameStatus.timeLeft > 10
+              }"
+            >
+              {{ formatTime(gameStatus.timeLeft ?? elapsedTime) }}
+            </div>
           </div>
         </div>
       </div>
@@ -68,6 +117,7 @@
           :settings="difficultySettings"
           @score-change="handleScoreChange"
           @game-end="handleGameEnd"
+          @status-update="handleStatusUpdate"
         />
       </div>
 
@@ -279,7 +329,7 @@ import { ref, computed, onMounted, onUnmounted, watch, defineAsyncComponent } fr
 import { useRoute, useRouter } from 'vue-router'
 import { useGameStore, useUserStore } from '@/stores'
 import { useResponsive } from '@/composables/useResponsive'
-import { DIFFICULTIES, type GameResult, type GameState, type GameDefinition } from '@/types/game'
+import { DIFFICULTIES, type GameResult, type GameState, type GameDefinition, type GameStatusUpdate } from '@/types/game'
 import { calculateDifficultyAdjustment, applyDifficultyAdjustment, getFullDifficultyLabel, type DifficultyAdjustment } from '@/services/adaptiveDifficultyService'
 import TrainingCompleteModal from '@/components/ui/TrainingCompleteModal.vue'
 import { gameRegistry } from '@/core/gameRegistry'
@@ -321,6 +371,15 @@ const elapsedTime = ref(0)
 const gameResult = ref<GameResult | null>(null)
 const difficultyAdjustment = ref<DifficultyAdjustment | null>(null)
 let timerInterval: ReturnType<typeof setInterval> | null = null
+
+// 遊戲元件回報的即時狀態
+const gameStatus = ref<GameStatusUpdate>({
+  showTimer: true,
+  showScore: true,
+  showCounts: false,
+  showCombo: false,
+  showProgress: false
+})
 
 // 每日訓練相關
 const showCompletionModal = ref(false)
@@ -498,6 +557,15 @@ function startGame(): void {
   currentScore.value = 0
   elapsedTime.value = 0
   
+  // 重置遊戲狀態顯示
+  gameStatus.value = {
+    showTimer: true,
+    showScore: true,
+    showCounts: false,
+    showCombo: false,
+    showProgress: false
+  }
+  
   // 開始計時
   timerInterval = setInterval(() => {
     elapsedTime.value++
@@ -533,6 +601,17 @@ function quitGame(): void {
 // 處理分數變化
 function handleScoreChange(score: number): void {
   currentScore.value = score
+}
+
+// 處理遊戲狀態更新（來自遊戲元件的 throttled emit）
+function handleStatusUpdate(status: GameStatusUpdate): void {
+  // 合併狀態，保留未更新的欄位
+  gameStatus.value = { ...gameStatus.value, ...status }
+  
+  // 同步分數到 currentScore（兼容舊版）
+  if (status.score !== undefined) {
+    currentScore.value = status.score
+  }
 }
 
 // 處理遊戲結束

@@ -334,6 +334,7 @@ export const useGameStore = defineStore('game', () => {
 
   /**
    * 取得其他維度的未玩遊戲（用於遊戲結束推薦）
+   * 優先推薦用戶弱項維度的遊戲（1.5x 權重加成）
    */
   function getUnplayedGamesByOtherDimensions(currentGameId: string, count: number = 4): GameDefinition[] {
     const currentGame = gameRegistry.get(currentGameId)
@@ -353,6 +354,27 @@ export const useGameStore = defineStore('game', () => {
     )
     todayPlayedIds.add(currentGameId)
 
+    // 找出用戶的弱項維度（分數最低的維度）
+    const scores = cognitiveScores.value
+    const allDimensions: CognitiveDimension[] = ['reaction', 'logic', 'memory', 'cognition', 'coordination', 'attention']
+    
+    // 計算有效分數的維度（排除 0 分的維度，可能是未測試過）
+    const validScores = allDimensions
+      .filter(dim => scores[dim] > 0)
+      .map(dim => ({ dim, score: scores[dim] }))
+    
+    // 找出最低分的維度作為弱項
+    const weakDimensions: CognitiveDimension[] = []
+    if (validScores.length > 0) {
+      const minScore = Math.min(...validScores.map(v => v.score))
+      // 分數低於平均值的都算弱項
+      const avgScore = validScores.reduce((sum, v) => sum + v.score, 0) / validScores.length
+      weakDimensions.push(...validScores
+        .filter(v => v.score <= avgScore)
+        .map(v => v.dim)
+      )
+    }
+
     // 找其他維度的遊戲
     const allGames = gameRegistry.getAll()
     const otherDimensionGames: Array<{ game: GameDefinition; score: number }> = []
@@ -367,7 +389,13 @@ export const useGameStore = defineStore('game', () => {
 
       // 優先推薦不同維度的遊戲
       const overlap = gameDimensions.filter(d => currentDimensions.includes(d)).length
-      const diversityScore = gameDimensions.length - overlap
+      let diversityScore = gameDimensions.length - overlap
+
+      // 弱項維度遊戲加成 1.5x 權重
+      const hasWeakDimension = gameDimensions.some(d => weakDimensions.includes(d))
+      if (hasWeakDimension) {
+        diversityScore *= 1.5
+      }
 
       otherDimensionGames.push({ game, score: diversityScore })
     }

@@ -29,7 +29,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  appName: '健腦訓練',
+  appName: '愛健腦',
   appIcon: '🧠',
   navItems: () => [
     { id: 'home', label: '首頁', icon: '🏠', path: '/' },
@@ -112,7 +112,7 @@ provide('desktopLayout', {
         <div class="app-logo">
           <img 
             src="/logo.svg" 
-            alt="健腦訓練" 
+            alt="愛健腦" 
             class="app-logo-img"
           />
           <Transition name="fade">

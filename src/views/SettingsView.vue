@@ -10,7 +10,7 @@
     <!-- 可滾動內容區 -->
     <div class="app-content-scroll">
       <div class="p-4 space-y-4">
-        <!-- 外觀主題設定 -->
+        <!-- 外觀主題設定（已禁用，固定為明亮模式）
         <div class="card p-4">
           <h3 class="font-semibold text-[var(--color-text)] mb-4">🎨 外觀主題</h3>
           
@@ -49,6 +49,7 @@
             </button>
           </div>
         </div>
+        -->
 
         <!-- 螢幕方向設定 -->
         <div class="card p-4">
@@ -202,7 +203,8 @@
         <!-- 關於 -->
         <div class="card p-4">
           <div class="text-center text-sm">
-            <p class="font-semibold text-[var(--color-text)]">健腦訓練 Brain Training</p>
+            <img src="/logo.svg" alt="愛健腦" class="w-12 h-12 mx-auto mb-3" />
+            <p class="font-semibold text-[var(--color-text)]">愛健腦 iHealthBrain</p>
             <p class="text-[var(--color-text-muted)]">版本 1.0.0</p>
           </div>
         </div>

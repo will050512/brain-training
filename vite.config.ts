@@ -13,15 +13,17 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png', 'apple-touch-icon.png', 'robots.txt', 'offline.html', 'logo.svg'],
       manifest: {
-        name: '健腦訓練 - 認知能力評估與訓練',
-        short_name: '健腦訓練',
-        description: '專為長者設計的認知訓練遊戲，預防失智症',
+        name: '愛健腦 iHealthBrain - 認知健康',
+        short_name: '愛健腦',
+        description: '由未來家 Next Home AI 開發，專為長者設計的認知訓練遊戲平台，結合科學驗證的認知訓練方法與 AI 技術，幫助維持大腦健康',
         theme_color: '#667eea',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/brain-training/',
         start_url: '/brain-training/',
+        categories: ['health', 'medical', 'games'],
+        lang: 'zh-TW',
         icons: [
           {
             src: 'pwa-192x192.png',

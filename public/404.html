@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>健腦訓練遊戲</title>
+  <title>愛健腦 iHealthBrain</title>
   <script>
     // 單頁應用程式的 GitHub Pages 路由處理
     // 將所有 404 請求重定向到 index.html
@@ -39,6 +39,13 @@
     .loading {
       text-align: center;
     }
+    .logo {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
     .spinner {
       width: 50px;
       height: 50px;
@@ -51,10 +58,17 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+    .brand-name {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
   </style>
 </head>
 <body>
   <div class="loading">
+    <img src="logo-64.png" alt="愛健腦" class="logo" />
+    <p class="brand-name">愛健腦 iHealthBrain</p>
     <div class="spinner"></div>
     <p>正在載入...</p>
   </div>

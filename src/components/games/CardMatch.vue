@@ -7,9 +7,11 @@
  * - 邏輯層：@/games/logic/cardMatch.ts，純函數處理遊戲邏輯
  * - 音效/狀態層：@/games/core/useGame.ts，統一管理狀態與音效
  */
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGame } from '@/games/core/useGame'
+import { useThrottledEmit } from '@/composables/useThrottledEmit'
 import type { DifficultyConfig } from '@/games/core/gameTypes'
+import type { GameStatusUpdate } from '@/types'
 import {
   generateCards,
   checkMatch,
@@ -24,7 +26,6 @@ import type { GameDifficulty } from '@/stores/settingsStore'
 
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
-import GameStatusBar from './ui/GameStatusBar.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 
 // ===== Props & Emits =====
@@ -40,7 +41,14 @@ const emit = defineEmits<{
   'game:end': [result: ReturnType<typeof summarizeResult>]
   'score:update': [score: number]
   'state:change': [phase: string]
+  'status-update': [status: GameStatusUpdate]
 }>()
+
+// 節流 emit 狀態更新
+const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
+  (event, data) => emit('status-update', data),
+  100
+)
 
 // ===== 難度配置轉換 =====
 interface CardMatchDifficultyConfig extends DifficultyConfig {
@@ -308,11 +316,31 @@ watch(() => props.difficulty, (newDifficulty) => {
   game.setDifficulty(newDifficulty)
 })
 
-// 監聯計時器時間到
+// 監聽計時器時間到
 watch(() => game.timer.isTimeUp.value, (isUp) => {
   if (isUp && isPlaying.value) {
     handleTimeUp()
   }
+})
+
+// 監聽狀態變化，節流 emit 給父層
+watchEffect(() => {
+  if (phase.value === 'playing') {
+    throttledEmit({
+      timeLeft: config.value.timeLimit > 0 ? displayTime.value : undefined,
+      score: score.value,
+      currentRound: matchedPairs.value,
+      totalRounds: totalPairs.value,
+      showTimer: config.value.timeLimit > 0,
+      showScore: true,
+      showProgress: true
+    })
+  }
+})
+
+// 清理
+onUnmounted(() => {
+  cleanupThrottle()
 })
 </script>
 
@@ -329,17 +357,6 @@ watch(() => game.timer.isTimeUp.value, (isUp) => {
 
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
-      <!-- 狀態列 -->
-      <GameStatusBar
-        :time="displayTime"
-        :score="score"
-        :progress="Math.round((matchedPairs / totalPairs) * 100)"
-        :is-warning="timerWarning"
-        show-timer
-        show-score
-        show-progress
-      />
-
       <!-- 遊戲資訊 -->
       <div class="game-info flex justify-center gap-6 mt-4 text-sm">
         <div class="stat">

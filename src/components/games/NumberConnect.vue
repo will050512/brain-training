@@ -3,10 +3,12 @@
  * 數字連連看遊戲（重構版）
  * 使用新的遊戲核心架構
  */
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, watchEffect, onMounted, onBeforeUnmount, onUnmounted } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useGameTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
+import { useThrottledEmit } from '@/composables/useThrottledEmit'
+import type { GameStatusUpdate } from '@/types'
 import {
   createGameState,
   tryConnect,
@@ -23,7 +25,6 @@ import {
 
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
-import GameStatusBar from './ui/GameStatusBar.vue'
 
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
@@ -37,7 +38,14 @@ const emit = defineEmits<{
   'game:end': [result: any]
   'score:update': [score: number]
   'state:change': [phase: string]
+  'status-update': [status: GameStatusUpdate]
 }>()
+
+// 節流 emit 狀態更新
+const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
+  (event, data) => emit('status-update', data),
+  100
+)
 
 // ===== 遊戲配置 =====
 const config = computed<NumberConnectConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
@@ -269,9 +277,28 @@ onMounted(() => {
   window.addEventListener('resize', handleResize)
 })
 
+// 監聽狀態變化，節流 emit 給父層
+watchEffect(() => {
+  if (phase.value === 'playing') {
+    throttledEmit({
+      timeLeft: timeRemaining.value,
+      score: score.value,
+      currentRound: connectionCount.value,
+      totalRounds: config.value.count - 1,
+      showTimer: true,
+      showScore: true,
+      showProgress: true
+    })
+  }
+})
+
 onBeforeUnmount(() => {
   stopTimer()
   window.removeEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  cleanupThrottle()
 })
 
 // 監聽難度變化
@@ -296,15 +323,6 @@ watch(() => props.difficulty, () => {
 
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
-      <!-- 狀態列 -->
-      <GameStatusBar
-        :score="score"
-        :time="timeRemaining"
-        :progress="progress"
-        show-time
-        show-progress
-      />
-
       <!-- 工具列 -->
       <div class="toolbar flex justify-center gap-4 mt-4">
         <button

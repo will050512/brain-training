@@ -3,10 +3,12 @@
  * 天平秤重遊戲（重構版）
  * 使用新的遊戲核心架構
  */
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useRoundTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
+import { useThrottledEmit } from '@/composables/useThrottledEmit'
+import type { GameStatusUpdate } from '@/types'
 import {
   generateRound,
   validateAnswer,
@@ -21,7 +23,6 @@ import {
 
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
-import GameStatusBar from './ui/GameStatusBar.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 
 // ===== Props & Emits =====
@@ -36,7 +37,14 @@ const emit = defineEmits<{
   'game:end': [result: any]
   'score:update': [score: number]
   'state:change': [phase: string]
+  'status-update': [status: GameStatusUpdate]
 }>()
+
+// 節流 emit 狀態更新
+const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
+  (event, data) => emit('status-update', data),
+  100
+)
 
 // ===== 遊戲配置 =====
 const config = computed<BalanceScaleConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
@@ -230,6 +238,28 @@ onMounted(() => {
   preloadDefaultSounds()
 })
 
+// 監聽狀態變化，節流 emit 給父層
+watchEffect(() => {
+  if (phase.value === 'playing') {
+    throttledEmit({
+      timeLeft: roundTime.value,
+      score: score.value,
+      correctCount: correctCount.value,
+      wrongCount: wrongCount.value,
+      currentRound: currentRound.value,
+      totalRounds: totalRounds,
+      showTimer: true,
+      showScore: true,
+      showCounts: true,
+      showProgress: true
+    })
+  }
+})
+
+onUnmounted(() => {
+  cleanupThrottle()
+})
+
 // 監聽難度變化
 watch(() => props.difficulty, () => {
   if (phase.value !== 'ready') {
@@ -252,16 +282,6 @@ watch(() => props.difficulty, () => {
 
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
-      <!-- 狀態列 -->
-      <GameStatusBar
-        :time="roundTime"
-        :score="score"
-        :progress="progress"
-        :is-warning="roundTime <= 3"
-        show-timer
-        show-score
-        show-progress
-      />
 
       <!-- 題目資訊 -->
       <div class="question-info text-center mt-4">

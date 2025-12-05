@@ -39,8 +39,8 @@
         <router-link to="/settings" class="text-2xl">⚙️</router-link>
       </div>
       <div class="flex items-center gap-2">
-        <span class="text-2xl">🧠</span>
-        <h1 class="text-lg font-bold text-[var(--color-text)]">健腦訓練</h1>
+        <img src="/logo.svg" alt="愛健腦" class="w-8 h-8" />
+        <h1 class="text-lg font-bold text-[var(--color-text)]">愛健腦</h1>
       </div>
       <div class="app-header-action text-right">
         <button v-if="userStore.isLoggedIn" @click="handleLogout" class="text-sm text-[var(--color-text-muted)]">
