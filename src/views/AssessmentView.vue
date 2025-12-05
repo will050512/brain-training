@@ -1,19 +1,25 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-slate-900 dark:to-slate-800">
+  <div 
+    class="bg-gradient-to-b from-blue-50 to-white dark:from-slate-900 dark:to-slate-800"
+    :class="stage === 'mini-cog' ? 'h-screen h-[100dvh] flex flex-col overflow-hidden' : 'min-h-screen'"
+  >
     <!-- 頭部 -->
-    <div class="bg-[var(--color-surface)] shadow-sm">
-      <div class="container mx-auto px-4 py-4">
+    <div class="bg-[var(--color-surface)] shadow-sm flex-shrink-0">
+      <div class="container mx-auto px-4 py-3 sm:py-4">
         <div class="flex items-center justify-between">
           <router-link to="/" class="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">
             ← 返回
           </router-link>
-          <h1 class="text-xl font-bold text-[var(--color-text)]">能力評估測試</h1>
+          <h1 class="text-lg sm:text-xl font-bold text-[var(--color-text)]">能力評估測試</h1>
           <div class="w-16"></div>
         </div>
       </div>
     </div>
 
-    <div class="container mx-auto px-4 py-8">
+    <div 
+      class="container mx-auto px-4"
+      :class="stage === 'mini-cog' ? 'flex-1 overflow-auto py-2 sm:py-4' : 'py-8'"
+    >
       <!-- Mini-Cog 測驗模式 -->
       <MiniCogFlow 
         v-if="stage === 'mini-cog'"

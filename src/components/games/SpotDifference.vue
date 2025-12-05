@@ -20,7 +20,6 @@ import {
 
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
-import GameResultScreen from './ui/GameResultScreen.vue'
 import GameStatusBar from './ui/GameStatusBar.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 
@@ -227,17 +226,6 @@ function handleGameEnd() {
   emit('game:end', result)
 }
 
-function handleRestart() {
-  stopRound()
-  resetGame()
-  handleStart()
-}
-
-function handleQuit() {
-  stopRound()
-  resetGame()
-}
-
 // ===== 生命週期 =====
 onMounted(() => {
   preloadDefaultSounds()
@@ -360,21 +348,6 @@ watch(() => props.difficulty, () => {
         :message="feedbackData.message"
       />
     </template>
-
-    <!-- 結果畫面 -->
-    <GameResultScreen
-      v-else-if="phase === 'finished' || phase === 'result'"
-      :score="score"
-      :grade="calculateGrade(score) as 'S' | 'A' | 'B' | 'C' | 'D' | 'F'"
-      :custom-stats="[
-        { label: '找到', value: totalFound, icon: '✅' },
-        { label: '總數', value: totalRounds * diffCount, icon: '🔍' },
-        { label: '錯誤點擊', value: wrongClicks, icon: '❌' },
-        { label: '使用提示', value: hintsUsed, icon: '💡' },
-      ]"
-      @replay="handleRestart"
-      @back="handleQuit"
-    />
   </div>
 </template>
 

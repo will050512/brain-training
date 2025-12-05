@@ -19,7 +19,6 @@ import {
 
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
-import GameResultScreen from './ui/GameResultScreen.vue'
 import GameStatusBar from './ui/GameStatusBar.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 import GameOptionGrid from './ui/GameOptionGrid.vue'
@@ -206,16 +205,6 @@ function handleGameEnd() {
   emit('game:end', result)
 }
 
-function handleRestart() {
-  resetGame()
-  handleStart()
-}
-
-function handleQuit() {
-  stopTimer()
-  resetGame()
-}
-
 // ===== 生命週期 =====
 onMounted(() => {
   preloadDefaultSounds()
@@ -290,22 +279,6 @@ watch(() => props.difficulty, () => {
         :combo="feedbackData.combo"
       />
     </template>
-
-    <!-- 結果畫面 -->
-    <GameResultScreen
-      v-else-if="phase === 'finished' || phase === 'result'"
-      :score="score"
-      :max-score="config.questionsCount * (config.basePoints + 10)"
-      :accuracy="correctCount / (correctCount + wrongCount)"
-      :duration="config.timeLimit - timeLeft"
-      :stats="[
-        { label: '答對', value: correctCount, icon: '✅' },
-        { label: '答錯', value: wrongCount, icon: '❌' },
-        { label: '最高連擊', value: maxCombo, icon: '🔥' },
-      ]"
-      @restart="handleRestart"
-      @quit="handleQuit"
-    />
   </div>
 </template>
 

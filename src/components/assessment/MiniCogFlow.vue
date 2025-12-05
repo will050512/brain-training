@@ -579,12 +579,17 @@ onUnmounted(() => {
 .mini-cog-flow {
   max-width: 800px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
 }
 
 /* Progress Bar */
 .progress-bar {
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
 }
 
 .progress-steps {
@@ -659,8 +664,13 @@ onUnmounted(() => {
 .step-content {
   background: var(--color-surface);
   border-radius: 1.5rem;
-  padding: 2rem;
+  padding: 1.25rem;
   box-shadow: var(--shadow-lg);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Intro Step */
@@ -669,40 +679,40 @@ onUnmounted(() => {
 }
 
 .intro-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-}
-
-.intro-step h2 {
-  font-size: 1.75rem;
-  color: var(--color-text);
+  font-size: 3rem;
   margin-bottom: 0.5rem;
 }
 
+.intro-step h2 {
+  font-size: 1.5rem;
+  color: var(--color-text);
+  margin-bottom: 0.25rem;
+}
+
 .intro-description {
-  font-size: 1.125rem;
+  font-size: 1rem;
   color: var(--color-text-muted);
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .info-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .info-card {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
+  gap: 0.5rem;
+  padding: 0.75rem;
   background: var(--color-infocard);
-  border-radius: 1rem;
+  border-radius: 0.75rem;
 }
 
 .info-icon {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 .info-text {
@@ -712,25 +722,25 @@ onUnmounted(() => {
 }
 
 .info-text strong {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--color-text);
 }
 
 .info-text span {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   color: var(--color-text-muted);
 }
 
 .disclaimer {
   background: var(--color-disclaimer);
-  padding: 1rem;
+  padding: 0.75rem;
   border-radius: 0.75rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .disclaimer p {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--color-disclaimer-text);
 }
 

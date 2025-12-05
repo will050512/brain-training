@@ -23,7 +23,6 @@ import {
 
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
-import GameResultScreen from './ui/GameResultScreen.vue'
 import GameStatusBar from './ui/GameStatusBar.vue'
 
 // ===== Props & Emits =====
@@ -259,17 +258,6 @@ function handleGameEnd() {
   emit('game:end', result)
 }
 
-function handleRestart() {
-  stopTimer()
-  resetGame()
-  handleStart()
-}
-
-function handleQuit() {
-  stopTimer()
-  resetGame()
-}
-
 // ===== 視窗大小變化處理 =====
 function handleResize() {
   drawConnections()
@@ -386,23 +374,6 @@ watch(() => props.difficulty, () => {
         {{ feedbackData.message }}
       </div>
     </template>
-
-    <!-- 結果畫面 -->
-    <GameResultScreen
-      v-else-if="phase === 'finished' || phase === 'result'"
-      :score="score"
-      :correct-count="connectionCount"
-      :wrong-count="errors"
-      :total-count="config.count - 1"
-      :grade="calculateGrade(score) as 'S' | 'A' | 'B' | 'C' | 'D' | 'F'"
-      :custom-stats="[
-        { label: '完成連接', value: connectionCount, icon: '🔗' },
-        { label: '錯誤次數', value: errors, icon: '❌' },
-        { label: '提示使用', value: hintUsed, icon: '💡' },
-      ]"
-      @replay="handleRestart"
-      @back="handleQuit"
-    />
   </div>
 </template>
 

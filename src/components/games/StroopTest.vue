@@ -23,7 +23,6 @@ import {
 
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
-import GameResultScreen from './ui/GameResultScreen.vue'
 import GameStatusBar from './ui/GameStatusBar.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 
@@ -238,17 +237,6 @@ function handleGameEnd() {
   emit('game:end', result)
 }
 
-function handleRestart() {
-  stopRound()
-  resetGame()
-  handleStart()
-}
-
-function handleQuit() {
-  stopRound()
-  resetGame()
-}
-
 // ===== 生命週期 =====
 onMounted(() => {
   preloadDefaultSounds()
@@ -343,23 +331,6 @@ watch(() => props.difficulty, () => {
         :message="feedbackData.message"
       />
     </template>
-
-    <!-- 結果畫面 -->
-    <GameResultScreen
-      v-else-if="phase === 'finished' || phase === 'result'"
-      :score="score"
-      :max-score="config.rounds * 10"
-      :accuracy="correctCount / Math.max(correctCount + wrongCount, 1)"
-      :duration="config.rounds * config.timePerRound"
-      :stats="[
-        { label: '答對', value: correctCount, icon: '✅' },
-        { label: '答錯', value: wrongCount, icon: '❌' },
-        { label: '一致題正確', value: congruentCorrect, icon: '🟢' },
-        { label: '不一致題正確', value: incongruentCorrect, icon: '🔴' },
-      ]"
-      @restart="handleRestart"
-      @quit="handleQuit"
-    />
   </div>
 </template>
 

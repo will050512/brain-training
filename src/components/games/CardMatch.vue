@@ -24,7 +24,6 @@ import type { GameDifficulty } from '@/stores/settingsStore'
 
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
-import GameResultScreen from './ui/GameResultScreen.vue'
 import GameStatusBar from './ui/GameStatusBar.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 
@@ -294,19 +293,6 @@ function handleTimeUp() {
   handleGameComplete()
 }
 
-/** 重新開始 */
-function handleRestart() {
-  game.timer.stop()
-  game.state.resetGame()
-  handleStart()
-}
-
-/** 退出遊戲 */
-function handleQuit() {
-  game.timer.stop()
-  game.state.resetGame()
-}
-
 // ===== 生命週期 =====
 onMounted(() => {
   // 載入儲存的難度設定
@@ -410,22 +396,6 @@ watch(() => game.timer.isTimeUp.value, (isUp) => {
         :message="feedbackData.message"
       />
     </template>
-
-    <!-- 結果畫面 -->
-    <GameResultScreen
-      v-else-if="phase === 'finished' || phase === 'result'"
-      :score="score"
-      :max-score="totalPairs * config.baseScore"
-      :accuracy="matchedPairs / totalPairs"
-      :duration="game.timer.getElapsedTime()"
-      :stats="[
-        { label: '配對', value: `${matchedPairs}/${totalPairs}`, icon: '🎴' },
-        { label: '步數', value: moves, icon: '👆' },
-        { label: '效率', value: `${Math.round((totalPairs * 2 / Math.max(moves, 1)) * 100)}%`, icon: '⚡' },
-      ]"
-      @restart="handleRestart"
-      @quit="handleQuit"
-    />
   </div>
 </template>
 

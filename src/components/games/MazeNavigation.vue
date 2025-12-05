@@ -26,7 +26,6 @@ import {
 
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
-import GameResultScreen from './ui/GameResultScreen.vue'
 import GameStatusBar from './ui/GameStatusBar.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 
@@ -197,17 +196,6 @@ function handleGameEnd() {
   emit('game:end', result)
 }
 
-function handleRestart() {
-  stopTimer()
-  resetGame()
-  handleStart()
-}
-
-function handleQuit() {
-  stopTimer()
-  resetGame()
-}
-
 // ===== 生命週期 =====
 onMounted(() => {
   preloadDefaultSounds()
@@ -331,20 +319,6 @@ watch(() => props.difficulty, () => {
         :message="feedbackData.message"
       />
     </template>
-
-    <!-- 結果畫面 -->
-    <GameResultScreen
-      v-else-if="phase === 'finished' || phase === 'result'"
-      :score="score"
-      :time-spent="elapsedTime"
-      :grade="calculateGrade(score) as 'S' | 'A' | 'B' | 'C' | 'D' | 'F'"
-      :custom-stats="[
-        { label: '步數', value: moves, icon: '👣' },
-        { label: '花費時間', value: `${elapsedTime}秒`, icon: '⏱️' },
-      ]"
-      @replay="handleRestart"
-      @back="handleQuit"
-    />
   </div>
 </template>
 

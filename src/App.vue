@@ -10,6 +10,7 @@ import MobileBottomNav from '@/components/ui/MobileBottomNav.vue'
 import InstallPrompt from '@/components/ui/InstallPrompt.vue'
 import ConsentModal from '@/components/ui/ConsentModal.vue'
 import ToastNotification from '@/components/ui/ToastNotification.vue'
+import PWAUpdateBanner from '@/components/ui/PWAUpdateBanner.vue'
 import { getDataConsent, checkConsentVersionNeedsUpdate } from '@/services/db'
 import type { DataConsentOptions } from '@/types/user'
 import type { LayoutType } from '@/types/layout'
@@ -234,6 +235,9 @@ onMounted(async () => {
     
     <!-- PWA 安裝提示 -->
     <InstallPrompt />
+    
+    <!-- PWA 更新提示 -->
+    <PWAUpdateBanner />
     
     <!-- 資料使用同意對話框 -->
     <ConsentModal

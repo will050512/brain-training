@@ -5,13 +5,13 @@
       class="game-header bg-[var(--color-surface)] shadow-sm border-b border-[var(--color-border)]"
       :class="{ 'game-header-compact': isMobile, 'game-header-landscape': isLandscape }"
     >
-      <div class="container mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
-        <button @click="handleBack" class="btn btn-secondary btn-sm lg:btn-md">
+      <div class="container mx-auto flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 lg:py-4 gap-2">
+        <button @click="handleBack" class="btn btn-secondary btn-sm flex-shrink-0 !px-2 sm:!px-4">
           ← <span class="hidden sm:inline">返回</span>
         </button>
         
-        <div class="text-center flex-1 mx-2">
-          <h1 class="text-base lg:text-xl font-bold text-[var(--color-text)] truncate">
+        <div class="text-center flex-1 min-w-0 mx-1 sm:mx-2">
+          <h1 class="text-sm sm:text-base lg:text-xl font-bold text-[var(--color-text)] truncate">
             {{ currentGame?.name || '遊戲' }}
           </h1>
           <span 
@@ -22,17 +22,17 @@
           </span>
         </div>
         
-        <div class="flex items-center gap-2 lg:gap-4">
+        <div class="flex items-center gap-1 sm:gap-2 lg:gap-4 flex-shrink-0">
           <!-- 分數顯示 -->
           <div class="text-right game-stats-landscape">
             <div class="text-xs lg:text-sm text-[var(--color-text-secondary)] hide-landscape">分數</div>
-            <div class="text-lg lg:text-2xl font-bold text-blue-600 dark:text-blue-400 stat-value">{{ currentScore }}</div>
+            <div class="text-base sm:text-lg lg:text-2xl font-bold text-blue-600 dark:text-blue-400 stat-value">{{ currentScore }}</div>
           </div>
           
           <!-- 計時器 -->
           <div class="text-right game-stats-landscape">
             <div class="text-xs lg:text-sm text-[var(--color-text-secondary)] hide-landscape">時間</div>
-            <div class="text-lg lg:text-2xl font-bold text-[var(--color-text)] stat-value">{{ formatTime(elapsedTime) }}</div>
+            <div class="text-base sm:text-lg lg:text-2xl font-bold text-[var(--color-text)] stat-value">{{ formatTime(elapsedTime) }}</div>
           </div>
         </div>
       </div>

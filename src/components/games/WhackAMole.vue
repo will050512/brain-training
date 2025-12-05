@@ -24,7 +24,6 @@ import {
 
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
-import GameResultScreen from './ui/GameResultScreen.vue'
 import GameStatusBar from './ui/GameStatusBar.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 
@@ -254,25 +253,6 @@ function handleGameEnd() {
   emit('game:end', result)
 }
 
-function handleRestart() {
-  stopTimer()
-  if (spawnTimer) {
-    clearInterval(spawnTimer)
-    spawnTimer = null
-  }
-  resetGame()
-  handleStart()
-}
-
-function handleQuit() {
-  stopTimer()
-  if (spawnTimer) {
-    clearInterval(spawnTimer)
-    spawnTimer = null
-  }
-  resetGame()
-}
-
 // ===== 生命週期 =====
 onMounted(() => {
   preloadDefaultSounds()
@@ -372,24 +352,6 @@ watch(() => props.difficulty, () => {
         :combo="feedbackData.combo"
       />
     </template>
-
-    <!-- 結果畫面 -->
-    <GameResultScreen
-      v-else-if="phase === 'finished' || phase === 'result'"
-      :score="displayScore"
-      :correct-count="hitMoles"
-      :total-count="totalMoles"
-      :time-spent="config.gameTime"
-      :max-combo="currentMaxCombo"
-      :grade="calculateGrade(displayScore) as 'S' | 'A' | 'B' | 'C' | 'D' | 'F'"
-      :custom-stats="[
-        { label: '命中', value: `${hitMoles}/${totalMoles}`, icon: '🐹' },
-        { label: '炸彈', value: hitBombs, icon: '💣' },
-        { label: '最高連擊', value: `${currentMaxCombo}x`, icon: '🔥' },
-      ]"
-      @replay="handleRestart"
-      @back="handleQuit"
-    />
   </div>
 </template>
 

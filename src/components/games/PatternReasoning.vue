@@ -21,7 +21,6 @@ import {
 
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
-import GameResultScreen from './ui/GameResultScreen.vue'
 import GameStatusBar from './ui/GameStatusBar.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 import GameOptionGrid from './ui/GameOptionGrid.vue'
@@ -262,17 +261,6 @@ function handleGameEnd() {
   emit('game:end', result)
 }
 
-function handleRestart() {
-  stopRound()
-  resetGame()
-  handleStart()
-}
-
-function handleQuit() {
-  stopRound()
-  resetGame()
-}
-
 // ===== 生命週期 =====
 onMounted(() => {
   preloadDefaultSounds()
@@ -389,23 +377,6 @@ watch(() => props.difficulty, () => {
         :score="feedbackData.score"
       />
     </template>
-
-    <!-- 結果畫面 -->
-    <GameResultScreen
-      v-else-if="phase === 'finished' || phase === 'result'"
-      :score="score"
-      :correct-count="correctCount"
-      :wrong-count="wrongCount"
-      :total-count="config.totalQuestions"
-      :grade="calculateGrade(score) as 'S' | 'A' | 'B' | 'C' | 'D' | 'F'"
-      :custom-stats="[
-        { label: '正確', value: correctCount, icon: '✅' },
-        { label: '錯誤', value: wrongCount, icon: '❌' },
-        { label: '最長連續', value: maxStreak, icon: '🔥' },
-      ]"
-      @replay="handleRestart"
-      @back="handleQuit"
-    />
   </div>
 </template>
 

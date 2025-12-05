@@ -27,7 +27,6 @@ import {
 
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
-import GameResultScreen from './ui/GameResultScreen.vue'
 import GameStatusBar from './ui/GameStatusBar.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 
@@ -210,17 +209,6 @@ function handleGameEnd() {
   emit('game:end', result)
 }
 
-function handleRestart() {
-  stopRound()
-  resetGame()
-  handleStart()
-}
-
-function handleQuit() {
-  stopRound()
-  resetGame()
-}
-
 // ===== 生命週期 =====
 onMounted(() => {
   preloadDefaultSounds()
@@ -332,20 +320,6 @@ watch(() => props.difficulty, () => {
         :score="feedbackData.score"
       />
     </template>
-
-    <!-- 結果畫面 -->
-    <GameResultScreen
-      v-else-if="phase === 'finished' || phase === 'result'"
-      :score="score"
-      :grade="calculateGrade(allRounds.filter(r => r.result === 'win').length, config.rounds) as 'S' | 'A' | 'B' | 'C' | 'D' | 'F'"
-      :custom-stats="[
-        { label: '勝利', value: allRounds.filter(r => r.result === 'win').length, icon: '🏆' },
-        { label: '失敗', value: allRounds.filter(r => r.result === 'lose' || r.result === 'timeout').length, icon: '💔' },
-        { label: '平手', value: allRounds.filter(r => r.result === 'tie').length, icon: '🤝' },
-      ]"
-      @replay="handleRestart"
-      @back="handleQuit"
-    />
   </div>
 </template>
 
