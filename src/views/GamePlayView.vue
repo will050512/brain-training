@@ -246,7 +246,7 @@
                     {{ game.name }}
                   </span>
                   <span class="text-xs text-[var(--color-text-muted)]">
-                    {{ game.primaryDimension }}
+                    {{ getGameDimensionLabel(game.id) }}
                   </span>
                 </button>
               </div>
@@ -282,6 +282,24 @@ import { useResponsive } from '@/composables/useResponsive'
 import { DIFFICULTIES, type GameResult, type GameState, type GameDefinition } from '@/types/game'
 import { calculateDifficultyAdjustment, applyDifficultyAdjustment, getFullDifficultyLabel, type DifficultyAdjustment } from '@/services/adaptiveDifficultyService'
 import TrainingCompleteModal from '@/components/ui/TrainingCompleteModal.vue'
+import { gameRegistry } from '@/core/gameRegistry'
+import type { CognitiveDimension } from '@/types/cognitive'
+
+// 認知維度中文名稱對應
+const dimensionLabels: Record<CognitiveDimension, string> = {
+  memory: '記憶力',
+  attention: '專注力',
+  logic: '邏輯推理',
+  reaction: '反應速度',
+  cognition: '認知能力',
+  coordination: '協調能力'
+}
+
+// 取得遊戲的主要維度名稱
+function getGameDimensionLabel(gameId: string): string {
+  const dimension = gameRegistry.getPrimaryDimension(gameId)
+  return dimension ? dimensionLabels[dimension] : '綜合訓練'
+}
 
 const route = useRoute()
 const router = useRouter()
