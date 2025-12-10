@@ -20,6 +20,7 @@ import {
   saveUserStats,
   getUserStats,
 } from '@/services/db'
+import { dataInitService } from '@/services/dataInitService'
 
 export const useUserStore = defineStore('user', () => {
   // 狀態
@@ -121,6 +122,7 @@ export const useUserStore = defineStore('user', () => {
     currentSettings.value = null
     currentStats.value = null
     localStorage.removeItem('brain-training-last-user')
+    dataInitService.clearUserData()
   }
 
   /**
@@ -240,6 +242,9 @@ export const useUserStore = defineStore('user', () => {
 
       // 保存到 localStorage 以便下次恢復 session
       localStorage.setItem('brain-training-last-user', odId)
+
+      // 初始化全局資料
+      await dataInitService.initUserData(odId)
 
       return true
     } catch (e) {

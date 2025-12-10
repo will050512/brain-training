@@ -6,6 +6,7 @@
 import { ref, computed, watch, provide } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useResponsive } from '@/composables/useResponsive'
+import SyncStatusIndicator from '@/components/ui/SyncStatusIndicator.vue'
 
 interface NavItem {
   id: string
@@ -162,6 +163,9 @@ provide('desktopLayout', {
 
       <!-- 底部區域 -->
       <div class="sidebar-footer">
+        <div v-if="showExpanded" class="px-2 mb-2">
+          <SyncStatusIndicator position="sidebar" />
+        </div>
         <slot name="sidebar-footer" :collapsed="isCollapsed && !isHovering" />
       </div>
     </aside>

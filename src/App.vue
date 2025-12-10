@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, provide } from 'vue'
+import { ref, onMounted, watch, computed, provide, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore, useSettingsStore } from '@/stores'
+import { dataInitService } from '@/services/dataInitService'
 import { useTheme } from '@/composables/useTheme'
 import { useResponsive } from '@/composables/useResponsive'
 import AppShell from '@/components/layout/AppShell.vue'
@@ -172,6 +173,13 @@ onMounted(async () => {
   if (userStore.currentUser?.id) {
     await checkConsentStatus()
   }
+
+  // 初始化數據同步服務
+  dataInitService.initialize()
+})
+
+onUnmounted(() => {
+  dataInitService.destroy()
 })
 </script>
 

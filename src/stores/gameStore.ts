@@ -17,7 +17,8 @@ import { gameRegistry } from '@/core/gameRegistry'
 import { 
   saveGameSession, 
   getUserGameSessions, 
-  generateId 
+  generateId,
+  getTodayTrainingSession
 } from '@/services/db'
 import { 
   calculateCognitiveScoresFromResult,
@@ -407,6 +408,29 @@ export const useGameStore = defineStore('game', () => {
       .map(item => item.game)
   }
 
+  /**
+   * 從 DB 同步每日訓練狀態
+   */
+  async function syncDailyTrainingFromDB(odId: string): Promise<void> {
+    const session = await getTodayTrainingSession(odId)
+    if (!session) return
+
+    if (dailyTrainingQueue.value.length > 0) {
+      dailyTrainingQueue.value.forEach(item => {
+        if (session.completedGames.includes(item.gameId)) {
+          item.isCompleted = true
+        }
+      })
+      
+      const firstUnfinished = dailyTrainingQueue.value.findIndex(item => !item.isCompleted)
+      if (firstUnfinished !== -1) {
+        currentTrainingIndex.value = firstUnfinished
+      } else {
+        currentTrainingIndex.value = dailyTrainingQueue.value.length
+      }
+    }
+  }
+
   return {
     // 狀態
     sessions,
@@ -447,5 +471,6 @@ export const useGameStore = defineStore('game', () => {
     getTodayTrainingSummary,
     clearDailyTraining,
     getUnplayedGamesByOtherDimensions,
+    syncDailyTrainingFromDB,
   }
 })

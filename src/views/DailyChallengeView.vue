@@ -4,8 +4,8 @@
  * 自動生成覆蓋所有6個認知維度的訓練菜單
  * 一鍵開始連續訓練模式
  */
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import { useGameStore } from '@/stores/gameStore'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -19,6 +19,7 @@ import {
 import type { CognitiveScores, CognitiveDimension } from '@/types/cognitive'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 const gameStore = useGameStore()
 const settingsStore = useSettingsStore()
@@ -254,6 +255,13 @@ function getDifficultyColor(difficulty: string): string {
 
 onMounted(() => {
   loadTrainingPlan()
+})
+
+// 監聽路由變化，當重新進入此頁面時刷新
+watch(() => route.path, (newPath) => {
+  if (newPath === '/daily-challenge') {
+    loadTrainingPlan()
+  }
 })
 </script>
 

@@ -5,6 +5,7 @@
  */
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import SyncStatusIndicator from '@/components/ui/SyncStatusIndicator.vue'
 
 interface Props {
   /** 頁面標題 */
@@ -107,6 +108,7 @@ const headerClass = computed(() => {
 
       <!-- 右側操作區 -->
       <div class="header-right">
+        <SyncStatusIndicator position="header" />
         <slot name="header-right" />
       </div>
     </header>

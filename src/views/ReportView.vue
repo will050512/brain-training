@@ -893,8 +893,13 @@ async function loadMiniCogData(): Promise<void> {
 }
 
 // 生命週期
-onMounted(() => {
+onMounted(async () => {
   loadMiniCogData()
+  
+  // 確保遊戲記錄已載入
+  if (userStore.currentUser?.id && gameStore.sessions.length === 0) {
+    await gameStore.loadUserSessions(userStore.currentUser.id)
+  }
 })
 
 // 下載報告
