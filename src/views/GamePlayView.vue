@@ -281,11 +281,11 @@
             <div class="flex flex-col gap-3 mb-6">
               <!-- 智能推薦下一關 (如果有推薦遊戲) -->
               <button 
-                v-if="recommendedGames.length > 0"
-                @click="startRecommendedGame(recommendedGames[0])" 
+                v-if="recommendedGames.length > 0 && recommendedGames[0]"
+                @click="recommendedGames[0] && startRecommendedGame(recommendedGames[0])" 
                 class="btn btn-primary btn-xl py-4 text-lg w-full shadow-md"
               >
-                ➡️ 下一個挑戰：{{ recommendedGames[0].name }}
+                ➡️ 下一個挑戰：{{ recommendedGames[0]?.name }}
               </button>
 
               <div class="grid grid-cols-2 gap-3">
@@ -772,11 +772,11 @@ function goBack(): void {
   }
 }
 
-// 監聽路由變化，選擇遊戲
-watch(() => route.params.gameId, (newId) => {
+// 監聯路由變化，選擇遊戲
+watch(() => route.params.gameId, (newId: string | string[] | undefined) => {
   if (newId) {
     const id = Array.isArray(newId) ? newId[0] : newId
-    gameStore.selectGame(id)
+    if (id) gameStore.selectGame(id)
     
     // 如果是從每日訓練自動跳轉過來的，且帶有 autoStart 參數
     if (route.query.autoStart === 'true') {
