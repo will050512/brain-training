@@ -273,38 +273,44 @@
             </div>
           </template>
           
-          <!-- 普通遊戲模式 - 2x2 推薦網格 -->
+          <!-- 普通遊戲模式 - 推薦網格 + 大按鈕 -->
           <template v-else>
-            <button @click="playAgain" class="btn btn-primary btn-lg w-full mb-4">
-              🔄 再玩一次
-            </button>
+            <!-- 主要操作按鈕 - 年長者友善設計 -->
+            <div class="grid grid-cols-2 gap-3 mb-6">
+              <button @click="playAgain" class="btn btn-primary btn-xl py-4 text-lg">
+                🔄 再玩一次
+              </button>
+              <router-link to="/games" class="btn btn-secondary btn-xl py-4 text-lg">
+                🎮 更多遊戲
+              </router-link>
+            </div>
             
-            <!-- 推薦其他遊戲 -->
-            <div v-if="recommendedGames.length > 0" class="mt-6">
-              <h3 class="text-sm font-medium text-[var(--color-text-secondary)] mb-3 text-left">
+            <!-- 推薦其他遊戲 - 總是顯示 -->
+            <div class="mt-4">
+              <h3 class="text-base font-medium text-[var(--color-text)] mb-3 text-left">
                 🎯 試試其他維度的訓練
               </h3>
-              <div class="grid grid-cols-2 gap-3">
+              <div v-if="recommendedGames.length > 0" class="grid grid-cols-2 gap-3">
                 <button
                   v-for="game in recommendedGames"
                   :key="game.id"
                   @click="startRecommendedGame(game)"
                   class="recommended-game-card"
                 >
-                  <span class="text-2xl mb-1">{{ game.icon }}</span>
-                  <span class="text-sm font-medium text-[var(--color-text)] truncate w-full">
+                  <span class="text-3xl mb-2">{{ game.icon }}</span>
+                  <span class="text-sm font-bold text-[var(--color-text)] truncate w-full">
                     {{ game.name }}
                   </span>
-                  <span class="text-xs text-[var(--color-text-muted)]">
+                  <span class="text-xs text-[var(--color-accent-purple)] font-medium">
                     {{ getGameDimensionLabel(game.id) }}
                   </span>
                 </button>
               </div>
+              <div v-else class="text-center py-6 text-[var(--color-text-secondary)]">
+                <p class="text-lg mb-2">🎉 太棒了！</p>
+                <p>您今天已經嘗試了多種訓練</p>
+              </div>
             </div>
-            
-            <router-link to="/games" class="btn btn-secondary w-full mt-4">
-              🎮 更多遊戲
-            </router-link>
           </template>
           
           <router-link to="/report" class="btn btn-ghost w-full mt-2 text-sm">

@@ -88,8 +88,7 @@
           class="draggable-number"
           :class="{ 
             'dragging': num.isDragging,
-            'snapped': num.snapped,
-            'correct': num.isCorrect
+            'snapped': num.snapped
           }"
           :style="{ 
             left: num.x + 'px', 
@@ -1466,14 +1465,21 @@ onUnmounted(() => {
 }
 
 .draggable-number.snapped {
-  border-color: #22c55e;
-  background: #f0fdf4;
+  border-color: #667eea;
+  background: #f5f3ff;
 }
 
-.draggable-number.correct {
+/* 完成評分後才顯示正確/錯誤狀態 */
+.draggable-number.show-result.correct {
   border-color: #22c55e;
   background: #22c55e;
   color: white;
+}
+
+.draggable-number.show-result.incorrect {
+  border-color: #ef4444;
+  background: #fef2f2;
+  color: #ef4444;
 }
 
 /* 時鐘指針 */

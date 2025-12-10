@@ -1,4 +1,4 @@
-# 🛠️ 開發者指南
+![1765347981543](image/DEVELOPER_GUIDE/1765347981543.png)# 🛠️ 開發者指南
 
 本文件為開發人員提供詳細的專案架構說明與開發指南。
 
@@ -18,22 +18,30 @@ brain-training/
 │   ├── components/          # Vue 元件
 │   │   ├── assessment/      # 評估相關元件
 │   │   ├── charts/          # 圖表元件
-│   │   ├── games/           # 遊戲 UI 元件
+│   │   ├── games/           # 遊戲 UI 元件（16 個）
+│   │   ├── layout/          # 佈局元件
 │   │   └── ui/              # 共用 UI 元件
-│   ├── composables/         # Vue Composables
+│   ├── composables/         # Vue Composables（通用）
 │   │   ├── useTheme.ts      # 主題切換
 │   │   ├── useToast.ts      # Toast 通知
-│   │   ├── useGameState.ts  # 遊戲狀態管理
-│   │   ├── useGameTimer.ts  # 遊戲計時器
-│   │   ├── useGameAudio.ts  # 遊戲音效
-│   │   └── useRoundTimer.ts # 回合計時器
+│   │   ├── usePWA.ts        # PWA 功能
+│   │   ├── useResponsive.ts # 響應式工具
+│   │   ├── useThrottledEmit.ts # 節流事件
+│   │   └── useTouchGesture.ts  # 觸控手勢
 │   ├── core/                # 核心邏輯
 │   │   └── gameRegistry.ts  # 遊戲註冊中心
-│   ├── games/               # 遊戲邏輯模組
-│   │   ├── logic/           # 純邏輯（可測試）
+│   ├── games/               # 遊戲模組
+│   │   ├── core/            # 遊戲專用 Composables
+│   │   │   ├── useGame.ts       # 遊戲基礎邏輯
+│   │   │   ├── useGameAudio.ts  # 遊戲音效
+│   │   │   ├── useGameScore.ts  # 分數計算
+│   │   │   ├── useGameState.ts  # 遊戲狀態
+│   │   │   └── useGameTimer.ts  # 遊戲計時
+│   │   ├── logic/           # 純邏輯（16 個遊戲）
+│   │   │   └── __tests__/   # 單元測試
 │   │   └── index.ts         # 統一匯出
 │   ├── router/              # Vue Router 配置
-│   ├── services/            # 服務層
+│   ├── services/            # 服務層（16 個服務）
 │   ├── stores/              # Pinia 狀態管理
 │   ├── types/               # TypeScript 類型定義
 │   ├── utils/               # 工具函式
@@ -114,9 +122,9 @@ export function calculateGrade(
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ExampleLogic } from '@/games'
-import { useGameState } from '@/composables/useGameState'
-import { useGameTimer } from '@/composables/useGameTimer'
-import { useGameAudio } from '@/composables/useGameAudio'
+import { useGameState } from '@/games/core/useGameState'
+import { useGameTimer } from '@/games/core/useGameTimer'
+import { useGameAudio } from '@/games/core/useGameAudio'
 
 // Props
 const props = defineProps<{
@@ -236,80 +244,29 @@ describe('ExampleGame Logic', () => {
 
 ## 🎨 Composables 使用指南
 
-### useGameState
+Composables 分為兩類：
+- **通用 Composables** (`src/composables/`)：全域使用的功能
+- **遊戲 Composables** (`src/games/core/`)：遊戲專用的功能
 
-管理遊戲狀態：
+### 通用 Composables
 
-```typescript
-import { useGameState } from '@/composables/useGameState'
+#### useTheme
 
-const { 
-  score,
-  round,
-  isPlaying,
-  startGame,
-  endGame,
-  addScore,
-  nextRound,
-} = useGameState()
-```
-
-### useGameTimer
-
-管理遊戲計時：
+管理主題切換：
 
 ```typescript
-import { useGameTimer } from '@/composables/useGameTimer'
+import { useTheme } from '@/composables/useTheme'
 
-const {
-  timeLeft,
-  isRunning,
-  startTimer,
-  stopTimer,
-  pauseTimer,
-  resetTimer,
-} = useGameTimer({
-  duration: 60,
-  onTick: (time) => console.log(`剩餘 ${time} 秒`),
-  onEnd: () => endGame(),
-})
+const { isDark, toggleTheme, setTheme, effectiveTheme } = useTheme()
+
+// 切換主題
+toggleTheme()
+
+// 設定特定主題
+setTheme('dark')  // 'light' | 'dark' | 'system'
 ```
 
-### useGameAudio
-
-管理遊戲音效：
-
-```typescript
-import { useGameAudio } from '@/composables/useGameAudio'
-
-const { playSound, stopAll } = useGameAudio()
-
-// 播放音效
-playSound('correct')  // 答對
-playSound('wrong')    // 答錯
-playSound('click')    // 點擊
-playSound('start')    // 開始
-playSound('end')      // 結束
-```
-
-### useRoundTimer
-
-管理回合計時：
-
-```typescript
-import { useRoundTimer } from '@/composables/useRoundTimer'
-
-const {
-  timeLeft,
-  startRoundTimer,
-  stopRoundTimer,
-} = useRoundTimer({
-  duration: 5,  // 每回合 5 秒
-  onEnd: () => handleTimeout(),
-})
-```
-
-### useToast
+#### useToast
 
 顯示 Toast 通知：
 
@@ -329,6 +286,99 @@ showToast('請注意', 'warning')
 
 // 資訊訊息
 showToast('提示訊息', 'info')
+```
+
+#### usePWA
+
+PWA 功能管理：
+
+```typescript
+import { usePWA } from '@/composables/usePWA'
+
+const { isInstallable, isInstalled, promptInstall } = usePWA()
+
+// 提示使用者安裝
+if (isInstallable.value) {
+  promptInstall()
+}
+```
+
+#### useResponsive
+
+響應式工具：
+
+```typescript
+import { useResponsive } from '@/composables/useResponsive'
+
+const { isMobile, isTablet, isDesktop, screenWidth } = useResponsive()
+```
+
+### 遊戲專用 Composables（src/games/core/）
+
+#### useGameState
+
+管理遊戲狀態：
+
+```typescript
+import { useGameState } from '@/games/core/useGameState'
+
+const { 
+  score,
+  round,
+  isPlaying,
+  startGame,
+  endGame,
+  addScore,
+  nextRound,
+} = useGameState()
+```
+
+#### useGameTimer
+
+管理遊戲計時：
+
+```typescript
+import { useGameTimer } from '@/games/core/useGameTimer'
+
+const {
+  timeLeft,
+  isRunning,
+  startTimer,
+  stopTimer,
+  pauseTimer,
+  resetTimer,
+} = useGameTimer({
+  duration: 60,
+  onTick: (time) => console.log(`剩餘 ${time} 秒`),
+  onEnd: () => endGame(),
+})
+```
+
+#### useGameAudio
+
+管理遊戲音效：
+
+```typescript
+import { useGameAudio } from '@/games/core/useGameAudio'
+
+const { playSound, stopAll } = useGameAudio()
+
+// 播放音效
+playSound('correct')  // 答對
+playSound('wrong')    // 答錯
+playSound('click')    // 點擊
+playSound('start')    // 開始
+playSound('end')      // 結束
+```
+
+#### useGameScore
+
+管理遊戲分數：
+
+```typescript
+import { useGameScore } from '@/games/core/useGameScore'
+
+const { score, addScore, resetScore, calculateFinalScore } = useGameScore()
 ```
 
 ---
@@ -705,4 +755,59 @@ A:
 
 ---
 
-最後更新：2024-12-07
+## 📋 更新日誌
+
+### 2025-12-10 版本更新
+
+#### 🎨 UI/UX 改進
+
+**1. 主色調更新**
+- 新增強調色系：
+  - `--color-accent-green: #01cb5f`
+  - `--color-accent-purple: #a124e0`
+  - `--color-accent-blue: #1f8ea9`
+  - `--color-accent-dark: #11031d`
+- 更新主要漸層：`linear-gradient(135deg, #a124e0 0%, #1f8ea9 100%)`
+- `index.html` theme-color 更新為 `#11031d`
+
+**2. LOGO 更新**
+- 新增 `logo.png` 作為主要品牌圖示
+- 更新 `scripts/generate-icons.js` 自動生成各尺寸圖標
+- 執行 `node scripts/generate-icons.js` 重新生成圖標
+
+**3. 遊戲結束推薦改進 (GamePlayView.vue)**
+- 遊戲完成後總是顯示推薦區塊
+- 大按鈕設計，年長者友善
+- 2x2 網格推薦其他維度遊戲
+- 無推薦時顯示鼓勵訊息
+
+#### ⚡ 功能改進
+
+**1. 每日挑戰自動化 (DailyChallengeView.vue)**
+- 自動生成涵蓋所有 6 個認知維度的訓練計畫
+- 一鍵開始連續訓練模式
+- 維度覆蓋狀態視覺化顯示
+- 訓練進度追蹤
+
+**2. Mini-Cog 組裝模式改進 (ClockDrawingTest.vue)**
+- 行動裝置預設使用組裝模式
+- 移除即時正確/錯誤顏色提示
+- 完成組裝後才進行自動評分
+- 更直覺的拖放操作
+
+#### 🔧 技術變更
+
+**檔案變更清單：**
+- `src/style.css` - 新增強調色 CSS 變數
+- `index.html` - 更新 theme-color
+- `scripts/generate-icons.js` - 更新圖標來源路徑
+- `src/views/GamePlayView.vue` - 遊戲結束推薦改進
+- `src/views/DailyChallengeView.vue` - 每日挑戰重新設計
+- `src/components/games/ClockDrawingTest.vue` - 組裝模式改進
+
+**新增檔案：**
+- `logo.png` - 新品牌圖示（根目錄）
+
+---
+
+最後更新：2025-12-10

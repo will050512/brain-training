@@ -14,7 +14,7 @@
 
 ### ✨ 核心特色
 
-- 🎮 **15+ 種訓練遊戲** - 涵蓋記憶、邏輯、反應、注意力等多元訓練
+- 🎮 **16 種訓練遊戲** - 涵蓋記憶、邏輯、反應、注意力等多元訓練
 - 📊 **專業評估系統** - 整合 Mini-Cog 等專業認知評估工具
 - 🔍 **退化偵測** - 智能分析認知趨勢，早期發現潛在問題
 - 📈 **自適應難度** - 根據表現自動調整遊戲難度
@@ -91,12 +91,12 @@ setTheme('dark')  // 'light' | 'dark' | 'system'
 
 | 維度 | 說明 | 相關遊戲 |
 |------|------|----------|
-| ⚡ **反應力** | 快速反應與處理速度 | 打地鼠、猜拳挑戰、Stroop 測試 |
-| 🧩 **邏輯力** | 推理與問題解決能力 | 數學心算、天秤平衡、迷宮導航 |
-| 🧠 **記憶力** | 短期與工作記憶 | 撲克記憶、瞬間記憶、卡牌配對 |
-| 💡 **認知力** | 認知彈性與資訊處理 | Stroop 測試、大家來找碴 |
-| 🎯 **協調力** | 手眼協調與空間處理 | 打地鼠、迷宮導航 |
-| 👁️ **專注力** | 持續注意與選擇性注意 | 大家來找碴、Stroop 測試 |
+| ⚡ **反應力** | 快速反應與處理速度 | 打地鼠、猜拳挑戰、Stroop 測試、節拍模仿 |
+| 🧩 **邏輯力** | 推理與問題解決能力 | 數學心算、天秤平衡、迷宮導航、圖案推理 |
+| 🧠 **記憶力** | 短期與工作記憶 | 撲克記憶、瞬間記憶、卡牌配對、聲音記憶、手勢記憶 |
+| 💡 **認知力** | 認知彈性與資訊處理 | Stroop 測試、大家來找碴、圖案推理 |
+| 🎯 **協調力** | 手眼協調與空間處理 | 打地鼠、迷宮導航、數字連連看、節拍模仿 |
+| 👁️ **專注力** | 持續注意與選擇性注意 | 大家來找碴、Stroop 測試、數字連連看 |
 
 ---
 
@@ -119,6 +119,22 @@ setTheme('dark')  // 'light' | 'dark' | 'system'
 - **訓練**: 視覺記憶、空間記憶
 - **難度**: 隨卡牌數量增加
 
+#### 🎵 聲音記憶 (AudioMemory)
+- **說明**: 聆聽並記住播放的聲音序列，然後依序重現
+- **訓練**: 聽覺記憶、聲音辨識、專注力
+- **特色**: 
+  - 20 種聲音素材（動物、樂器、自然、生活）
+  - 序列長度隨表現自動調整
+- **難度**: 簡單 2-4 音、中等 3-6 音、困難 4-8 音
+
+#### 👋 手勢記憶 (GestureMemory)
+- **說明**: 觀察並記住手勢序列，然後依序點擊重現
+- **訓練**: 記憶力、協調力、序列記憶
+- **特色**: 
+  - 12 種手勢圖示（揮手、讚、勝利、OK 等）
+  - 視覺化手勢展示
+- **難度**: 簡單 2-4 個、中等 3-6 個、困難 4-8 個
+
 ### 邏輯類遊戲
 
 #### ➕ 數學心算 (MathCalc)
@@ -136,6 +152,17 @@ setTheme('dark')  // 'light' | 'dark' | 'system'
 - **訓練**: 空間推理、規劃能力
 - **難度**: 隨迷宮大小增加
 
+#### 🧩 圖案推理 (PatternReasoning)
+- **說明**: 根據圖案序列規律，選出正確的下一個圖案
+- **訓練**: 邏輯推理、模式識別、抽象思維
+- **題型**: 
+  - 旋轉題：圖案旋轉規律
+  - 序列題：形狀循環規律
+  - 變換題：大小漸變規律
+  - 類比題：A:B = C:? 推理
+  - 遞進題：顏色與大小遞進
+- **難度**: 簡單 2 種題型、中等 3 種題型、困難 5 種題型
+
 ### 反應類遊戲
 
 #### 🐹 打地鼠 (WhackAMole)
@@ -147,6 +174,25 @@ setTheme('dark')  // 'light' | 'dark' | 'system'
 - **說明**: 快速選擇能贏電腦的猜拳手勢
 - **訓練**: 反應力、決策速度
 - **難度**: 隨時間限制縮短
+
+#### 🥁 節拍模仿 (RhythmMimic)
+- **說明**: 聆聽節奏模式後，點擊螢幕重現相同節拍
+- **訓練**: 節奏感、時間感知、協調能力
+- **特色**: 
+  - 10 種節奏模式（華爾滋、切分音、三連音等）
+  - 即時評分（Perfect/Good/OK/Miss）
+- **難度**: 簡單 300ms 容差、中等 200ms 容差、困難 150ms 容差
+
+### 專注類遊戲
+
+#### 🔢 數字連連看 (NumberConnect)
+- **說明**: 依序連接 1 到 N 的數字，考驗視覺追蹤能力
+- **訓練**: 視覺追蹤、注意力、序列認知
+- **特色**: 
+  - 支援阿拉伯數字、中文數字、混合模式
+  - 錯誤點擊計數
+  - 提示功能
+- **難度**: 簡單 10 個數字、中等 15 個數字、困難 20 個數字（含中文）
 
 ### 認知類遊戲
 
@@ -266,7 +312,7 @@ src/
 ├── components/           # Vue 元件
 │   ├── assessment/       # 評估相關元件
 │   ├── charts/           # 圖表元件
-│   ├── games/            # 遊戲元件 (15+)
+│   ├── games/            # 遊戲元件 (16 個)
 │   └── ui/               # UI 共用元件
 │       ├── BaseButton.vue    # 基礎按鈕
 │       ├── BaseCard.vue      # 基礎卡片
@@ -278,9 +324,21 @@ src/
 │       ├── ToastNotification.vue # Toast 通知元件
 │       ├── InstallPrompt.vue # PWA 安裝提示（含 iOS 指引）
 │       └── ...
-├── composables/          # Vue Composables
+├── composables/          # Vue Composables（通用）
 │   ├── useTheme.ts       # 主題切換
-│   └── useToast.ts       # Toast 通知系統
+│   ├── useToast.ts       # Toast 通知系統
+│   ├── usePWA.ts         # PWA 功能
+│   ├── useResponsive.ts  # 響應式工具
+│   ├── useThrottledEmit.ts # 節流事件
+│   └── useTouchGesture.ts  # 觸控手勢
+├── games/                # 遊戲模組
+│   ├── core/             # 遊戲核心 Composables
+│   │   ├── useGame.ts        # 遊戲基礎邏輯
+│   │   ├── useGameAudio.ts   # 遊戲音效
+│   │   ├── useGameScore.ts   # 分數計算
+│   │   ├── useGameState.ts   # 遊戲狀態
+│   │   └── useGameTimer.ts   # 遊戲計時
+│   └── logic/            # 遊戲邏輯（16 個遊戲）
 ├── core/                 # 核心邏輯
 │   └── gameRegistry.ts   # 遊戲註冊中心
 ├── router/               # 路由設定
@@ -290,12 +348,16 @@ src/
 │   ├── professionalScoreCalculator.ts # 專業評分
 │   ├── assessmentService.ts          # 評估服務
 │   ├── miniCogService.ts             # Mini-Cog 服務
+│   ├── clockDrawingAnalyzer.ts       # 時鐘繪圖 AI 分析
 │   ├── declineDetectionService.ts    # 退化偵測
 │   ├── dailyTrainingService.ts       # 每日訓練
 │   ├── adaptiveDifficultyService.ts  # 自適應難度
 │   ├── behaviorAnalysisService.ts    # 行為分析
+│   ├── correlationAnalysisService.ts # 相關性分析
 │   ├── recommendationEngine.ts       # 推薦引擎
 │   ├── nutritionPlaceholder.ts       # 營養建議
+│   ├── pdfService.ts                 # PDF 報告生成
+│   ├── taiwanNormativeData.ts        # 台灣常模數據
 │   └── offlineSyncService.ts         # 離線同步
 ├── stores/               # Pinia stores
 │   ├── userStore.ts      # 使用者狀態
@@ -736,7 +798,7 @@ watch(effectiveTheme, () => {
 - 📦 新增 `.scrollbar-hide` 工具類別
 
 ### v1.0.0 (初始版本)
-- 🎉 15+ 種認知訓練遊戲
+- 🎉 16 種認知訓練遊戲
 - 🎉 Mini-Cog 專業評估整合
 - 🎉 退化偵測與自適應難度系統
 - 🎉 PWA 離線支援

@@ -11,7 +11,8 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const SOURCE_LOGO = path.join(__dirname, '../src/logo/logo_long.png')
+// 使用根目錄的新 logo.png
+const SOURCE_LOGO = path.join(__dirname, '../logo.png')
 const PUBLIC_DIR = path.join(__dirname, '../public')
 
 // 要產生的圖示尺寸配置

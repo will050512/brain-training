@@ -28,7 +28,7 @@ export interface AssetManifest {
 export const DEFAULT_ASSET_MANIFEST: AssetManifest = {
   ui: {
     images: {
-      logo: '/images/ui/logo.svg',
+      logo: '/images/ui/public/logo.svg',
       homeIcon: '/images/ui/icons/home.svg',
       settingsIcon: '/images/ui/icons/settings.svg',
       reportIcon: '/images/ui/icons/report.svg',

@@ -26,11 +26,15 @@
   --color-focus-ring: rgba(59, 130, 246, 0.5);
   --color-skeleton: #e2e8f0;
   
-  /* 顏色主題 */
-  --color-primary: #3b82f6;
-  --color-primary-dark: #1d4ed8;
-  --color-primary-light: #60a5fa;
-  --color-primary-bg: #eff6ff;
+  /* 顏色主題 - 新色調 */
+  --color-primary: #a124e0;
+  --color-primary-dark: #11031d;
+  --color-primary-light: #c45ff5;
+  --color-primary-bg: #f5e6ff;
+  --color-accent-green: #01cb5f;
+  --color-accent-purple: #a124e0;
+  --color-accent-blue: #1f8ea9;
+  --color-accent-dark: #11031d;
   --color-success: #22c55e;
   --color-success-bg: #f0fdf4;
   --color-warning: #eab308;
@@ -155,10 +159,12 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.3);
   
-  /* 漸層 */
-  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --gradient-hero: linear-gradient(to bottom, #eff6ff, #ffffff);
+  /* 漸層 - 新色調 */
+  --gradient-primary: linear-gradient(135deg, #a124e0 0%, #1f8ea9 100%);
+  --gradient-hero: linear-gradient(to bottom, #f5e6ff, #ffffff);
   --gradient-card: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  --gradient-accent: linear-gradient(135deg, #01cb5f 0%, #1f8ea9 100%);
+  --gradient-dark: linear-gradient(135deg, #11031d 0%, #a124e0 100%);
 }
 
 /* 深色模式變數 */
