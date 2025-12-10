@@ -156,7 +156,7 @@ async function saveFontToCache(fontData: ArrayBuffer): Promise<void> {
  * 載入 Noto Sans TC 字體
  * 優先從快取載入，否則從 CDN 下載
  */
-async function loadNotoSansTC(): Promise<string> {
+async function loadNotoSansTC(): Promise<string | null> {
   // 已載入則直接返回
   if (fontLoaded && fontBase64) {
     return fontBase64
@@ -170,34 +170,39 @@ async function loadNotoSansTC(): Promise<string> {
     return fontBase64
   }
 
-  // 從 CDN 下載完整 Noto Sans TC 字體
-  const fontUrl = 'https://cdn.jsdelivr.net/npm/@aspect-ux/noto-sans-tc@0.0.1/NotoSansTC-Regular.ttf'
+  // 定義字體下載來源（含備援）
+  const fontUrls = [
+    'https://cdn.jsdelivr.net/npm/@aspect-ux/noto-sans-tc@0.0.1/NotoSansTC-Regular.ttf',
+    'https://unpkg.com/@aspect-ux/noto-sans-tc@0.0.1/NotoSansTC-Regular.ttf'
+  ]
   
-  try {
-    const response = await fetch(fontUrl)
-    if (!response.ok) {
-      throw new Error('字體下載失敗')
+  for (const url of fontUrls) {
+    try {
+      const response = await fetch(url)
+      if (!response.ok) continue
+      
+      const arrayBuffer = await response.arrayBuffer()
+      
+      // 儲存到快取
+      await saveFontToCache(arrayBuffer)
+      
+      // 轉換為 base64
+      const uint8Array = new Uint8Array(arrayBuffer)
+      let binary = ''
+      for (let i = 0; i < uint8Array.length; i++) {
+        binary += String.fromCharCode(uint8Array[i] as number)
+      }
+      fontBase64 = btoa(binary)
+      fontLoaded = true
+      
+      return fontBase64
+    } catch (error) {
+      console.warn(`從 ${url} 下載字體失敗:`, error)
     }
-    
-    const arrayBuffer = await response.arrayBuffer()
-    
-    // 儲存到快取
-    await saveFontToCache(arrayBuffer)
-    
-    // 轉換為 base64
-    const uint8Array = new Uint8Array(arrayBuffer)
-    let binary = ''
-    for (let i = 0; i < uint8Array.length; i++) {
-      binary += String.fromCharCode(uint8Array[i] as number)
-    }
-    fontBase64 = btoa(binary)
-    fontLoaded = true
-    
-    return fontBase64
-  } catch (error) {
-    console.error('字體載入失敗:', error)
-    throw new Error('無法載入中文字體，請檢查網路連線')
   }
+
+  console.error('所有字體來源下載失敗')
+  return null
 }
 
 /**
@@ -212,10 +217,15 @@ async function initPdfWithFont(): Promise<jsPDF> {
     format: 'a4',
   })
 
-  // 添加字體
-  doc.addFileToVFS('NotoSansTC-Regular.ttf', fontData)
-  doc.addFont('NotoSansTC-Regular.ttf', 'NotoSansTC', 'normal')
-  doc.setFont('NotoSansTC')
+  if (fontData) {
+    // 添加字體
+    doc.addFileToVFS('NotoSansTC-Regular.ttf', fontData)
+    doc.addFont('NotoSansTC-Regular.ttf', 'NotoSansTC', 'normal')
+    doc.setFont('NotoSansTC')
+  } else {
+    console.warn('無法載入中文字體，使用預設字體')
+    doc.setFont('helvetica')
+  }
 
   return doc
 }

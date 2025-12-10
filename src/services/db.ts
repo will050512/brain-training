@@ -821,31 +821,31 @@ async function calculateWeeklyTrends(
     dominantCognitiveArea: string | null
   }[] = []
   
-  for (const [weekStart, data] of weeklyData) {
+  for (const [weekStart, data] of Array.from(weeklyData.entries())) {
     const { sessions: weekSessions, miniCogResults: weekMiniCog } = data
     
     // 計算該週平均分數
     const scores = weekSessions
-      .filter(s => s.result?.score !== undefined)
-      .map(s => s.result.score)
+      .filter((s: GameSession) => s.result?.score !== undefined)
+      .map((s: GameSession) => s.result.score)
     const averageScore = scores.length > 0 
-      ? scores.reduce((a, b) => a + b, 0) / scores.length 
+      ? scores.reduce((a: number, b: number) => a + b, 0) / scores.length 
       : 0
     
     // 計算該週平均正確率
     const accuracies = weekSessions
-      .filter(s => s.result?.accuracy !== undefined)
-      .map(s => s.result.accuracy)
+      .filter((s: GameSession) => s.result?.accuracy !== undefined)
+      .map((s: GameSession) => s.result.accuracy!)
     const averageAccuracy = accuracies.length > 0
-      ? accuracies.reduce((a, b) => a + b, 0) / accuracies.length
+      ? accuracies.reduce((a: number, b: number) => a + b, 0) / accuracies.length
       : 0
     
     // 計算該週平均反應時間
     const reactionTimes = weekSessions
-      .filter(s => s.result?.avgReactionTime !== undefined)
-      .map(s => s.result.avgReactionTime)
+      .filter((s: GameSession) => s.result?.avgReactionTime !== undefined)
+      .map((s: GameSession) => s.result.avgReactionTime!)
     const averageReactionTime = reactionTimes.length > 0
-      ? reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length
+      ? reactionTimes.reduce((a: number, b: number) => a + b, 0) / reactionTimes.length
       : 0
     
     // 獲取該週最新的 Mini-Cog 分數
@@ -1008,6 +1008,14 @@ export async function getDailyTrainingSessionsByDateRange(
 ): Promise<DailyTrainingSession[]> {
   const sessions = await getUserDailyTrainingSessions(odId)
   return sessions.filter(s => s.date >= startDate && s.date <= endDate)
+}
+
+/**
+ * 刪除每日訓練會話
+ */
+export async function deleteDailyTrainingSession(id: string): Promise<void> {
+  const db = await getDB()
+  await db.delete('dailyTrainingSessions', id)
 }
 
 // ===== 基準能力評估相關操作 =====

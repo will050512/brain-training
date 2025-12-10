@@ -12,6 +12,7 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { 
   createPersonalizedTrainingPlan, 
   getTodayPlan,
+  regenerateDailyPlan,
   type DailyTrainingPlan,
   type TrainingGameItem
 } from '@/services/dailyTrainingService'
@@ -137,6 +138,47 @@ async function loadTrainingPlan() {
     trainingPlan.value = plan
   } catch (error) {
     console.error('載入訓練計畫失敗:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 重新生成計畫
+async function regeneratePlan() {
+  if (!trainingPlan.value || trainingPlan.value.status !== 'not-started') return
+  
+  isLoading.value = true
+  try {
+    const odId = userStore.currentUser?.id
+    if (!odId) return
+    
+    const cognitiveScores: CognitiveScores = gameStore.cognitiveScores || {
+      reaction: 50,
+      logic: 50,
+      memory: 50,
+      cognition: 50,
+      coordination: 50,
+      attention: 50,
+    }
+    
+    const recentSessions = gameStore.recentSessions.map(s => ({
+      gameId: s.gameId,
+      accuracy: s.result?.accuracy,
+      id: s.id
+    }))
+    
+    const duration = settingsStore.dailyTrainingDuration || 15
+    
+    const plan = await regenerateDailyPlan(
+      odId,
+      duration,
+      cognitiveScores,
+      recentSessions
+    )
+    
+    trainingPlan.value = plan
+  } catch (error) {
+    console.error('重新生成計畫失敗:', error)
   } finally {
     isLoading.value = false
   }
@@ -300,6 +342,13 @@ onMounted(() => {
             🚀 一鍵開始訓練
           </template>
         </button>
+        
+        <!-- 重新生成按鈕 (僅在未開始時顯示) -->
+        <div v-if="trainingPlan.status === 'not-started'" class="regenerate-section">
+          <button class="text-btn" @click="regeneratePlan" :disabled="isLoading">
+            🔄 重新生成計畫
+          </button>
+        </div>
       </section>
 
       <!-- 訓練遊戲列表 -->
@@ -590,6 +639,27 @@ onMounted(() => {
 
 .start-training-btn.completed {
   background: linear-gradient(135deg, var(--color-accent-green) 0%, #059669 100%);
+}
+
+.regenerate-section {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.text-btn:hover {
+  background: var(--color-bg-soft);
+  color: var(--color-primary);
 }
 
 .btn-spinner {

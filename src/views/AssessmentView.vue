@@ -270,6 +270,61 @@
         </div>
       </div>
 
+      <!-- Mini-Cog 結果頁面 -->
+      <div v-else-if="stage === 'mini-cog-result'" class="max-w-2xl mx-auto">
+        <div class="card text-center">
+          <div class="text-6xl mb-6">🎉</div>
+          <h2 class="text-2xl font-bold mb-2 text-[var(--color-text)]">Mini-Cog 篩檢完成！</h2>
+          <p class="text-[var(--color-text-secondary)] mb-8">以下是您的篩檢結果</p>
+
+          <!-- 分數卡片 -->
+          <div class="bg-[var(--color-bg-soft)] rounded-xl p-6 mb-8">
+            <div class="text-4xl font-bold text-[var(--color-primary)] mb-2">
+              {{ recentMiniCogResult?.totalScore }} / 5
+            </div>
+            <div class="text-[var(--color-text-secondary)]">總分</div>
+            
+            <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-[var(--color-border)]">
+              <div>
+                <div class="text-xl font-bold text-[var(--color-text)]">
+                  {{ recentMiniCogResult?.wordRecall.score }} / 3
+                </div>
+                <div class="text-sm text-[var(--color-text-muted)]">詞語回憶</div>
+              </div>
+              <div>
+                <div class="text-xl font-bold text-[var(--color-text)]">
+                  {{ recentMiniCogResult?.clockDrawing.score }} / 2
+                </div>
+                <div class="text-sm text-[var(--color-text-muted)]">時鐘繪圖</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 建議 -->
+          <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 mb-8 text-left">
+            <h3 class="font-bold text-blue-800 dark:text-blue-300 mb-2">💡 評估建議</h3>
+            <p class="text-blue-700 dark:text-blue-200 text-sm leading-relaxed">
+              根據您的篩檢結果，我們已為您調整了遊戲難度。建議您每天進行 15 分鐘的認知訓練，持續保持大腦健康。
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-3">
+            <button 
+              @click="startDailyTraining" 
+              class="btn btn-primary btn-lg w-full"
+            >
+              開始今日訓練
+            </button>
+            <button 
+              @click="viewReport" 
+              class="btn btn-secondary w-full"
+            >
+              查看詳細報告
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- 結果頁面 -->
       <div v-else-if="stage === 'result'" class="max-w-2xl mx-auto">
         <div class="card text-center">
@@ -367,7 +422,7 @@ const settingsStore = useSettingsStore()
 const userStore = useUserStore()
 
 // 狀態
-const stage = ref<'select' | 'mini-cog' | 'intro' | 'testing' | 'result'>('select')
+const stage = ref<'select' | 'mini-cog' | 'intro' | 'testing' | 'result' | 'mini-cog-result'>('select')
 const questions = ref<AssessmentQuestion[]>([])
 const answers = ref<AssessmentAnswer[]>([])
 const currentIndex = ref(0)
@@ -450,6 +505,14 @@ function handleMiniCogComplete(miniCogResult: MiniCogResult) {
     }
   })
   
+  stage.value = 'mini-cog-result'
+}
+
+function startDailyTraining() {
+  router.push('/daily-challenge')
+}
+
+function viewReport() {
   router.push('/report')
 }
 
@@ -568,7 +631,8 @@ function saveAndContinue() {
       scores: result.value.scores,
     })
   }
-  router.push('/games')
+  // 引導至每日訓練，讓用戶可以直接開始個人化訓練
+  router.push('/daily-challenge')
 }
 
 // 重新測試
@@ -583,7 +647,7 @@ onMounted(() => {
 })
 
 // 監聽頁面離開
-watch(stage, (newStage) => {
+watch(stage, (newStage: string) => {
   if (newStage !== 'testing') {
     stopTimer()
   }

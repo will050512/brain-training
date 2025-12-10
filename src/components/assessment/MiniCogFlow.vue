@@ -106,9 +106,9 @@
 
       <!-- Step 2: Clock Drawing -->
       <div v-else-if="currentStep === 2" key="clock" class="step-content clock-step">
-        <h2>時鐘繪圖</h2>
+        <h2>時鐘測驗</h2>
         <p class="instruction">
-          請在下方畫一個時鐘，顯示時間：<strong>{{ clockTime }}</strong>
+          請在下方組裝一個時鐘，顯示時間：<strong>{{ clockTime }}</strong>
           <span class="time-hint">（{{ clockTimeDescription }}）</span>
         </p>
         
@@ -245,6 +245,7 @@ import ClockDrawingTest from '@/components/games/ClockDrawingTest.vue'
 import {
   type MiniCogResult,
   type ClockDrawingSelfAssessment,
+  type ClockDrawingResult,
   type MiniCogWordSet,
   type MiniCogLocale,
   getRandomWordSet,
@@ -260,7 +261,7 @@ import { useUserStore } from '@/stores/userStore'
 
 // Props
 const props = withDefaults(defineProps<{
-  language?: 'zh-TW' | 'zh-CN' | 'en'
+  language?: MiniCogLocale
 }>(), {
   language: 'zh-TW'
 })
@@ -421,13 +422,9 @@ const proceedToClockDrawing = () => {
   currentStep.value = 2
 }
 
-const handleClockComplete = async (data: {
-  selfAssessment: ClockDrawingSelfAssessment
-  imageData?: string
-  score: number
-}) => {
+const handleClockComplete = async (data: ClockDrawingResult) => {
   clockAssessment.value = data.selfAssessment
-  clockCompletionTime.value = data.score * 1000 // 暫時使用
+  clockCompletionTime.value = data.completionTime
   
   // Check consent before storing image
   const odId = userStore.currentUser?.id
@@ -461,8 +458,8 @@ const submitRecall = () => {
   showResults.value = true
   
   // Calculate results
-  const correctWords = selectedWords.value.filter(w => 
-    session.value.wordSet?.words.includes(w)
+  const correctWords = selectedWords.value.filter((w: string) => 
+    session.value.wordSet?.words.includes(w) ?? false
   )
   
   // Calculate scores

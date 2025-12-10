@@ -10,7 +10,8 @@
           ← <span class="hidden sm:inline">返回</span>
         </button>
         
-        <div class="text-center flex-1 min-w-0 mx-1 sm:mx-2">
+        <!-- 標題區域：手機版隱藏難度文字，只顯示標題 -->
+        <div class="text-center flex-1 min-w-0 mx-1 sm:mx-2" :class="{ 'hidden xs:block': isMobile && gameState === 'playing' }">
           <h1 class="text-sm sm:text-base lg:text-xl font-bold text-[var(--color-text)] truncate">
             {{ currentGame?.name || '遊戲' }}
           </h1>
@@ -22,27 +23,28 @@
           </span>
         </div>
         
-        <div class="flex items-center gap-1 sm:gap-2 lg:gap-4 flex-shrink-0">
+        <!-- 狀態顯示區域：優化手機版佈局 -->
+        <div class="flex items-center gap-2 sm:gap-4 flex-shrink-0 ml-auto">
           <!-- 進度顯示 -->
           <div 
             v-if="gameStatus.showProgress !== false && gameStatus.totalRounds" 
-            class="text-right game-stats-landscape"
+            class="text-right flex flex-col items-end"
           >
-            <div class="text-xs lg:text-sm text-[var(--color-text-secondary)] hide-landscape">進度</div>
-            <div class="text-base sm:text-lg lg:text-2xl font-bold text-purple-600 dark:text-purple-400 stat-value">
+            <div class="text-[10px] sm:text-xs lg:text-sm text-[var(--color-text-secondary)] leading-none mb-0.5">進度</div>
+            <div class="text-sm sm:text-lg lg:text-2xl font-bold text-purple-600 dark:text-purple-400 leading-none">
               {{ gameStatus.currentRound || 0 }}/{{ gameStatus.totalRounds }}
             </div>
           </div>
 
-          <!-- 正確/錯誤計數 -->
+          <!-- 正確/錯誤計數 (手機版優先顯示) -->
           <div 
             v-if="gameStatus.showCounts !== false && (gameStatus.correctCount !== undefined || gameStatus.wrongCount !== undefined)" 
-            class="text-right game-stats-landscape"
+            class="text-right flex flex-col items-end"
           >
-            <div class="text-xs lg:text-sm text-[var(--color-text-secondary)] hide-landscape">對/錯</div>
-            <div class="text-base sm:text-lg lg:text-2xl font-bold stat-value">
+            <div class="text-[10px] sm:text-xs lg:text-sm text-[var(--color-text-secondary)] leading-none mb-0.5">對/錯</div>
+            <div class="text-sm sm:text-lg lg:text-2xl font-bold leading-none">
               <span class="text-green-600 dark:text-green-400">{{ gameStatus.correctCount || 0 }}</span>
-              <span class="text-[var(--color-text-muted)]">/</span>
+              <span class="text-[var(--color-text-muted)] mx-0.5">/</span>
               <span class="text-red-500 dark:text-red-400">{{ gameStatus.wrongCount || 0 }}</span>
             </div>
           </div>
@@ -50,31 +52,31 @@
           <!-- 連擊顯示 -->
           <div 
             v-if="gameStatus.showCombo && gameStatus.combo && gameStatus.combo > 1" 
-            class="text-right game-stats-landscape"
+            class="text-right flex flex-col items-end"
           >
-            <div class="text-xs lg:text-sm text-[var(--color-text-secondary)] hide-landscape">連擊</div>
-            <div class="text-base sm:text-lg lg:text-2xl font-bold text-orange-500 dark:text-orange-400 stat-value">🔥{{ gameStatus.combo }}x</div>
+            <div class="text-[10px] sm:text-xs lg:text-sm text-[var(--color-text-secondary)] leading-none mb-0.5">連擊</div>
+            <div class="text-sm sm:text-lg lg:text-2xl font-bold text-orange-500 dark:text-orange-400 leading-none">🔥{{ gameStatus.combo }}</div>
           </div>
 
           <!-- 分數顯示 -->
           <div 
             v-if="gameStatus.showScore !== false" 
-            class="text-right game-stats-landscape"
+            class="text-right flex flex-col items-end"
           >
-            <div class="text-xs lg:text-sm text-[var(--color-text-secondary)] hide-landscape">分數</div>
-            <div class="text-base sm:text-lg lg:text-2xl font-bold text-blue-600 dark:text-blue-400 stat-value">{{ gameStatus.score ?? currentScore }}</div>
+            <div class="text-[10px] sm:text-xs lg:text-sm text-[var(--color-text-secondary)] leading-none mb-0.5">分數</div>
+            <div class="text-sm sm:text-lg lg:text-2xl font-bold text-blue-600 dark:text-blue-400 leading-none">{{ gameStatus.score ?? currentScore }}</div>
           </div>
           
           <!-- 計時器 -->
           <div 
             v-if="gameStatus.showTimer !== false" 
-            class="text-right game-stats-landscape"
+            class="text-right flex flex-col items-end min-w-[3rem] sm:min-w-[4rem]"
           >
-            <div class="text-xs lg:text-sm text-[var(--color-text-secondary)] hide-landscape">
+            <div class="text-[10px] sm:text-xs lg:text-sm text-[var(--color-text-secondary)] leading-none mb-0.5">
               {{ gameStatus.timeLeft !== undefined ? '剩餘' : '用時' }}
             </div>
             <div 
-              class="text-base sm:text-lg lg:text-2xl font-bold stat-value"
+              class="text-sm sm:text-lg lg:text-2xl font-bold leading-none tabular-nums"
               :class="{
                 'text-red-500 dark:text-red-400 animate-pulse': gameStatus.timeLeft !== undefined && gameStatus.timeLeft <= 10,
                 'text-[var(--color-text)]': gameStatus.timeLeft === undefined || gameStatus.timeLeft > 10
@@ -276,23 +278,34 @@
           <!-- 普通遊戲模式 - 推薦網格 + 大按鈕 -->
           <template v-else>
             <!-- 主要操作按鈕 - 年長者友善設計 -->
-            <div class="grid grid-cols-2 gap-3 mb-6">
-              <button @click="playAgain" class="btn btn-primary btn-xl py-4 text-lg">
-                🔄 再玩一次
+            <div class="flex flex-col gap-3 mb-6">
+              <!-- 智能推薦下一關 (如果有推薦遊戲) -->
+              <button 
+                v-if="recommendedGames.length > 0"
+                @click="startRecommendedGame(recommendedGames[0])" 
+                class="btn btn-primary btn-xl py-4 text-lg w-full shadow-md"
+              >
+                ➡️ 下一個挑戰：{{ recommendedGames[0].name }}
               </button>
-              <router-link to="/games" class="btn btn-secondary btn-xl py-4 text-lg">
-                🎮 更多遊戲
-              </router-link>
+
+              <div class="grid grid-cols-2 gap-3">
+                <button @click="playAgain" class="btn btn-secondary btn-xl py-4 text-lg">
+                  🔄 再玩一次
+                </button>
+                <router-link to="/games" class="btn btn-secondary btn-xl py-4 text-lg flex items-center justify-center">
+                  🎮 更多遊戲
+                </router-link>
+              </div>
             </div>
             
-            <!-- 推薦其他遊戲 - 總是顯示 -->
-            <div class="mt-4">
+            <!-- 其他推薦遊戲 (顯示剩餘的) -->
+            <div v-if="recommendedGames.length > 1" class="mt-4">
               <h3 class="text-base font-medium text-[var(--color-text)] mb-3 text-left">
-                🎯 試試其他維度的訓練
+                🎯 或者試試其他訓練
               </h3>
-              <div v-if="recommendedGames.length > 0" class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-2 gap-3">
                 <button
-                  v-for="game in recommendedGames"
+                  v-for="game in recommendedGames.slice(1)"
                   :key="game.id"
                   @click="startRecommendedGame(game)"
                   class="recommended-game-card"
@@ -306,10 +319,10 @@
                   </span>
                 </button>
               </div>
-              <div v-else class="text-center py-6 text-[var(--color-text-secondary)]">
-                <p class="text-lg mb-2">🎉 太棒了！</p>
-                <p>您今天已經嘗試了多種訓練</p>
-              </div>
+            </div>
+            <div v-else-if="recommendedGames.length === 0" class="text-center py-6 text-[var(--color-text-secondary)]">
+              <p class="text-lg mb-2">🎉 太棒了！</p>
+              <p>您今天已經嘗試了多種訓練</p>
             </div>
           </template>
           
@@ -317,6 +330,18 @@
             📊 查看報告
           </router-link>
         </div>
+      </div>
+
+      <!-- 未知狀態 (Fallback) -->
+      <div v-else class="max-w-lg mx-auto text-center py-12">
+        <div class="text-6xl mb-4">🤔</div>
+        <h2 class="text-xl font-bold mb-4 text-[var(--color-text)]">狀態異常</h2>
+        <p class="text-[var(--color-text-secondary)] mb-6">
+          遊戲狀態似乎出現了問題，請嘗試重新載入。
+        </p>
+        <button @click="router.go(0)" class="btn btn-primary">
+          重新載入頁面
+        </button>
       </div>
     </div>
     
@@ -337,6 +362,7 @@ import { useGameStore, useUserStore } from '@/stores'
 import { useResponsive } from '@/composables/useResponsive'
 import { DIFFICULTIES, type GameResult, type GameState, type GameDefinition, type GameStatusUpdate } from '@/types/game'
 import { calculateDifficultyAdjustment, applyDifficultyAdjustment, getFullDifficultyLabel, type DifficultyAdjustment } from '@/services/adaptiveDifficultyService'
+import { markGameCompleted } from '@/services/dailyTrainingService'
 import TrainingCompleteModal from '@/components/ui/TrainingCompleteModal.vue'
 import { gameRegistry } from '@/core/gameRegistry'
 import type { CognitiveDimension } from '@/types/cognitive'
@@ -627,29 +653,35 @@ async function handleGameEnd(result: GameResult): Promise<void> {
     timerInterval = null
   }
   
-  gameResult.value = result
-  currentScore.value = result.score
-  gameState.value = 'finished'
-  
-  // 記錄遊戲結果
-  await gameStore.recordGameResult(result)
-  
-  // 如果是每日訓練，標記完成並更新狀態
-  if (isFromDailyTraining.value) {
-    gameStore.completeCurrentTrainingGame(result.score, result.duration)
-    
-    // 檢查是否完成所有訓練
-    if (gameStore.isAllTrainingCompleted()) {
-      // 顯示慶祝動畫
-      showCompletionModal.value = true
-    }
-  } else {
-    // 從普通遊戲選擇進入，載入推薦遊戲
-    recommendedGames.value = gameStore.getUnplayedGamesByOtherDimensions(gameId.value, 4)
-  }
-  
-  // 計算難度調整
   try {
+    gameResult.value = result
+    currentScore.value = result.score
+    gameState.value = 'finished'
+    
+    // 記錄遊戲結果
+    await gameStore.recordGameResult(result)
+    
+    // 如果是每日訓練，標記完成並更新狀態
+    if (isFromDailyTraining.value) {
+      gameStore.completeCurrentTrainingGame(result.score, result.duration)
+      
+      // 同步更新到後端服務，確保進度持久化
+      const odId = userStore.currentUser?.id
+      if (odId) {
+        await markGameCompleted(odId, result.gameId, result.duration)
+      }
+      
+      // 檢查是否完成所有訓練
+      if (gameStore.isAllTrainingCompleted()) {
+        // 顯示慶祝動畫
+        showCompletionModal.value = true
+      }
+    } else {
+      // 從普通遊戲選擇進入，載入推薦遊戲
+      recommendedGames.value = gameStore.getUnplayedGamesByOtherDimensions(gameId.value, 4)
+    }
+    
+    // 計算難度調整
     const odId = userStore.currentUser?.id || ''
     if (odId && gameId.value) {
       const adjustment = await calculateDifficultyAdjustment(
@@ -665,7 +697,9 @@ async function handleGameEnd(result: GameResult): Promise<void> {
       }
     }
   } catch (error) {
-    console.error('計算難度調整失敗:', error)
+    console.error('處理遊戲結束時發生錯誤:', error)
+    // 確保狀態為 finished 以顯示結果畫面（即使部分邏輯失敗）
+    gameState.value = 'finished'
   }
 }
 
@@ -683,10 +717,27 @@ function playAgain(): void {
 function continueToNextGame(): void {
   const nextGame = gameStore.getNextTrainingGame()
   if (nextGame) {
+    // 先重置當前狀態
+    playAgain()
+    
+    // 移動到下一個遊戲
     gameStore.moveToNextTrainingGame()
     gameStore.selectGame(nextGame.gameId)
     gameStore.selectDifficulty(nextGame.difficulty)
-    router.push(`/games/${nextGame.gameId}?autoStart=true&fromDaily=true`)
+    
+    // 強制跳轉（如果是同一個路由，Vue Router 可能不會重新加載組件）
+    // 使用 replace 避免在歷史記錄中堆積
+    router.replace({
+      path: `/games/${nextGame.gameId}`,
+      query: { 
+        autoStart: 'true', 
+        fromDaily: 'true',
+        t: Date.now().toString() // 加入時間戳強制刷新
+      }
+    })
+  } else {
+    // 如果沒有下一個遊戲，跳轉到報告頁面
+    router.push('/report')
   }
 }
 
@@ -722,9 +773,20 @@ function goBack(): void {
 }
 
 // 監聽路由變化，選擇遊戲
-watch(gameId, (newId) => {
-  if (newId && !gameStore.currentGame) {
-    gameStore.selectGame(newId)
+watch(() => route.params.gameId, (newId) => {
+  if (newId) {
+    const id = Array.isArray(newId) ? newId[0] : newId
+    gameStore.selectGame(id)
+    
+    // 如果是從每日訓練自動跳轉過來的，且帶有 autoStart 參數
+    if (route.query.autoStart === 'true') {
+      // 重置狀態
+      playAgain()
+      // 延遲開始，確保組件已掛載
+      setTimeout(() => {
+        startGame()
+      }, 100)
+    }
   }
 }, { immediate: true })
 

@@ -37,8 +37,8 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  'game:start': []
-  'game:end': [result: ReturnType<typeof summarizeResult>]
+  'game-start': []
+  'game-end': [result: ReturnType<typeof summarizeResult>]
   'score:update': [score: number]
   'state:change': [phase: string]
   'status-update': [status: GameStatusUpdate]
@@ -102,7 +102,7 @@ const game = useGame<CardMatchDifficultyConfig>({
       moves.value,
       result.duration
     )
-    emit('game:end', cardResult)
+    emit('game-end', cardResult)
   },
 })
 
@@ -170,7 +170,7 @@ function handleStart() {
   
   // 開始遊戲狀態
   game.state.startGame()
-  emit('game:start')
+  emit('game-start')
   
   // 預覽階段 - 顯示所有卡片
   isPreviewing.value = true
@@ -293,7 +293,7 @@ function handleGameComplete() {
   
   // 結束遊戲
   game.state.finishGame()
-  emit('game:end', result)
+  emit('game-end', result)
 }
 
 /** 時間到處理 */

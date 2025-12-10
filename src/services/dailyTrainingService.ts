@@ -11,6 +11,7 @@ import { gameRegistry } from '@/core/gameRegistry'
 import { 
   getTodayTrainingSession, 
   saveDailyTrainingSession,
+  deleteDailyTrainingSession,
   generateId,
   getLatestMiniCogResult,
   type DailyTrainingSession
@@ -426,6 +427,26 @@ export async function resumeTraining(odId: string): Promise<DailyTrainingPlan | 
     return convertSessionToPlan(session)
   }
   return null
+}
+
+/**
+ * 重新生成每日訓練計畫
+ * 刪除今日現有計畫並重新生成
+ */
+export async function regenerateDailyPlan(
+  odId: string,
+  duration: DailyTrainingDuration,
+  cognitiveScores: CognitiveScores,
+  recentSessions: { gameId: string; accuracy?: number; id?: string }[] = []
+): Promise<DailyTrainingPlan> {
+  // 刪除今日現有計畫
+  const existingSession = await getTodayTrainingSession(odId)
+  if (existingSession) {
+    await deleteDailyTrainingSession(existingSession.id)
+  }
+  
+  // 重新生成個人化計畫
+  return createPersonalizedTrainingPlan(odId, duration, cognitiveScores, recentSessions)
 }
 
 /**

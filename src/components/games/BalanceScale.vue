@@ -33,8 +33,8 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  'game:start': []
-  'game:end': [result: any]
+  'game-start': []
+  'game-end': [result: any]
   'score:update': [score: number]
   'state:change': [phase: string]
   'status-update': [status: GameStatusUpdate]
@@ -75,7 +75,7 @@ const {
 
 function startGame() {
   startGameState()
-  emit('game:start')
+  emit('game-start')
 }
 
 function finishGame() {
@@ -230,7 +230,7 @@ function handleGameEnd() {
   )
   
   finishGame()
-  emit('game:end', result)
+  emit('game-end', result)
 }
 
 // ===== 生命週期 =====
