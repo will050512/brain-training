@@ -262,6 +262,19 @@ watch(effectiveTheme, () => {
   initChart()
 })
 
+// 獲取圖表圖片
+function getDataURL(): string | null {
+  return chart?.getDataURL({
+    type: 'png',
+    pixelRatio: 2,
+    backgroundColor: effectiveTheme.value === 'dark' ? '#1f2937' : '#ffffff'
+  }) || null
+}
+
+defineExpose({
+  getDataURL
+})
+
 onMounted(() => {
   initChart()
   window.addEventListener('resize', handleResize)

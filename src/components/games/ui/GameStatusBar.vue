@@ -145,14 +145,14 @@ const progressPercent = computed(() => {
 }
 
 .status-label {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .status-value {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--color-text);
 }
@@ -187,7 +187,7 @@ const progressPercent = computed(() => {
 }
 
 .count-value {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   font-weight: 600;
 }
 
@@ -214,7 +214,7 @@ const progressPercent = computed(() => {
 }
 
 .combo-value {
-  font-size: 1rem;
+  font-size: 1.125rem;
   font-weight: 700;
   color: white;
 }
@@ -246,11 +246,11 @@ const progressPercent = computed(() => {
   }
   
   .status-label {
-    font-size: 0.625rem;
+    font-size: 0.75rem;
   }
   
   .status-value {
-    font-size: 1rem;
+    font-size: 1.25rem;
   }
   
   .counts-item {

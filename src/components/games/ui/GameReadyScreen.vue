@@ -319,8 +319,8 @@ onUnmounted(() => {
   }
   
   .start-button {
-    padding: 0.875rem 2rem;
-    font-size: 1.125rem;
+    padding: 1rem 2rem;
+    font-size: 1.25rem;
   }
   
   .countdown-number {

@@ -330,9 +330,9 @@ const displayGradeMessage = computed(() => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.875rem 1.5rem;
+  padding: 1rem 2rem;
   border-radius: var(--radius-lg);
-  font-size: 1rem;
+  font-size: 1.125rem;
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -390,7 +390,7 @@ const displayGradeMessage = computed(() => {
   }
   
   .stat-value {
-    font-size: 1.25rem;
+    font-size: 1.375rem;
   }
   
   .action-buttons {

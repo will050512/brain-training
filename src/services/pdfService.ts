@@ -71,6 +71,8 @@ export interface PdfReportOptions {
   includeBehavior?: boolean
   includeRecommendations?: boolean
   language?: 'zh-TW' | 'en' | 'bilingual'
+  radarChartImage?: string | null
+  trendChartImage?: string | null
 }
 
 // ===== 常數定義 ===== (調整顏色/字級並加入字型常數)
@@ -224,7 +226,7 @@ export async function generateCognitiveReport(
       doc.addPage()
       currentY = margin
     }
-    currentY = drawCognitiveScoresSection(doc, cognitiveScores, currentY, margin, pageWidth)
+    currentY = drawCognitiveScoresSection(doc, cognitiveScores, currentY, margin, pageWidth, options)
   }
 
   // ===== 趨勢分析 =====
@@ -233,7 +235,7 @@ export async function generateCognitiveReport(
       doc.addPage()
       currentY = margin
     }
-    currentY = drawTrendsSection(doc, trends, currentY, margin, pageWidth)
+    currentY = drawTrendsSection(doc, trends, currentY, margin, pageWidth, options)
   }
 
   // ===== 行為分析摘要 =====
@@ -437,7 +439,8 @@ function drawCognitiveScoresSection(
   scores: CognitiveScoreData,
   startY: number,
   margin: number,
-  pageWidth: number
+  pageWidth: number,
+  options: PdfReportOptions
 ): number {
   let y = startY
 
@@ -450,7 +453,21 @@ function drawCognitiveScoresSection(
   doc.text('認知功能領域評估 Cognitive Domain Assessment', margin + 2, y + 3)
   y += 15
 
-  // 繪製簡易條形圖
+  // 如果有雷達圖圖片，優先使用圖片
+  if (options.radarChartImage) {
+    try {
+      const imgWidth = 120
+      const imgHeight = 100
+      const x = (pageWidth - imgWidth) / 2
+      doc.addImage(options.radarChartImage, 'PNG', x, y, imgWidth, imgHeight)
+      y += imgHeight + 5
+    } catch (e) {
+      console.warn('無法繪製雷達圖', e)
+    }
+  } 
+  
+  // 繪製簡易條形圖 (作為補充或備用)
+  // 如果有雷達圖，條形圖可以縮小或省略，這裡選擇保留但作為詳細數據列表
   const domains = [
     { name: '記憶力 Memory', score: scores.memory },
     { name: '注意力 Attention', score: scores.attention },
@@ -498,7 +515,8 @@ function drawTrendsSection(
   trends: TrendDataPoint[],
   startY: number,
   margin: number,
-  pageWidth: number
+  pageWidth: number,
+  options: PdfReportOptions
 ): number {
   let y = startY
 
@@ -510,6 +528,19 @@ function drawTrendsSection(
   doc.setTextColor(COLORS.primary)
   doc.text('表現趨勢分析 Performance Trends', margin + 2, y + 3)
   y += 12
+
+  // 如果有趨勢圖圖片，優先使用圖片
+  if (options.trendChartImage) {
+    try {
+      const imgWidth = 160
+      const imgHeight = 80
+      const x = (pageWidth - imgWidth) / 2
+      doc.addImage(options.trendChartImage, 'PNG', x, y, imgWidth, imgHeight)
+      y += imgHeight + 5
+    } catch (e) {
+      console.warn('無法繪製趨勢圖', e)
+    }
+  }
 
   // 繪製趨勢表格
   const tableData: string[][] = [['日期 Date', '分數 Score', '遊戲類型 Game Type']]

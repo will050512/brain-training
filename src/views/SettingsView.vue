@@ -51,6 +51,11 @@
         </div>
         -->
 
+        <!-- 訓練目標設定 -->
+        <div class="card">
+          <TrainingGoalSettings />
+        </div>
+
         <!-- 螢幕方向設定 -->
         <div class="card p-4">
           <h3 class="font-semibold text-[var(--color-text)] mb-4">📱 螢幕方向</h3>
@@ -217,6 +222,7 @@
 import { useRouter } from 'vue-router'
 import { useUserStore, useSettingsStore, useGameStore } from '@/stores'
 import { clearUserGameSessions } from '@/services/db'
+import TrainingGoalSettings from '@/components/ui/TrainingGoalSettings.vue'
 
 const router = useRouter()
 const userStore = useUserStore()

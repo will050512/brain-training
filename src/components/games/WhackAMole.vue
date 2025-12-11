@@ -334,7 +334,7 @@ watch(() => props.difficulty, () => {
           <Transition name="pop">
             <div
               v-if="hole.active"
-              class="absolute text-5xl md:text-6xl transform transition-transform"
+              class="absolute text-6xl md:text-7xl transform transition-transform"
               :class="{ 
                 'animate-pulse': hole.type === 'mole',
                 'scale-110': hole.hit,
@@ -373,7 +373,7 @@ watch(() => props.difficulty, () => {
 
 <style scoped>
 .hole {
-  min-height: 80px;
+  min-height: 100px;
 }
 
 .pop-enter-active,

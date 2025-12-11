@@ -194,8 +194,8 @@ const handleSelect = (option: NormalizedOption) => {
 /* 尺寸變體 */
 .variant-large .option-button {
   padding: 1.5rem;
-  font-size: 1.5rem;
-  min-height: 80px;
+  font-size: 2rem;
+  min-height: 100px;
 }
 
 .variant-compact .option-button {
@@ -268,8 +268,8 @@ const handleSelect = (option: NormalizedOption) => {
   
   .variant-large .option-button {
     padding: 1rem;
-    font-size: 1.25rem;
-    min-height: 60px;
+    font-size: 1.5rem;
+    min-height: 80px;
   }
   
   /* 手機上 4 列改為 2 列 */

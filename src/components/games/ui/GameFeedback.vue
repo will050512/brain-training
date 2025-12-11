@@ -153,19 +153,19 @@ watch(() => props.show, (newVal) => {
 }
 
 .size-md .feedback-icon {
-  font-size: 2.5rem;
+  font-size: 3rem;
 }
 
 .size-md .feedback-message {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
 }
 
 .size-lg .feedback-icon {
-  font-size: 3.5rem;
+  font-size: 4.5rem;
 }
 
 .size-lg .feedback-message {
-  font-size: 1.5rem;
+  font-size: 2rem;
 }
 
 /* 類型樣式 */
@@ -284,11 +284,11 @@ watch(() => props.show, (newVal) => {
   }
   
   .size-md .feedback-icon {
-    font-size: 2rem;
+    font-size: 2.5rem;
   }
   
   .size-md .feedback-message {
-    font-size: 1rem;
+    font-size: 1.25rem;
   }
 }
 </style>

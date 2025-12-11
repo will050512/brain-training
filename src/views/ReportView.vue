@@ -32,7 +32,7 @@
         <section class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
           <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-[var(--color-text)]">🧠 認知能力</h3>
           <div class="h-64">
-            <RadarChart :scores="gameStore.cognitiveScores" :previousScores="previousScores" />
+            <RadarChart ref="radarChartRef" :scores="gameStore.cognitiveScores" :previousScores="previousScores" />
           </div>
         </section>
 
@@ -168,6 +168,7 @@
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center min-w-0">
             <div class="h-80 w-full min-w-0">
               <RadarChart 
+                ref="radarChartRef"
                 :scores="gameStore.cognitiveScores" 
                 :previousScores="previousScores"
               />
@@ -204,6 +205,7 @@
           </div>
           <div class="h-72 w-full min-w-0">
              <TrendChart 
+                ref="trendChartRef"
                 :history="gameStore.scoreHistory" 
                 :showWarningLines="true"
                 :professionalMode="false"
@@ -442,6 +444,10 @@ import MiniCogCorrelationChart from '@/components/charts/MiniCogCorrelationChart
 const { isMobile } = useResponsive()
 const userStore = useUserStore()
 const gameStore = useGameStore()
+
+// 圖表 Refs
+const radarChartRef = ref<InstanceType<typeof RadarChart> | null>(null)
+const trendChartRef = ref<InstanceType<typeof TrendChart> | null>(null)
 
 // 狀態
 const isGenerating = ref(false)
@@ -689,13 +695,25 @@ async function downloadReport() {
         } catch (e) { console.warn('Behavior analysis skipped') }
      }
 
+     // 獲取圖表圖片
+     const radarChartImage = radarChartRef.value?.getDataURL()
+     const trendChartImage = trendChartRef.value?.getDataURL()
+
      const pdfBlob = await generateCognitiveReport(
         userInfo,
         miniCogReportData,
         cognitiveScoreData,
         trendData,
         behaviorSummary,
-        { includeClockDrawing: true, includeTrends: true, includeBehavior: true, includeRecommendations: true, language: 'bilingual' }
+        { 
+          includeClockDrawing: true, 
+          includeTrends: true, 
+          includeBehavior: true, 
+          includeRecommendations: true, 
+          language: 'bilingual',
+          radarChartImage,
+          trendChartImage
+        }
      )
      
      const filename = `認知評估報告_${userStore.currentUser?.name}_${new Date().toISOString().split('T')[0]}.pdf`
