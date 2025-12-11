@@ -1,9 +1,12 @@
 <script setup lang="ts">
 /**
- * 桌面版布局元件
- * 可收合側邊欄 + 主內容區 + 可選資訊側欄
+ * 通用佈局元件 (Responsive Layout)
+ * 優化重點：
+ * 1. 桌面端採用 App-Shell 模式：側邊欄與 Header 固定，僅內容區捲動。
+ * 2. 側邊欄懸停/收合邏輯優化。
+ * 3. 手機端維持抽屜式導航。
  */
-import { ref, computed, watch, provide } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useResponsive } from '@/composables/useResponsive'
 import SyncStatusIndicator from '@/components/ui/SyncStatusIndicator.vue'
@@ -17,15 +20,10 @@ interface NavItem {
 }
 
 interface Props {
-  /** 應用名稱 */
   appName?: string
-  /** 應用圖示 */
   appIcon?: string
-  /** 導航項目 */
   navItems?: NavItem[]
-  /** 是否顯示右側資訊欄 */
   showAside?: boolean
-  /** 側邊欄預設收合狀態 */
   defaultCollapsed?: boolean
 }
 
@@ -50,326 +48,170 @@ const emit = defineEmits<{
 
 const router = useRouter()
 const route = useRoute()
-const { isTablet } = useResponsive()
+const { isMobile, isTablet } = useResponsive()
 
-// 側邊欄狀態
-const isCollapsed = ref(props.defaultCollapsed)
-const isHovering = ref(false)
+// 狀態管理
+const isSidebarOpen = ref(false) // 手機版：是否開啟抽屜
+const isCollapsed = ref(props.defaultCollapsed) // 桌面版：是否收合
+const isHovering = ref(false) // 桌面版：滑鼠懸停
 
-// 平板模式下預設收合
-watch(isTablet, (val) => {
-  if (val) {
-    isCollapsed.value = true
+// 監聽螢幕尺寸變化
+watch(isMobile, (mobile) => {
+  if (mobile) {
+    isSidebarOpen.value = false
+  } else {
+    isSidebarOpen.value = true
   }
 }, { immediate: true })
 
-// 當收合狀態改變時通知父元件
-watch(isCollapsed, (val) => {
-  emit('update:collapsed', val)
+// 平板自動收合
+watch(isTablet, (tablet) => {
+  if (tablet && !isMobile.value) {
+    isCollapsed.value = true
+  }
 })
 
-// 實際顯示狀態（hover 時展開）
-const showExpanded = computed(() => !isCollapsed.value || isHovering.value)
+// 計算屬性
+const showSidebarText = computed(() => {
+  if (isMobile.value) return true
+  return !isCollapsed.value || isHovering.value
+})
 
-// 當前路由匹配
 const isActiveRoute = (path: string): boolean => {
-  if (path === '/') {
-    return route.path === '/'
-  }
+  if (path === '/') return route.path === '/'
   return route.path.startsWith(path)
 }
 
-// 切換收合
-const toggleCollapse = (): void => {
-  isCollapsed.value = !isCollapsed.value
-}
-
-// 導航
 const navigateTo = (path: string): void => {
   router.push(path)
+  if (isMobile.value) isSidebarOpen.value = false
 }
 
-// Provide 給子元件使用
-provide('desktopLayout', {
-  isCollapsed,
-  toggleCollapse,
-})
+const toggleMobileMenu = () => isSidebarOpen.value = !isSidebarOpen.value
+
+const toggleCollapse = () => {
+  isCollapsed.value = !isCollapsed.value
+  emit('update:collapsed', isCollapsed.value)
+}
 </script>
 
 <template>
-  <div class="desktop-layout">
-    <!-- 側邊導航欄 -->
+  <div class="layout-container">
+    
+    <Transition name="fade">
+      <div 
+        v-if="isMobile && isSidebarOpen" 
+        class="mobile-overlay"
+        @click="isSidebarOpen = false"
+      ></div>
+    </Transition>
+
+    <header v-if="isMobile" class="mobile-header">
+      <button @click="toggleMobileMenu" class="mobile-menu-btn">
+        <span class="text-xl">☰</span>
+      </button>
+      <div class="flex items-center gap-2">
+        <img src="@/assets/logo.svg" alt="logo" class="w-6 h-6" />
+        <span class="font-bold text-lg">{{ appName }}</span>
+      </div>
+      <div class="w-8"></div> 
+    </header>
+
     <aside 
       class="sidebar"
       :class="{ 
-        'sidebar-collapsed': isCollapsed && !isHovering,
-        'sidebar-hovering': isHovering 
+        'sidebar-mobile': isMobile,
+        'sidebar-mobile-open': isMobile && isSidebarOpen,
+        'sidebar-desktop-collapsed': !isMobile && isCollapsed && !isHovering,
+        'sidebar-desktop-expanded': !isMobile && (!isCollapsed || isHovering)
       }"
-      @mouseenter="isHovering = true"
-      @mouseleave="isHovering = false"
+      @mouseenter="!isMobile && (isHovering = true)"
+      @mouseleave="!isMobile && (isHovering = false)"
     >
-      <!-- Logo 區域 -->
       <div class="sidebar-header">
-        <div class="app-logo">
-          <img 
-            src="/public/logo.svg" 
-            alt="愛護腦" 
-            class="app-logo-img"
-          />
-          <Transition name="fade">
-            <span v-if="showExpanded" class="app-logo-text">{{ appName }}</span>
+        <div class="app-info" :class="{ 'justify-center': !showSidebarText && !isMobile }">
+          <img src="@/assets/logo.svg" alt="Logo" class="app-logo" />
+          <Transition name="fade-slide">
+            <span v-if="showSidebarText" class="app-name">{{ appName }}</span>
           </Transition>
         </div>
         
-        <!-- 收合按鈕 -->
         <button 
-          type="button"
-          class="collapse-btn"
-          :class="{ 'collapse-btn-visible': showExpanded }"
-          @click="toggleCollapse"
-          :title="isCollapsed ? '展開側邊欄' : '收合側邊欄'"
+          v-if="!isMobile"
+          class="collapse-toggle"
+          :class="{ 'opacity-0': !showSidebarText }"
+          @click.stop="toggleCollapse"
         >
-          <span class="collapse-icon" :class="{ 'rotated': !isCollapsed }">
-            ‹
-          </span>
+          <span class="arrow-icon" :class="{ 'rotate-180': !isCollapsed }">›</span>
+        </button>
+
+        <button v-if="isMobile" @click="isSidebarOpen = false" class="mobile-close-btn">
+          ✕
         </button>
       </div>
 
-      <!-- 導航列表 -->
-      <nav class="sidebar-nav">
+      <nav class="sidebar-nav custom-scrollbar">
         <ul class="nav-list">
           <li v-for="item in navItems" :key="item.id">
             <button
-              type="button"
               class="nav-item"
-              :class="{ 'nav-item-active': isActiveRoute(item.path) }"
+              :class="{ 
+                'active': isActiveRoute(item.path),
+                'collapsed-mode': !showSidebarText && !isMobile
+              }"
               @click="navigateTo(item.path)"
-              :title="isCollapsed && !isHovering ? item.label : undefined"
+              :title="!showSidebarText ? item.label : ''"
             >
               <span class="nav-icon">{{ item.icon }}</span>
-              <Transition name="fade">
-                <span v-if="showExpanded" class="nav-label">{{ item.label }}</span>
+              
+              <Transition name="fade-slide">
+                <div v-if="showSidebarText" class="nav-content">
+                  <span class="nav-label">{{ item.label }}</span>
+                  <span v-if="item.badge" class="nav-badge">{{ item.badge }}</span>
+                </div>
               </Transition>
-              <span 
-                v-if="item.badge && showExpanded" 
-                class="nav-badge"
-              >
-                {{ item.badge }}
-              </span>
             </button>
           </li>
         </ul>
       </nav>
 
-      <!-- 底部區域 -->
       <div class="sidebar-footer">
-        <div v-if="showExpanded" class="px-2 mb-2">
-          <SyncStatusIndicator position="sidebar" />
+        <div class="footer-content" :class="{ 'justify-center': !showSidebarText }">
+          <SyncStatusIndicator :position="showSidebarText ? 'sidebar' : 'icon'" />
         </div>
-        <slot name="sidebar-footer" :collapsed="isCollapsed && !isHovering" />
+        <slot name="sidebar-footer" :collapsed="!showSidebarText" />
       </div>
     </aside>
 
-    <!-- 主內容區 -->
     <div class="main-wrapper">
-      <!-- 頂部欄（可選） -->
-      <header v-if="$slots.header" class="main-header">
+      <header v-if="$slots.header && !isMobile" class="desktop-header">
         <slot name="header" />
       </header>
 
-      <!-- 主內容 -->
-      <main class="main-content">
+      <main class="main-content custom-scrollbar">
         <slot />
       </main>
     </div>
 
-    <!-- 右側資訊欄（可選） -->
-    <aside v-if="showAside || $slots.aside" class="aside-panel">
+    <aside 
+      v-if="(showAside || $slots.aside) && !isMobile" 
+      class="aside-panel custom-scrollbar"
+    >
       <slot name="aside" />
     </aside>
   </div>
 </template>
 
 <style scoped>
-.desktop-layout {
+/* ===== 核心佈局修正 ===== */
+.layout-container {
   display: flex;
-  min-height: 100vh;
-  background: var(--color-bg);
-}
-
-/* ===== 側邊欄 ===== */
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  width: 260px;
-  background: var(--color-surface);
-  border-right: 1px solid var(--color-border);
-  transition: width var(--transition-normal);
+  /* 關鍵：強制容器高度等於視窗高度，禁止外層捲動 */
+  height: 100vh; 
+  width: 100vw;
+  background-color: var(--color-bg);
   position: relative;
-  z-index: 20;
-}
-
-.sidebar-collapsed {
-  width: 72px;
-}
-
-.sidebar-hovering {
-  position: absolute;
-  height: 100%;
-  box-shadow: var(--shadow-xl);
-}
-
-/* Logo */
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--color-border-light);
-  min-height: 64px;
-}
-
-.app-logo {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  overflow: hidden;
-}
-
-.app-logo-img {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-.app-logo-icon {
-  font-size: 1.75rem;
-  flex-shrink: 0;
-}
-
-.app-logo-text {
-  font-size: var(--font-size-lg);
-  font-weight: 700;
-  color: var(--color-text);
-  white-space: nowrap;
-}
-
-/* 收合按鈕 */
-.collapse-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: var(--color-bg-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  opacity: 0;
-  transition: all var(--transition-fast);
-  flex-shrink: 0;
-}
-
-.collapse-btn-visible {
-  opacity: 1;
-}
-
-.sidebar:hover .collapse-btn {
-  opacity: 1;
-}
-
-.collapse-btn:hover {
-  background: var(--color-bg-muted);
-}
-
-.collapse-icon {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: var(--color-text-muted);
-  transition: transform var(--transition-fast);
-}
-
-.collapse-icon.rotated {
-  transform: rotate(180deg);
-}
-
-/* 導航 */
-.sidebar-nav {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--spacing-sm);
-}
-
-.nav-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  text-align: left;
-  color: var(--color-text-secondary);
-  font-size: 0.9375rem;
-  font-weight: 500;
-  overflow: hidden;
-}
-
-.nav-item:hover {
-  background: var(--color-bg-soft);
-  color: var(--color-text);
-}
-
-.nav-item-active {
-  background: var(--color-primary-bg);
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.nav-item-active:hover {
-  background: var(--color-primary-bg);
-}
-
-.nav-icon {
-  font-size: 1.25rem;
-  flex-shrink: 0;
-  width: 24px;
-  text-align: center;
-}
-
-.nav-label {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.nav-badge {
-  margin-left: auto;
-  padding: 2px 8px;
-  background: var(--color-primary);
-  color: white;
-  border-radius: var(--radius-full);
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-/* 側邊欄底部 */
-.sidebar-footer {
-  padding: var(--spacing-md);
-  border-top: 1px solid var(--color-border-light);
+  overflow: hidden; /* 防止 Body 捲動 */
 }
 
 /* ===== 主內容區 ===== */
@@ -377,64 +219,246 @@ provide('desktopLayout', {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0; /* 防止 flex 子項溢出 */
-  transition: margin-left var(--transition-normal);
+  min-width: 0;
+  height: 100%; /* 繼承父層高度 */
+  position: relative;
+  /* 手機版為了避開 Fixed Header 的 padding */
+  padding-top: 56px; 
 }
 
-.sidebar-hovering ~ .main-wrapper {
-  margin-left: 72px;
+@media (min-width: 768px) {
+  .main-wrapper {
+    padding-top: 0;
+  }
 }
 
-.main-header {
-  flex-shrink: 0;
-  padding: var(--spacing-md) var(--spacing-lg);
+/* 桌面 Header 樣式 - 不再使用 sticky，因為它在 flex col 中自然位於頂部 */
+.desktop-header {
+  flex-shrink: 0; /* 防止被擠壓 */
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
+  z-index: 20;
 }
 
+/* 內容捲動區 - 這是真正發生捲動的地方 */
 .main-content {
   flex: 1;
-  overflow-y: auto;
-  padding: var(--spacing-lg);
+  overflow-y: auto; /* 啟用垂直捲動 */
+  overflow-x: hidden;
+  padding: 1rem;
+  scroll-behavior: smooth;
 }
 
-/* ===== 右側資訊欄 ===== */
-.aside-panel {
-  width: 320px;
+@media (min-width: 1024px) {
+  .main-content {
+    padding: 2rem;
+  }
+}
+
+/* ===== 側邊欄通用 ===== */
+.sidebar {
   background: var(--color-surface);
-  border-left: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 50;
+  flex-shrink: 0;
+  height: 100%; /* 佔滿高度 */
+}
+
+/* 導航列表區域 (側邊欄內部的捲動) */
+.sidebar-nav {
+  flex: 1;
   overflow-y: auto;
-  padding: var(--spacing-lg);
+  padding: 1rem 0.75rem;
 }
 
-/* ===== 動畫 ===== */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.15s ease;
+/* 右側資訊欄 */
+.aside-panel {
+  width: 300px;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-surface);
+  flex-shrink: 0;
+  padding: 1.5rem;
+  overflow-y: auto; /* 獨立捲動 */
+  height: 100%;
 }
 
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+/* ===== 手機版樣式 ===== */
+.mobile-header {
+  position: absolute; /* 改為 absolute，相對於 layout-container */
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  z-index: 60; /* 最高層級 */
 }
 
-/* ===== 響應式 ===== */
-@media (max-width: 1200px) {
-  .aside-panel {
-    display: none;
-  }
+.mobile-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 45;
 }
 
-@media (max-width: 1024px) {
-  .sidebar {
-    width: 72px;
-  }
-  
-  .sidebar:hover {
-    width: 260px;
-    position: absolute;
-    height: 100%;
-    box-shadow: var(--shadow-xl);
-  }
+/* 手機版 Sidebar (Drawer) */
+.sidebar-mobile {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  height: 100%;
+  width: 280px;
+  transform: translateX(-100%);
+  box-shadow: none;
 }
+
+.sidebar-mobile-open {
+  transform: translateX(0);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+}
+
+/* 桌面版 Sidebar 寬度 */
+.sidebar-desktop-collapsed { width: 72px; }
+.sidebar-desktop-expanded { width: 260px; }
+
+/* 懸停展開效果 */
+.layout-container:has(.sidebar-desktop-collapsed:hover) .sidebar-desktop-collapsed {
+  width: 260px;
+  position: absolute; /* 懸停時脫離流，覆蓋內容 */
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+  height: 100%;
+}
+
+/* ===== 元件細節樣式 ===== */
+.sidebar-header {
+  height: 64px;
+  flex-shrink: 0; /* 防止被擠壓 */
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.sidebar-footer {
+  flex-shrink: 0;
+  padding: 1rem;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  color: var(--color-text-secondary);
+  transition: all 0.2s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.nav-item:hover {
+  background-color: var(--color-bg-soft);
+  color: var(--color-text);
+}
+
+.nav-item.active {
+  background-color: var(--color-primary-bg);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.nav-item.collapsed-mode {
+  justify-content: center;
+  padding: 0.75rem 0;
+}
+
+.nav-icon {
+  font-size: 1.25rem;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.nav-content {
+  margin-left: 0.75rem;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.nav-badge {
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 99px;
+  min-width: 1.25rem;
+  text-align: center;
+}
+
+.app-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  overflow: hidden;
+}
+
+.app-logo { width: 32px; height: 32px; flex-shrink: 0; }
+.app-name { font-weight: 700; font-size: 1.125rem; white-space: nowrap; color: var(--color-text); }
+
+.collapse-toggle {
+  width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+  border-radius: 4px; color: var(--color-text-secondary); background: var(--color-bg-soft); transition: all 0.2s;
+}
+.collapse-toggle:hover { background: var(--color-bg-muted); color: var(--color-text); }
+.arrow-icon { font-size: 1.25rem; line-height: 1; font-weight: bold; transition: transform 0.3s; }
+.mobile-menu-btn { padding: 0.5rem; margin-left: -0.5rem; color: var(--color-text); }
+.mobile-close-btn { margin-left: auto; padding: 8px; font-size: 1.25rem; color: var(--color-text-secondary); }
+
+/* ===== 美化捲軸 (Chrome/Safari/Edge) ===== */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-text-muted);
+}
+
+/* ===== 過渡動畫 ===== */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-slide-enter-active, .fade-slide-leave-active { transition: all 0.2s ease; }
+.fade-slide-enter-from, .fade-slide-leave-to { opacity: 0; transform: translateX(-10px); }
 </style>

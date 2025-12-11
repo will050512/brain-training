@@ -97,7 +97,7 @@ const headerClass = computed(() => {
         <slot name="header-title">
           <div class="header-title-wrapper">
             <img 
-              src="/public/logo.svg" 
+              src="@/assets/logo.svg" 
               alt="健腦訓練" 
               class="header-logo"
             />

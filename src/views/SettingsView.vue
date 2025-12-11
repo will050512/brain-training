@@ -203,7 +203,7 @@
         <!-- 關於 -->
         <div class="card p-4">
           <div class="text-center text-sm">
-            <img src="/public/logo.svg" alt="愛護腦" class="w-12 h-12 mx-auto mb-3" />
+            <img src="@/assets/logo.svg" alt="愛護腦" class="w-12 h-12 mx-auto mb-3" />
             <p class="font-semibold text-[var(--color-text)]">愛護腦 Al MindCare</p>
             <p class="text-[var(--color-text-muted)]">版本 1.0.0</p>
           </div>

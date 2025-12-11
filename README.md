@@ -816,7 +816,7 @@ watch(effectiveTheme, () => {
 
 <div align="center">
 
-**健腦訓練 Brain Training** © 2024
+**健腦訓練 Brain Training** © 2025
 
 Made with ❤️ for cognitive health
 

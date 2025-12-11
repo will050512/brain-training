@@ -39,7 +39,7 @@
         <router-link to="/settings" class="text-2xl">⚙️</router-link>
       </div>
       <div class="flex items-center gap-2">
-        <img src="/public/logo.svg" alt="愛護腦" class="w-8 h-8" />
+        <img src="@/assets/logo.svg" alt="愛護腦" class="w-8 h-8" />
         <h1 class="text-lg font-bold text-[var(--color-text)]">愛護腦</h1>
       </div>
       <div class="app-header-action text-right">
@@ -276,7 +276,7 @@
 
     <!-- 版本資訊 -->
     <footer class="flex-shrink-0 py-2 text-center text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)]">
-      健腦訓練 Brain Training © 2024
+      健腦訓練 Brain Training © 2025
     </footer>
   </div>
 </template>
