@@ -51,7 +51,7 @@
 
     <!-- 可滾動內容區 -->
     <div class="app-content-scroll">
-      <div class="container mx-auto px-4 py-6">
+      <div class="container mx-auto px-4 py-4 sm:px-6 sm:py-6 max-w-4xl">
 
       <!-- 使用者狀態（精簡版） -->
       <div v-if="userStore.isLoggedIn" class="flex items-center gap-3 mb-6 p-3 bg-[var(--color-surface)] rounded-xl">
@@ -87,18 +87,20 @@
 
       <!-- 訓練目標卡片（新增：圓形進度 + 目標設定） -->
       <div v-if="userStore.isLoggedIn" class="mb-6">
-        <div class="bg-gradient-to-r from-[var(--color-primary)] to-purple-500 dark:from-indigo-600 dark:to-purple-600 rounded-2xl p-5 text-white shadow-lg">
+        <div class="bg-gradient-to-r from-[var(--color-primary)] to-purple-500 dark:from-indigo-600 dark:to-purple-600 rounded-2xl p-4 sm:p-5 text-white shadow-lg">
           <!-- 標題與設定按鈕 -->
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <h2 class="font-bold text-lg">訓練目標</h2>
-              <p class="text-blue-100 text-sm">每週 {{ settingsStore.weeklyTrainingGoal }} 天 · {{ settingsStore.dailyTrainingDuration }} 分鐘/天</p>
+          <div class="flex items-start sm:items-center justify-between mb-3 sm:mb-4 gap-2">
+            <div class="flex-1 min-w-0">
+              <h2 class="font-bold text-base sm:text-lg truncate">訓練目標</h2>
+              <p class="text-blue-100 text-xs sm:text-sm leading-tight">
+                每週 {{ settingsStore.weeklyTrainingGoal }} 天 · {{ settingsStore.dailyTrainingDuration }} 分鐘/天
+              </p>
             </div>
-            <button 
+            <button
               @click="showGoalSettings = true"
-              class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
+              class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors flex-shrink-0"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="16" height="16" class="sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
@@ -106,37 +108,39 @@
           </div>
 
           <!-- 圓形進度與週訓練統計 -->
-          <div class="flex items-center justify-around">
+          <div class="flex items-center justify-center sm:justify-around gap-4 sm:gap-0">
             <!-- 圓形進度 -->
-            <CircularProgress
-              :value="weeklyProgress.completedDays"
-              :max="settingsStore.weeklyTrainingGoal"
-              :size="120"
-              :stroke-width="10"
-              progress-color="#ffffff"
-              track-color="rgba(255,255,255,0.3)"
-              :show-percentage="false"
-            >
-              <div class="text-center">
-                <span class="text-3xl font-bold">{{ weeklyProgress.completedDays }}</span>
-                <span class="text-sm opacity-80">/{{ settingsStore.weeklyTrainingGoal }}</span>
-                <span class="block text-xs opacity-70">天</span>
-              </div>
-            </CircularProgress>
+            <div class="flex-shrink-0">
+              <CircularProgress
+                :value="weeklyProgress.completedDays"
+                :max="settingsStore.weeklyTrainingGoal"
+                :size="100"
+                :stroke-width="8"
+                progress-color="#ffffff"
+                track-color="rgba(255,255,255,0.3)"
+                :show-percentage="false"
+              >
+                <div class="text-center">
+                  <span class="text-2xl sm:text-3xl font-bold">{{ weeklyProgress.completedDays }}</span>
+                  <span class="text-xs sm:text-sm opacity-80">/{{ settingsStore.weeklyTrainingGoal }}</span>
+                  <span class="block text-xs opacity-70">天</span>
+                </div>
+              </CircularProgress>
+            </div>
 
             <!-- 週統計 -->
-            <div class="space-y-3">
-              <div class="flex items-center gap-3">
-                <span class="text-2xl">⏱️</span>
-                <div>
-                  <p class="text-xl font-bold">{{ weeklyProgress.totalMinutes }}</p>
+            <div class="space-y-2 sm:space-y-3 flex-1 sm:flex-initial">
+              <div class="flex items-center gap-2 sm:gap-3">
+                <span class="text-xl sm:text-2xl">⏱️</span>
+                <div class="min-w-0 flex-1">
+                  <p class="text-lg sm:text-xl font-bold truncate">{{ weeklyProgress.totalMinutes }}</p>
                   <p class="text-xs opacity-70">本週訓練分鐘</p>
                 </div>
               </div>
-              <div class="flex items-center gap-3">
-                <span class="text-2xl">🎮</span>
-                <div>
-                  <p class="text-xl font-bold">{{ weeklyProgress.totalSessions }}</p>
+              <div class="flex items-center gap-2 sm:gap-3">
+                <span class="text-xl sm:text-2xl">🎮</span>
+                <div class="min-w-0 flex-1">
+                  <p class="text-lg sm:text-xl font-bold truncate">{{ weeklyProgress.totalSessions }}</p>
                   <p class="text-xs opacity-70">遊戲次數</p>
                 </div>
               </div>
@@ -144,10 +148,10 @@
           </div>
 
           <!-- 開始訓練按鈕 -->
-          <router-link 
-            to="/daily-challenge" 
-            class="block w-full py-3 mt-4 bg-white text-blue-600 rounded-xl font-semibold text-center
-                   hover:bg-blue-50 transition-colors shadow-md"
+          <router-link
+            to="/daily-challenge"
+            class="block w-full py-2.5 sm:py-3 mt-3 sm:mt-4 bg-white text-blue-600 rounded-xl font-semibold text-center
+                   hover:bg-blue-50 transition-colors shadow-md text-sm sm:text-base"
           >
             {{ dailyProgress.completed ? '繼續訓練' : '開始今日訓練' }}
           </router-link>
@@ -242,27 +246,27 @@
       <!-- 統計摘要（精簡版） -->
       <div v-if="userStore.isLoggedIn && userStore.currentStats" class="mb-6">
         <h2 class="text-sm font-semibold text-[var(--color-text-muted)] mb-3">訓練統計</h2>
-        <div class="grid grid-cols-4 gap-2">
-          <div class="text-center p-3 bg-[var(--color-surface)] rounded-xl">
-            <div class="text-xl font-bold text-blue-500">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+          <div class="text-center p-2 sm:p-3 bg-[var(--color-surface)] rounded-xl">
+            <div class="text-lg sm:text-xl font-bold text-blue-500">
               {{ userStore.currentStats.totalGamesPlayed }}
             </div>
             <div class="text-xs text-[var(--color-text-muted)]">次數</div>
           </div>
-          <div class="text-center p-3 bg-[var(--color-surface)] rounded-xl">
-            <div class="text-xl font-bold text-green-500">
+          <div class="text-center p-2 sm:p-3 bg-[var(--color-surface)] rounded-xl">
+            <div class="text-lg sm:text-xl font-bold text-green-500">
               {{ userStore.currentStats.averageScore }}
             </div>
             <div class="text-xs text-[var(--color-text-muted)]">平均</div>
           </div>
-          <div class="text-center p-3 bg-[var(--color-surface)] rounded-xl">
-            <div class="text-xl font-bold text-purple-500">
+          <div class="text-center p-2 sm:p-3 bg-[var(--color-surface)] rounded-xl">
+            <div class="text-lg sm:text-xl font-bold text-purple-500">
               {{ formatPlayTime(userStore.currentStats.totalPlayTime) }}
             </div>
             <div class="text-xs text-[var(--color-text-muted)]">時長</div>
           </div>
-          <div class="text-center p-3 bg-[var(--color-surface)] rounded-xl">
-            <div class="text-xl font-bold text-orange-500">
+          <div class="text-center p-2 sm:p-3 bg-[var(--color-surface)] rounded-xl">
+            <div class="text-lg sm:text-xl font-bold text-orange-500">
               {{ userStore.currentStats.streak }}
             </div>
             <div class="text-xs text-[var(--color-text-muted)]">連續</div>

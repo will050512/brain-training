@@ -382,13 +382,13 @@ onUnmounted(() => {
 
       <!-- 卡片網格 -->
       <div
-        class="card-grid mt-6 grid gap-2 md:gap-3"
+        class="card-grid mt-4 sm:mt-6 grid gap-2 sm:gap-3 px-2"
         :style="{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }"
       >
         <button
           v-for="(card, index) in cards"
           :key="card.id"
-          class="card-cell aspect-square rounded-lg transition-all duration-300 transform"
+          class="card-cell aspect-square rounded-lg transition-all duration-300 transform min-h-[60px] sm:min-h-[70px] md:min-h-[80px] flex items-center justify-center"
           :class="{
             'bg-blue-500 scale-100': !card.isFlipped && !card.isMatched,
             'bg-white dark:bg-gray-700 scale-105 rotate-y-180': card.isFlipped && !card.isMatched,
@@ -400,7 +400,7 @@ onUnmounted(() => {
           @click="handleCardClick(index)"
         >
           <span
-            class="text-3xl md:text-4xl transition-opacity duration-200"
+            class="text-2xl sm:text-3xl md:text-4xl transition-opacity duration-200"
             :class="{ 'opacity-0': !card.isFlipped && !card.isMatched, 'opacity-100': card.isFlipped || card.isMatched }"
           >
             {{ card.emoji }}

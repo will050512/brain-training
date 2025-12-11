@@ -113,6 +113,7 @@ const selectedCards = ref<number[]>([])
 // ===== 計算屬性 =====
 const gridCols = computed(() => config.value.gridCols)
 const matchedPairs = computed(() => getMatchedCount(cards.value))
+const gridMaxWidth = computed(() => Math.min(gridCols.value * 70, window.innerWidth - 40))
 
 // ===== 回饋映射 =====
 const feedbackData = computed(() => {
@@ -295,7 +296,7 @@ watch(() => props.difficulty, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲資訊 -->
-      <div class="game-info flex justify-center gap-6 mt-4 text-sm">
+      <div class="game-info flex justify-center gap-4 sm:gap-6 mt-4 text-xs sm:text-sm px-4">
         <div class="stat">
           <span class="text-gray-500 dark:text-gray-400">配對：</span>
           <span class="font-bold">{{ matchedPairs }} / {{ config.pairs }}</span>
@@ -307,25 +308,25 @@ watch(() => props.difficulty, () => {
       </div>
 
       <!-- 預覽提示 -->
-      <div 
-        v-if="isPreviewing" 
-        class="preview-hint text-center mt-4 text-lg font-medium text-blue-500"
+      <div
+        v-if="isPreviewing"
+        class="preview-hint text-center mt-4 text-base sm:text-lg font-medium text-blue-500 px-4"
       >
         記住牌面位置...
       </div>
 
       <!-- 卡片網格 -->
-      <div 
-        class="card-grid mt-6 grid gap-2 md:gap-3 mx-auto"
-        :style="{ 
-          gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
-          maxWidth: `${gridCols * 80}px`
-        }"
-      >
+        <div
+          class="card-grid mt-4 sm:mt-6 grid gap-2 sm:gap-3 md:gap-4 mx-auto px-4"
+          :style="{
+            gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+            maxWidth: `${gridMaxWidth}px`
+          }"
+        >
         <div
           v-for="card in cards"
           :key="card.id"
-          class="poker-card aspect-[2/3] rounded-lg cursor-pointer transition-all duration-300 transform perspective-1000"
+          class="poker-card aspect-[2/3] rounded-lg cursor-pointer transition-all duration-300 transform perspective-1000 min-h-[80px] sm:min-h-[90px] md:min-h-[100px]"
           :class="{
             'is-flipped': card.isFlipped,
             'is-matched': card.isMatched,
@@ -336,30 +337,30 @@ watch(() => props.difficulty, () => {
           <!-- 卡片內容 -->
           <div class="card-inner relative w-full h-full">
             <!-- 卡片背面 -->
-            <div 
+            <div
               class="card-back absolute inset-0 rounded-lg flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800"
               :class="{ 'hidden': card.isFlipped }"
             >
-              <div class="pattern text-4xl opacity-50">🂠</div>
+              <div class="pattern text-2xl sm:text-3xl md:text-4xl opacity-50">🂠</div>
             </div>
-            
+
             <!-- 卡片正面 -->
-            <div 
+            <div
               class="card-front absolute inset-0 rounded-lg flex flex-col items-center justify-center bg-white dark:bg-gray-100 border-2"
-              :class="{ 
+              :class="{
                 'hidden': !card.isFlipped,
                 'border-green-500': card.isMatched,
                 'border-gray-300': !card.isMatched,
               }"
             >
-              <div 
-                class="rank text-2xl md:text-3xl font-bold"
+              <div
+                class="rank text-xl sm:text-2xl md:text-3xl font-bold"
                 :style="{ color: getSuitColor(card.suit) }"
               >
                 {{ card.rank }}
               </div>
-              <div 
-                class="suit text-3xl md:text-4xl"
+              <div
+                class="suit text-2xl sm:text-3xl md:text-4xl"
                 :style="{ color: getSuitColor(card.suit) }"
               >
                 {{ card.suit }}

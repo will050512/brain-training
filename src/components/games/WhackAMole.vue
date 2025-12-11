@@ -317,39 +317,39 @@ watch(() => props.difficulty, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲場地 -->
-      <div 
-        class="game-field grid gap-4 p-6 bg-gradient-to-b from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 rounded-2xl mt-4"
+      <div
+        class="game-field grid gap-3 sm:gap-4 p-4 sm:p-6 bg-gradient-to-b from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 rounded-2xl mt-4"
         :class="gridClass"
       >
         <div
           v-for="(hole, index) in holes"
           :key="index"
-          class="hole relative aspect-square flex items-center justify-center cursor-pointer select-none"
+          class="hole relative aspect-square flex items-center justify-center cursor-pointer select-none min-h-[80px] sm:min-h-[100px] md:min-h-[120px]"
           @click="handleHoleClick(index)"
         >
           <!-- 洞 -->
           <div class="absolute inset-0 bg-gradient-to-b from-amber-800 to-amber-900 rounded-full shadow-inner"></div>
-          
+
           <!-- 地鼠/炸彈 -->
           <Transition name="pop">
             <div
               v-if="hole.active"
-              class="absolute text-6xl md:text-7xl transform transition-transform"
-              :class="{ 
+              class="absolute text-4xl sm:text-5xl md:text-6xl lg:text-7xl transform transition-transform"
+              :class="{
                 'animate-pulse': hole.type === 'mole',
                 'scale-110': hole.hit,
-                'opacity-50': hole.hit 
+                'opacity-50': hole.hit
               }"
             >
               {{ hole.type === 'mole' ? '🐹' : '💣' }}
             </div>
           </Transition>
-          
+
           <!-- 得分提示 -->
           <Transition name="fade">
             <div
               v-if="hole.showScore"
-              class="absolute -top-4 font-bold text-xl"
+              class="absolute -top-2 sm:-top-4 font-bold text-lg sm:text-xl"
               :class="hole.scoreClass"
             >
               {{ hole.scoreText }}

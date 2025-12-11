@@ -63,35 +63,35 @@
           <div class="grid grid-cols-3 gap-2">
             <button
               @click="settingsStore.setOrientationPreference('portrait')"
-              class="flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all"
-              :class="settingsStore.orientationPreference === 'portrait' 
-                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
+              class="flex flex-col items-center gap-1 p-3 sm:p-4 rounded-xl border-2 transition-all min-h-[60px] sm:min-h-[80px]"
+              :class="settingsStore.orientationPreference === 'portrait'
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]'
                 : 'border-[var(--color-border)]'"
             >
-              <span class="text-xl">📱</span>
-              <span class="text-sm text-[var(--color-text)]">直向</span>
+              <span class="text-xl sm:text-2xl">📱</span>
+              <span class="text-xs sm:text-sm text-[var(--color-text)]">直向</span>
             </button>
-            
+
             <button
               @click="settingsStore.setOrientationPreference('landscape')"
-              class="flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all"
-              :class="settingsStore.orientationPreference === 'landscape' 
-                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
+              class="flex flex-col items-center gap-1 p-3 sm:p-4 rounded-xl border-2 transition-all min-h-[60px] sm:min-h-[80px]"
+              :class="settingsStore.orientationPreference === 'landscape'
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]'
                 : 'border-[var(--color-border)]'"
             >
-              <span class="text-xl">📺</span>
-              <span class="text-sm text-[var(--color-text)]">橫向</span>
+              <span class="text-xl sm:text-2xl">📺</span>
+              <span class="text-xs sm:text-sm text-[var(--color-text)]">橫向</span>
             </button>
-            
+
             <button
               @click="settingsStore.setOrientationPreference('auto')"
-              class="flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all"
-              :class="settingsStore.orientationPreference === 'auto' 
-                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
+              class="flex flex-col items-center gap-1 p-3 sm:p-4 rounded-xl border-2 transition-all min-h-[60px] sm:min-h-[80px]"
+              :class="settingsStore.orientationPreference === 'auto'
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]'
                 : 'border-[var(--color-border)]'"
             >
-              <span class="text-xl">🔄</span>
-              <span class="text-sm text-[var(--color-text)]">自動</span>
+              <span class="text-xl sm:text-2xl">🔄</span>
+              <span class="text-xs sm:text-sm text-[var(--color-text)]">自動</span>
             </button>
           </div>
           

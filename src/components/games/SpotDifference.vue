@@ -281,20 +281,20 @@ watch(() => props.difficulty, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲資訊 -->
-      <div class="game-info flex justify-between items-center mt-4 px-2">
-        <div class="text-sm">
+      <div class="game-info flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-0 mt-4 px-2">
+        <div class="text-xs sm:text-sm">
           <span class="text-gray-500 dark:text-gray-400">第</span>
           <span class="font-bold mx-1">{{ currentRound + 1 }} / {{ totalRounds }}</span>
           <span class="text-gray-500 dark:text-gray-400">回合</span>
         </div>
-        <div class="text-sm">
+        <div class="text-xs sm:text-sm">
           <span class="text-gray-500 dark:text-gray-400">找到：</span>
           <span class="font-bold text-green-500">{{ foundDifferences.length }}</span>
           <span class="text-gray-500 dark:text-gray-400"> / {{ diffCount }}</span>
         </div>
         <button
           v-if="config.maxHints > 0"
-          class="hint-btn text-sm px-3 py-1 rounded-lg bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
+          class="hint-btn text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-lg bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 min-h-[36px] font-medium"
           :disabled="hintsUsed >= config.maxHints"
           @click="handleUseHint"
         >
@@ -303,25 +303,25 @@ watch(() => props.difficulty, () => {
       </div>
 
       <!-- 圖片對比區域 -->
-      <div 
-        class="comparison-area mt-6 grid grid-cols-2 gap-4"
+      <div
+        class="comparison-area mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 px-2"
         v-if="currentRoundData"
       >
         <!-- 原圖（左邊） -->
         <div class="image-container">
-          <div class="label text-center text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+          <div class="label text-center text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
             原圖
           </div>
-          <div 
+          <div
             class="image-grid"
-            :style="{ 
-              gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` 
+            :style="{
+              gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`
             }"
           >
             <div
               v-for="(emoji, index) in currentRoundData.originalGrid"
               :key="`original-${index}`"
-              class="grid-cell aspect-square flex items-center justify-center text-2xl md:text-3xl bg-gray-100 dark:bg-gray-700 rounded"
+              class="grid-cell aspect-square flex items-center justify-center text-lg sm:text-2xl md:text-3xl bg-gray-100 dark:bg-gray-700 rounded min-h-[32px] min-w-[32px] sm:min-h-[40px] sm:min-w-[40px] md:min-h-[48px] md:min-w-[48px]"
             >
               {{ emoji }}
             </div>
@@ -330,19 +330,19 @@ watch(() => props.difficulty, () => {
 
         <!-- 比對圖（右邊，可點擊） -->
         <div class="image-container">
-          <div class="label text-center text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+          <div class="label text-center text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
             找出不同（點擊此處）
           </div>
-          <div 
+          <div
             class="image-grid"
-            :style="{ 
-              gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` 
+            :style="{
+              gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`
             }"
           >
             <button
               v-for="(emoji, index) in currentRoundData.compareGrid"
               :key="`compare-${index}`"
-              class="grid-cell aspect-square flex items-center justify-center text-2xl md:text-3xl rounded cursor-pointer transition-all"
+              class="grid-cell aspect-square flex items-center justify-center text-lg sm:text-2xl md:text-3xl rounded cursor-pointer transition-all min-h-[32px] min-w-[32px] sm:min-h-[40px] sm:min-w-[40px] md:min-h-[48px] md:min-w-[48px]"
               :class="{
                 'bg-green-200 dark:bg-green-800 ring-2 ring-green-500': foundDifferences.includes(index),
                 'bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900': !foundDifferences.includes(index),

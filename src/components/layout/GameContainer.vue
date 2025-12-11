@@ -305,9 +305,14 @@ provide('gameContainer', {
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   background: var(--color-bg);
   position: relative;
   overflow: hidden;
+  /* 確保在所有裝置上都填滿視窗 */
+  width: 100vw;
+  width: 100dvw;
 }
 
 /* 遊戲頭部 */

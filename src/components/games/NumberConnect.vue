@@ -324,9 +324,9 @@ watch(() => props.difficulty, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 工具列 -->
-      <div class="toolbar flex justify-center gap-4 mt-4">
+      <div class="toolbar flex justify-center gap-4 mt-4 px-4">
         <button
-          class="tool-btn px-4 py-2 rounded-lg bg-yellow-200 dark:bg-yellow-700 hover:bg-yellow-300 dark:hover:bg-yellow-600 transition-colors"
+          class="tool-btn min-h-[48px] px-4 py-2 rounded-lg bg-yellow-200 dark:bg-yellow-700 hover:bg-yellow-300 dark:hover:bg-yellow-600 transition-colors text-base sm:text-lg font-medium"
           @click="showHint"
         >
           💡 提示
@@ -334,21 +334,25 @@ watch(() => props.difficulty, () => {
       </div>
 
       <!-- 遊戲資訊 -->
-      <div class="game-info text-center mt-4 text-sm text-gray-500 dark:text-gray-400">
-        <span>下一個：{{ currentTarget }}</span>
-        <span class="mx-2">|</span>
-        <span>連接：{{ connectionCount }} / {{ config.count - 1 }}</span>
-        <span class="mx-2">|</span>
-        <span>錯誤：{{ errors }}</span>
+      <div class="game-info text-center mt-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 px-4">
+        <div class="flex flex-wrap justify-center gap-2 sm:gap-4">
+          <span>下一個：<strong class="text-blue-600">{{ currentTarget }}</strong></span>
+          <span class="hidden sm:inline">|</span>
+          <span>連接：{{ connectionCount }} / {{ config.count - 1 }}</span>
+          <span class="hidden sm:inline">|</span>
+          <span>錯誤：{{ errors }}</span>
+        </div>
       </div>
 
       <!-- 遊戲區域 -->
-      <div 
+      <div
         ref="containerRef"
-        class="game-area relative mt-6 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden"
-        :style="{ 
-          width: '100%',
-          aspectRatio: `${config.canvasWidth}/${config.canvasHeight}` 
+        class="game-area relative mt-4 sm:mt-6 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden mx-4"
+        :style="{
+          width: 'calc(100% - 2rem)',
+          aspectRatio: `${config.canvasWidth}/${config.canvasHeight}`,
+          maxWidth: '500px',
+          margin: '0 auto'
         }"
       >
         <!-- Canvas 層 - 繪製連線 -->
@@ -362,7 +366,7 @@ watch(() => props.difficulty, () => {
           <button
             v-for="node in nodes"
             :key="node.value"
-            class="node-btn absolute w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all transform hover:scale-110"
+            class="node-btn absolute w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center text-sm sm:text-base md:text-lg font-bold transition-all transform hover:scale-110 min-h-[44px] min-w-[44px] sm:min-h-[48px] sm:min-w-[48px]"
             :class="{
               'bg-green-500 text-white': node.connected,
               'bg-blue-500 text-white ring-2 ring-blue-300 animate-pulse': !node.connected && node.value === currentTarget,

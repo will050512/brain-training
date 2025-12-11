@@ -113,6 +113,7 @@ const gridSize = computed(() => config.value.size)
 const cells = computed(() => mazeState.value?.cells || [])
 const playerPosition = computed(() => mazeState.value?.playerPosition || 0)
 const playerPos = computed(() => indexToPosition(playerPosition.value, gridSize.value))
+const mazeWidth = computed(() => Math.min(gridSize.value * 35, Math.min(window.innerWidth - 40, 350)))
 
 // ===== 回饋映射 =====
 const feedbackData = computed(() => {
@@ -259,23 +260,24 @@ watch(() => props.difficulty, () => {
       </div>
 
       <!-- 迷宮（含觸控手勢偵測區域） -->
-      <div 
+      <div
         ref="gameAreaRef"
-        class="maze-container mt-6 flex justify-center touch-area"
+        class="maze-container mt-4 sm:mt-6 flex justify-center touch-area px-2"
         v-if="mazeState"
         v-on="touchHandlers"
       >
-        <div 
+        <div
           class="maze-grid"
-          :style="{ 
+          :style="{
             gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
-            width: `${Math.min(gridSize * 40, 400)}px`
+            width: `${mazeWidth}px`,
+            maxWidth: '100%'
           }"
         >
           <div
             v-for="(_, index) in cells"
             :key="index"
-            class="maze-cell aspect-square"
+            class="maze-cell aspect-square min-h-[25px] sm:min-h-[30px] md:min-h-[35px]"
             :class="{
               'cell-wall': getCellType(mazeState!, index) === 'wall',
               'cell-path': getCellType(mazeState!, index) === 'path',
@@ -284,45 +286,45 @@ watch(() => props.difficulty, () => {
               'cell-player': index === playerPosition,
             }"
           >
-            <span v-if="index === playerPosition" class="text-xl">🏃</span>
-            <span v-else-if="getCellType(mazeState!, index) === 'end'" class="text-lg">🏁</span>
+            <span v-if="index === playerPosition" class="text-lg sm:text-xl">🏃</span>
+            <span v-else-if="getCellType(mazeState!, index) === 'end'" class="text-sm sm:text-lg">🏁</span>
           </div>
         </div>
       </div>
 
       <!-- 方向控制 -->
-      <div class="controls mt-6 flex flex-col items-center gap-2">
+      <div class="controls mt-4 sm:mt-6 flex flex-col items-center gap-2 px-4">
         <button
-          class="control-btn"
+          class="control-btn min-h-[48px] w-12 sm:w-14 md:w-16 text-lg sm:text-xl md:text-2xl"
           @click="handleMove('up')"
           :disabled="!mazeState || !canMove(mazeState, 'up')"
         >
           ↑
         </button>
-        <div class="flex gap-2">
+        <div class="flex gap-2 sm:gap-3">
           <button
-            class="control-btn"
+            class="control-btn min-h-[48px] w-12 sm:w-14 md:w-16 text-lg sm:text-xl md:text-2xl"
             @click="handleMove('left')"
             :disabled="!mazeState || !canMove(mazeState, 'left')"
           >
             ←
           </button>
           <button
-            class="control-btn"
+            class="control-btn min-h-[48px] w-12 sm:w-14 md:w-16 text-lg sm:text-xl md:text-2xl"
             @click="handleMove('down')"
             :disabled="!mazeState || !canMove(mazeState, 'down')"
           >
             ↓
           </button>
           <button
-            class="control-btn"
+            class="control-btn min-h-[48px] w-12 sm:w-14 md:w-16 text-lg sm:text-xl md:text-2xl"
             @click="handleMove('right')"
             :disabled="!mazeState || !canMove(mazeState, 'right')"
           >
             →
           </button>
         </div>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+        <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2 text-center">
           滑動螢幕或使用鍵盤方向鍵
         </p>
       </div>

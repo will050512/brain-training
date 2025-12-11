@@ -207,11 +207,16 @@ const toggleCollapse = () => {
 .layout-container {
   display: flex;
   /* 關鍵：強制容器高度等於視窗高度，禁止外層捲動 */
-  height: 100vh; 
+  height: 100vh;
+  height: 100dvh;
   width: 100vw;
+  width: 100dvw;
   background-color: var(--color-bg);
   position: relative;
   overflow: hidden; /* 防止 Body 捲動 */
+  /* 確保最小高度 */
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* ===== 主內容區 ===== */

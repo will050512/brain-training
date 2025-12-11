@@ -4,14 +4,14 @@
     class="clock-drawing-test"
   >
     <!-- 指示區域 -->
-    <div class="instructions" v-if="!isComplete">
-      <h3>🕐 時鐘測驗</h3>
-      <p class="target-time">
-        請組裝一個時鐘，並將指針指向 
-        <strong>{{ actualTargetTime }}</strong>
-        <span class="time-hint">（{{ targetTimeDescription }}）</span>
+    <div class="instructions px-4" v-if="!isComplete">
+      <h3 class="text-lg sm:text-xl font-bold text-[var(--color-text)]">🕐 時鐘測驗</h3>
+      <p class="target-time text-sm sm:text-base text-[var(--color-text-secondary)]">
+        請組裝一個時鐘，並將指針指向
+        <strong class="text-blue-600 text-base sm:text-lg">{{ actualTargetTime }}</strong>
+        <span class="time-hint text-xs sm:text-sm">（{{ targetTimeDescription }}）</span>
       </p>
-      <p class="hint">提示：拖放數字到正確位置，然後旋轉指針設定時間</p>
+      <p class="hint text-xs sm:text-sm text-[var(--color-text-muted)]">提示：拖放數字到正確位置，然後旋轉指針設定時間</p>
     </div>
 
     <!-- 組裝模式區域 -->

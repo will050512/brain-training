@@ -320,11 +320,11 @@ watch(() => props.difficulty, () => {
     <template v-else-if="phase === 'playing' || phase === 'paused'">
 
       <!-- 遊戲資訊 -->
-      <div class="game-info text-center mt-4">
-        <div class="text-sm text-gray-500 dark:text-gray-400">
+      <div class="game-info text-center mt-4 px-4">
+        <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
           第 {{ currentRound + 1 }} / {{ totalRounds }} 題
         </div>
-        <div class="flex justify-center gap-4 mt-2 text-sm">
+        <div class="flex justify-center gap-4 mt-2 text-xs sm:text-sm">
           <div>
             <span class="text-gray-500 dark:text-gray-400">連續正確：</span>
             <span class="font-bold text-orange-500">{{ streak }}</span>
@@ -333,39 +333,39 @@ watch(() => props.difficulty, () => {
       </div>
 
       <!-- 序列顯示區 -->
-      <div class="sequence-area mt-8">
-        <div class="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
+      <div class="sequence-area mt-6 sm:mt-8 px-4">
+        <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center mb-3 sm:mb-4">
           {{ instruction }}
         </div>
-        
-        <div class="sequence-display flex items-center justify-center gap-3 flex-wrap">
+
+        <div class="sequence-display flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
           <div
             v-for="(item, index) in sequenceItems"
             :key="index"
-            class="sequence-item w-16 h-16 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg"
+            class="sequence-item w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg min-h-[48px] min-w-[48px] sm:min-h-[56px] sm:min-w-[56px]"
             :style="{
               color: item.color,
-              fontSize: item.size === 'large' ? '2.5rem' : item.size === 'medium' ? '2rem' : '1.5rem',
+              fontSize: item.size === 'large' ? '2rem' : item.size === 'medium' ? '1.5rem' : '1.25rem',
               transform: `rotate(${item.rotation}deg)`,
             }"
           >
             {{ item.shape }}
           </div>
-          
+
           <!-- 問號位置 -->
-          <div class="question-mark w-16 h-16 flex items-center justify-center text-3xl font-bold bg-blue-100 dark:bg-blue-900 rounded-lg border-2 border-dashed border-blue-400">
+          <div class="question-mark w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center text-2xl sm:text-3xl font-bold bg-blue-100 dark:bg-blue-900 rounded-lg border-2 border-dashed border-blue-400 min-h-[48px] min-w-[48px] sm:min-h-[56px] sm:min-w-[56px]">
             ?
           </div>
         </div>
       </div>
 
       <!-- 選項區 -->
-      <div class="options-area mt-8">
-        <div class="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
+      <div class="options-area mt-6 sm:mt-8 px-4">
+        <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center mb-3 sm:mb-4">
           選擇答案
         </div>
-        
-        <div class="options-grid grid gap-3" :class="{
+
+        <div class="options-grid grid gap-2 sm:gap-3" :class="{
           'grid-cols-3': config.optionCount === 3,
           'grid-cols-4': config.optionCount === 4,
           'grid-cols-5': config.optionCount === 5,
@@ -373,7 +373,7 @@ watch(() => props.difficulty, () => {
           <button
             v-for="(opt, idx) in options"
             :key="opt.id"
-            class="option-btn p-4 rounded-xl flex items-center justify-center transition-all transform hover:scale-105"
+            class="option-btn p-3 sm:p-4 rounded-xl flex items-center justify-center transition-all transform hover:scale-105 min-h-[60px] sm:min-h-[70px] md:min-h-[80px]"
             :class="{
               'bg-gray-100 dark:bg-gray-700': !isAnswerLocked,
               'bg-green-500': isAnswerLocked && idx === currentQuestion?.correctIndex,

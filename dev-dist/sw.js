@@ -82,7 +82,7 @@ define(['./workbox-bf3571c7'], (function (workbox) { 'use strict';
     "revision": "0069240704f8ea44c26cfc342a71c899"
   }, {
     "url": "/brain-training/index.html",
-    "revision": "0.qlatojkhfto"
+    "revision": "0.5glgave6j2o"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/brain-training/index.html"), {

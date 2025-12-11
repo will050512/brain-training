@@ -312,18 +312,18 @@ watch(() => props.difficulty, () => {
       </div>
 
       <!-- 選擇按鈕 -->
-      <div 
+      <div
         v-if="!showResult"
-        class="gesture-buttons mt-8 flex justify-center gap-4"
+        class="gesture-buttons mt-6 sm:mt-8 flex justify-center gap-3 sm:gap-4 flex-wrap"
       >
         <button
           v-for="gesture in GESTURE_LIST"
           :key="gesture"
-          class="gesture-btn w-24 h-24 md:w-28 md:h-28 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-blue-500 hover:text-white transition-all transform hover:scale-110 active:scale-95"
+          class="gesture-btn min-w-[80px] w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-blue-500 hover:text-white transition-all transform hover:scale-105 active:scale-95 flex flex-col items-center justify-center gap-1 p-2"
           @click="handleSelectGesture(gesture)"
         >
-          <div class="text-5xl md:text-6xl">{{ GESTURES[gesture].emoji }}</div>
-          <div class="text-xs mt-1">{{ GESTURES[gesture].name }}</div>
+          <div class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl">{{ GESTURES[gesture].emoji }}</div>
+          <div class="text-xs sm:text-sm font-medium leading-tight">{{ GESTURES[gesture].name }}</div>
         </button>
       </div>
 

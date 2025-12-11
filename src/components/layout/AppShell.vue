@@ -136,6 +136,9 @@ const headerClass = computed(() => {
   height: 100dvh;
   overflow: hidden;
   background: var(--color-bg);
+  /* 確保在所有裝置上都填滿視窗 */
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .with-safe-area {

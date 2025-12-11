@@ -284,17 +284,17 @@ watch(() => props.difficulty, () => {
     <template v-else-if="phase === 'playing' || phase === 'paused'">
 
       <!-- 題目資訊 -->
-      <div class="question-info text-center mt-4">
-        <div class="text-sm text-gray-500 dark:text-gray-400">
+      <div class="question-info text-center mt-4 px-4">
+        <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
           第 {{ currentRound + 1 }} / {{ totalRounds }} 題
         </div>
-        <div class="text-lg font-medium mt-2">
+        <div class="text-base sm:text-lg font-medium mt-2">
           哪一邊比較重？
         </div>
       </div>
 
       <!-- 天平 -->
-      <div class="scale-container relative mt-6" v-if="currentRoundData">
+      <div class="scale-container relative mt-4 sm:mt-6 px-4" v-if="currentRoundData">
         <!-- 天平支架 -->
         <div class="scale-stand">
           <div class="stand-base"></div>
@@ -303,24 +303,24 @@ watch(() => props.difficulty, () => {
         </div>
 
         <!-- 天平臂 -->
-        <div 
+        <div
           class="scale-arm"
           :style="{ transform: `rotate(${armRotation}deg)` }"
         >
           <!-- 左盤 -->
-          <div 
-            class="scale-pan left cursor-pointer hover:ring-4 hover:ring-blue-300 transition-all"
-            :class="{ 
+          <div
+            class="scale-pan left cursor-pointer hover:ring-4 hover:ring-blue-300 transition-all min-h-[120px] sm:min-h-[140px]"
+            :class="{
               'ring-4 ring-green-400': showResult && currentRoundData.leftWeight > currentRoundData.rightWeight,
               'ring-4 ring-red-400': showResult && currentRoundData.leftWeight < currentRoundData.rightWeight && selectedSide === 'left'
             }"
             @click="handleSelectSide('left')"
           >
             <div class="pan-items">
-              <span 
-                v-for="(item, i) in currentRoundData.leftItems" 
-                :key="i" 
-                class="text-3xl md:text-4xl"
+              <span
+                v-for="(item, i) in currentRoundData.leftItems"
+                :key="i"
+                class="text-2xl sm:text-3xl md:text-4xl"
               >
                 {{ item.emoji }}
               </span>
@@ -329,19 +329,19 @@ watch(() => props.difficulty, () => {
           </div>
 
           <!-- 右盤 -->
-          <div 
-            class="scale-pan right cursor-pointer hover:ring-4 hover:ring-blue-300 transition-all"
-            :class="{ 
+          <div
+            class="scale-pan right cursor-pointer hover:ring-4 hover:ring-blue-300 transition-all min-h-[120px] sm:min-h-[140px]"
+            :class="{
               'ring-4 ring-green-400': showResult && currentRoundData.rightWeight > currentRoundData.leftWeight,
               'ring-4 ring-red-400': showResult && currentRoundData.rightWeight < currentRoundData.leftWeight && selectedSide === 'right'
             }"
             @click="handleSelectSide('right')"
           >
             <div class="pan-items">
-              <span 
-                v-for="(item, i) in currentRoundData.rightItems" 
-                :key="i" 
-                class="text-3xl md:text-4xl"
+              <span
+                v-for="(item, i) in currentRoundData.rightItems"
+                :key="i"
+                class="text-2xl sm:text-3xl md:text-4xl"
               >
                 {{ item.emoji }}
               </span>
@@ -352,9 +352,9 @@ watch(() => props.difficulty, () => {
 
         <!-- 結果提示 -->
         <Transition name="fade">
-          <div 
+          <div
             v-if="showResult"
-            class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-5xl z-10"
+            class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-4xl sm:text-5xl z-10"
           >
             {{ isCorrect ? '✅' : '❌' }}
           </div>
@@ -362,13 +362,15 @@ watch(() => props.difficulty, () => {
       </div>
 
       <!-- 重量提示（簡單模式） -->
-      <div 
-        v-if="config.showWeightHint && currentRoundData" 
-        class="weight-hint text-center mt-4 text-sm text-gray-500 dark:text-gray-400"
+      <div
+        v-if="config.showWeightHint && currentRoundData"
+        class="weight-hint text-center mt-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 px-4"
       >
-        <span>左邊: {{ currentRoundData.leftWeight }} 重量單位</span>
-        <span class="mx-4">|</span>
-        <span>右邊: {{ currentRoundData.rightWeight }} 重量單位</span>
+        <div class="flex flex-wrap justify-center gap-2 sm:gap-4">
+          <span>左邊: {{ currentRoundData.leftWeight }} 重量單位</span>
+          <span class="hidden sm:inline">|</span>
+          <span>右邊: {{ currentRoundData.rightWeight }} 重量單位</span>
+        </div>
       </div>
 
       <!-- 回饋動畫 -->

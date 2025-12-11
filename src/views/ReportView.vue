@@ -1,42 +1,171 @@
 <template>
   <div class="min-h-screen bg-[var(--color-bg)]">
     
-    <div v-if="isMobile" class="flex flex-col min-h-screen">
-      <div class="flex justify-between items-center p-4 bg-[var(--color-surface)] border-b border-[var(--color-border)] sticky top-0 z-30">
-        <h2 class="text-lg font-bold text-[var(--color-text)]">認知評估報告</h2>
+    <!-- 手機版視圖：優化為完整報告顯示，適合長者閱讀 -->
+    <div v-if="isMobile" class="flex flex-col min-h-screen pb-safe">
+      <div class="flex justify-between items-center p-4 bg-[var(--color-surface)] border-b border-[var(--color-border)] sticky top-0 z-30 shadow-sm">
+        <h2 class="text-xl font-bold text-[var(--color-text)]">認知評估報告</h2>
         <button 
           @click="downloadReport" 
           class="w-10 h-10 flex items-center justify-center rounded-full bg-[var(--color-surface-alt)] text-[var(--color-text)] border border-[var(--color-border)] active:scale-95 transition-transform" 
           :disabled="isGenerating"
+          aria-label="下載報告"
         >
           <span class="text-xl">{{ isGenerating ? '⏳' : '📥' }}</span>
         </button>
       </div>
 
-      <main class="flex-1 p-4 space-y-4">
+      <main class="flex-1 p-4 space-y-6 overflow-x-hidden">
+        <!-- 免責聲明 -->
+        <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3 rounded-xl flex gap-3 items-start">
+          <div class="text-lg">⚠️</div>
+          <p class="text-sm text-amber-900 dark:text-amber-100 leading-relaxed">
+            數據僅供參考，非醫療診斷。
+          </p>
+        </div>
+
+        <!-- 用戶卡片 -->
         <section class="flex items-center gap-4 p-5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl text-white shadow-lg">
-          <div class="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-2xl backdrop-blur-sm">👤</div>
-          <div class="flex-1">
-            <h2 class="text-xl font-bold m-0">{{ userStore.currentUser?.name || '使用者' }}</h2>
-            <p class="text-sm opacity-90">{{ userStore.userAge || '?' }} 歲</p>
+          <div class="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-2xl backdrop-blur-sm shrink-0">👤</div>
+          <div class="flex-1 min-w-0">
+            <h2 class="text-xl font-bold m-0 truncate">{{ userStore.currentUser?.name || '使用者' }}</h2>
+            <p class="text-sm opacity-90">{{ userStore.userAge || '?' }} 歲 • {{ userStore.currentUser?.educationYears || 0 }}年教育</p>
           </div>
           <div 
-            class="px-4 py-2 rounded-xl backdrop-blur-sm text-center min-w-[80px]"
+            class="px-3 py-2 rounded-xl backdrop-blur-sm text-center min-w-[70px] shrink-0"
             :class="getScoreLevelBg(cognitiveIndex)"
           >
-            <span class="text-2xl font-bold block">{{ cognitiveIndex }}</span>
+            <span class="text-2xl font-bold block leading-none mb-1">{{ cognitiveIndex }}</span>
             <span class="text-xs opacity-90">綜合指數</span>
           </div>
         </section>
         
+        <!-- 認知雷達圖 -->
         <section class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
-          <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-[var(--color-text)]">🧠 認知能力</h3>
-          <div class="h-64">
+          <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-[var(--color-text)]">🧠 認知能力分佈</h3>
+          <div class="h-64 w-full">
             <RadarChart ref="radarChartRef" :scores="gameStore.cognitiveScores" :previousScores="previousScores" />
           </div>
         </section>
 
-        <div class="h-8"></div>
+        <!-- 認知維度列表 (手機版條狀圖) -->
+        <section class="space-y-3">
+           <div v-for="dim in cognitiveDimensions" :key="dim.id" class="bg-[var(--color-surface)] p-3 rounded-xl border border-[var(--color-border)] flex items-center gap-3 shadow-sm">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center bg-[var(--color-bg-soft)] text-xl shrink-0">
+                {{ dim.icon }}
+              </div>
+              <div class="flex-1 min-w-0">
+                 <div class="flex justify-between mb-1">
+                    <span class="font-bold text-[var(--color-text)] truncate">{{ dim.name }}</span>
+                    <span class="font-bold" :style="{ color: dim.color }">{{ gameStore.cognitiveScores[dim.id] }}</span>
+                 </div>
+                 <div class="h-2.5 bg-[var(--color-bg-soft)] rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-1000" :style="{ width: `${gameStore.cognitiveScores[dim.id]}%`, backgroundColor: dim.color }"></div>
+                 </div>
+              </div>
+           </div>
+        </section>
+
+        <!-- 歷史趨勢 -->
+        <section class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
+           <div class="flex justify-between items-center mb-4">
+             <h3 class="text-lg font-bold text-[var(--color-text)]">📈 近期趨勢</h3>
+             <span class="text-xs text-[var(--color-text-secondary)]">近30天</span>
+           </div>
+           <div class="h-56 w-full">
+             <TrendChart :history="gameStore.scoreHistory" :showWarningLines="false" :professionalMode="false" />
+           </div>
+        </section>
+
+        <!-- 統計數據 (2x2 Grid) -->
+        <section class="grid grid-cols-2 gap-3">
+            <div class="bg-[var(--color-surface)] p-3 rounded-xl border border-[var(--color-border)] text-center shadow-sm">
+               <div class="text-2xl font-bold text-blue-500">{{ userStore.currentStats?.totalGamesPlayed || 0 }}</div>
+               <div class="text-xs text-[var(--color-text-secondary)] mt-1">總遊戲次數</div>
+            </div>
+            <div class="bg-[var(--color-surface)] p-3 rounded-xl border border-[var(--color-border)] text-center shadow-sm">
+               <div class="text-2xl font-bold text-green-500">{{ userStore.currentStats?.averageScore || 0 }}</div>
+               <div class="text-xs text-[var(--color-text-secondary)] mt-1">平均分數</div>
+            </div>
+            <div class="bg-[var(--color-surface)] p-3 rounded-xl border border-[var(--color-border)] text-center shadow-sm">
+               <div class="text-2xl font-bold text-purple-500 text-nowrap overflow-hidden text-ellipsis">{{ formatPlayTime(userStore.currentStats?.totalPlayTime || 0) }}</div>
+               <div class="text-xs text-[var(--color-text-secondary)] mt-1">總訓練時長</div>
+            </div>
+            <div class="bg-[var(--color-surface)] p-3 rounded-xl border border-[var(--color-border)] text-center shadow-sm">
+               <div class="text-2xl font-bold text-orange-500">{{ userStore.currentStats?.streak || 0 }}</div>
+               <div class="text-xs text-[var(--color-text-secondary)] mt-1">連續天數</div>
+            </div>
+        </section>
+
+        <!-- Mini-Cog (手機版簡化) -->
+        <section v-if="latestMiniCogResult" class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-[var(--color-text)]">🧪 Mini-Cog 篩檢</h3>
+                <span class="text-xs text-[var(--color-text-muted)]">{{ formatDateTime(latestMiniCogResult.completedAt).split(' ')[0] }}</span>
+            </div>
+            <div class="flex items-center gap-4 mb-4">
+               <div class="w-16 h-16 rounded-full border-4 flex items-center justify-center text-2xl font-bold shrink-0"
+                    :class="[getMiniCogBorderClass(latestMiniCogResult.totalScore), getMiniCogScoreClass(latestMiniCogResult.totalScore)]">
+                  {{ latestMiniCogResult.totalScore }}
+               </div>
+               <div class="flex-1 p-3 rounded-lg border-l-4 text-sm" :class="getMiniCogInterpretationClass(latestMiniCogResult)">
+                  <strong class="block mb-1 text-base">{{ getMiniCogInterpretation(latestMiniCogResult).label }}</strong>
+                  <span class="opacity-90">{{ getMiniCogInterpretation(latestMiniCogResult).description }}</span>
+               </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-sm">
+                <div class="bg-[var(--color-surface-alt)] p-2 rounded-lg border border-[var(--color-border)] flex justify-between">
+                    <span>📝 詞語</span>
+                    <span class="font-bold">{{ latestMiniCogResult.wordRecall.score }}/3</span>
+                </div>
+                <div class="bg-[var(--color-surface-alt)] p-2 rounded-lg border border-[var(--color-border)] flex justify-between">
+                    <span>🕐 畫鐘</span>
+                    <span class="font-bold">{{ latestMiniCogResult.clockDrawing.score }}/2</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 訓練建議 -->
+        <section v-if="trainingSuggestions.length > 0" class="space-y-3">
+            <h3 class="text-lg font-bold text-[var(--color-text)]">💡 智能建議</h3>
+            <div v-for="(s, i) in trainingSuggestions.slice(0, 3)" :key="i" 
+                 class="bg-[var(--color-surface)] p-4 rounded-xl border-l-[5px] shadow-sm"
+                 :class="s.priority === 'high' ? 'border-red-500 bg-red-50/30' : (s.priority === 'medium' ? 'border-yellow-500 bg-yellow-50/30' : 'border-green-500 bg-green-50/30')">
+                 <div class="flex items-center gap-2 font-bold mb-2 text-[var(--color-text)]">
+                    {{ COGNITIVE_DIMENSIONS[s.dimension].icon }} {{ COGNITIVE_DIMENSIONS[s.dimension].name }}
+                 </div>
+                 <p class="text-sm text-[var(--color-text-secondary)] leading-relaxed">{{ s.message }}</p>
+            </div>
+        </section>
+
+        <!-- 最近記錄 -->
+        <section v-if="gameStore.recentSessions.length > 0" class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
+           <h3 class="text-lg font-bold mb-4 text-[var(--color-text)]">🕐 最近記錄</h3>
+           <div class="space-y-3">
+            <div 
+              v-for="session in gameStore.recentSessions.slice(0, 3)" 
+              :key="session.id"
+              class="flex items-center justify-between p-3 bg-[var(--color-surface-alt)] rounded-lg"
+            >
+              <div class="flex items-center gap-3">
+                <span class="text-xl">{{ getGameIcon(session.gameId) }}</span>
+                <div class="min-w-0">
+                  <div class="font-bold text-sm text-[var(--color-text)] truncate max-w-[120px]">{{ getGameName(session.gameId) }}</div>
+                  <div class="text-xs text-[var(--color-text-muted)]">
+                    {{ formatDateTime(session.createdAt).split(' ')[0] }}
+                  </div>
+                </div>
+              </div>
+              <div class="text-right shrink-0">
+                <div class="font-bold" :class="getScoreClass(session.result.score)">
+                  {{ session.result.score }}
+                </div>
+              </div>
+            </div>
+           </div>
+        </section>
+
+        <div class="h-12"></div> <!-- Bottom spacer -->
       </main>
     </div>
 

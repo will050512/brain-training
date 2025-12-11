@@ -349,11 +349,11 @@ watch(() => props.difficulty, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲資訊 -->
-      <div class="game-info text-center mt-4">
-        <div class="text-sm text-gray-500 dark:text-gray-400">
+      <div class="game-info text-center mt-4 px-4">
+        <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
           第 {{ currentRound + 1 }} / {{ totalRounds }} 回合
         </div>
-        <div class="flex justify-center gap-4 mt-2 text-sm">
+        <div class="flex flex-wrap justify-center gap-3 sm:gap-4 mt-2 text-xs sm:text-sm">
           <div>
             <span class="text-gray-500 dark:text-gray-400">序列長度：</span>
             <span class="font-bold text-blue-500">{{ currentLength }}</span>
@@ -366,20 +366,20 @@ watch(() => props.difficulty, () => {
       </div>
 
       <!-- 顯示區域 -->
-      <div class="display-area mt-8">
+      <div class="display-area mt-6 sm:mt-8 px-4">
         <!-- 聆聽階段 -->
-        <div 
+        <div
           v-if="gamePhase === 'listening'"
           class="listening-phase text-center"
         >
-          <div class="text-lg font-medium mb-4">
+          <div class="text-base sm:text-lg font-medium mb-3 sm:mb-4">
             🎵 仔細聆聽...
           </div>
-          <div class="sound-indicator flex justify-center gap-3 flex-wrap">
+          <div class="sound-indicator flex justify-center gap-2 sm:gap-3 flex-wrap">
             <div
               v-for="(sound, index) in sequence"
               :key="index"
-              class="sound-dot w-12 h-12 rounded-full transition-all duration-200 flex items-center justify-center text-2xl"
+              class="sound-dot w-10 h-10 sm:w-12 sm:h-12 rounded-full transition-all duration-200 flex items-center justify-center text-lg sm:text-2xl min-h-[40px] min-w-[40px] sm:min-h-[48px] sm:min-w-[48px]"
               :class="{
                 'bg-blue-500 scale-125 shadow-lg shadow-blue-500/50': currentPlayingIndex === index,
                 'bg-gray-300 dark:bg-gray-600': currentPlayingIndex !== index,
@@ -391,36 +391,36 @@ watch(() => props.difficulty, () => {
         </div>
 
         <!-- 輸入階段 -->
-        <div 
+        <div
           v-else-if="gamePhase === 'input'"
           class="input-phase"
         >
-          <div class="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
+          <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center mb-3 sm:mb-4">
             按順序點擊聲音
           </div>
-          
+
           <!-- 輸入進度 -->
-          <div class="input-progress flex justify-center gap-2 mb-6 min-h-14 flex-wrap">
+          <div class="input-progress flex justify-center gap-1 sm:gap-2 mb-4 sm:mb-6 min-h-12 sm:min-h-14 flex-wrap">
             <div
               v-for="(sound, index) in userInput"
               :key="index"
-              class="sound-icon w-12 h-12 flex items-center justify-center text-2xl bg-blue-100 dark:bg-blue-900 rounded-full"
+              class="sound-icon w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-lg sm:text-2xl bg-blue-100 dark:bg-blue-900 rounded-full min-h-[40px] min-w-[40px] sm:min-h-[48px] sm:min-w-[48px]"
             >
               {{ sound.emoji }}
             </div>
             <div
               v-for="i in (currentLength - userInput.length)"
               :key="'placeholder-' + i"
-              class="sound-placeholder w-12 h-12 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-full"
+              class="sound-placeholder w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-full min-h-[40px] min-w-[40px] sm:min-h-[48px] sm:min-w-[48px]"
             >
               ?
             </div>
           </div>
 
           <!-- 重播按鈕 -->
-          <div class="text-center mb-4">
+          <div class="text-center mb-3 sm:mb-4">
             <button
-              class="replay-btn px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              class="replay-btn min-h-[48px] px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-base sm:text-lg font-medium"
               @click="replaySequence"
             >
               🔁 重播聲音
@@ -428,14 +428,14 @@ watch(() => props.difficulty, () => {
           </div>
 
           <!-- 聲音選擇區 -->
-          <div class="sound-grid grid grid-cols-3 md:grid-cols-4 gap-3 max-w-lg mx-auto">
+          <div class="sound-grid grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3 max-w-sm sm:max-w-lg mx-auto">
             <button
               v-for="sound in soundPool"
               :key="sound.id"
-              class="sound-btn p-4 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900 transition-all transform hover:scale-105 active:scale-95"
+              class="sound-btn p-3 sm:p-4 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900 transition-all transform hover:scale-105 active:scale-95 min-h-[60px] sm:min-h-[70px] md:min-h-[80px]"
               @click="handleSoundClick(sound)"
             >
-              <div class="text-3xl">{{ sound.emoji }}</div>
+              <div class="text-2xl sm:text-3xl">{{ sound.emoji }}</div>
               <div class="text-xs mt-1">{{ sound.name }}</div>
             </button>
           </div>

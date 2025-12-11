@@ -298,11 +298,11 @@ watch(() => props.difficulty, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲資訊 -->
-      <div class="game-info text-center mt-4">
-        <div class="text-sm text-gray-500 dark:text-gray-400">
+      <div class="game-info text-center mt-4 px-4">
+        <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
           第 {{ currentRound + 1 }} / {{ totalRounds }} 回合
         </div>
-        <div class="flex justify-center gap-4 mt-2 text-sm">
+        <div class="flex flex-wrap justify-center gap-3 sm:gap-4 mt-2 text-xs sm:text-sm">
           <div>
             <span class="text-gray-500 dark:text-gray-400">序列長度：</span>
             <span class="font-bold text-blue-500">{{ currentLength }}</span>
@@ -315,62 +315,62 @@ watch(() => props.difficulty, () => {
       </div>
 
       <!-- 顯示區域 -->
-      <div class="display-area mt-8">
+      <div class="display-area mt-6 sm:mt-8 px-4">
         <!-- 顯示階段 -->
-        <div 
+        <div
           v-if="showingPhase === 'showing'"
           class="showing-phase text-center"
         >
-          <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4">
             記住手勢順序...
           </div>
-          <div 
-            class="gesture-display text-8xl transition-all duration-200 min-h-32 flex items-center justify-center"
+          <div
+            class="gesture-display text-6xl sm:text-7xl md:text-8xl transition-all duration-200 min-h-24 sm:min-h-28 md:min-h-32 flex items-center justify-center"
             :class="{ 'opacity-0 scale-50': displayGesture === null, 'opacity-100 scale-110': displayGesture !== null }"
           >
             {{ displayGesture?.icon ?? '' }}
           </div>
-          <div class="gesture-name text-xl font-medium mt-2">
+          <div class="gesture-name text-lg sm:text-xl font-medium mt-2">
             {{ displayGesture?.name ?? '' }}
           </div>
         </div>
 
         <!-- 輸入階段 -->
-        <div 
+        <div
           v-else-if="showingPhase === 'input'"
           class="input-phase"
         >
-          <div class="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
+          <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center mb-3 sm:mb-4">
             按順序點擊手勢
           </div>
-          
+
           <!-- 輸入進度 -->
-          <div class="input-progress flex justify-center gap-2 mb-6 min-h-12">
+          <div class="input-progress flex justify-center gap-1 sm:gap-2 mb-4 sm:mb-6 min-h-10 sm:min-h-12 flex-wrap">
             <div
               v-for="(gesture, index) in userInput"
               :key="index"
-              class="gesture-icon w-10 h-10 flex items-center justify-center text-2xl bg-blue-100 dark:bg-blue-900 rounded-lg"
+              class="gesture-icon w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-lg sm:text-2xl bg-blue-100 dark:bg-blue-900 rounded-lg min-h-[32px] min-w-[32px] sm:min-h-[40px] sm:min-w-[40px]"
             >
               {{ gesture.icon }}
             </div>
             <div
               v-for="i in (currentLength - userInput.length)"
               :key="'placeholder-' + i"
-              class="gesture-placeholder w-10 h-10 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg"
+              class="gesture-placeholder w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg min-h-[32px] min-w-[32px] sm:min-h-[40px] sm:min-w-[40px]"
             >
               ?
             </div>
           </div>
 
           <!-- 手勢選擇區 -->
-          <div class="gesture-grid grid grid-cols-3 md:grid-cols-4 gap-3 max-w-md mx-auto">
+          <div class="gesture-grid grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3 max-w-sm sm:max-w-md mx-auto">
             <button
               v-for="gesture in gesturePool"
               :key="gesture.id"
-              class="gesture-btn p-4 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-blue-500 hover:text-white transition-all transform hover:scale-105 active:scale-95"
+              class="gesture-btn p-3 sm:p-4 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-blue-500 hover:text-white transition-all transform hover:scale-105 active:scale-95 min-h-[60px] sm:min-h-[70px] md:min-h-[80px]"
               @click="handleGestureClick(gesture)"
             >
-              <div class="text-3xl">{{ gesture.icon }}</div>
+              <div class="text-2xl sm:text-3xl">{{ gesture.icon }}</div>
               <div class="text-xs mt-1">{{ gesture.name }}</div>
             </button>
           </div>

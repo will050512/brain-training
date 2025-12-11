@@ -16,9 +16,9 @@
       </div>
     </div>
 
-    <div 
-      class="container mx-auto px-4"
-      :class="stage === 'mini-cog' ? 'flex-1 overflow-auto py-2 sm:py-4' : 'py-8'"
+    <div
+      class="container mx-auto px-3 sm:px-4"
+      :class="stage === 'mini-cog' ? 'flex-1 overflow-auto py-2 sm:py-4' : 'py-4 sm:py-8'"
     >
       <!-- Mini-Cog 測驗模式 -->
       <MiniCogFlow 

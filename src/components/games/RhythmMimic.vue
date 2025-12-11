@@ -350,15 +350,15 @@ watch(() => props.difficulty, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲資訊 -->
-      <div class="game-info text-center mt-4">
-        <div class="text-sm text-gray-500 dark:text-gray-400">
+      <div class="game-info text-center mt-4 px-4">
+        <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
           第 {{ currentRound + 1 }} / {{ totalRounds }} 回合
         </div>
-        <div class="text-sm mt-1">
+        <div class="text-xs sm:text-sm mt-1">
           <span class="text-gray-500 dark:text-gray-400">模式：</span>
           <span class="font-medium">{{ currentPattern?.name || '' }}</span>
         </div>
-        <div class="flex justify-center gap-4 mt-2 text-sm">
+        <div class="flex flex-wrap justify-center gap-3 sm:gap-4 mt-2 text-xs sm:text-sm">
           <div>
             <span class="text-gray-500 dark:text-gray-400">節拍數：</span>
             <span class="font-bold text-blue-500">{{ currentBeats.length }}</span>
@@ -371,22 +371,22 @@ watch(() => props.difficulty, () => {
       </div>
 
       <!-- 顯示區域 -->
-      <div class="display-area mt-8">
+      <div class="display-area mt-6 sm:mt-8 px-4">
         <!-- 聆聽階段 -->
-        <div 
+        <div
           v-if="gamePhase === 'listening'"
           class="listening-phase text-center"
         >
-          <div class="text-lg font-medium mb-6">
+          <div class="text-base sm:text-lg font-medium mb-4 sm:mb-6">
             🎵 仔細聆聽節奏...
           </div>
-          
+
           <!-- 節拍視覺指示 -->
-          <div class="beat-indicator flex justify-center gap-3 flex-wrap">
+          <div class="beat-indicator flex justify-center gap-2 sm:gap-3 flex-wrap">
             <div
               v-for="(beat, index) in currentBeats"
               :key="index"
-              class="beat-dot w-12 h-12 rounded-full transition-all duration-100 flex items-center justify-center text-xl"
+              class="beat-dot w-10 h-10 sm:w-12 sm:h-12 rounded-full transition-all duration-100 flex items-center justify-center text-lg sm:text-xl min-h-[40px] min-w-[40px] sm:min-h-[48px] sm:min-w-[48px]"
               :class="{
                 'bg-blue-500 scale-125 shadow-lg shadow-blue-500/50': currentBeatIndex === index,
                 'bg-gray-300 dark:bg-gray-600': currentBeatIndex !== index && index > currentBeatIndex,
@@ -396,52 +396,52 @@ watch(() => props.difficulty, () => {
               {{ currentBeatIndex === index ? '🔊' : '' }}
             </div>
           </div>
-          
-          <div class="text-sm text-gray-400 mt-4">
+
+          <div class="text-xs sm:text-sm text-gray-400 mt-3 sm:mt-4">
             播放次數：{{ playCount + 1 }} / {{ config.playCount }}
           </div>
         </div>
 
         <!-- 輸入階段 -->
-        <div 
+        <div
           v-else-if="gamePhase === 'input'"
           class="input-phase text-center"
         >
-          <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4">
             點擊下方按鈕複製節奏
           </div>
-          
+
           <!-- 輸入進度 -->
-          <div class="input-progress flex justify-center gap-3 mb-8 flex-wrap">
+          <div class="input-progress flex justify-center gap-2 sm:gap-3 mb-6 sm:mb-8 flex-wrap">
             <div
               v-for="(tap, index) in userTaps"
               :key="index"
-              class="tap-dot w-8 h-8 bg-green-500 rounded-full"
+              class="tap-dot w-6 h-6 sm:w-8 sm:h-8 bg-green-500 rounded-full min-h-[24px] min-w-[24px] sm:min-h-[32px] sm:min-w-[32px]"
             />
             <div
               v-for="i in (currentBeats.length - userTaps.length)"
               :key="'placeholder-' + i"
-              class="tap-placeholder w-8 h-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-full"
+              class="tap-placeholder w-6 h-6 sm:w-8 sm:h-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-full min-h-[24px] min-w-[24px] sm:min-h-[32px] sm:min-w-[32px]"
             />
           </div>
 
           <!-- 敲擊按鈕 -->
           <button
-            class="tap-btn w-40 h-40 rounded-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-6xl shadow-xl transition-all transform"
+            class="tap-btn w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-4xl sm:text-5xl md:text-6xl shadow-xl transition-all transform min-h-[128px] min-w-[128px] sm:min-h-[144px] sm:min-w-[144px] md:min-h-[160px] md:min-w-[160px]"
             :class="{ 'scale-90 bg-blue-700': isTapping }"
             @click="handleTap"
             @touchstart.prevent="handleTap"
           >
             👆
           </button>
-          
-          <div class="text-sm text-gray-500 dark:text-gray-400 mt-6">
+
+          <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-4 sm:mt-6">
             剩餘 {{ currentBeats.length - userTaps.length }} 次敲擊
           </div>
 
           <!-- 跳過按鈕 -->
           <button
-            class="skip-btn mt-4 px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-sm"
+            class="skip-btn mt-3 sm:mt-4 px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-sm sm:text-base font-medium min-h-[44px]"
             @click="skipInput"
           >
             完成輸入

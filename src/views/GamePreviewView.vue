@@ -24,7 +24,8 @@
           <header class="preview-header">
             <button @click="showDifficultyPanel = true" class="difficulty-btn" aria-label="調整遊戲難度">
               <span class="btn-icon">⚙️</span>
-              難度: {{ DIFFICULTIES[selectedDifficulty].name }}
+              <span class="hidden xs:inline">難度: {{ DIFFICULTIES[selectedDifficulty].name }}</span>
+              <span class="xs:inline hidden">{{ DIFFICULTIES[selectedDifficulty].name }}</span>
             </button>
             <h1 class="game-title">{{ currentGame?.name || '遊戲' }}</h1>
           </header>
@@ -192,7 +193,7 @@ const dimensionColor = computed(() => primaryDimension.value ? COGNITIVE_DIMENSI
 const dimensionName = computed(() => primaryDimension.value ? COGNITIVE_DIMENSIONS[primaryDimension.value].name : '')
 
 const estimatedTime = computed(() => {
-  if (!currentGame.value) return 60
+  if (!currentGame.value?.estimatedTime) return 60
   return currentGame.value.estimatedTime[selectedDifficulty.value] || 60
 })
 

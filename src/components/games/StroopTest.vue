@@ -295,31 +295,31 @@ watch(() => props.difficulty, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 題目區域 -->
-      <div class="question-area mt-8 text-center">
-        <div class="question-number text-sm text-gray-500 dark:text-gray-400 mb-2">
+      <div class="question-area mt-6 sm:mt-8 text-center px-2">
+        <div class="question-number text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2">
           第 {{ currentRound + 1 }} / {{ totalRounds }} 題
         </div>
 
         <!-- 題目提示 -->
-        <div 
-          v-if="questionPrompt" 
-          class="question-prompt mb-4 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 inline-block"
+        <div
+          v-if="questionPrompt"
+          class="question-prompt mb-3 sm:mb-4 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 inline-block"
         >
-          <span class="text-lg mr-2">{{ questionPrompt.icon }}</span>
-          <span class="text-sm font-medium">{{ questionPrompt.text }}</span>
+          <span class="text-base sm:text-lg mr-2">{{ questionPrompt.icon }}</span>
+          <span class="text-xs sm:text-sm font-medium">{{ questionPrompt.text }}</span>
         </div>
-        
+
         <!-- Stroop 文字顯示 -->
-        <div 
+        <div
           v-if="currentQuestion"
-          class="stroop-display py-8"
+          class="stroop-display py-4 sm:py-6 md:py-8"
         >
-          <div 
-            class="stroop-word text-6xl md:text-7xl font-bold select-none p-4 rounded-lg inline-block"
-            :style="{ 
+          <div
+            class="stroop-word text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold select-none p-3 sm:p-4 rounded-lg inline-block break-words leading-tight"
+            :style="{
               color: currentQuestion.inkColor,
               borderColor: currentQuestion.borderColor,
-              borderWidth: '4px',
+              borderWidth: '3px',
               borderStyle: 'solid'
             }"
           >
@@ -328,11 +328,11 @@ watch(() => props.difficulty, () => {
         </div>
 
         <!-- 顏色選項 -->
-        <div class="color-options grid grid-cols-2 gap-3 md:gap-4 mt-6 max-w-md mx-auto">
+        <div class="color-options grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 mt-4 sm:mt-6 max-w-sm sm:max-w-md mx-auto">
           <button
             v-for="option in options"
             :key="option.name"
-            class="color-option p-4 md:p-5 rounded-xl text-white font-bold text-lg md:text-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="color-option p-3 sm:p-4 md:p-5 rounded-xl text-white font-bold text-base sm:text-lg md:text-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[60px] sm:min-h-[70px] md:min-h-[80px] flex items-center justify-center"
             :style="{ backgroundColor: option.value }"
             :disabled="isAnswering"
             @click="handleSelectAnswer(option.name)"
