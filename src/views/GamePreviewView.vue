@@ -1,146 +1,152 @@
 <template>
   <div class="game-preview-page">
-    <!-- 漸層背景裝飾 -->
-    <div class="bg-decoration">
+    <div class="bg-layer">
+      <div class="gradient-overlay"></div>
       <div class="floating-shape shape-1"></div>
       <div class="floating-shape shape-2"></div>
       <div class="floating-shape shape-3"></div>
-      <div class="gradient-overlay"></div>
+      
+      <div class="ground-decoration">
+        <div class="grass"></div>
+        <div class="bottles">
+          <div class="bottle bottle-1"></div>
+          <div class="bottle bottle-2"></div>
+          <div class="bottle bottle-3"></div>
+        </div>
+      </div>
     </div>
 
-    <!-- 橫屏並列佈局容器 -->
-    <div class="preview-layout-wrapper">
-      <!-- 左側：資訊區 -->
-      <div class="preview-info-section">
-        <!-- 頂部工具列 -->
-        <header class="preview-header">
-          <button @click="showDifficultyPanel = true" class="difficulty-btn">
-            難度調整
-          </button>
-          <h1 class="game-title">{{ currentGame?.name || '遊戲' }}</h1>
-        </header>
+    <main class="main-container">
+      
+      <div class="content-scroll-area">
+        <div class="content-inner">
+          
+          <header class="preview-header">
+            <button @click="showDifficultyPanel = true" class="difficulty-btn" aria-label="調整遊戲難度">
+              <span class="btn-icon">⚙️</span>
+              難度: {{ DIFFICULTIES[selectedDifficulty].name }}
+            </button>
+            <h1 class="game-title">{{ currentGame?.name || '遊戲' }}</h1>
+          </header>
 
-        <!-- 遊戲圖示與動畫 -->
-        <div class="game-icon-area">
-          <div class="game-icon-wrapper">
-            <span class="game-icon">{{ currentGame?.icon || '🎮' }}</span>
+          <div class="visual-center">
+            <div class="game-icon-wrapper">
+              <span class="game-icon" role="img" aria-label="遊戲圖示">
+                {{ currentGame?.icon || '🎮' }}
+              </span>
+            </div>
+            
+            <div v-if="primaryDimension" class="dimension-badge" :style="{ backgroundColor: dimensionColor }">
+              {{ dimensionName }}
+            </div>
           </div>
-          <!-- 認知維度標籤 -->
-          <div v-if="primaryDimension" class="dimension-badge" :style="{ backgroundColor: dimensionColor }">
-            {{ dimensionName }}
+
+          <div class="game-info-card">
+            <h2 class="section-title">遊戲特點</h2>
+            <ul class="benefits-list">
+              <li v-for="(instruction, index) in currentGame?.instructions?.slice(0, 3)" :key="index">
+                {{ instruction }}
+              </li>
+            </ul>
           </div>
-        </div>
 
-        <!-- 遊戲說明 -->
-        <div class="game-benefits">
-          <ul>
-            <li v-for="(instruction, index) in currentGame?.instructions?.slice(0, 3)" :key="index">
-              {{ instruction }}
-            </li>
-          </ul>
-        </div>
-      </div>
+          <div class="desktop-actions">
+            <button @click="startGame" class="start-btn-large">
+              開始遊戲
+            </button>
+            <div class="secondary-actions">
+              <button @click="showInstructions = true" class="text-btn">詳細說明</button>
+              <button @click="goBack" class="text-btn">返回列表</button>
+            </div>
+          </div>
 
-      <!-- 右側：操作區 -->
-      <div class="preview-action-section">
-        <!-- 按鈕區 -->
-        <div class="action-buttons-vertical">
-          <button @click="startGame" class="start-btn-large">
-            開始遊戲
-          </button>
-          <button @click="showInstructions = true" class="instruction-btn-outline">
-            查看詳細說明
-          </button>
-          <button @click="goBack" class="back-btn-ghost">
-            <span class="back-icon">↩</span>
-            返回選擇
-          </button>
+          <div class="spacer"></div>
         </div>
       </div>
-    </div>
 
-    <!-- 草地裝飾 (豎屏時顯示) -->
-    <div class="ground-decoration portrait-only">
-      <div class="grass"></div>
-      <div class="bottles">
-        <div class="bottle bottle-1"></div>
-        <div class="bottle bottle-2"></div>
-        <div class="bottle bottle-3"></div>
-      </div>
-    </div>
-
-    <!-- 底部按鈕區 (豎屏時顯示) -->
-    <footer class="preview-footer portrait-only">
-      <button @click="goBack" class="back-btn">
-        <span class="back-icon">↩</span>
-        返回
-      </button>
-
-      <div class="action-buttons">
-        <button @click="showInstructions = true" class="instruction-btn">
-          說 明
+      <footer class="mobile-footer">
+        <button @click="goBack" class="icon-btn-secondary" aria-label="返回">
+          <span class="back-icon">↩</span>
         </button>
-        <button @click="startGame" class="start-btn">
-          開 始
-        </button>
-      </div>
-    </footer>
 
-    <!-- 難度調整面板 -->
+        <button @click="showInstructions = true" class="action-btn secondary">
+          說明
+        </button>
+        
+        <button @click="startGame" class="action-btn primary">
+          開始
+        </button>
+      </footer>
+    </main>
+
     <Teleport to="body">
-      <Transition name="slide-up">
-        <div v-if="showDifficultyPanel" class="panel-overlay" @click.self="showDifficultyPanel = false">
-          <div class="difficulty-panel">
-            <h3>選擇難度</h3>
-            <div class="difficulty-options">
+      <Transition name="fade-slide">
+        <div v-if="showDifficultyPanel" class="modal-overlay" @click.self="showDifficultyPanel = false">
+          <div class="modal-card">
+            <header class="modal-header">
+              <h3>選擇遊戲難度</h3>
+              <button class="close-icon" @click="showDifficultyPanel = false">✕</button>
+            </header>
+            
+            <div class="difficulty-grid">
               <button
                 v-for="diff in difficulties"
                 :key="diff.id"
                 @click="selectDifficulty(diff.id)"
-                class="difficulty-option"
+                class="difficulty-card"
                 :class="{ active: selectedDifficulty === diff.id }"
-                :style="{ 
-                  '--diff-color': diff.color,
-                  '--diff-bg': diff.bgColor
-                }"
+                :style="{ '--accent-color': diff.color }"
               >
-                <span class="diff-name">{{ diff.name }}</span>
-                <span class="diff-best">最佳: {{ getBestScore(diff.id) || '-' }}</span>
+                <div class="diff-info">
+                  <span class="diff-name">{{ diff.name }}</span>
+                  <span class="diff-score">最佳: {{ getBestScore(diff.id) || '-' }}</span>
+                </div>
+                <div class="radio-indicator"></div>
               </button>
             </div>
-            <button @click="showDifficultyPanel = false" class="panel-close-btn">
-              確定
+
+            <button @click="showDifficultyPanel = false" class="modal-confirm-btn">
+              確定選擇
             </button>
           </div>
         </div>
       </Transition>
     </Teleport>
 
-    <!-- 詳細說明面板 -->
     <Teleport to="body">
-      <Transition name="slide-up">
-        <div v-if="showInstructions" class="panel-overlay" @click.self="showInstructions = false">
-          <div class="instructions-panel">
-            <h3>{{ currentGame?.name }} - 遊戲說明</h3>
-            <div class="instructions-content">
-              <p class="game-description">{{ currentGame?.description }}</p>
-              <ul class="instructions-list">
+      <Transition name="fade-slide">
+        <div v-if="showInstructions" class="modal-overlay" @click.self="showInstructions = false">
+          <div class="modal-card instructions-mode">
+            <header class="modal-header">
+              <h3>遊戲說明</h3>
+              <button class="close-icon" @click="showInstructions = false">✕</button>
+            </header>
+            
+            <div class="scrollable-content">
+              <p class="description-text">{{ currentGame?.description }}</p>
+              
+              <div class="info-blocks">
+                <div class="info-block">
+                  <span class="label">預估時間</span>
+                  <span class="value">{{ estimatedTime }} 秒</span>
+                </div>
+                <div class="info-block">
+                  <span class="label">難度</span>
+                  <span class="value" :style="{ color: DIFFICULTIES[selectedDifficulty].color }">
+                    {{ DIFFICULTIES[selectedDifficulty].name }}
+                  </span>
+                </div>
+              </div>
+
+              <h4 class="sub-title">如何進行：</h4>
+              <ul class="detailed-list">
                 <li v-for="(instruction, index) in currentGame?.instructions" :key="index">
                   {{ instruction }}
                 </li>
               </ul>
             </div>
-            <div class="instructions-meta">
-              <div class="meta-item">
-                <span class="meta-label">預估時間</span>
-                <span class="meta-value">{{ estimatedTime }} 秒</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-label">目前難度</span>
-                <span class="meta-value">{{ DIFFICULTIES[selectedDifficulty].name }}</span>
-              </div>
-            </div>
-            <button @click="showInstructions = false" class="panel-close-btn">
+
+            <button @click="showInstructions = false" class="modal-confirm-btn">
               了解了
             </button>
           </div>
@@ -161,241 +167,95 @@ const route = useRoute()
 const router = useRouter()
 const gameStore = useGameStore()
 
-// 狀態
+// --- 狀態管理 ---
 const showDifficultyPanel = ref(false)
 const showInstructions = ref(false)
 const selectedDifficulty = ref<Difficulty>('easy')
 
-// 取得遊戲 ID
+// --- Computed 邏輯 ---
 const gameId = computed(() => route.params.gameId as string)
 
-// 當前遊戲
 const currentGame = computed<GameDefinition | undefined>(() => {
   return gameStore.allGames.find(g => g.id === gameId.value)
 })
 
-// 難度列表
 const difficulties = Object.values(DIFFICULTIES)
 
-// 主要認知維度
 const primaryDimension = computed<CognitiveDimension | null>(() => {
   if (!currentGame.value) return null
   const weights = Object.entries(currentGame.value.cognitiveWeights) as [CognitiveDimension, number][]
   if (weights.length === 0) return null
-  const sorted = weights.sort((a, b) => b[1] - a[1])
-  const first = sorted[0]
-  return first ? first[0] : null
+  return weights.sort((a, b) => b[1] - a[1])[0][0]
 })
 
-// 維度顏色
-const dimensionColor = computed(() => {
-  if (!primaryDimension.value) return '#6366f1'
-  return COGNITIVE_DIMENSIONS[primaryDimension.value].color
-})
+const dimensionColor = computed(() => primaryDimension.value ? COGNITIVE_DIMENSIONS[primaryDimension.value].color : '#6366f1')
+const dimensionName = computed(() => primaryDimension.value ? COGNITIVE_DIMENSIONS[primaryDimension.value].name : '')
 
-// 維度名稱
-const dimensionName = computed(() => {
-  if (!primaryDimension.value) return ''
-  return COGNITIVE_DIMENSIONS[primaryDimension.value].name
-})
-
-// 預估時間
 const estimatedTime = computed(() => {
   if (!currentGame.value) return 60
   return currentGame.value.estimatedTime[selectedDifficulty.value] || 60
 })
 
-// 取得最佳成績
+// --- Methods ---
 function getBestScore(difficulty: Difficulty): number {
   return gameStore.getBestScore(gameId.value, difficulty)
 }
 
-// 選擇難度
 function selectDifficulty(difficulty: Difficulty): void {
   selectedDifficulty.value = difficulty
 }
 
-// 返回
 function goBack(): void {
   router.push('/games')
 }
 
-// 開始遊戲
 function startGame(): void {
   if (!currentGame.value) return
-  
   gameStore.selectGame(currentGame.value.id)
   gameStore.selectDifficulty(selectedDifficulty.value)
-  
-  // 帶上 autoStart 參數讓遊戲頁面自動開始
   router.push({
     path: `/games/${currentGame.value.id}`,
     query: { autoStart: 'true' }
   })
 }
 
-// 初始化
 onMounted(() => {
-  if (gameId.value) {
-    gameStore.selectGame(gameId.value)
-  }
-  
-  // 嘗試恢復之前的難度設定
+  if (gameId.value) gameStore.selectGame(gameId.value)
   const savedDifficulty = gameStore.currentDifficulty
-  if (savedDifficulty) {
-    selectedDifficulty.value = savedDifficulty
-  }
+  if (savedDifficulty) selectedDifficulty.value = savedDifficulty
 })
 </script>
 
 <style scoped>
+/* =========================================
+   全域設定與變數
+   ========================================= */
+:root {
+  --header-height: 60px;
+  --footer-height: 80px;
+  --safe-top: env(safe-area-inset-top, 20px);
+  --safe-bottom: env(safe-area-inset-bottom, 20px);
+  --color-primary: #65a30d;
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --font-scale: 1; /* 可透過 JS 控制放大 */
+}
+
 .game-preview-page {
   position: fixed;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  background: linear-gradient(135deg, #fef9c3 0%, #d9f99d 50%, #86efac 100%);
-  overflow: hidden;
+  background-color: #fef9c3; /* Fallback */
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #1f2937;
+  overflow: hidden; /* 防止整個頁面彈性滾動 */
 }
 
-/* ===== 響應式佈局容器 ===== */
-.preview-layout-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  position: relative;
-  z-index: 5;
-}
-
-.preview-info-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
-
-.preview-action-section {
-  display: none; /* 豎屏時隱藏，用 footer */
-}
-
-/* 橫屏並列佈局 */
-@media (orientation: landscape) and (max-height: 500px) {
-  .preview-layout-wrapper {
-    flex-direction: row;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  }
-
-  .preview-info-section {
-    flex: 0 0 55%;
-    max-width: 450px;
-    padding: 0.75rem 1rem;
-    justify-content: flex-start;
-    overflow-y: auto;
-  }
-
-  .preview-action-section {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 0.75rem;
-  }
-
-  .portrait-only {
-    display: none !important;
-  }
-
-  .preview-header {
-    padding: 0.5rem 0;
-  }
-
-  .game-title {
-    font-size: 1.25rem !important;
-  }
-
-  .game-icon-wrapper {
-    width: 80px !important;
-    height: 80px !important;
-  }
-
-  .game-icon {
-    font-size: 2.5rem !important;
-  }
-
-  .game-icon-area {
-    margin-bottom: 1rem !important;
-  }
-
-  .game-benefits li {
-    font-size: 0.9375rem !important;
-    padding: 0.25rem 0 !important;
-  }
-}
-
-/* 橫屏操作按鈕區 */
-.action-buttons-vertical {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  width: 100%;
-  max-width: 200px;
-}
-
-.start-btn-large {
-  padding: 1rem 2rem;
-  background: linear-gradient(135deg, #22c55e, #4ade80);
-  color: white;
-  border: 3px solid #fff;
-  border-radius: 12px;
-  font-size: 1.25rem;
-  font-weight: 700;
-  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.4);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.start-btn-large:active {
-  transform: scale(0.95);
-}
-
-.instruction-btn-outline {
-  padding: 0.75rem 1.5rem;
-  background: rgba(255, 255, 255, 0.8);
-  color: #65a30d;
-  border: 2px solid #65a30d;
-  border-radius: 10px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.instruction-btn-outline:hover {
-  background: rgba(255, 255, 255, 1);
-}
-
-.back-btn-ghost {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: transparent;
-  border: none;
-  color: #65a30d;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-/* 背景裝飾 */
-.bg-decoration {
+/* =========================================
+   背景與裝飾層 (Z-index: 0)
+   ========================================= */
+.bg-layer {
   position: absolute;
   inset: 0;
+  z-index: 0;
   pointer-events: none;
   overflow: hidden;
 }
@@ -403,448 +263,635 @@ onMounted(() => {
 .gradient-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.4) 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(134, 239, 172, 0.3) 100%
-  );
+  background: linear-gradient(135deg, #fef9c3 0%, #d9f99d 50%, #86efac 100%);
 }
 
+/* 浮動形狀動畫優化 */
 .floating-shape {
   position: absolute;
   border-radius: 50%;
-  opacity: 0.6;
-  animation: float 6s ease-in-out infinite;
+  opacity: 0.5;
+  filter: blur(10px); /* 模糊化以減少視覺干擾 */
+  animation: float 8s ease-in-out infinite;
+  will-change: transform;
 }
 
-.shape-1 {
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, #f97316, #fb923c);
-  top: 15%;
-  left: 20%;
-  animation-delay: 0s;
-}
-
-.shape-2 {
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, #ec4899, #f472b6);
-  top: 25%;
-  right: 25%;
-  animation-delay: -2s;
-}
-
-.shape-3 {
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(135deg, #facc15, #fde047);
-  top: 35%;
-  left: 50%;
-  animation-delay: -4s;
-}
+.shape-1 { width: 100px; height: 100px; background: #fb923c; top: 10%; left: 10%; }
+.shape-2 { width: 80px; height: 80px; background: #f472b6; top: 40%; right: 10%; animation-delay: -2s; }
+.shape-3 { width: 60px; height: 60px; background: #fde047; bottom: 20%; left: 30%; animation-delay: -4s; }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-20px) rotate(10deg); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
 }
 
-/* 頂部工具列 */
-.preview-header {
+/* 地面裝飾 */
+.ground-decoration {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 15vh;
+  max-height: 120px;
+  z-index: 1;
+}
+
+.grass {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to top, #22c55e, #86efac);
+  border-radius: 50% 50% 0 0 / 30% 30% 0 0;
+  opacity: 0.9;
+}
+
+.bottles {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2rem;
+  opacity: 0.6;
+}
+
+.bottle {
+  width: 30px;
+  height: 50px;
+  border-radius: 6px 6px 10px 10px;
+  background-color: rgba(255,255,255,0.5);
+}
+
+.bottle-1 { background: #60a5fa; }
+.bottle-2 { background: #f472b6; }
+.bottle-3 { background: #fb923c; }
+
+
+/* =========================================
+   主佈局容器 (Z-index: 10)
+   ========================================= */
+.main-container {
   position: relative;
   z-index: 10;
   display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 1200px; /* 桌面版限制寬度 */
+  margin: 0 auto;
+}
+
+/* 內容滾動區 */
+.content-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
+  padding: var(--safe-top) 1rem 0 1rem;
+  scrollbar-width: none; /* Firefox 隱藏捲軸 */
+}
+
+.content-scroll-area::-webkit-scrollbar {
+  display: none; /* Chrome/Safari 隱藏捲軸 */
+}
+
+.content-inner {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.5rem;
-  padding-top: max(1rem, env(safe-area-inset-top));
+  min-height: 100%;
+  padding-bottom: 2rem;
+}
+
+/* 標題與導航 */
+.preview-header {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .difficulty-btn {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
-  border: none;
-  border-radius: 8px;
+  border-radius: 20px;
+  font-size: 0.9rem;
   font-weight: 600;
-  font-size: 0.875rem;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  backdrop-filter: blur(4px);
   cursor: pointer;
-  transition: all 0.2s;
-}
-
-.difficulty-btn:active {
-  transform: scale(0.95);
 }
 
 .game-title {
-  font-size: 1.75rem;
+  font-size: clamp(1.75rem, 5vw, 2.5rem); /* 響應式字體 */
   font-weight: 800;
-  color: #65a30d;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  color: #3f6212;
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.5);
+  margin: 0;
+  text-align: center;
 }
 
-/* 遊戲圖示區域 */
-.game-icon-area {
-  text-align: center;
+/* 視覺中心 */
+.visual-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-bottom: 2rem;
 }
 
 .game-icon-wrapper {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 120px;
-  height: 120px;
+  width: clamp(100px, 20vw, 140px);
+  height: clamp(100px, 20vw, 140px);
   background: white;
   border-radius: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-lg);
   margin-bottom: 1rem;
+  border: 4px solid rgba(255, 255, 255, 0.8);
 }
 
 .game-icon {
-  font-size: 4rem;
+  font-size: clamp(3.5rem, 10vw, 5rem);
 }
 
 .dimension-badge {
-  display: inline-block;
-  padding: 0.375rem 1rem;
+  padding: 0.5rem 1.25rem;
   color: white;
-  border-radius: 9999px;
-  font-size: 0.875rem;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.5px;
+}
+
+/* 資訊卡片 */
+.game-info-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  padding: 1.5rem;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 500px;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  font-size: 1.1rem;
+  color: #4b5563;
+  margin-bottom: 1rem;
+  text-align: center;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.game-benefits {
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-.game-benefits ul {
+.benefits-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.game-benefits li {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+.benefits-list li {
+  font-size: 1.15rem; /* 長者友善字體 */
+  color: #1f2937;
   padding: 0.5rem 0;
-  font-size: 1.125rem;
-  color: #374151;
-  font-weight: 500;
-}
-
-.game-benefits li::before {
-  content: '•';
-  font-size: 1.5rem;
-  color: #65a30d;
-}
-
-/* 草地裝飾 */
-.ground-decoration {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 120px;
-  pointer-events: none;
-}
-
-.grass {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  background: linear-gradient(to top, #22c55e, #4ade80);
-  border-radius: 100% 100% 0 0 / 50% 50% 0 0;
-}
-
-.bottles {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
-  gap: 2rem;
-}
-
-.bottle {
-  width: 40px;
-  height: 60px;
-  border-radius: 8px 8px 12px 12px;
-  opacity: 0.8;
-}
-
-.bottle-1 { background: linear-gradient(to top, #3b82f6, #60a5fa); }
-.bottle-2 { background: linear-gradient(to top, #ec4899, #f472b6); }
-.bottle-3 { background: linear-gradient(to top, #f97316, #fb923c); }
-
-/* 底部按鈕區 */
-.preview-footer {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.5rem;
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
-}
-
-.back-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: transparent;
-  border: none;
-  color: #65a30d;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.back-icon {
-  font-size: 1.25rem;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 1rem;
-}
-
-.instruction-btn,
-.start-btn {
-  padding: 1rem 2rem;
-  border-radius: 12px;
-  font-size: 1.25rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  min-width: 120px;
-}
-
-.instruction-btn {
-  background: linear-gradient(135deg, #f97316, #fb923c);
-  color: white;
-  border: 3px solid #fff;
-  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.4);
-}
-
-.start-btn {
-  background: linear-gradient(135deg, #22c55e, #4ade80);
-  color: white;
-  border: 3px solid #fff;
-  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.4);
-}
-
-.instruction-btn:active,
-.start-btn:active {
-  transform: scale(0.95);
-}
-
-/* 面板樣式 */
-.panel-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 100;
-}
-
-.difficulty-panel,
-.instructions-panel {
-  width: 100%;
-  max-width: 500px;
-  background: var(--color-surface, white);
-  border-radius: 24px 24px 0 0;
-  padding: 1.5rem;
-  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
-}
-
-.difficulty-panel h3,
-.instructions-panel h3 {
-  text-align: center;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-text, #1f2937);
-  margin-bottom: 1.5rem;
-}
-
-.difficulty-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-}
-
-.difficulty-option {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.25rem;
-  border: 2px solid var(--diff-bg, #e5e7eb);
-  border-radius: 12px;
-  background: var(--diff-bg, #f3f4f6);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.difficulty-option.active {
-  border-color: var(--diff-color, #6366f1);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-}
-
-.diff-name {
-  font-weight: 600;
-  color: var(--diff-color, #374151);
-}
-
-.diff-best {
-  font-size: 0.875rem;
-  color: var(--color-text-muted, #6b7280);
-}
-
-.instructions-content {
-  margin-bottom: 1.5rem;
-}
-
-.game-description {
-  color: var(--color-text-secondary, #4b5563);
-  margin-bottom: 1rem;
-  line-height: 1.6;
-}
-
-.instructions-list {
-  padding-left: 1.25rem;
-  color: var(--color-text, #1f2937);
-}
-
-.instructions-list li {
-  margin-bottom: 0.5rem;
+  align-items: flex-start;
   line-height: 1.5;
 }
 
-.instructions-meta {
+.benefits-list li::before {
+  content: "✨";
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+.spacer {
+  height: calc(var(--footer-height) + var(--safe-bottom));
+}
+
+/* =========================================
+   操作區樣式 (手機版 Footer)
+   ========================================= */
+.mobile-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  padding-bottom: max(1rem, var(--safe-bottom));
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+  z-index: 50;
+}
+
+/* 按鈕共用樣式 */
+.action-btn {
+  flex: 1;
+  border: none;
+  border-radius: 16px;
+  padding: 0;
+  height: 56px; /* 加大觸控區 */
+  font-size: 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn:active, .icon-btn-secondary:active {
+  transform: scale(0.96);
+}
+
+.primary {
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.secondary {
+  background: #fff;
+  color: #65a30d;
+  border: 2px solid #bef264;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.icon-btn-secondary {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  border: none;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* =========================================
+   桌面版/橫屏佈局調整 (隱藏 Footer，改用側邊欄或內嵌)
+   ========================================= */
+.desktop-actions {
+  display: none; /* 預設隱藏 */
+}
+
+@media (min-width: 768px), (orientation: landscape) {
+  .mobile-footer {
+    display: none; /* 桌面/橫屏不顯示底部浮動條 */
+  }
+
+  .spacer {
+    display: none;
+  }
+  
+  /* 轉為網格佈局 */
+  .main-container {
+    padding: 2rem;
+    height: 100vh;
+    justify-content: center;
+  }
+
+  .content-scroll-area {
+    overflow: visible; /* 桌面不需內部滾動 */
+    padding: 0;
+  }
+
+  .content-inner {
+    flex-direction: row; /* 左右排列 */
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 3rem;
+    max-width: 1000px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.4);
+    padding: 3rem;
+    border-radius: 32px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+    backdrop-filter: blur(10px);
+  }
+
+  .preview-header {
+    width: 100%;
+    flex-direction: row-reverse;
+    justify-content: space-between;
+    margin-bottom: 0;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid rgba(255,255,255,0.5);
+  }
+
+  .game-title {
+    text-align: left;
+  }
+
+  .visual-center {
+    flex: 0 0 auto;
+    margin-bottom: 0;
+  }
+  
+  .game-info-card {
+    flex: 1;
+    min-width: 300px;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    margin-bottom: 0;
+  }
+
+  .desktop-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 220px;
+    padding-left: 2rem;
+    border-left: 2px solid rgba(255,255,255,0.5);
+  }
+
+  .start-btn-large {
+    width: 100%;
+    height: 64px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+    transition: all 0.2s;
+  }
+  
+  .start-btn-large:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.5);
+  }
+
+  .secondary-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .text-btn {
+    background: transparent;
+    border: none;
+    color: #4b5563;
+    font-size: 1rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    transition: all 0.2s;
+  }
+  
+  .text-btn:hover {
+    color: #1f2937;
+    text-decoration-color: #1f2937;
+  }
+}
+
+/* =========================================
+   模態窗 (Modal) 共用樣式
+   ========================================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end; /* 手機版預設底部彈出 */
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 600px;
+  background: white;
+  border-radius: 24px 24px 0 0;
+  padding: 1.5rem;
+  padding-bottom: max(1.5rem, var(--safe-bottom));
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 640px) {
+  .modal-overlay {
+    align-items: center; /* 桌面版垂直置中 */
+  }
+  .modal-card {
+    border-radius: 24px;
+    width: 90%;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 1rem;
+}
+
+.modal-header h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: #1f2937;
+}
+
+.close-icon {
+  background: #f3f4f6;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1.25rem;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+/* 難度選擇樣式 */
+.difficulty-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  overflow-y: auto;
+}
+
+.difficulty-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.difficulty-card.active {
+  border-color: var(--accent-color);
+  background-color: #f8fafc;
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.05);
+}
+
+.diff-name {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.difficulty-card.active .diff-name {
+  color: var(--accent-color);
+}
+
+.diff-score {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.radio-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  position: relative;
+}
+
+.difficulty-card.active .radio-indicator {
+  border-color: var(--accent-color);
+  background: var(--accent-color);
+}
+
+.difficulty-card.active .radio-indicator::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  background: white;
+  border-radius: 50%;
+}
+
+.modal-confirm-btn {
+  width: 100%;
+  padding: 1rem;
+  background: #1f2937;
+  color: white;
+  border: none;
+  border-radius: 16px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: auto;
+}
+
+/* 說明面板內容 */
+.scrollable-content {
+  overflow-y: auto;
+  margin-bottom: 1.5rem;
+  padding-right: 0.5rem;
+}
+
+.description-text {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: #374151;
+  margin-bottom: 1.5rem;
+}
+
+.info-blocks {
   display: flex;
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
 
-.meta-item {
+.info-block {
   flex: 1;
-  padding: 0.75rem;
-  background: var(--color-surface-alt, #f3f4f6);
-  border-radius: 8px;
+  background: #f3f4f6;
+  padding: 1rem;
+  border-radius: 12px;
   text-align: center;
 }
 
-.meta-label {
+.info-block .label {
   display: block;
-  font-size: 0.75rem;
-  color: var(--color-text-muted, #6b7280);
+  font-size: 0.875rem;
+  color: #6b7280;
   margin-bottom: 0.25rem;
 }
 
-.meta-value {
-  font-weight: 600;
-  color: var(--color-text, #1f2937);
+.info-block .value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
 }
 
-.panel-close-btn {
-  width: 100%;
-  padding: 1rem;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
+.sub-title {
+  font-size: 1.125rem;
+  margin-bottom: 0.75rem;
+  color: #1f2937;
 }
 
-/* 過渡動畫 */
-.slide-up-enter-active,
-.slide-up-leave-active {
+.detailed-list {
+  padding-left: 1.25rem;
+  margin: 0;
+}
+
+.detailed-list li {
+  font-size: 1.05rem;
+  color: #4b5563;
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+/* 動畫過渡 */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
   transition: all 0.3s ease;
 }
 
-.slide-up-enter-from,
-.slide-up-leave-to {
+.fade-slide-enter-from,
+.fade-slide-leave-to {
   opacity: 0;
 }
 
-.slide-up-enter-from .difficulty-panel,
-.slide-up-enter-from .instructions-panel,
-.slide-up-leave-to .difficulty-panel,
-.slide-up-leave-to .instructions-panel {
+.fade-slide-enter-from .modal-card,
+.fade-slide-leave-to .modal-card {
   transform: translateY(100%);
 }
 
-/* 深色模式 */
-:root.dark .game-preview-page {
-  background: linear-gradient(135deg, #1e3a5f 0%, #1e293b 50%, #0f172a 100%);
-}
-
-:root.dark .game-title {
-  color: #a3e635;
-}
-
-:root.dark .game-benefits li {
-  color: #e5e7eb;
-}
-
-:root.dark .back-btn {
-  color: #a3e635;
-}
-
-:root.dark .grass {
-  background: linear-gradient(to top, #166534, #15803d);
-}
-
-/* 響應式 */
-@media (max-width: 640px) {
-  .game-title {
-    font-size: 1.5rem;
-  }
-  
-  .game-icon-wrapper {
-    width: 100px;
-    height: 100px;
-  }
-  
-  .game-icon {
-    font-size: 3rem;
-  }
-  
-  .game-benefits li {
-    font-size: 1rem;
-  }
-  
-  .action-buttons {
-    gap: 0.75rem;
-  }
-  
-  .instruction-btn,
-  .start-btn {
-    padding: 0.875rem 1.5rem;
-    font-size: 1rem;
-    min-width: 100px;
-  }
-}
-
-@media (min-width: 768px) {
-  .difficulty-panel,
-  .instructions-panel {
-    border-radius: 24px;
-    margin-bottom: 2rem;
+@media (min-width: 640px) {
+  .fade-slide-enter-from .modal-card,
+  .fade-slide-leave-to .modal-card {
+    transform: scale(0.9) translateY(0);
+    opacity: 0;
   }
 }
 </style>

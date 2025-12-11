@@ -1,6 +1,6 @@
 <template>
   <div class="game-wrapper min-h-screen bg-[var(--color-bg)] flex flex-col">
-    <div 
+    <div
       class="game-header bg-[var(--color-surface)] shadow-sm border-b border-[var(--color-border)] z-10 sticky top-0"
       :class="{ 'game-header-compact': isMobile, 'game-header-landscape': isLandscape }"
     >
@@ -9,12 +9,13 @@
           <span class="text-lg leading-none">←</span>
           <span class="hidden sm:inline ml-1">返回</span>
         </button>
-        
-        <div class="flex-1 min-w-0 mx-1 sm:mx-2 flex flex-col justify-center items-center" :class="{ 'opacity-0 w-0 absolute': isMobile && gameState === 'playing' && gameStatus.showTimer }">
+
+        <!-- 手機版：遊戲進行時顯示簡化標題 -->
+        <div class="flex-1 min-w-0 mx-1 sm:mx-2 flex flex-col justify-center items-center" :class="{ 'opacity-50': isMobile && gameState === 'playing' }">
           <h1 class="text-sm sm:text-base lg:text-xl font-bold text-[var(--color-text)] truncate w-full text-center">
             {{ currentGame?.name || '遊戲' }}
           </h1>
-          <span 
+          <span
             v-if="!isMobile || gameState !== 'playing'"
             class="difficulty-badge text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full inline-block mt-0.5"
             :class="`difficulty-${gameStore.currentDifficulty}`"
@@ -22,10 +23,11 @@
             {{ DIFFICULTIES[gameStore.currentDifficulty].name }}
           </span>
         </div>
-        
-        <div class="flex items-center gap-1.5 sm:gap-4 flex-shrink-0 ml-auto bg-[var(--color-surface)]">
-          <div 
-            v-if="gameStatus.showProgress !== false && gameStatus.totalRounds" 
+
+        <!-- 桌面版狀態顯示 -->
+        <div class="hidden sm:flex items-center gap-1.5 sm:gap-4 flex-shrink-0 ml-auto bg-[var(--color-surface)]">
+          <div
+            v-if="gameStatus.showProgress !== false && gameStatus.totalRounds"
             class="status-item text-right flex flex-col items-end"
           >
             <div class="status-label text-[10px] text-[var(--color-text-secondary)] leading-none mb-0.5">進度</div>
@@ -34,8 +36,8 @@
             </div>
           </div>
 
-          <div 
-            v-if="gameStatus.showCounts !== false && (gameStatus.correctCount !== undefined || gameStatus.wrongCount !== undefined)" 
+          <div
+            v-if="gameStatus.showCounts !== false && (gameStatus.correctCount !== undefined || gameStatus.wrongCount !== undefined)"
             class="status-item text-right flex flex-col items-end"
           >
             <div class="status-label text-[10px] text-[var(--color-text-secondary)] leading-none mb-0.5">對/錯</div>
@@ -46,8 +48,8 @@
             </div>
           </div>
 
-          <div 
-            v-if="gameStatus.showCombo && gameStatus.combo && gameStatus.combo > 1" 
+          <div
+            v-if="gameStatus.showCombo && gameStatus.combo && gameStatus.combo > 1"
             class="status-item text-right flex flex-col items-end"
           >
             <div class="status-label text-[10px] text-[var(--color-text-secondary)] leading-none mb-0.5">連擊</div>
@@ -56,8 +58,8 @@
             </div>
           </div>
 
-          <div 
-            v-if="gameStatus.showScore !== false" 
+          <div
+            v-if="gameStatus.showScore !== false"
             class="status-item text-right flex flex-col items-end min-w-[2.5rem] sm:min-w-auto"
           >
             <div class="status-label text-[10px] text-[var(--color-text-secondary)] leading-none mb-0.5">分數</div>
@@ -65,15 +67,15 @@
               {{ gameStatus.score ?? currentScore }}
             </div>
           </div>
-          
-          <div 
-            v-if="gameStatus.showTimer !== false" 
+
+          <div
+            v-if="gameStatus.showTimer !== false"
             class="status-item text-right flex flex-col items-end min-w-[3.2rem] sm:min-w-[4rem]"
           >
             <div class="status-label text-[10px] text-[var(--color-text-secondary)] leading-none mb-0.5">
               {{ gameStatus.timeLeft !== undefined ? '剩餘' : '用時' }}
             </div>
-            <div 
+            <div
               class="status-value text-sm sm:text-lg font-bold leading-none tabular-nums"
               :class="{
                 'text-red-500 dark:text-red-400 animate-pulse': gameStatus.timeLeft !== undefined && gameStatus.timeLeft <= 10,
@@ -87,18 +89,64 @@
       </div>
     </div>
 
-    <div class="game-play-area flex-1 container mx-auto p-3 sm:p-4 lg:p-8 overflow-y-auto overflow-x-hidden w-full">
-      <div v-if="gameState === 'ready'" class="max-w-lg mx-auto text-center h-full flex flex-col justify-center">
-        <div class="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 shadow-lg">
-          <div class="text-5xl sm:text-6xl mb-4 transform hover:scale-110 transition-transform">{{ currentGame?.icon }}</div>
-          <h2 class="text-xl sm:text-2xl font-bold mb-4 text-[var(--color-text)]">{{ currentGame?.name }}</h2>
-          
-          <p class="text-sm sm:text-base text-[var(--color-text-secondary)] mb-6">
+    <!-- 手機版浮動狀態欄 - 始終顯示關鍵狀態 -->
+    <div
+      v-if="isMobile && gameState === 'playing'"
+      class="fixed top-14 left-0 right-0 z-20 bg-[var(--color-surface)]/95 backdrop-blur-sm border-b border-[var(--color-border)] px-2 py-1"
+    >
+      <div class="flex items-center justify-between gap-2 text-xs">
+        <!-- 左側：時間和分數 -->
+        <div class="flex items-center gap-3 flex-1 min-w-0">
+          <div
+            v-if="gameStatus.showTimer !== false"
+            class="flex items-center gap-1 text-red-500 dark:text-red-400 font-bold"
+            :class="{ 'animate-pulse': gameStatus.timeLeft !== undefined && gameStatus.timeLeft <= 10 }"
+          >
+            <span>⏱️</span>
+            <span class="tabular-nums">{{ formatTime(gameStatus.timeLeft ?? elapsedTime) }}</span>
+          </div>
+          <div
+            v-if="gameStatus.showScore !== false"
+            class="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-bold"
+          >
+            <span>🎯</span>
+            <span>{{ gameStatus.score ?? currentScore }}</span>
+          </div>
+        </div>
+
+        <!-- 右側：進度和對錯 -->
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <div
+            v-if="gameStatus.showProgress !== false && gameStatus.totalRounds"
+            class="text-purple-600 dark:text-purple-400 font-bold"
+          >
+            {{ gameStatus.currentRound || 0 }}/{{ gameStatus.totalRounds }}
+          </div>
+          <div
+            v-if="gameStatus.showCounts !== false && (gameStatus.correctCount !== undefined || gameStatus.wrongCount !== undefined)"
+            class="flex items-center gap-1"
+          >
+            <span class="text-green-600 dark:text-green-400 font-bold">{{ gameStatus.correctCount || 0 }}</span>
+            <span class="text-[var(--color-text-muted)]">/</span>
+            <span class="text-red-500 dark:text-red-400 font-bold">{{ gameStatus.wrongCount || 0 }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="game-play-area flex-1 container mx-auto w-full">
+      <!-- 準備畫面 - 適應螢幕高度 -->
+      <div v-if="gameState === 'ready'" class="game-content-fit max-w-lg mx-auto text-center">
+        <div class="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 sm:p-6 shadow-lg">
+          <div class="text-4xl sm:text-5xl lg:text-6xl mb-4 transform hover:scale-110 transition-transform">{{ currentGame?.icon }}</div>
+          <h2 class="text-lg sm:text-xl lg:text-2xl font-bold mb-4 text-[var(--color-text)]">{{ currentGame?.name }}</h2>
+
+          <p class="text-sm sm:text-base text-[var(--color-text-secondary)] mb-4 sm:mb-6">
             準備好了嗎？點擊下方按鈕開始遊戲！
           </p>
-          
+
           <div class="space-y-3">
-            <button @click="startGame" class="btn btn-primary btn-xl w-full text-lg shadow-md active:scale-95 transition-transform">
+            <button @click="startGame" class="btn btn-primary btn-xl w-full text-base sm:text-lg shadow-md active:scale-95 transition-transform">
               開始遊戲 🎮
             </button>
             <button @click="goBack" class="btn btn-secondary w-full">
@@ -108,7 +156,8 @@
         </div>
       </div>
 
-      <div v-else-if="gameState === 'playing'" class="game-container w-full h-full flex flex-col">
+      <!-- 遊戲進行中 - 填滿可用空間 -->
+      <div v-else-if="gameState === 'playing'" class="game-content-full w-full">
         <component
           :is="gameComponent"
           :difficulty="gameStore.currentDifficulty"
@@ -116,14 +165,15 @@
           @score-change="handleScoreChange"
           @game-end="handleGameEnd"
           @status-update="handleStatusUpdate"
-          class="flex-1 w-full"
+          class="w-full h-full"
         />
       </div>
 
-      <div v-else-if="gameState === 'paused'" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="bg-[var(--color-surface)] rounded-2xl p-6 sm:p-8 max-w-sm w-full border border-[var(--color-border)] text-center shadow-2xl">
-          <div class="text-5xl mb-4">⏸️</div>
-          <h2 class="text-xl font-bold mb-6 text-[var(--color-text)]">遊戲暫停</h2>
+      <!-- 暫停畫面 -->
+      <div v-else-if="gameState === 'paused'" class="game-content-fit">
+        <div class="bg-[var(--color-surface)] rounded-2xl p-4 sm:p-6 lg:p-8 max-w-sm mx-auto border border-[var(--color-border)] text-center shadow-2xl">
+          <div class="text-4xl sm:text-5xl mb-4">⏸️</div>
+          <h2 class="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-[var(--color-text)]">遊戲暫停</h2>
           <div class="flex flex-col sm:flex-row gap-3">
             <button @click="resumeGame" class="btn btn-primary btn-lg flex-1">
               繼續遊戲
@@ -135,7 +185,8 @@
         </div>
       </div>
 
-      <div v-else-if="gameState === 'finished'" class="max-w-lg mx-auto text-center pb-8">
+      <!-- 結算畫面 - 適應螢幕高度，避免滾動 -->
+      <div v-else-if="gameState === 'finished'" class="game-content-fit max-w-lg mx-auto text-center">
         <div class="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 sm:p-6 shadow-lg">
           <div class="text-5xl sm:text-6xl mb-2 sm:mb-4 animate-bounce-in">
             {{ getFinalEmoji(currentScore) }}

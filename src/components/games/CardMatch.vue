@@ -27,6 +27,7 @@ import type { GameDifficulty } from '@/stores/settingsStore'
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
 import GameFeedback from './ui/GameFeedback.vue'
+import CardMatchResult from './ui/CardMatchResult.vue'
 
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
@@ -42,6 +43,8 @@ const emit = defineEmits<{
   'score:update': [score: number]
   'state:change': [phase: string]
   'status-update': [status: GameStatusUpdate]
+  'back': []
+  'next-game': [gameId: string]
 }>()
 
 // 節流 emit 狀態更新
@@ -370,15 +373,15 @@ onUnmounted(() => {
       </div>
 
       <!-- 預覽提示 -->
-      <div 
-        v-if="isPreviewing" 
+      <div
+        v-if="isPreviewing"
         class="preview-hint text-center mt-4 text-lg font-medium text-blue-500"
       >
         記住卡片位置...
       </div>
 
       <!-- 卡片網格 -->
-      <div 
+      <div
         class="card-grid mt-6 grid gap-2 md:gap-3"
         :style="{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }"
       >
@@ -396,7 +399,7 @@ onUnmounted(() => {
           :disabled="card.isFlipped || card.isMatched || isChecking || isPreviewing"
           @click="handleCardClick(index)"
         >
-          <span 
+          <span
             class="text-3xl md:text-4xl transition-opacity duration-200"
             :class="{ 'opacity-0': !card.isFlipped && !card.isMatched, 'opacity-100': card.isFlipped || card.isMatched }"
           >
@@ -413,6 +416,26 @@ onUnmounted(() => {
         :message="feedbackData.message"
       />
     </template>
+
+    <!-- 遊戲結束 - 使用專用結算畫面 -->
+    <CardMatchResult
+      v-else-if="phase === 'finished'"
+      :result="{
+        score: score,
+        accuracy: matchedPairs / totalPairs,
+        duration: game.timer.getElapsedTime(),
+        correctCount: matchedPairs,
+        totalCount: totalPairs * 2,
+        avgReactionTime: Math.round(game.timer.getElapsedTime() * 1000 / moves),
+        moves: moves,
+        maxCombo: 0
+      }"
+      :best-score="100"
+      :is-new-record="score > 80"
+      @replay="handleStart"
+      @back="$emit('back')"
+      @next-game="(gameId) => $emit('next-game', gameId)"
+    />
   </div>
 </template>
 
