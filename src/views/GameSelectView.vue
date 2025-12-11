@@ -9,7 +9,7 @@
 
     <!-- 認知維度篩選標籤（固定在頂部） -->
     <div class="flex-shrink-0 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
-      <div class="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide">
+      <div class="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide md:flex-wrap md:justify-center md:overflow-visible">
         <button
           @click="selectedDimension = null"
           class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors"
@@ -100,16 +100,6 @@ const selectedDimension = ref<CognitiveDimension | null>(null)
 // 認知維度列表
 const cognitiveDimensions = Object.values(COGNITIVE_DIMENSIONS)
 
-// 篩選後的遊戲列表
-const filteredGames = computed(() => {
-  const games = gameStore.allGames
-  if (!selectedDimension.value) return games
-  return games.filter(game => {
-    const weights = game.cognitiveWeights
-    return weights[selectedDimension.value!] !== undefined && (weights[selectedDimension.value!] as number) > 0
-  })
-})
-
 // 取得維度顏色
 function getDimensionColor(dimension: CognitiveDimension): string {
   return COGNITIVE_DIMENSIONS[dimension].color
@@ -120,19 +110,29 @@ function getDimensionName(dimension: CognitiveDimension): string {
   return COGNITIVE_DIMENSIONS[dimension].name
 }
 
-// 取得遊戲的主要認知維度
+// 取得遊戲的主要認知維度 (權重最高者)
+// 將此函式移到 filteredGames 之前以提高可讀性與邏輯一致性
 function primaryDimension(game: GameDefinition): CognitiveDimension | null {
   const weights = Object.entries(game.cognitiveWeights) as [CognitiveDimension, number][]
   if (weights.length === 0) return null
+  // 降序排列，取第一個
   const sorted = weights.sort((a, b) => b[1] - a[1])
   const first = sorted[0]
   return first ? first[0] : null
 }
 
+// 篩選後的遊戲列表（嚴格模式：只顯示主要維度為選中維度的遊戲）
+const filteredGames = computed(() => {
+  const games = gameStore.allGames
+  if (!selectedDimension.value) return games
+  return games.filter(game => primaryDimension(game) === selectedDimension.value)
+})
+
 // 取得分數顏色 class
-function getScoreClass(score: number): string {
-  if (score >= 80) return 'score-good'
-  if (score >= 50) return 'score-medium'
+function getScoreClass(score: number | undefined): string {
+  const s = score ?? 0
+  if (s >= 80) return 'score-good'
+  if (s >= 50) return 'score-medium'
   return 'score-low'
 }
 

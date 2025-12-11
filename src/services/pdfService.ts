@@ -73,158 +73,114 @@ export interface PdfReportOptions {
   language?: 'zh-TW' | 'en' | 'bilingual'
 }
 
-// ===== 常數定義 =====
+// ===== 常數定義 ===== (調整顏色/字級並加入字型常數)
+const FONT_NAME = 'NotoSansTC'
+const FONT_FILENAME = 'NotoSansTC-Regular.ttf' // 請將 NotoSansTC-Regular.ttf 放到 public/fonts/ (見 README)
 
-// 字型快取 key
-const FONT_CACHE_KEY = 'noto-sans-tc-font-cache'
-const FONT_VERSION = '1.0'
-
-// 顏色配置
 const COLORS = {
   primary: '#4f46e5',
-  secondary: '#64748b',
-  success: '#22c55e',
-  warning: '#f59e0b',
-  danger: '#ef4444',
-  text: '#1e293b',
+  secondary: '#334155',
+  success: '#16a34a',
+  warning: '#d97706',
+  danger: '#dc2626',
+  text: '#0f172a',
   lightText: '#64748b',
-  border: '#e2e8f0',
+  border: '#cbd5e1',
   background: '#f8fafc',
+  headerBg: '#e0e7ff',
 }
 
-// 風險等級配色
-const RISK_COLORS = {
-  low: '#22c55e',
-  moderate: '#f59e0b',
-  high: '#ef4444',
+const RISK_COLORS: Record<'high' | 'low', string> = {
+  high: COLORS.danger,
+  low: COLORS.success,
 }
 
-// 字體大小配置
 const FONT_SIZES = {
-  title: 18,
+  title: 20,
   subtitle: 14,
   heading: 12,
   body: 10,
-  small: 8,
-  tiny: 7,
+  small: 9,
+  tiny: 8,
 }
 
-// ===== 字體管理 =====
+// ===== 字體管理（替換原有快取方案，改為直接載入 public/fonts） =====
 
 let fontLoaded = false
 let fontBase64: string | null = null
 
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  let binary = ''
+  const bytes = new Uint8Array(buffer)
+  const len = bytes.byteLength
+  for (let i = 0; i < len; i++) {
+    const v = bytes[i] ?? 0
+    binary += String.fromCharCode(v)
+  }
+  return window.btoa(binary)
+}
+
 /**
- * 從 IndexedDB 快取載入字體
+ * 載入中文字型（優先本地 public/fonts，其次可再考慮 CDN）
+ * 會檢查 response header 與檔案大小避免回傳 404 HTML 被當成字型
  */
-async function loadFontFromCache(): Promise<string | null> {
+async function loadChineseFont(): Promise<string | null> {
+  if (fontLoaded && fontBase64) return fontBase64
+
+  // 使用 import.meta.env.BASE_URL 構建正確的 URL，支援子目錄部署
+  const baseUrl = (import.meta && (import.meta as any).env && (import.meta as any).env.BASE_URL) ? String((import.meta as any).env.BASE_URL) : '/'
+  const fontUrl = new URL('fonts/' + FONT_FILENAME, window.location.origin + baseUrl).href
+
+  console.log(`[PDF] 準備載入字型，目標網址: ${fontUrl}`)
+
   try {
-    const cache = await caches.open(FONT_CACHE_KEY)
-    const response = await cache.match(FONT_VERSION)
-    if (response) {
-      const blob = await response.blob()
-      return new Promise((resolve) => {
-        const reader = new FileReader()
-        reader.onloadend = () => {
-          const base64 = (reader.result as string).split(',')[1]
-          resolve(base64 || null)
-        }
-        reader.readAsDataURL(blob)
-      })
+    const res = await fetch(fontUrl)
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} ${res.statusText}`)
     }
-  } catch {
-    console.warn('無法從快取載入字體')
-  }
-  return null
-}
 
-/**
- * 儲存字體到 IndexedDB 快取
- */
-async function saveFontToCache(fontData: ArrayBuffer): Promise<void> {
-  try {
-    const cache = await caches.open(FONT_CACHE_KEY)
-    const blob = new Blob([fontData], { type: 'font/ttf' })
-    const response = new Response(blob)
-    await cache.put(FONT_VERSION, response)
-  } catch {
-    console.warn('無法儲存字體到快取')
-  }
-}
+    const contentType = res.headers.get('content-type') || ''
+    if (contentType.includes('text/html')) {
+      throw new Error('伺服器回傳的是 HTML，可能為 404 頁面，請檢查 public/fonts 路徑與檔名')
+    }
 
-/**
- * 載入 Noto Sans TC 字體
- * 優先從快取載入，否則從 CDN 下載
- */
-async function loadNotoSansTC(): Promise<string | null> {
-  // 已載入則直接返回
-  if (fontLoaded && fontBase64) {
-    return fontBase64
-  }
+    const ab = await res.arrayBuffer()
+    if (ab.byteLength < 1000) {
+      throw new Error(`字型檔太小 (${ab.byteLength} bytes)，可能已損毀`) 
+    }
 
-  // 嘗試從快取載入
-  const cachedFont = await loadFontFromCache()
-  if (cachedFont) {
-    fontBase64 = cachedFont
+    fontBase64 = arrayBufferToBase64(ab)
     fontLoaded = true
+    console.log(`[PDF] 成功載入字型 (${fontUrl}), size=${ab.byteLength}`)
     return fontBase64
+  } catch (e) {
+    console.error('[PDF] 本地字型載入失敗:', e)
+    try { alert(`無法載入字型檔！\n請確認 public/fonts/${FONT_FILENAME} 是否存在。\n嘗試的 URL: ${fontUrl}`) } catch {}
+    return null
   }
-
-  // 定義字體下載來源（含備援）
-  const fontUrls = [
-    'https://cdn.jsdelivr.net/npm/@aspect-ux/noto-sans-tc@0.0.1/NotoSansTC-Regular.ttf',
-    'https://unpkg.com/@aspect-ux/noto-sans-tc@0.0.1/NotoSansTC-Regular.ttf'
-  ]
-  
-  for (const url of fontUrls) {
-    try {
-      const response = await fetch(url)
-      if (!response.ok) continue
-      
-      const arrayBuffer = await response.arrayBuffer()
-      
-      // 儲存到快取
-      await saveFontToCache(arrayBuffer)
-      
-      // 轉換為 base64
-      const uint8Array = new Uint8Array(arrayBuffer)
-      let binary = ''
-      for (let i = 0; i < uint8Array.length; i++) {
-        binary += String.fromCharCode(uint8Array[i] as number)
-      }
-      fontBase64 = btoa(binary)
-      fontLoaded = true
-      
-      return fontBase64
-    } catch (error) {
-      console.warn(`從 ${url} 下載字體失敗:`, error)
-    }
-  }
-
-  console.error('所有字體來源下載失敗')
-  return null
 }
 
 /**
- * 初始化 PDF 文件並設置中文字體
+ * 初始化 PDF 並註冊中文字型；若失敗會 alert 提示避免產生亂碼 PDF
  */
 async function initPdfWithFont(): Promise<jsPDF> {
-  const fontData = await loadNotoSansTC()
-  
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
     format: 'a4',
   })
 
-  if (fontData) {
-    // 添加字體
-    doc.addFileToVFS('NotoSansTC-Regular.ttf', fontData)
-    doc.addFont('NotoSansTC-Regular.ttf', 'NotoSansTC', 'normal')
-    doc.setFont('NotoSansTC')
+  const base64 = await loadChineseFont()
+  if (base64) {
+    doc.addFileToVFS(FONT_FILENAME, base64)
+    doc.addFont(FONT_FILENAME, FONT_NAME, 'normal')
+    doc.setFont(FONT_NAME)
   } else {
-    console.warn('無法載入中文字體，使用預設字體')
-    doc.setFont('helvetica')
+    const msg = '❌ 無法載入中文字型 (public/fonts/NotoSansTC-Regular.ttf)。PDF 會出現中文亂碼，請確認字型已放到 public/fonts 並重新啟動應用。'
+    console.error(msg)
+    // 直接提示開發者（開發環境或使用者要能注意到）
+    try { alert(msg) } catch { /* 無視無法 alert 的環境 */ }
+    doc.setFont('helvetica') // 回退
   }
 
   return doc
@@ -723,41 +679,50 @@ function drawSimpleTable(
   y: number,
   width: number
 ): number {
-  const rowHeight = 6
-  const colWidths = data[0] ? data[0].map(() => width / (data[0]?.length || 1)) : []
-  
+  const rowHeight = 8
+  const cols = data[0]?.length || 1
+  const colWidth = width / cols
+
   doc.setFontSize(FONT_SIZES.small)
+  doc.setLineWidth(0.1)
+  doc.setDrawColor(COLORS.border)
 
   for (let i = 0; i < data.length; i++) {
     const row = data[i]
     if (!row) continue
-    
-    // 表頭背景
+
+    // 表頭
     if (i === 0) {
       doc.setFillColor(COLORS.primary)
       doc.rect(x, y, width, rowHeight, 'F')
       doc.setTextColor('#ffffff')
     } else {
-      // 交替行背景
-      if (i % 2 === 0) {
-        doc.setFillColor(COLORS.background)
-        doc.rect(x, y, width, rowHeight, 'F')
-      }
+      // 斑馬紋
+      doc.setFillColor(i % 2 === 0 ? '#ffffff' : COLORS.background)
+      doc.rect(x, y, width, rowHeight, 'F')
       doc.setTextColor(COLORS.text)
     }
 
-    // 繪製單元格
-    let cellX = x
-    for (let j = 0; j < row.length; j++) {
-      const cellWidth = colWidths[j] || 0
-      doc.text(row[j] || '', cellX + 2, y + rowHeight / 2 + 1)
-      cellX += cellWidth
-    }
-
-    // 繪製邊框
-    doc.setDrawColor(COLORS.border)
-    doc.setLineWidth(0.1)
+    // 外框
     doc.rect(x, y, width, rowHeight, 'S')
+
+    // 單元格內容與垂直分隔線
+    for (let j = 0; j < cols; j++) {
+      const cellX = x + j * colWidth
+      if (j > 0) doc.line(cellX, y, cellX, y + rowHeight)
+
+      let textToShow = (row[j] ?? '') as string
+      if (typeof textToShow !== 'string') textToShow = String(textToShow)
+      const maxTextWidth = colWidth - 6
+      // 簡單截斷
+      if (doc.getTextWidth(textToShow) > maxTextWidth) {
+        while (doc.getTextWidth(textToShow + '...') > maxTextWidth && textToShow.length > 0) {
+          textToShow = textToShow.slice(0, -1)
+        }
+        textToShow += '...'
+      }
+      doc.text(textToShow, cellX + 3, y + rowHeight / 2 + 1.5)
+    }
 
     y += rowHeight
   }
@@ -807,16 +772,13 @@ export function downloadPdf(blob: Blob, filename: string): void {
  */
 export async function preloadFont(): Promise<void> {
   try {
-    await loadNotoSansTC()
+    await loadChineseFont()
     console.log('PDF 字體預載完成')
   } catch (error) {
     console.warn('PDF 字體預載失敗:', error)
   }
 }
 
-/**
- * 檢查字體是否已載入
- */
 export function isFontLoaded(): boolean {
   return fontLoaded
 }
