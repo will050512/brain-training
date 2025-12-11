@@ -186,11 +186,11 @@ const primaryDimension = computed<CognitiveDimension | null>(() => {
   if (!currentGame.value) return null
   const weights = Object.entries(currentGame.value.cognitiveWeights) as [CognitiveDimension, number][]
   if (weights.length === 0) return null
-  return weights.sort((a, b) => b[1] - a[1])[0][0]
+  return weights.sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
 })
 
-const dimensionColor = computed(() => primaryDimension.value ? COGNITIVE_DIMENSIONS[primaryDimension.value].color : '#6366f1')
-const dimensionName = computed(() => primaryDimension.value ? COGNITIVE_DIMENSIONS[primaryDimension.value].name : '')
+const dimensionColor = computed(() => primaryDimension.value ? COGNITIVE_DIMENSIONS[primaryDimension.value]?.color ?? '#6366f1' : '#6366f1')
+const dimensionName = computed(() => primaryDimension.value ? COGNITIVE_DIMENSIONS[primaryDimension.value]?.name ?? '' : '')
 
 const estimatedTime = computed(() => {
   if (!currentGame.value?.estimatedTime) return 60
