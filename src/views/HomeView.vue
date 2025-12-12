@@ -64,6 +64,53 @@
         </div>
       </div>
 
+      <!-- 訓練提醒 -->
+      <div v-if="trainingReminder" class="mb-4">
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-3 flex items-center gap-3">
+          <span class="text-2xl">💪</span>
+          <p class="text-sm text-blue-800 dark:text-blue-200 flex-1">{{ trainingReminder }}</p>
+          <button 
+            @click="trainingReminder = null"
+            class="text-blue-400 hover:text-blue-600 text-xl"
+          >×</button>
+        </div>
+      </div>
+
+      <!-- 月度評估提醒 -->
+      <div v-if="assessmentReminder?.needsAssessment" class="mb-4">
+        <div 
+          class="rounded-xl p-3 flex items-start gap-3"
+          :class="assessmentReminder.daysSinceLastAssessment >= 60 
+            ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800' 
+            : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800'"
+        >
+          <span class="text-2xl shrink-0">🧪</span>
+          <div class="flex-1">
+            <p 
+              class="text-sm font-medium"
+              :class="assessmentReminder.daysSinceLastAssessment >= 60 
+                ? 'text-red-800 dark:text-red-200' 
+                : 'text-amber-800 dark:text-amber-200'"
+            >
+              {{ assessmentReminder.message }}
+            </p>
+            <router-link 
+              to="/assessment" 
+              class="inline-block mt-2 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
+              :class="assessmentReminder.daysSinceLastAssessment >= 60 
+                ? 'bg-red-500 text-white hover:bg-red-600' 
+                : 'bg-amber-500 text-white hover:bg-amber-600'"
+            >
+              前往評估
+            </router-link>
+          </div>
+          <button 
+            @click="assessmentReminder = null"
+            class="text-gray-400 hover:text-gray-600 text-xl shrink-0"
+          >×</button>
+        </div>
+      </div>
+
       <!-- 評估引導卡片（未完成評估時顯示） -->
       <div v-if="userStore.isLoggedIn && !settingsStore.hasCompletedAssessment" class="mb-6">
         <div class="bg-gradient-to-r from-orange-500 to-amber-500 dark:from-orange-600 dark:to-amber-600 rounded-2xl p-4 text-white shadow-lg">
@@ -297,12 +344,14 @@ import TrainingGoalSettings from '@/components/ui/TrainingGoalSettings.vue'
 import TrainingHistoryModal from '@/components/ui/TrainingHistoryModal.vue'
 import { getOverallDeclineSummary } from '@/services/declineDetectionService'
 import { getTodayTrainingStatus, getTrainingStats } from '@/services/dailyTrainingService'
-import { getGameSessionsByDate } from '@/services/db'
+import { getGameSessionsByDate, getLatestMiniCogResult } from '@/services/db'
+import { useNotification } from '@/composables/useNotification'
 import type { GameSession } from '@/types/game'
 
 const router = useRouter()
 const userStore = useUserStore()
 const settingsStore = useSettingsStore()
+const { checkTrainingReminder, checkAssessmentReminder, requestPermission } = useNotification()
 
 // 認知維度列表
 const cognitiveDimensions = Object.values(COGNITIVE_DIMENSIONS) as CognitiveDimensionInfo[]
@@ -326,6 +375,10 @@ const weeklyProgress = ref({ completedDays: 0, totalMinutes: 0, totalSessions: 0
 
 // 週曆訓練資料
 const weeklyTrainingData = ref<Record<string, { minutes: number; completed: boolean; sessions: number }>>({})
+
+// 提醒訊息
+const trainingReminder = ref<{ shouldRemind: boolean; daysMissed: number; message: string } | null>(null)
+const assessmentReminder = ref<{ needsAssessment: boolean; daysSinceLastAssessment: number; message: string } | null>(null)
 
 // 認知趨勢資料
 const cognitiveTrend = ref<{
@@ -574,6 +627,44 @@ onMounted(async () => {
       loadCognitiveTrend(),
       loadDailyProgress()
     ])
+    
+    // 檢查訓練提醒
+    trainingReminder.value = checkTrainingReminder()
+    
+    // 檢查月度評估提醒（30天）
+    const userId = userStore.currentUser?.id
+    if (userId) {
+      try {
+        const latestMiniCog = await getLatestMiniCogResult(userId)
+        if (latestMiniCog?.completedAt) {
+          const lastAssessmentDate = new Date(latestMiniCog.completedAt)
+          const now = new Date()
+          const daysSince = Math.floor((now.getTime() - lastAssessmentDate.getTime()) / (1000 * 60 * 60 * 24))
+          
+          if (daysSince >= 30) {
+            assessmentReminder.value = {
+              needsAssessment: true,
+              daysSinceLastAssessment: daysSince,
+              message: daysSince >= 60 
+                ? `距上次評估已超過 ${daysSince} 天，強烈建議重新評估` 
+                : `距上次評估已 ${daysSince} 天，建議重新進行認知篩檢`
+            }
+          }
+        } else if (settingsStore.hasCompletedAssessment) {
+          // 標記完成但沒有 Mini-Cog 記錄，可能是舊資料
+          assessmentReminder.value = {
+            needsAssessment: true,
+            daysSinceLastAssessment: 999,
+            message: '建議進行一次認知篩檢，以獲得更精準的訓練建議'
+          }
+        }
+      } catch (e) {
+        console.error('檢查評估提醒失敗', e)
+      }
+    }
+    
+    // 嘗試請求通知權限（僅在支援的環境）
+    requestPermission()
   }
 })
 </script>

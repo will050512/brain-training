@@ -138,6 +138,44 @@
             </div>
         </section>
 
+        <!-- 手機版營養建議 -->
+        <section class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
+          <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-[var(--color-text)]">🥗 營養建議</h3>
+          
+          <!-- 未解鎖 -->
+          <div v-if="!nutritionUnlocked" class="text-center py-4">
+            <div class="text-3xl mb-2">🔒</div>
+            <p class="text-sm text-[var(--color-text-secondary)]">完成 <span class="font-bold">{{ nutritionUnlockProgress }}/10</span> 次訓練後解鎖</p>
+            <div class="w-48 h-2 bg-[var(--color-bg-soft)] rounded-full mx-auto mt-2 overflow-hidden">
+              <div class="h-full bg-green-500 rounded-full" :style="{ width: `${nutritionUnlockProgress * 10}%` }"></div>
+            </div>
+          </div>
+
+          <!-- 已解鎖 -->
+          <div v-else-if="nutritionResult">
+            <!-- 高優先建議 (只顯示前2個) -->
+            <div v-if="nutritionResult.recommendations.filter(r => r.priority === 'high' || r.priority === 'medium').length > 0" class="space-y-3">
+              <div 
+                v-for="rec in nutritionResult.recommendations.filter(r => r.priority === 'high' || r.priority === 'medium').slice(0, 2)" 
+                :key="rec.id"
+                class="p-3 rounded-lg border-l-4 bg-[var(--color-surface-alt)]"
+                :class="rec.priority === 'high' ? 'border-red-500' : 'border-yellow-500'"
+              >
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="font-bold text-sm text-[var(--color-text)]">{{ rec.supplement.name }}</span>
+                  <span v-if="rec.supplement.isPartnerProduct" class="text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">推薦</span>
+                </div>
+                <p class="text-xs text-[var(--color-text-secondary)]">{{ rec.reason }}</p>
+              </div>
+            </div>
+            
+            <!-- 提示查看完整報告 -->
+            <div class="mt-4 pt-3 border-t border-[var(--color-border)] text-center">
+              <p class="text-xs text-[var(--color-text-muted)]">⚠️ 建議僅供參考，請諮詢醫療人員</p>
+            </div>
+          </div>
+        </section>
+
         <!-- 最近記錄 -->
         <section v-if="gameStore.recentSessions.length > 0" class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
            <h3 class="text-lg font-bold mb-4 text-[var(--color-text)]">🕐 最近記錄</h3>
@@ -513,6 +551,141 @@
           </div>
         </section>
 
+        <!-- 營養建議區塊 -->
+        <section id="nutrition" class="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] shadow-sm p-8 scroll-mt-8">
+          <h3 class="text-xl font-bold mb-6 flex items-center gap-2 text-[var(--color-text)]">🥗 個人化營養建議</h3>
+          
+          <!-- 未解鎖狀態 -->
+          <div v-if="!nutritionUnlocked" class="text-center py-8">
+            <div class="w-20 h-20 mx-auto mb-4 bg-[var(--color-bg-soft)] rounded-full flex items-center justify-center text-4xl">🔒</div>
+            <p class="text-[var(--color-text-secondary)] mb-4">完成 <span class="font-bold text-[var(--color-primary)]">{{ nutritionUnlockProgress }}/10</span> 次訓練後解鎖營養建議</p>
+            <div class="w-64 h-3 bg-[var(--color-bg-soft)] rounded-full mx-auto overflow-hidden">
+              <div 
+                class="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500"
+                :style="{ width: `${nutritionUnlockProgress * 10}%` }"
+              ></div>
+            </div>
+            <p class="text-xs text-[var(--color-text-muted)] mt-3">多次訓練後，系統將根據您的認知表現提供個人化營養建議</p>
+          </div>
+
+          <!-- 已解鎖 - 營養建議內容 -->
+          <div v-else-if="nutritionResult">
+            <!-- 免責聲明提示 -->
+            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 rounded-xl mb-6">
+              <div class="flex items-start gap-3">
+                <span class="text-xl shrink-0">⚠️</span>
+                <div>
+                  <p class="text-sm text-amber-900 dark:text-amber-100 leading-relaxed">
+                    以下營養建議僅供參考，不構成醫療診斷。開始任何補充計畫前請諮詢專業醫療人員。
+                  </p>
+                  <button 
+                    @click="showNutritionDisclaimer = !showNutritionDisclaimer"
+                    class="text-xs text-amber-700 dark:text-amber-300 underline mt-1"
+                  >
+                    {{ showNutritionDisclaimer ? '收起詳細說明' : '閱讀完整免責聲明' }}
+                  </button>
+                </div>
+              </div>
+              <div v-if="showNutritionDisclaimer" class="mt-3 pt-3 border-t border-amber-200 dark:border-amber-700 text-xs text-amber-800 dark:text-amber-200 whitespace-pre-wrap">
+                {{ NUTRITION_DISCLAIMER }}
+              </div>
+            </div>
+
+            <!-- 高優先建議 -->
+            <div v-if="nutritionResult.recommendations.filter(r => r.priority === 'high').length > 0" class="mb-6">
+              <h4 class="text-base font-bold mb-3 flex items-center gap-2 text-red-600 dark:text-red-400">
+                <span class="w-3 h-3 rounded-full bg-red-500"></span> 重點關注
+              </h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div 
+                  v-for="rec in nutritionResult.recommendations.filter(r => r.priority === 'high')" 
+                  :key="rec.id"
+                  class="p-4 rounded-xl border-l-4 border-red-500 bg-red-50/50 dark:bg-red-900/10"
+                >
+                  <div class="flex items-center gap-2 mb-2">
+                    <span class="font-bold text-[var(--color-text)]">{{ rec.supplement.name }}</span>
+                    <span v-if="rec.supplement.isPartnerProduct" class="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded">推薦</span>
+                  </div>
+                  <p class="text-sm text-[var(--color-text-secondary)] mb-2">{{ rec.reason }}</p>
+                  <div class="text-xs text-[var(--color-text-muted)]">
+                    建議劑量：{{ rec.supplement.dosageRange }}
+                  </div>
+                  <div v-if="rec.supplement.isPartnerProduct && rec.supplement.partnerName" class="mt-2 pt-2 border-t border-red-200 dark:border-red-800">
+                    <a 
+                      v-if="rec.supplement.partnerUrl"
+                      :href="rec.supplement.partnerUrl" 
+                      target="_blank"
+                      class="text-xs text-[var(--color-primary)] hover:underline"
+                    >
+                      了解更多：{{ rec.supplement.partnerName }} →
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 中優先建議 -->
+            <div v-if="nutritionResult.recommendations.filter(r => r.priority === 'medium').length > 0" class="mb-6">
+              <h4 class="text-base font-bold mb-3 flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
+                <span class="w-3 h-3 rounded-full bg-yellow-500"></span> 建議考慮
+              </h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div 
+                  v-for="rec in nutritionResult.recommendations.filter(r => r.priority === 'medium')" 
+                  :key="rec.id"
+                  class="p-4 rounded-xl border-l-4 border-yellow-500 bg-yellow-50/50 dark:bg-yellow-900/10"
+                >
+                  <div class="flex items-center gap-2 mb-2">
+                    <span class="font-bold text-[var(--color-text)]">{{ rec.supplement.name }}</span>
+                    <span v-if="rec.supplement.isPartnerProduct" class="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded">推薦</span>
+                  </div>
+                  <p class="text-sm text-[var(--color-text-secondary)] mb-2">{{ rec.reason }}</p>
+                  <div class="text-xs text-[var(--color-text-muted)]">
+                    建議劑量：{{ rec.supplement.dosageRange }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 認知相關建議 -->
+            <div v-if="nutritionResult.cognitiveBasedAdvice.length > 0" class="mb-6">
+              <h4 class="text-base font-bold mb-3 flex items-center gap-2 text-[var(--color-text)]">🧠 認知評估建議</h4>
+              <div class="bg-[var(--color-bg-soft)] p-4 rounded-xl">
+                <ul class="space-y-2">
+                  <li 
+                    v-for="(advice, i) in nutritionResult.cognitiveBasedAdvice" 
+                    :key="i"
+                    class="text-sm text-[var(--color-text-secondary)] flex items-start gap-2"
+                  >
+                    <span class="text-[var(--color-primary)] shrink-0">•</span>
+                    {{ advice }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- 一般保健建議 -->
+            <div class="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 p-5 rounded-xl border border-green-200 dark:border-green-800">
+              <h4 class="text-base font-bold mb-3 flex items-center gap-2 text-green-700 dark:text-green-400">💡 一般保健建議</h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div 
+                  v-for="(advice, i) in nutritionResult.generalAdvice" 
+                  :key="i"
+                  class="text-sm text-green-800 dark:text-green-200 flex items-center gap-2"
+                >
+                  <span class="text-green-500">✓</span>
+                  {{ advice }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 載入中 -->
+          <div v-else class="text-center py-8 text-[var(--color-text-muted)]">
+            正在分析您的認知數據...
+          </div>
+        </section>
+
         <section id="recent" class="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] shadow-sm p-8 scroll-mt-8">
           <h3 class="text-xl font-bold mb-4 text-[var(--color-text)]">🕐 最近遊戲記錄</h3>
           <div v-if="gameStore.recentSessions.length > 0" class="space-y-3">
@@ -564,6 +737,12 @@ import { getLatestMiniCogResult, getUserMiniCogResults } from '@/services/db'
 import { type MiniCogResult, getRiskLevelDescription, calculateMiniCogTotal } from '@/services/miniCogService'
 import type { ReportUserInfo } from '@/services/pdfService'
 import { getQuickReferenceCutoffs, getRiskLevel as getNormativeRiskLevel } from '@/services/taiwanNormativeData'
+import { 
+  generatePersonalizedRecommendations, 
+  type PersonalizedNutritionResult,
+  type NutritionRecommendation,
+  NUTRITION_DISCLAIMER
+} from '@/services/nutritionPlaceholder'
 
 // 圖表元件
 import RadarChart from '@/components/charts/RadarChart.vue'
@@ -584,6 +763,19 @@ const activeSection = ref('user-info')
 const latestMiniCogResult = ref<MiniCogResult | null>(null)
 const miniCogHistory = ref<MiniCogResult[]>([])
 const showMiniCogHistory = ref(false)
+const nutritionResult = ref<PersonalizedNutritionResult | null>(null)
+const showNutritionDisclaimer = ref(false)
+
+// 檢查營養建議解鎖（10次遊戲）
+const nutritionUnlocked = computed(() => {
+  const totalGames = userStore.currentStats?.totalGamesPlayed || 0
+  return totalGames >= 10
+})
+
+const nutritionUnlockProgress = computed(() => {
+  const totalGames = userStore.currentStats?.totalGamesPlayed || 0
+  return Math.min(totalGames, 10)
+})
 
 // 報告區塊定義
 const reportSections = [
@@ -596,6 +788,7 @@ const reportSections = [
   { id: 'correlation', name: '關聯分析', icon: '📐' },
   { id: 'games', name: '各遊戲表現', icon: '🎮' },
   { id: 'suggestions', name: '訓練建議', icon: '💡' },
+  { id: 'nutrition', name: '營養建議', icon: '🥗' },
   { id: 'recent', name: '最近記錄', icon: '🕐' },
 ]
 
@@ -865,6 +1058,26 @@ onMounted(async () => {
 
     if (gameStore.sessions.length === 0) {
       await gameStore.loadUserSessions(userStore.currentUser.id)
+    }
+    
+    // 生成營養建議（如已解鎖）
+    if (nutritionUnlocked.value) {
+      try {
+        const profile = {
+          age: userStore.userAge || 65,
+          educationYears: userStore.currentUser?.educationYears || 9,
+          miniCogScore: latestMiniCogResult.value?.totalScore,
+          miniCogAtRisk: latestMiniCogResult.value?.atRisk,
+          cognitiveScores: gameStore.cognitiveScores,
+          scoreHistory: gameStore.scoreHistory.map(h => ({
+            date: h.date,
+            scores: h.scores
+          }))
+        }
+        nutritionResult.value = generatePersonalizedRecommendations(profile)
+      } catch (e) { 
+        console.error('Failed generating nutrition recommendations', e) 
+      }
     }
   }
   

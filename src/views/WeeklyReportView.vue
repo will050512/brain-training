@@ -14,6 +14,12 @@ import {
   type ProfessionalAssessment
 } from '@/services/professionalScoreCalculator'
 import { calculateScoreHistory, type ScoreHistory } from '@/services/scoreCalculator'
+import { 
+  generatePersonalizedRecommendations, 
+  type PersonalizedNutritionResult,
+  type NutritionRecommendation
+} from '@/services/nutritionPlaceholder'
+import { getLatestMiniCogResult } from '@/services/db'
 import DisclaimerBanner from '@/components/ui/DisclaimerBanner.vue'
 import RadarChart from '@/components/charts/RadarChart.vue'
 import TrendChart from '@/components/charts/TrendChart.vue'
@@ -27,7 +33,11 @@ const gameStore = useGameStore()
 const isLoading = ref(true)
 const sessions = ref<GameSession[]>([])
 const professionalAssessment = ref<ProfessionalAssessment | null>(null)
-const selectedTab = ref<'overview' | 'professional' | 'trend'>('overview')
+const selectedTab = ref<'overview' | 'professional' | 'trend' | 'nutrition'>('overview')
+const nutritionResult = ref<PersonalizedNutritionResult | null>(null)
+
+// 上週分數（用於計算趨勢）
+const previousWeekScores = ref<CognitiveScores | null>(null)
 
 // 本週日期範圍
 const weekRange = computed(() => {
@@ -89,6 +99,32 @@ const dimensionNames: Record<CognitiveDimension, string> = {
   attention: '專注力',
 }
 
+// 維度圖標
+const dimensionIcons: Record<CognitiveDimension, string> = {
+  reaction: '⚡',
+  logic: '🧩',
+  memory: '🧠',
+  cognition: '💡',
+  coordination: '🎯',
+  attention: '👁️',
+}
+
+// 計算趨勢箭頭
+function getTrendArrow(dim: CognitiveDimension): { arrow: string; class: string; change: number } {
+  if (!previousWeekScores.value) return { arrow: '→', class: 'trend-neutral', change: 0 }
+  
+  const current = cognitiveScores.value[dim] || 0
+  const previous = previousWeekScores.value[dim] || 0
+  const change = current - previous
+  
+  if (change >= 5) return { arrow: '↑', class: 'trend-up', change }
+  if (change <= -5) return { arrow: '↓', class: 'trend-down', change }
+  return { arrow: '→', class: 'trend-neutral', change }
+}
+
+// 營養建議是否解鎖
+const nutritionUnlocked = computed(() => sessions.value.length >= 10)
+
 // 認知分數
 const cognitiveScores = computed<CognitiveScores>(() => {
   return gameStore.cognitiveScores || {
@@ -144,6 +180,74 @@ async function loadData() {
         cognitiveScores.value,
         sessions.value
       )
+    }
+    
+    // 計算上週分數（用於趨勢比較）
+    const lastWeekStart = new Date(weekRange.value.start)
+    lastWeekStart.setDate(lastWeekStart.getDate() - 7)
+    const lastWeekEnd = new Date(weekRange.value.start)
+    lastWeekEnd.setDate(lastWeekEnd.getDate() - 1)
+    
+    const lastWeekSessions = sessions.value.filter(s => {
+      const date = new Date(s.createdAt)
+      return date >= lastWeekStart && date <= lastWeekEnd
+    })
+    
+    if (lastWeekSessions.length > 0) {
+      // 簡單計算上週平均分數
+      const scores: CognitiveScores = {
+        reaction: 0, logic: 0, memory: 0, cognition: 0, coordination: 0, attention: 0
+      }
+      const counts: Record<CognitiveDimension, number> = {
+        reaction: 0, logic: 0, memory: 0, cognition: 0, coordination: 0, attention: 0
+      }
+      
+      lastWeekSessions.forEach(s => {
+        // 使用 cognitiveScores 而不是 dimensions
+        if (s.cognitiveScores) {
+          Object.entries(s.cognitiveScores).forEach(([dim, score]) => {
+            const dimension = dim as CognitiveDimension
+            if (score > 0) {
+              scores[dimension] = (scores[dimension] || 0) + score
+              counts[dimension] = (counts[dimension] || 0) + 1
+            }
+          })
+        }
+      })
+      
+      Object.keys(scores).forEach(key => {
+        const dim = key as CognitiveDimension
+        if (counts[dim] > 0) {
+          scores[dim] = Math.round(scores[dim] / counts[dim])
+        }
+      })
+      
+      previousWeekScores.value = scores
+    }
+    
+    // 載入營養建議（如已解鎖）
+    if (nutritionUnlocked.value) {
+      try {
+        const userId = userStore.currentUser?.id
+        const latestMiniCog = userId ? await getLatestMiniCogResult(userId) : null
+        
+        const profile = {
+          age: userStore.currentUser?.birthday 
+            ? new Date().getFullYear() - new Date(userStore.currentUser.birthday).getFullYear() 
+            : 65,
+          educationYears: userStore.currentUser?.educationYears || 9,
+          miniCogScore: latestMiniCog?.totalScore,
+          miniCogAtRisk: latestMiniCog?.atRisk,
+          cognitiveScores: cognitiveScores.value,
+          scoreHistory: scoreHistory.value.map(h => ({
+            date: h.date,
+            scores: h.scores
+          }))
+        }
+        nutritionResult.value = generatePersonalizedRecommendations(profile)
+      } catch (e) {
+        console.error('載入營養建議失敗:', e)
+      }
     }
   } catch (error) {
     console.error('載入資料失敗:', error)
@@ -212,6 +316,13 @@ onMounted(() => {
         >
           趨勢分析
         </button>
+        <button 
+          class="tab" 
+          :class="{ active: selectedTab === 'nutrition' }"
+          @click="selectedTab = 'nutrition'"
+        >
+          營養建議
+        </button>
       </div>
 
       <!-- 概覽頁 -->
@@ -261,7 +372,7 @@ onMounted(() => {
           </div>
         </section>
 
-        <!-- 各維度分數 -->
+        <!-- 各維度分數（加入趨勢箭頭） -->
         <section class="dimensions-section">
           <h2>各維度表現</h2>
           <div class="dimension-list">
@@ -270,8 +381,18 @@ onMounted(() => {
               :key="dim"
               class="dimension-item"
             >
-              <div class="dimension-name">
-                {{ dimensionNames[dim as CognitiveDimension] }}
+              <div class="dimension-header">
+                <span class="dimension-icon">{{ dimensionIcons[dim as CognitiveDimension] }}</span>
+                <span class="dimension-name">{{ dimensionNames[dim as CognitiveDimension] }}</span>
+                <span 
+                  class="trend-arrow"
+                  :class="getTrendArrow(dim as CognitiveDimension).class"
+                >
+                  {{ getTrendArrow(dim as CognitiveDimension).arrow }}
+                  <small v-if="getTrendArrow(dim as CognitiveDimension).change !== 0">
+                    {{ getTrendArrow(dim as CognitiveDimension).change > 0 ? '+' : '' }}{{ getTrendArrow(dim as CognitiveDimension).change }}
+                  </small>
+                </span>
               </div>
               <div class="dimension-bar">
                 <div 
@@ -436,6 +557,103 @@ onMounted(() => {
             </div>
           </div>
         </section>
+      </div>
+
+      <!-- 營養建議頁 -->
+      <div v-if="selectedTab === 'nutrition'" class="tab-content">
+        <!-- 未解鎖 -->
+        <div v-if="!nutritionUnlocked" class="no-data">
+          <div class="no-data-icon">🔒</div>
+          <p>完成 10 次遊戲後解鎖營養建議</p>
+          <p class="sub">目前已完成 {{ sessions.length }} 次</p>
+          <div class="unlock-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" :style="{ width: `${Math.min(sessions.length, 10) * 10}%` }"></div>
+            </div>
+            <span class="progress-text">{{ sessions.length }}/10</span>
+          </div>
+        </div>
+
+        <!-- 已解鎖 -->
+        <template v-else-if="nutritionResult">
+          <!-- 免責聲明 -->
+          <section class="nutrition-disclaimer">
+            <div class="disclaimer-icon">⚠️</div>
+            <p>以下營養建議僅供參考，不構成醫療診斷。開始任何補充計畫前請諮詢專業醫療人員。</p>
+          </section>
+
+          <!-- 高優先建議 -->
+          <section v-if="nutritionResult.recommendations.filter(r => r.priority === 'high').length > 0" class="nutrition-section">
+            <h2>🔴 重點關注</h2>
+            <div class="supplement-list">
+              <div 
+                v-for="rec in nutritionResult.recommendations.filter(r => r.priority === 'high')" 
+                :key="rec.id"
+                class="supplement-card priority-high"
+              >
+                <div class="supplement-header">
+                  <span class="supplement-name">{{ rec.supplement.name }}</span>
+                  <span v-if="rec.supplement.isPartnerProduct" class="partner-badge">推薦</span>
+                </div>
+                <p class="supplement-reason">{{ rec.reason }}</p>
+                <div class="supplement-benefits">
+                  <span v-for="(benefit, i) in rec.supplement.benefits.slice(0, 2)" :key="i" class="benefit-tag">
+                    {{ benefit }}
+                  </span>
+                </div>
+                <div class="supplement-dosage">建議劑量：{{ rec.supplement.dosageRange }}</div>
+                <a 
+                  v-if="rec.supplement.isPartnerProduct && rec.supplement.partnerUrl"
+                  :href="rec.supplement.partnerUrl" 
+                  target="_blank"
+                  class="partner-link"
+                >
+                  了解更多 →
+                </a>
+              </div>
+            </div>
+          </section>
+
+          <!-- 中優先建議 -->
+          <section v-if="nutritionResult.recommendations.filter(r => r.priority === 'medium').length > 0" class="nutrition-section">
+            <h2>🟡 建議考慮</h2>
+            <div class="supplement-list">
+              <div 
+                v-for="rec in nutritionResult.recommendations.filter(r => r.priority === 'medium')" 
+                :key="rec.id"
+                class="supplement-card priority-medium"
+              >
+                <div class="supplement-header">
+                  <span class="supplement-name">{{ rec.supplement.name }}</span>
+                </div>
+                <p class="supplement-reason">{{ rec.reason }}</p>
+                <div class="supplement-dosage">建議劑量：{{ rec.supplement.dosageRange }}</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 認知評估建議 -->
+          <section v-if="nutritionResult.cognitiveBasedAdvice.length > 0" class="advice-section">
+            <h2>🧠 認知評估建議</h2>
+            <ul class="advice-list">
+              <li v-for="(advice, i) in nutritionResult.cognitiveBasedAdvice" :key="i">{{ advice }}</li>
+            </ul>
+          </section>
+
+          <!-- 一般保健建議 -->
+          <section class="advice-section general">
+            <h2>💡 一般保健建議</h2>
+            <ul class="advice-list">
+              <li v-for="(advice, i) in nutritionResult.generalAdvice" :key="i">{{ advice }}</li>
+            </ul>
+          </section>
+        </template>
+
+        <!-- 載入中 -->
+        <div v-else class="loading">
+          <div class="spinner"></div>
+          <p>正在分析您的認知數據...</p>
+        </div>
       </div>
     </template>
   </div>
@@ -807,5 +1025,217 @@ onMounted(() => {
   .tabs {
     overflow-x: auto;
   }
+}
+
+/* 維度趨勢箭頭 */
+.dimension-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 120px;
+}
+
+.dimension-icon {
+  font-size: 1rem;
+}
+
+.trend-arrow {
+  font-size: 0.875rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.trend-arrow small {
+  font-size: 0.625rem;
+}
+
+.trend-up {
+  color: var(--color-success, #22c55e);
+}
+
+.trend-down {
+  color: var(--color-danger, #ef4444);
+}
+
+.trend-neutral {
+  color: var(--color-text-muted);
+}
+
+/* 營養建議頁樣式 */
+.nutrition-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.disclaimer-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.nutrition-disclaimer p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.nutrition-section {
+  margin-bottom: 1.5rem;
+}
+
+.nutrition-section h2 {
+  font-size: 1.125rem;
+  margin-bottom: 1rem;
+  color: var(--color-text);
+}
+
+.supplement-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.supplement-card {
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  border-left: 4px solid;
+}
+
+.supplement-card.priority-high {
+  border-left-color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.supplement-card.priority-medium {
+  border-left-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.supplement-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.supplement-name {
+  font-weight: bold;
+  color: var(--color-text);
+}
+
+.partner-badge {
+  font-size: 0.625rem;
+  padding: 0.125rem 0.375rem;
+  background: rgba(251, 191, 36, 0.2);
+  color: #d97706;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.supplement-reason {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: 0 0 0.5rem 0;
+}
+
+.supplement-benefits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-bottom: 0.5rem;
+}
+
+.benefit-tag {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  background: var(--color-surface-alt);
+  border-radius: 4px;
+  color: var(--color-text-muted);
+}
+
+.supplement-dosage {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.partner-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.partner-link:hover {
+  text-decoration: underline;
+}
+
+.advice-section {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.advice-section.general {
+  background: rgba(34, 197, 94, 0.05);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.advice-section h2 {
+  font-size: 1rem;
+  margin: 0 0 0.75rem 0;
+  color: var(--color-text);
+}
+
+.advice-list {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.advice-list li {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.unlock-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.progress-bar {
+  width: 150px;
+  height: 8px;
+  background: var(--color-surface-alt);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), #22c55e);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-weight: bold;
 }
 </style>

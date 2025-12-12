@@ -93,8 +93,17 @@ async function migrateGameSessionResults(): Promise<void> {
     // 確保 result 存在
     if (!updatedSession.result) {
       updatedSession.result = {
+        gameId: updatedSession.gameId,
+        difficulty: updatedSession.difficulty,
+        subDifficulty: updatedSession.subDifficulty,
         score: 0,
+        maxScore: 100,
+        correctCount: 0,
+        totalCount: 0,
+        accuracy: 0,
+        avgReactionTime: 0,
         duration: 0,
+        timestamp: updatedSession.createdAt || new Date()
       }
       needsUpdate = true
     }

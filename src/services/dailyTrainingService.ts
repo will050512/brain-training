@@ -76,14 +76,22 @@ const DURATION_GAME_CONFIG: Record<DailyTrainingDuration, {
   30: { min: 6, max: 10, useMiniMode: false }
 }
 
-// Mini-Cog 分數對應基礎難度
-const MINICOG_DIFFICULTY_MAP: Record<number, { difficulty: Difficulty; subDifficulty: SubDifficulty }> = {
-  5: { difficulty: 'medium', subDifficulty: 3 },
-  4: { difficulty: 'medium', subDifficulty: 2 },
-  3: { difficulty: 'easy', subDifficulty: 3 },
-  2: { difficulty: 'easy', subDifficulty: 2 },
-  1: { difficulty: 'easy', subDifficulty: 1 },
-  0: { difficulty: 'easy', subDifficulty: 1 }
+// Mini-Cog 分數對應基礎難度（強化限制）
+// 分數 ≤2：限制 easy-1~2，避免過度挑戰
+// 分數 3：限制 easy-3~medium-1
+// 分數 4-5：允許較高難度
+const MINICOG_DIFFICULTY_MAP: Record<number, { 
+  difficulty: Difficulty
+  subDifficulty: SubDifficulty
+  maxDifficulty: Difficulty
+  maxSubDifficulty: SubDifficulty
+}> = {
+  5: { difficulty: 'medium', subDifficulty: 2, maxDifficulty: 'hard', maxSubDifficulty: 3 },
+  4: { difficulty: 'medium', subDifficulty: 1, maxDifficulty: 'hard', maxSubDifficulty: 1 },
+  3: { difficulty: 'easy', subDifficulty: 3, maxDifficulty: 'medium', maxSubDifficulty: 2 },
+  2: { difficulty: 'easy', subDifficulty: 2, maxDifficulty: 'easy', maxSubDifficulty: 3 },  // 限制
+  1: { difficulty: 'easy', subDifficulty: 1, maxDifficulty: 'easy', maxSubDifficulty: 2 },  // 限制
+  0: { difficulty: 'easy', subDifficulty: 1, maxDifficulty: 'easy', maxSubDifficulty: 1 }   // 限制
 }
 
 /**

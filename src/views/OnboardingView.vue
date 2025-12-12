@@ -15,7 +15,7 @@ const userStore = useUserStore()
 const settingsStore = useSettingsStore()
 
 // 步驟
-type Step = 'welcome' | 'profile' | 'settings' | 'assessment' | 'complete'
+type Step = 'welcome' | 'profile' | 'settings' | 'assessment-choice' | 'assessment' | 'complete'
 
 const currentStep = ref<Step>('welcome')
 const isLoading = ref(false)
@@ -24,6 +24,10 @@ const isLoading = ref(false)
 const userName = ref('')
 const userAge = ref<number | null>(null)
 const userGender = ref<'male' | 'female' | 'other'>('other')
+const userEducationYears = ref<number>(12) // 新增：教育年數
+
+// 評估選擇
+const assessmentChoice = ref<'mini-cog' | 'quick' | 'skip'>('mini-cog')
 
 // 設定選項
 const selectedDuration = ref<10 | 15 | 20 | 30>(15)
@@ -77,6 +81,7 @@ const stepTitle = computed(() => {
     case 'welcome': return '歡迎使用愛護腦'
     case 'profile': return '建立您的資料'
     case 'settings': return '設定訓練偏好'
+    case 'assessment-choice': return '選擇評估方式'
     case 'assessment': return '初始能力評估'
     case 'complete': return '設定完成！'
     default: return ''
@@ -85,7 +90,7 @@ const stepTitle = computed(() => {
 
 // 進度
 const progress = computed(() => {
-  const steps: Step[] = ['welcome', 'profile', 'settings', 'assessment', 'complete']
+  const steps: Step[] = ['welcome', 'profile', 'settings', 'assessment-choice', 'assessment', 'complete']
   const index = steps.indexOf(currentStep.value)
   return ((index + 1) / steps.length) * 100
 })
@@ -100,12 +105,31 @@ function nextStep(): void {
       currentStep.value = 'settings'
       break
     case 'settings':
-      currentStep.value = 'assessment'
+      currentStep.value = 'assessment-choice'
+      break
+    case 'assessment-choice':
+      handleAssessmentChoice()
       break
     case 'assessment':
       if (currentAssessmentGame.value >= assessmentGames.length) {
         finishAssessment()
       }
+      break
+  }
+}
+
+// 處理評估選擇
+function handleAssessmentChoice(): void {
+  switch (assessmentChoice.value) {
+    case 'mini-cog':
+      // 導向 Mini-Cog 評估（完成後會回到首頁）
+      router.push('/assessment')
+      break
+    case 'quick':
+      currentStep.value = 'assessment'
+      break
+    case 'skip':
+      finishAssessment()
       break
   }
 }
@@ -402,6 +426,87 @@ function startTraining(): void {
                  font-semibold text-lg hover:opacity-90 active:scale-98 transition-all"
         >
           下一步
+        </button>
+      </div>
+
+      <!-- 評估選擇 -->
+      <div v-if="currentStep === 'assessment-choice'" class="py-8">
+        <div class="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-transparent dark:border-slate-700 mb-6">
+          <h2 class="text-lg font-semibold mb-2 text-gray-800 dark:text-white">🧪 選擇評估方式</h2>
+          <p class="text-sm text-gray-500 dark:text-slate-400 mb-6">
+            評估結果將幫助系統為您推薦合適的訓練難度
+          </p>
+          
+          <!-- 推薦：Mini-Cog -->
+          <button
+            @click="assessmentChoice = 'mini-cog'"
+            class="w-full p-4 rounded-xl border-2 text-left transition-all mb-3"
+            :class="assessmentChoice === 'mini-cog' 
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' 
+              : 'border-gray-200 dark:border-slate-600 hover:border-gray-300'"
+          >
+            <div class="flex items-start gap-3">
+              <span class="text-2xl">🧠</span>
+              <div class="flex-1">
+                <div class="flex items-center gap-2">
+                  <p class="font-semibold text-gray-800 dark:text-white">Mini-Cog 認知篩檢</p>
+                  <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">推薦</span>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                  專業認知篩檢工具，包含詞語回憶與時鐘繪圖測試，約 5 分鐘
+                </p>
+                <p class="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                  ✓ 可獲得更精準的難度匹配 ✓ 可追蹤長期認知變化
+                </p>
+              </div>
+            </div>
+          </button>
+          
+          <!-- 快速評估 -->
+          <button
+            @click="assessmentChoice = 'quick'"
+            class="w-full p-4 rounded-xl border-2 text-left transition-all mb-3"
+            :class="assessmentChoice === 'quick' 
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' 
+              : 'border-gray-200 dark:border-slate-600 hover:border-gray-300'"
+          >
+            <div class="flex items-start gap-3">
+              <span class="text-2xl">⚡</span>
+              <div class="flex-1">
+                <p class="font-semibold text-gray-800 dark:text-white">快速遊戲評估</p>
+                <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                  透過 3 個簡短遊戲評估，約 2 分鐘
+                </p>
+              </div>
+            </div>
+          </button>
+          
+          <!-- 跳過 -->
+          <button
+            @click="assessmentChoice = 'skip'"
+            class="w-full p-4 rounded-xl border-2 text-left transition-all"
+            :class="assessmentChoice === 'skip' 
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' 
+              : 'border-gray-200 dark:border-slate-600 hover:border-gray-300'"
+          >
+            <div class="flex items-start gap-3">
+              <span class="text-2xl">⏭️</span>
+              <div class="flex-1">
+                <p class="font-semibold text-gray-800 dark:text-white">稍後評估</p>
+                <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                  先從簡單難度開始，之後再進行評估
+                </p>
+              </div>
+            </div>
+          </button>
+        </div>
+        
+        <button
+          @click="nextStep"
+          class="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl
+                 font-semibold text-lg hover:opacity-90 active:scale-98 transition-all"
+        >
+          {{ assessmentChoice === 'mini-cog' ? '開始 Mini-Cog 評估' : assessmentChoice === 'quick' ? '開始快速評估' : '直接開始訓練' }}
         </button>
       </div>
 

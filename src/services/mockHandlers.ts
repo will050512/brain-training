@@ -170,9 +170,10 @@ export const mockHandlers = {
     await delay(600)
     
     const dimensions = ['memory', 'cognition', 'attention', 'reaction', 'logic', 'coordination']
+    const trendOptions: ('improving' | 'stable' | 'declining')[] = ['improving', 'stable', 'declining']
     const trends = dimensions.map(dimension => ({
       dimension,
-      trend: (['improving', 'stable', 'declining'] as const)[Math.floor(Math.random() * 3)],
+      trend: trendOptions[Math.floor(Math.random() * 3)] ?? 'stable',
       changePercent: Math.round((Math.random() * 20 - 10) * 10) / 10,
       confidence: 0.7 + Math.random() * 0.25,
     }))

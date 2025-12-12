@@ -68,7 +68,7 @@ export interface DifficultyHistory {
   previousSubDifficulty: 1 | 2 | 3
   newDifficulty: 'easy' | 'medium' | 'hard'
   newSubDifficulty: 1 | 2 | 3
-  reason: 'accuracy-high' | 'accuracy-low' | 'manual'
+  reason: 'accuracy-high' | 'accuracy-low' | 'manual' | 'reaction-improved' | 'reaction-declined' | 'inactivity'
   accuracy: number
   changedAt: string
 }

@@ -70,9 +70,24 @@ export interface PdfReportOptions {
   includeTrends?: boolean
   includeBehavior?: boolean
   includeRecommendations?: boolean
+  includeNutrition?: boolean
   language?: 'zh-TW' | 'en' | 'bilingual'
   radarChartImage?: string | null
   trendChartImage?: string | null
+}
+
+/** 營養建議資料（用於 PDF 報告） */
+export interface NutritionReportData {
+  recommendations: Array<{
+    name: string
+    reason: string
+    priority: 'high' | 'medium' | 'low'
+    dosage: string
+    isPartnerProduct?: boolean
+    partnerName?: string
+  }>
+  cognitiveAdvice: string[]
+  generalAdvice: string[]
 }
 
 // ===== 常數定義 ===== (調整顏色/字級並加入字型常數)
@@ -199,7 +214,8 @@ export async function generateCognitiveReport(
   cognitiveScores: CognitiveScoreData | null,
   trends: TrendDataPoint[] | null,
   behaviorSummary: BehaviorSummary | null,
-  options: PdfReportOptions = {}
+  options: PdfReportOptions = {},
+  nutritionData?: NutritionReportData | null
 ): Promise<Blob> {
   // 載入 LOGO
   await loadLogo()
@@ -245,6 +261,13 @@ export async function generateCognitiveReport(
       currentY = margin
     }
     currentY = drawBehaviorSection(doc, behaviorSummary, currentY, margin, pageWidth)
+  }
+
+  // ===== 營養建議頁 =====
+  if (options.includeNutrition && nutritionData && nutritionData.recommendations.length > 0) {
+    doc.addPage()
+    currentY = margin
+    currentY = drawNutritionSection(doc, nutritionData, currentY, margin, pageWidth, pageHeight)
   }
 
   // ===== 法律聲明 =====
@@ -617,6 +640,179 @@ function drawBehaviorSection(
   }
 
   return y + 5
+}
+
+/**
+ * 繪製營養建議區塊
+ */
+function drawNutritionSection(
+  doc: jsPDF,
+  nutrition: NutritionReportData,
+  startY: number,
+  margin: number,
+  pageWidth: number,
+  pageHeight: number
+): number {
+  let y = startY
+
+  // 區塊標題
+  doc.setFillColor(COLORS.background)
+  doc.rect(margin, y - 3, pageWidth - margin * 2, 10, 'F')
+  
+  doc.setFontSize(FONT_SIZES.heading)
+  doc.setTextColor(COLORS.primary)
+  doc.text('個人化營養建議 Personalized Nutrition Recommendations', margin + 2, y + 3)
+  y += 15
+
+  // 免責聲明提醒
+  doc.setFontSize(FONT_SIZES.small)
+  doc.setTextColor(COLORS.warning)
+  doc.text('⚠️ 以下建議僅供參考，開始任何補充計畫前請諮詢專業醫療人員', margin, y)
+  doc.setTextColor(COLORS.lightText)
+  doc.text('    The following suggestions are for reference only. Consult a healthcare professional before starting any supplement plan.', margin, y + 4)
+  y += 12
+
+  // 高優先建議
+  const highPriority = nutrition.recommendations.filter(r => r.priority === 'high')
+  if (highPriority.length > 0) {
+    y = drawNutritionPriorityGroup(doc, '🔴 重點關注 High Priority', highPriority, y, margin, pageWidth, pageHeight, COLORS.danger)
+  }
+
+  // 中優先建議
+  const mediumPriority = nutrition.recommendations.filter(r => r.priority === 'medium')
+  if (mediumPriority.length > 0) {
+    y = drawNutritionPriorityGroup(doc, '🟡 建議考慮 Recommended', mediumPriority, y, margin, pageWidth, pageHeight, COLORS.warning)
+  }
+
+  // 認知評估建議
+  if (nutrition.cognitiveAdvice.length > 0) {
+    y += 5
+    if (y > pageHeight - 40) {
+      doc.addPage()
+      y = margin
+    }
+    
+    doc.setFontSize(FONT_SIZES.body)
+    doc.setTextColor(COLORS.primary)
+    doc.text('🧠 認知評估建議 Cognitive Assessment Advice', margin, y)
+    y += 6
+    
+    doc.setFontSize(FONT_SIZES.small)
+    doc.setTextColor(COLORS.text)
+    for (const advice of nutrition.cognitiveAdvice.slice(0, 4)) {
+      if (y > pageHeight - 20) {
+        doc.addPage()
+        y = margin
+      }
+      doc.text(`• ${advice}`, margin + 3, y)
+      y += 5
+    }
+  }
+
+  // 一般保健建議
+  if (nutrition.generalAdvice.length > 0) {
+    y += 5
+    if (y > pageHeight - 40) {
+      doc.addPage()
+      y = margin
+    }
+    
+    doc.setFontSize(FONT_SIZES.body)
+    doc.setTextColor(COLORS.success)
+    doc.text('💡 一般保健建議 General Health Advice', margin, y)
+    y += 6
+    
+    doc.setFontSize(FONT_SIZES.small)
+    doc.setTextColor(COLORS.text)
+    for (const advice of nutrition.generalAdvice.slice(0, 4)) {
+      if (y > pageHeight - 20) {
+        doc.addPage()
+        y = margin
+      }
+      doc.text(`• ${advice}`, margin + 3, y)
+      y += 5
+    }
+  }
+
+  return y + 5
+}
+
+/**
+ * 繪製營養建議優先級分組
+ */
+function drawNutritionPriorityGroup(
+  doc: jsPDF,
+  title: string,
+  recommendations: NutritionReportData['recommendations'],
+  startY: number,
+  margin: number,
+  pageWidth: number,
+  pageHeight: number,
+  accentColor: string
+): number {
+  let y = startY
+
+  // 分組標題
+  doc.setFontSize(FONT_SIZES.body)
+  doc.setTextColor(accentColor)
+  doc.text(title, margin, y)
+  y += 6
+
+  for (const rec of recommendations.slice(0, 3)) { // 每組最多顯示3個
+    if (y > pageHeight - 35) {
+      doc.addPage()
+      y = margin
+    }
+
+    // 繪製卡片背景
+    const cardHeight = rec.isPartnerProduct ? 28 : 24
+    doc.setFillColor('#f8fafc')
+    doc.setDrawColor(accentColor)
+    doc.setLineWidth(0.3)
+    doc.rect(margin, y, pageWidth - margin * 2, cardHeight, 'FD')
+    
+    // 左側色條
+    doc.setFillColor(accentColor)
+    doc.rect(margin, y, 2, cardHeight, 'F')
+    
+    y += 5
+    
+    // 補充品名稱
+    doc.setFontSize(FONT_SIZES.body)
+    doc.setTextColor(COLORS.text)
+    let nameX = margin + 5
+    doc.text(rec.name, nameX, y)
+    
+    // 合作夥伴標籤
+    if (rec.isPartnerProduct) {
+      const nameWidth = doc.getTextWidth(rec.name)
+      doc.setFontSize(FONT_SIZES.tiny)
+      doc.setTextColor(COLORS.warning)
+      doc.text('[推薦]', nameX + nameWidth + 3, y)
+    }
+    y += 5
+    
+    // 建議原因
+    doc.setFontSize(FONT_SIZES.small)
+    doc.setTextColor(COLORS.lightText)
+    const reasonLines = doc.splitTextToSize(rec.reason, pageWidth - margin * 2 - 10)
+    doc.text(reasonLines[0] || '', margin + 5, y)
+    y += 5
+    
+    // 建議劑量
+    doc.setFontSize(FONT_SIZES.tiny)
+    doc.text(`建議劑量：${rec.dosage}`, margin + 5, y)
+    
+    // 合作夥伴資訊
+    if (rec.isPartnerProduct && rec.partnerName) {
+      doc.setTextColor(COLORS.primary)
+      doc.text(`| 推薦來源：${rec.partnerName}`, margin + 60, y)
+    }
+    
+    y += cardHeight - 14 + 3 // 移至下一個卡片
+  }
+
+  return y + 3
 }
 
 /**

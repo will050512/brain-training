@@ -293,6 +293,8 @@
 
 html {
   font-size: var(--font-size-base);
+  /* 防止水平溢出 */
+  overflow-x: hidden;
 }
 
 body {
@@ -305,10 +307,85 @@ body {
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   transition: background-color 0.3s ease, color 0.3s ease;
+  /* 防止水平溢出與無意義滑動 */
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
 }
 
 #app {
   min-height: 100vh;
+  /* 確保內容不超出視窗 */
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* ========== 全局防溢出與觸控控制 ========== */
+
+/* 防止所有容器水平溢出 */
+.app-container,
+.page-container,
+.view-container,
+.content-wrapper,
+main,
+section,
+article {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* 長文字自動換行 */
+p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* PWA/手機觸控控制：只允許垂直滑動和縮放 */
+.touch-controlled {
+  touch-action: pan-y pinch-zoom;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 完全禁止觸控滑動（用於遊戲區域） */
+.no-scroll {
+  touch-action: none;
+  overflow: hidden;
+}
+
+/* 僅允許垂直滑動 */
+.scroll-y-only {
+  touch-action: pan-y;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 防止橡皮筋效果（iOS） */
+.no-bounce {
+  overscroll-behavior: none;
+}
+
+/* 安全區域填充（適用於瀏海螢幕） */
+.safe-area-padding {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 全螢幕容器（遊戲使用） */
+.fullscreen-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh; /* 動態視窗高度，處理手機瀏覽器工具列 */
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* 固定寬度改為最大寬度 */
+.max-w-safe {
+  max-width: min(100vw, 100%);
+  width: 100%;
 }
 
 /* ========== 長者友善按鈕系統 ========== */
