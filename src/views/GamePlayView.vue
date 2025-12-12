@@ -1,5 +1,5 @@
 <template>
-  <div class="game-wrapper min-h-screen bg-[var(--color-bg)] flex flex-col">
+  <div class="game-wrapper min-h-[100dvh] bg-[var(--color-bg)] flex flex-col">
     <div
       class="game-header bg-[var(--color-surface)] shadow-sm border-b border-[var(--color-border)] z-10 sticky top-0"
       :class="{ 'game-header-compact': isMobile, 'game-header-landscape': isLandscape }"
@@ -134,7 +134,10 @@
       </div>
     </div>
 
-    <div class="game-play-area flex-1 container mx-auto w-full">
+    <div
+      class="game-play-area flex-1 min-h-0 container mx-auto w-full"
+      :class="{ 'pt-10': isMobile && gameState === 'playing' }"
+    >
       <!-- 準備畫面 - 適應螢幕高度 -->
       <div v-if="gameState === 'ready'" class="game-content-fit max-w-lg mx-auto text-center">
         <div class="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 sm:p-6 shadow-lg">
@@ -157,7 +160,7 @@
       </div>
 
       <!-- 遊戲進行中 - 填滿可用空間 -->
-      <div v-else-if="gameState === 'playing'" class="game-content-full w-full">
+      <div v-else-if="gameState === 'playing'" class="game-content-full w-full h-full min-h-0 overflow-hidden">
         <component
           :is="gameComponent"
           :difficulty="gameStore.currentDifficulty"
@@ -165,7 +168,7 @@
           @score-change="handleScoreChange"
           @game-end="handleGameEnd"
           @status-update="handleStatusUpdate"
-          class="w-full h-full"
+          class="w-full h-full min-h-0"
         />
       </div>
 

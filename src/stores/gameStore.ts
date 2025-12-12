@@ -23,6 +23,7 @@ import {
 import { 
   calculateCognitiveScoresFromResult,
   calculateOverallCognitiveScores,
+  calculateDimensionSampleCounts,
   calculateScoreTrends,
   calculateScoreHistory,
   type ScoreTrend,
@@ -72,6 +73,24 @@ export const useGameStore = defineStore('game', () => {
 
   const cognitiveScores = computed((): CognitiveScores => {
     return calculateOverallCognitiveScores(sessions.value)
+  })
+
+  const dimensionSampleCounts = computed(() => {
+    return calculateDimensionSampleCounts(sessions.value)
+  })
+
+  const untestedDimensions = computed((): CognitiveDimension[] => {
+    const allDimensions: CognitiveDimension[] = [
+      'reaction',
+      'logic',
+      'memory',
+      'cognition',
+      'coordination',
+      'attention',
+    ]
+
+    const counts = dimensionSampleCounts.value
+    return allDimensions.filter(dimension => (counts[dimension] || 0) === 0)
   })
 
   const recentSessions = computed(() => {
@@ -447,6 +466,8 @@ export const useGameStore = defineStore('game', () => {
     cognitiveScores,
     recentSessions,
     scoreHistory,
+    dimensionSampleCounts,
+    untestedDimensions,
 
     // 動作
     loadUserSessions,

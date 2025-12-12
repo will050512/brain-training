@@ -209,14 +209,14 @@ function isPositionOccupied(posNumber: number): boolean {
 }
 
 function initAssembleMode() {
-  const size = Math.min(window.innerWidth - 40, 350)
-  clockFaceSize.value = size
-  
-  const numbers = Array.from({ length: 12 }, (_, i) => i + 1)
-  const shuffled = numbers.sort(() => Math.random() - 0.5)
-  
-  assembleNumbers.value = shuffled.map((value, index) => ({
-    id: index,
+  // 根據螢幕尺寸動態調整時鐘大小，考慮寬度和高度
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+  const isLandscape = viewportWidth > viewportHeight
+
+  let size: number
+  if (viewportWidth <= 480) {
+    // 手機豎屏
     value,
     x: -100,
     y: -100,

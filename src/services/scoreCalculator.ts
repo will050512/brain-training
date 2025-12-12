@@ -94,6 +94,33 @@ export function calculateOverallCognitiveScores(
   return scores
 }
 
+export type DimensionSampleCounts = Record<CognitiveDimension, number>
+
+export function calculateDimensionSampleCounts(
+  sessions: GameSession[]
+): DimensionSampleCounts {
+  const counts: DimensionSampleCounts = {
+    reaction: 0,
+    logic: 0,
+    memory: 0,
+    cognition: 0,
+    coordination: 0,
+    attention: 0,
+  }
+
+  for (const session of sessions) {
+    const weights = gameRegistry.getCognitiveWeights(session.gameId)
+    const entries = Object.entries(weights) as [CognitiveDimension, number][]
+    for (const [dimension, weight] of entries) {
+      if (weight && weight > 0) {
+        counts[dimension] += 1
+      }
+    }
+  }
+
+  return counts
+}
+
 /**
  * 計算特定時間範圍的認知分數
  */

@@ -135,11 +135,18 @@ function calculateCoverageScore(
 export function selectGamesForTraining(
   duration: DailyTrainingDuration,
   cognitiveScores: CognitiveScores,
-  recentGames: string[] = []
+  recentGames: string[] = [],
+  options: {
+    untestedDimensions?: CognitiveDimension[]
+    prioritizeUntested?: boolean
+  } = {}
 ): { games: GameDefinition[]; useMiniMode: boolean } {
   const config = DURATION_GAME_CONFIG[duration]
   const allGames = gameRegistry.getAll()
   const weaknesses = analyzeWeaknesses(cognitiveScores)
+
+  const untestedDimensions = options.untestedDimensions || []
+  const prioritizeUntested = options.prioritizeUntested === true
   
   // 所有維度（確保覆蓋）
   const allDimensions: CognitiveDimension[] = [
@@ -147,7 +154,11 @@ export function selectGamesForTraining(
   ]
   
   // 優先維度（弱項優先）
-  const priorityDimensions = weaknesses.length > 0 ? weaknesses : allDimensions.slice(0, 3)
+  const basePriorityDimensions = weaknesses.length > 0 ? weaknesses : allDimensions.slice(0, 3)
+
+  const priorityDimensions = (prioritizeUntested && untestedDimensions.length > 0)
+    ? [...untestedDimensions, ...basePriorityDimensions.filter(d => !untestedDimensions.includes(d))]
+    : basePriorityDimensions
   
   // 計算每個遊戲的推薦分數
   const scoredGames = allGames.map(game => {
@@ -187,7 +198,11 @@ export function selectGamesForTraining(
   const avgTimePerGame = duration * 60 / ((config.min + config.max) / 2) // 秒
   
   // 第一輪：確保覆蓋所有 6 個維度（強制）
-  for (const dim of allDimensions) {
+  const coverageOrder = (prioritizeUntested && untestedDimensions.length > 0)
+    ? [...untestedDimensions, ...allDimensions.filter(d => !untestedDimensions.includes(d))]
+    : allDimensions
+
+  for (const dim of coverageOrder) {
     if (coveredDimensions.has(dim)) continue
     
     // 找出能覆蓋此維度且尚未選擇的遊戲，按分數排序
@@ -205,6 +220,22 @@ export function selectGamesForTraining(
         totalTime += best.estimatedTime.medium
       }
     }
+  }
+
+  if (prioritizeUntested && untestedDimensions.length > 0) {
+    const sorted = selectedGames
+      .map((game, index) => {
+        const dims = getGameDimensions(game)
+        const coversUntested = untestedDimensions.some(d => dims.includes(d))
+        return { game, index, coversUntested }
+      })
+      .sort((a, b) => {
+        if (a.coversUntested === b.coversUntested) return a.index - b.index
+        return a.coversUntested ? -1 : 1
+      })
+      .map(x => x.game)
+
+    selectedGames.splice(0, selectedGames.length, ...sorted)
   }
   
   // 檢查是否覆蓋所有維度，如果沒有則嘗試用備選遊戲
@@ -255,7 +286,11 @@ export async function createDailyTrainingPlan(
   odId: string,
   duration: DailyTrainingDuration,
   cognitiveScores: CognitiveScores,
-  recentSessions: { gameId: string }[] = []
+  recentSessions: { gameId: string }[] = [],
+  options: {
+    untestedDimensions?: CognitiveDimension[]
+    prioritizeUntested?: boolean
+  } = {}
 ): Promise<DailyTrainingPlan> {
   const today = new Date().toISOString().split('T')[0] || new Date().toLocaleDateString('sv-SE')
   
@@ -269,7 +304,7 @@ export async function createDailyTrainingPlan(
   const recentGames = recentSessions.slice(0, 5).map(s => s.gameId)
   
   // 選擇遊戲
-  const { games: selectedGames, useMiniMode } = selectGamesForTraining(duration, cognitiveScores, recentGames)
+  const { games: selectedGames, useMiniMode } = selectGamesForTraining(duration, cognitiveScores, recentGames, options)
   
   // 建立計畫項目
   const games: TrainingGameItem[] = await Promise.all(
@@ -445,7 +480,11 @@ export async function regenerateDailyPlan(
   odId: string,
   duration: DailyTrainingDuration,
   cognitiveScores: CognitiveScores,
-  recentSessions: { gameId: string; accuracy?: number; id?: string }[] = []
+  recentSessions: { gameId: string; accuracy?: number; id?: string }[] = [],
+  options: {
+    untestedDimensions?: CognitiveDimension[]
+    prioritizeUntested?: boolean
+  } = {}
 ): Promise<DailyTrainingPlan> {
   // 刪除今日現有計畫
   const existingSession = await getTodayTrainingSession(odId)
@@ -454,7 +493,7 @@ export async function regenerateDailyPlan(
   }
   
   // 重新生成個人化計畫
-  return createPersonalizedTrainingPlan(odId, duration, cognitiveScores, recentSessions)
+  return createPersonalizedTrainingPlan(odId, duration, cognitiveScores, recentSessions, options)
 }
 
 /**
@@ -464,11 +503,15 @@ export async function restartTraining(
   odId: string,
   duration: DailyTrainingDuration,
   cognitiveScores: CognitiveScores,
-  recentSessions: { gameId: string }[] = []
+  recentSessions: { gameId: string }[] = [],
+  options: {
+    untestedDimensions?: CognitiveDimension[]
+    prioritizeUntested?: boolean
+  } = {}
 ): Promise<DailyTrainingPlan> {
   const today = new Date().toISOString().split('T')[0] || new Date().toLocaleDateString('sv-SE')
   const recentGames = recentSessions.slice(0, 5).map(s => s.gameId)
-  const { games: selectedGames, useMiniMode } = selectGamesForTraining(duration, cognitiveScores, recentGames)
+  const { games: selectedGames, useMiniMode } = selectGamesForTraining(duration, cognitiveScores, recentGames, options)
   
   const games: TrainingGameItem[] = await Promise.all(
     selectedGames.map(async (game, index) => {
@@ -766,7 +809,11 @@ export async function createPersonalizedTrainingPlan(
   odId: string,
   duration: DailyTrainingDuration,
   cognitiveScores: CognitiveScores,
-  recentSessions: { gameId: string; accuracy?: number; id?: string }[] = []
+  recentSessions: { gameId: string; accuracy?: number; id?: string }[] = [],
+  options: {
+    untestedDimensions?: CognitiveDimension[]
+    prioritizeUntested?: boolean
+  } = {}
 ): Promise<DailyTrainingPlan> {
   const today = new Date().toISOString().split('T')[0] || new Date().toLocaleDateString('sv-SE')
   
@@ -780,7 +827,7 @@ export async function createPersonalizedTrainingPlan(
   const recentGames = recentSessions.slice(0, 5).map(s => s.gameId)
   
   // 選擇遊戲
-  const { games: selectedGames, useMiniMode } = selectGamesForTraining(duration, cognitiveScores, recentGames)
+  const { games: selectedGames, useMiniMode } = selectGamesForTraining(duration, cognitiveScores, recentGames, options)
   
   // 為每個遊戲計算個人化難度
   const games: TrainingGameItem[] = await Promise.all(

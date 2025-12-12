@@ -7,7 +7,6 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { saveBaselineAssessment, generateId } from '@/services/db'
 import type { CognitiveDimension } from '@/types/cognitive'
 
 const router = useRouter()
@@ -27,7 +26,7 @@ const userGender = ref<'male' | 'female' | 'other'>('other')
 const userEducationYears = ref<number>(12) // 新增：教育年數
 
 // 評估選擇
-const assessmentChoice = ref<'mini-cog' | 'quick' | 'skip'>('mini-cog')
+const assessmentChoice = ref<'mini-cog' | 'quick' | 'trial'>('mini-cog')
 
 // 設定選項
 const selectedDuration = ref<10 | 15 | 20 | 30>(15)
@@ -122,13 +121,14 @@ function nextStep(): void {
 function handleAssessmentChoice(): void {
   switch (assessmentChoice.value) {
     case 'mini-cog':
-      // 導向 Mini-Cog 評估（完成後會回到首頁）
-      router.push('/assessment')
+      // 導向 Mini-Cog（可做基線）
+      router.push({ path: '/assessment', query: { mode: 'mini-cog' } })
       break
     case 'quick':
-      currentStep.value = 'assessment'
+      // 導向 3 分鐘快評（可做基線）
+      router.push({ path: '/assessment', query: { mode: 'quick' } })
       break
-    case 'skip':
+    case 'trial':
       finishAssessment()
       break
   }
@@ -175,52 +175,8 @@ async function finishAssessment(): Promise<void> {
     settingsStore.setDeclineDetectionMode(selectedMode.value)
     settingsStore.toggleBehaviorTracking(enableBehaviorTracking.value)
     
-    // 儲存基線評估
-    if (assessmentResults.value.length > 0 && userStore.currentUser?.id) {
-      const cognitiveScores: Record<CognitiveDimension, number> = {
-        memory: 0,
-        reaction: 0,
-        logic: 0,
-        cognition: 0,
-        coordination: 0,
-        attention: 0
-      }
-      
-      assessmentResults.value.forEach(result => {
-        cognitiveScores[result.dimension] = result.score
-      })
-      
-      // 計算整體等級
-      const avgScore = Object.values(cognitiveScores).reduce((a, b) => a + b, 0) / 6
-      const overallLevel = avgScore >= 70 ? 'advanced' : avgScore >= 40 ? 'intermediate' : 'beginner'
-      
-      await saveBaselineAssessment({
-        id: generateId(),
-        odId: userStore.currentUser.id,
-        assessedAt: new Date().toISOString(),
-        cognitiveScores,
-        suggestedDifficulties: {
-          default: avgScore >= 70 ? 'hard' : avgScore >= 40 ? 'medium' : 'easy'
-        },
-        overallLevel,
-        gamesPlayed: assessmentResults.value.map(result => ({
-          gameId: result.dimension,
-          score: result.score,
-          difficulty: 'easy'
-        }))
-      })
-    }
-    
-    // 標記已完成評估
-    settingsStore.setAssessmentResult({
-      suggestedDifficulty: 'easy',
-      completedAt: new Date().toISOString(),
-      scores: {
-        reaction: assessmentResults.value.find(r => r.dimension === 'reaction')?.score || 0,
-        memory: assessmentResults.value.find(r => r.dimension === 'memory')?.score || 0,
-        logic: assessmentResults.value.find(r => r.dimension === 'attention')?.score || 0, // 使用 attention 作為 logic
-      }
-    })
+    // 注意：本頁的「試玩」不應寫入任何評估基線。
+    // Mini-Cog / 3 分鐘快評會在 /assessment 內完成並寫入結果。
     
     currentStep.value = 'complete'
   } catch (error) {
@@ -473,28 +429,31 @@ function startTraining(): void {
             <div class="flex items-start gap-3">
               <span class="text-2xl">⚡</span>
               <div class="flex-1">
-                <p class="font-semibold text-gray-800 dark:text-white">快速遊戲評估</p>
+                <p class="font-semibold text-gray-800 dark:text-white">3 分鐘快評（可做基線）</p>
                 <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                  透過 3 個簡短遊戲評估，約 2 分鐘
+                  透過題組快速評估反應/記憶/邏輯，約 3 分鐘
+                </p>
+                <p class="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                  ✓ 可用於難度匹配 ✓ 適合想快速開始的人
                 </p>
               </div>
             </div>
           </button>
           
-          <!-- 跳過 -->
+          <!-- 試玩 -->
           <button
-            @click="assessmentChoice = 'skip'"
+            @click="assessmentChoice = 'trial'"
             class="w-full p-4 rounded-xl border-2 text-left transition-all"
-            :class="assessmentChoice === 'skip' 
+            :class="assessmentChoice === 'trial' 
               ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' 
               : 'border-gray-200 dark:border-slate-600 hover:border-gray-300'"
           >
             <div class="flex items-start gap-3">
               <span class="text-2xl">⏭️</span>
               <div class="flex-1">
-                <p class="font-semibold text-gray-800 dark:text-white">稍後評估</p>
+                <p class="font-semibold text-gray-800 dark:text-white">試玩（不計入評估）</p>
                 <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                  先從簡單難度開始，之後再進行評估
+                  先體驗訓練內容，不寫入評估基線，也不影響難度匹配
                 </p>
               </div>
             </div>
@@ -506,7 +465,7 @@ function startTraining(): void {
           class="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl
                  font-semibold text-lg hover:opacity-90 active:scale-98 transition-all"
         >
-          {{ assessmentChoice === 'mini-cog' ? '開始 Mini-Cog 評估' : assessmentChoice === 'quick' ? '開始快速評估' : '直接開始訓練' }}
+          {{ assessmentChoice === 'mini-cog' ? '開始 Mini-Cog 評估' : assessmentChoice === 'quick' ? '開始 3 分鐘快評' : '開始試玩' }}
         </button>
       </div>
 

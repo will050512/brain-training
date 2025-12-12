@@ -402,7 +402,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useSettingsStore, useUserStore } from '@/stores'
 import { DIFFICULTIES } from '@/types/game'
 import MiniCogFlow from '@/components/assessment/MiniCogFlow.vue'
@@ -418,6 +418,7 @@ import {
 } from '@/services/assessmentService'
 
 const router = useRouter()
+const route = useRoute()
 const settingsStore = useSettingsStore()
 const userStore = useUserStore()
 
@@ -438,6 +439,18 @@ const recentMiniCogResult = ref<MiniCogResult | null>(null)
 const memoryPhase = ref<'display' | 'input'>('display')
 const memoryInput = ref('')
 const memoryInputRef = ref<HTMLInputElement | null>(null)
+
+onMounted(() => {
+  const mode = String(route.query.mode || '').toLowerCase()
+  if (mode === 'mini-cog' || mode === 'minicog') {
+    stage.value = 'mini-cog'
+    return
+  }
+
+  if (mode === 'quick' || mode === 'full' || mode === 'quick-assessment' || mode === 'quickassessment') {
+    stage.value = 'intro'
+  }
+})
 
 // 計時器
 let timer: ReturnType<typeof setInterval> | null = null

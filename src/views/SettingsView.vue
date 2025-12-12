@@ -167,7 +167,7 @@
           
           <div class="grid grid-cols-2 gap-3 text-sm">
             <div class="p-3 bg-[var(--color-surface-alt)] rounded-lg text-center">
-              <div class="text-lg font-bold text-[var(--color-primary)]">{{ userStore.currentStats.totalGamesPlayed }}</div>
+              <div class="text-lg font-bold text-[var(--color-primary)]">{{ totalGamesPlayed }}</div>
               <div class="text-xs text-[var(--color-text-muted)]">遊戲次數</div>
             </div>
             <div class="p-3 bg-[var(--color-surface-alt)] rounded-lg text-center">
@@ -223,11 +223,17 @@ import { useRouter } from 'vue-router'
 import { useUserStore, useSettingsStore, useGameStore } from '@/stores'
 import { clearUserGameSessions } from '@/services/db'
 import TrainingGoalSettings from '@/components/ui/TrainingGoalSettings.vue'
+import { computed } from 'vue'
+import { getTotalGamesPlayed } from '@/utils/trainingStats'
 
 const router = useRouter()
 const userStore = useUserStore()
 const settingsStore = useSettingsStore()
 const gameStore = useGameStore()
+
+const totalGamesPlayed = computed(() => {
+  return getTotalGamesPlayed(userStore.currentStats?.totalGamesPlayed, gameStore.sessions.length)
+})
 
 // 格式化遊玩時間
 function formatPlayTime(seconds: number): string {

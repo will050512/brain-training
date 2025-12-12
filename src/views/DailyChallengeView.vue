@@ -17,6 +17,7 @@ import {
   type TrainingGameItem
 } from '@/services/dailyTrainingService'
 import type { CognitiveScores, CognitiveDimension } from '@/types/cognitive'
+import { getTotalGamesPlayed } from '@/utils/trainingStats'
 
 const router = useRouter()
 const route = useRoute()
@@ -99,6 +100,16 @@ const estimatedMinutes = computed(() => {
   return Math.ceil(trainingPlan.value.totalEstimatedTime / 60)
 })
 
+const totalGamesPlayed = computed(() => {
+  return getTotalGamesPlayed(userStore.currentStats?.totalGamesPlayed, gameStore.sessions.length)
+})
+
+const shouldPrioritizeUntested = computed(() => totalGamesPlayed.value < 18)
+
+const untestedDimensions = computed(() => {
+  return shouldPrioritizeUntested.value ? gameStore.untestedDimensions : []
+})
+
 // 載入訓練計畫
 async function loadTrainingPlan() {
   isLoading.value = true
@@ -132,7 +143,11 @@ async function loadTrainingPlan() {
         odId,
         duration,
         cognitiveScores,
-        recentSessions
+        recentSessions,
+        {
+          untestedDimensions: untestedDimensions.value,
+          prioritizeUntested: shouldPrioritizeUntested.value,
+        }
       )
     }
     
@@ -174,7 +189,11 @@ async function regeneratePlan() {
       odId,
       duration,
       cognitiveScores,
-      recentSessions
+      recentSessions,
+      {
+        untestedDimensions: untestedDimensions.value,
+        prioritizeUntested: shouldPrioritizeUntested.value,
+      }
     )
     
     trainingPlan.value = plan
