@@ -4,6 +4,7 @@ import router from './router'
 import App from './App.vue'
 import { registerAllGames } from './games'
 import { initDatabase } from './services/db'
+import { initMigrations } from './services/migrationService'
 import './style.css'
 
 // 建立應用程式
@@ -22,6 +23,10 @@ async function bootstrap() {
     // 初始化資料庫
     await initDatabase()
     console.log('Database initialized')
+    
+    // 執行資料遷移
+    await initMigrations()
+    console.log('Migrations completed')
     
     // 註冊所有遊戲
     registerAllGames()

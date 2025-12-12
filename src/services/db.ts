@@ -215,7 +215,7 @@ interface BrainTrainingDB extends DBSchema {
 }
 
 const DB_NAME = 'brain-training-db'
-const DB_VERSION = 3  // 升級版本以新增資料表
+const DB_VERSION = 4  // v4: 新增 API 同步支援與結果格式遷移
 
 let dbInstance: IDBPDatabase<BrainTrainingDB> | null = null
 
@@ -323,6 +323,9 @@ export async function getDB(): Promise<IDBPDatabase<BrainTrainingDB>> {
           nutritionStore.createIndex('by-odId', 'odId')
         }
       }
+
+      // v4 新增：API 同步支援與結果格式遷移
+      // 注意：結構性變更在 upgrade 處理，資料遷移在 initDatabase 後執行
     },
   })
 
