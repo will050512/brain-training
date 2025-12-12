@@ -23,6 +23,10 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const isLoading = ref(true)
+const isLocked = ref(false)
+const completedSessionsCount = ref(0)
+const REQUIRED_SESSIONS = 10
+
 const activeRecommendations = ref<NutritionRecommendation[]>([])
 const allSupplements = ref<SupplementInfo[]>([])
 const showAllSupplements = ref(false)
@@ -69,6 +73,15 @@ async function loadRecommendations(): Promise<void> {
       const db = await getDB()
       const sessions = await db.getAll('gameSessions') as GameSession[]
       const userSessions = sessions.filter(s => s.odId === userId)
+      
+      completedSessionsCount.value = userSessions.length
+      
+      // 檢查是否解鎖
+      if (completedSessionsCount.value < REQUIRED_SESSIONS) {
+        isLocked.value = true
+        isLoading.value = false
+        return
+      }
       
       // 計算歷史分數
       const history = calculateScoreHistory(userSessions, 'day')
@@ -201,6 +214,41 @@ onMounted(() => {
     <div v-if="isLoading" class="loading">
       <div class="spinner"></div>
       <p>正在分析您的需求...</p>
+    </div>
+
+    <!-- 鎖定狀態 -->
+    <div v-else-if="isLocked" class="locked-state">
+      <div class="locked-icon">🔒</div>
+      <h2>功能尚未解鎖</h2>
+      <p class="locked-desc">
+        為了提供精準的個人化營養建議，我們需要收集更多您的訓練數據。
+      </p>
+      
+      <div class="progress-container">
+        <div class="progress-info">
+          <span>訓練進度</span>
+          <span class="progress-text">{{ completedSessionsCount }} / {{ REQUIRED_SESSIONS }} 次</span>
+        </div>
+        <div class="progress-bar">
+          <div 
+            class="progress-fill" 
+            :style="{ width: `${Math.min((completedSessionsCount / REQUIRED_SESSIONS) * 100, 100)}%` }"
+          ></div>
+        </div>
+      </div>
+      
+      <div class="locked-benefits">
+        <h3>解鎖後您將獲得：</h3>
+        <ul>
+          <li>✨ 基於認知表現的精準營養建議</li>
+          <li>💊 針對弱項維度的補充方案</li>
+          <li>👨‍⚕️ 專業醫師與營養師的建議</li>
+        </ul>
+      </div>
+      
+      <button class="btn-primary" @click="router.push('/daily-challenge')">
+        前往每日訓練
+      </button>
     </div>
 
     <template v-else>
@@ -563,6 +611,116 @@ onMounted(() => {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* 鎖定狀態 */
+.locked-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  background: var(--color-surface);
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-md);
+  margin-top: 1rem;
+}
+
+.locked-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.locked-state h2 {
+  font-size: 1.75rem;
+  color: var(--color-text);
+  margin-bottom: 1rem;
+}
+
+.locked-desc {
+  color: var(--color-text-secondary);
+  margin-bottom: 2rem;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.progress-container {
+  max-width: 400px;
+  margin: 0 auto 2.5rem;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.progress-bar {
+  height: 12px;
+  background: var(--color-bg-soft);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: 6px;
+  transition: width 1s ease-out;
+}
+
+.locked-benefits {
+  text-align: left;
+  max-width: 400px;
+  margin: 0 auto 2.5rem;
+  background: var(--color-bg-soft);
+  padding: 1.5rem;
+  border-radius: 1rem;
+}
+
+.locked-benefits h3 {
+  font-size: 1.125rem;
+  color: var(--color-text);
+  margin-bottom: 1rem;
+}
+
+.locked-benefits ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.locked-benefits li {
+  margin-bottom: 0.75rem;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  padding: 1rem 2.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+  background: var(--gradient-primary);
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 /* 切換按鈕 */

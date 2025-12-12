@@ -118,7 +118,16 @@ function nextStep(): void {
 }
 
 // 處理評估選擇
-function handleAssessmentChoice(): void {
+async function handleAssessmentChoice(): Promise<void> {
+  // 先儲存設定，因為評估後可能不會回到此頁面
+  try {
+    settingsStore.setDailyTrainingDuration(selectedDuration.value)
+    settingsStore.setDeclineDetectionMode(selectedMode.value)
+    settingsStore.toggleBehaviorTracking(enableBehaviorTracking.value)
+  } catch (error) {
+    console.error('儲存設定失敗:', error)
+  }
+
   switch (assessmentChoice.value) {
     case 'mini-cog':
       // 導向 Mini-Cog（可做基線）
@@ -396,24 +405,29 @@ function startTraining(): void {
           <!-- 推薦：Mini-Cog -->
           <button
             @click="assessmentChoice = 'mini-cog'"
-            class="w-full p-4 rounded-xl border-2 text-left transition-all mb-3"
+            class="w-full p-4 rounded-xl border-2 text-left transition-all mb-3 relative overflow-hidden"
             :class="assessmentChoice === 'mini-cog' 
-              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' 
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 ring-2 ring-blue-500 ring-opacity-50' 
               : 'border-gray-200 dark:border-slate-600 hover:border-gray-300'"
           >
+            <div v-if="assessmentChoice === 'mini-cog'" class="absolute top-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-bl-lg">
+              已選擇
+            </div>
             <div class="flex items-start gap-3">
-              <span class="text-2xl">🧠</span>
+              <span class="text-3xl">🧠</span>
               <div class="flex-1">
-                <div class="flex items-center gap-2">
-                  <p class="font-semibold text-gray-800 dark:text-white">Mini-Cog 認知篩檢</p>
-                  <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">推薦</span>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <p class="font-bold text-lg text-gray-800 dark:text-white">Mini-Cog 認知篩檢</p>
+                  <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full font-bold">強烈推薦</span>
                 </div>
-                <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                  專業認知篩檢工具，包含詞語回憶與時鐘繪圖測試，約 5 分鐘
+                <p class="text-sm text-gray-600 dark:text-slate-300 mt-1">
+                  國際標準認知篩檢工具，包含詞語回憶與時鐘繪圖測試，約 3-5 分鐘。
                 </p>
-                <p class="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                  ✓ 可獲得更精準的難度匹配 ✓ 可追蹤長期認知變化
-                </p>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <span class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">✓ 精準難度匹配</span>
+                  <span class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">✓ 長期追蹤</span>
+                  <span class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">✓ 專業報告</span>
+                </div>
               </div>
             </div>
           </button>

@@ -5,6 +5,8 @@ import { useUserStore, useSettingsStore } from '@/stores'
 import { dataInitService } from '@/services/dataInitService'
 import { useTheme } from '@/composables/useTheme'
 import { useResponsive } from '@/composables/useResponsive'
+import { useNotification } from '@/composables/useNotification'
+import { useToast } from '@/composables/useToast'
 import AppShell from '@/components/layout/AppShell.vue'
 import DesktopLayout from '@/components/layout/DesktopLayout.vue'
 import MobileBottomNav from '@/components/ui/MobileBottomNav.vue'
@@ -20,6 +22,8 @@ const userStore = useUserStore()
 const settingsStore = useSettingsStore()
 const route = useRoute()
 const { isMobile, isTablet, isDesktop } = useResponsive()
+const { checkTrainingReminder, checkAssessmentReminder } = useNotification()
+const toast = useToast()
 
 // 初始化主題系統
 const { initTheme } = useTheme()
@@ -176,6 +180,26 @@ onMounted(async () => {
 
   // 初始化數據同步服務
   dataInitService.initialize()
+
+  // 檢查提醒（延遲執行以免影響首屏載入）
+  setTimeout(() => {
+    // 1. 訓練提醒
+    const trainingReminder = checkTrainingReminder()
+    if (trainingReminder.shouldRemind) {
+      toast.info(trainingReminder.message, { duration: 5000, icon: '📅' })
+    }
+
+    // 2. 評估提醒
+    const lastAssessmentDate = settingsStore.assessmentResult?.completedAt || null
+    const assessmentReminder = checkAssessmentReminder(lastAssessmentDate)
+    if (assessmentReminder.shouldRemind) {
+      // 如果從未評估過，且不是在 onboarding 或 assessment 頁面，才提醒
+      const isAssessmentPage = route.path.includes('assessment') || route.path.includes('onboarding')
+      if (!isAssessmentPage) {
+        toast.warning(assessmentReminder.message, { duration: 8000, icon: '📋' })
+      }
+    }
+  }, 2000)
 })
 
 onUnmounted(() => {
