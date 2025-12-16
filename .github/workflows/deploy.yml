@@ -30,12 +30,25 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
-      - name: Build
+      - name: Typecheck (vue-tsc)
+        run: npx vue-tsc -b
+
+      - name: Vite build
         run: npm run build
-        
+
+      - name: Show build output (diagnostics)
+        run: |
+          echo "== Files in workspace =="
+          ls -la
+          echo "\n== dist contents =="
+          ls -la dist || true
+          echo "\n== Versions =="
+          node -v
+          npm -v
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
-        
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
