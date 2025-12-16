@@ -3,6 +3,7 @@
  */
 
 export { default as ResponsiveContainer } from './ResponsiveContainer.vue'
+export { default as FluidContainer } from './FluidContainer.vue'
 export { default as AppShell } from './AppShell.vue'
 export { default as DesktopLayout } from './DesktopLayout.vue'
 export { default as GameContainer } from './GameContainer.vue'

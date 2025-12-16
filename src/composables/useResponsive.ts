@@ -4,28 +4,37 @@
  */
 import { ref, readonly, onMounted, onUnmounted, watchEffect } from 'vue'
 
-export type BreakpointKey = 'mobile' | 'tablet' | 'desktop' | 'wide'
+export type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl'
 
 interface BreakpointConfig {
-  mobile: number   // < 768px
-  tablet: number   // 768px - 1024px
-  desktop: number  // 1024px - 1400px
-  wide: number     // >= 1400px
+  xs: number     // < 480px - 超小手機
+  sm: number     // 480px - 639px - 小手機
+  md: number     // 640px - 767px - 大手機/小平板
+  lg: number     // 768px - 1023px - 平板
+  xl: number     // 1024px - 1279px - 小桌面
+  '2xl': number  // 1280px - 1535px - 桌面
+  '3xl': number  // >= 1536px - 大桌面
 }
 
 const BREAKPOINTS: BreakpointConfig = {
-  mobile: 0,
-  tablet: 768,
-  desktop: 1024,
-  wide: 1400,
+  xs: 0,
+  sm: 480,
+  md: 640,
+  lg: 768,
+  xl: 1024,
+  '2xl': 1280,
+  '3xl': 1536,
 }
 
 // 全域狀態（單例）
-const isMobile = ref(false)
-const isTablet = ref(false)
-const isDesktop = ref(false)
-const isWide = ref(false)
-const currentBreakpoint = ref<BreakpointKey>('mobile')
+const isXs = ref(false)
+const isSm = ref(false)
+const isMd = ref(false)
+const isLg = ref(false)
+const isXl = ref(false)
+const is2xl = ref(false)
+const is3xl = ref(false)
+const currentBreakpoint = ref<BreakpointKey>('xs')
 const screenWidth = ref(0)
 const screenHeight = ref(0)
 const isLandscape = ref(false)
@@ -44,32 +53,44 @@ function initResponsive(): void {
   // 偵測觸控裝置
   isTouchDevice.value = 'ontouchstart' in window || navigator.maxTouchPoints > 0
 
-  // 建立 MediaQueryList
-  const mqlMobile = window.matchMedia(`(max-width: ${BREAKPOINTS.tablet - 1}px)`)
-  const mqlTablet = window.matchMedia(`(min-width: ${BREAKPOINTS.tablet}px) and (max-width: ${BREAKPOINTS.desktop - 1}px)`)
-  const mqlDesktop = window.matchMedia(`(min-width: ${BREAKPOINTS.desktop}px) and (max-width: ${BREAKPOINTS.wide - 1}px)`)
-  const mqlWide = window.matchMedia(`(min-width: ${BREAKPOINTS.wide}px)`)
+  // 建立 MediaQueryList - 新的7斷點系統
+  const mqlXs = window.matchMedia(`(max-width: ${BREAKPOINTS.sm - 1}px)`)
+  const mqlSm = window.matchMedia(`(min-width: ${BREAKPOINTS.sm}px) and (max-width: ${BREAKPOINTS.md - 1}px)`)
+  const mqlMd = window.matchMedia(`(min-width: ${BREAKPOINTS.md}px) and (max-width: ${BREAKPOINTS.lg - 1}px)`)
+  const mqlLg = window.matchMedia(`(min-width: ${BREAKPOINTS.lg}px) and (max-width: ${BREAKPOINTS.xl - 1}px)`)
+  const mqlXl = window.matchMedia(`(min-width: ${BREAKPOINTS.xl}px) and (max-width: ${BREAKPOINTS['2xl'] - 1}px)`)
+  const mql2xl = window.matchMedia(`(min-width: ${BREAKPOINTS['2xl']}px) and (max-width: ${BREAKPOINTS['3xl'] - 1}px)`)
+  const mql3xl = window.matchMedia(`(min-width: ${BREAKPOINTS['3xl']}px)`)
   const mqlLandscape = window.matchMedia('(orientation: landscape)')
 
   // 更新狀態函數
   const updateBreakpoints = (): void => {
-    isMobile.value = mqlMobile.matches
-    isTablet.value = mqlTablet.matches
-    isDesktop.value = mqlDesktop.matches || mqlWide.matches
-    isWide.value = mqlWide.matches
+    isXs.value = mqlXs.matches
+    isSm.value = mqlSm.matches
+    isMd.value = mqlMd.matches
+    isLg.value = mqlLg.matches
+    isXl.value = mqlXl.matches
+    is2xl.value = mql2xl.matches
+    is3xl.value = mql3xl.matches
     isLandscape.value = mqlLandscape.matches
     screenWidth.value = window.innerWidth
     screenHeight.value = window.innerHeight
 
-    // 決定當前斷點
-    if (mqlWide.matches) {
-      currentBreakpoint.value = 'wide'
-    } else if (mqlDesktop.matches) {
-      currentBreakpoint.value = 'desktop'
-    } else if (mqlTablet.matches) {
-      currentBreakpoint.value = 'tablet'
+    // 決定當前斷點 - 按優先級順序
+    if (mql3xl.matches) {
+      currentBreakpoint.value = '3xl'
+    } else if (mql2xl.matches) {
+      currentBreakpoint.value = '2xl'
+    } else if (mqlXl.matches) {
+      currentBreakpoint.value = 'xl'
+    } else if (mqlLg.matches) {
+      currentBreakpoint.value = 'lg'
+    } else if (mqlMd.matches) {
+      currentBreakpoint.value = 'md'
+    } else if (mqlSm.matches) {
+      currentBreakpoint.value = 'sm'
     } else {
-      currentBreakpoint.value = 'mobile'
+      currentBreakpoint.value = 'xs'
     }
   }
 
@@ -88,10 +109,13 @@ function initResponsive(): void {
     mediaQueryListeners.push({ mql, handler })
   }
 
-  addListener(mqlMobile)
-  addListener(mqlTablet)
-  addListener(mqlDesktop)
-  addListener(mqlWide)
+  addListener(mqlXs)
+  addListener(mqlSm)
+  addListener(mqlMd)
+  addListener(mqlLg)
+  addListener(mqlXl)
+  addListener(mql2xl)
+  addListener(mql3xl)
   addListener(mqlLandscape)
 
   // 監聽 resize 以更新精確尺寸
@@ -123,10 +147,13 @@ export function useResponsive() {
 
   return {
     // 狀態
-    isMobile: readonly(isMobile),
-    isTablet: readonly(isTablet),
-    isDesktop: readonly(isDesktop),
-    isWide: readonly(isWide),
+    isXs: readonly(isXs),
+    isSm: readonly(isSm),
+    isMd: readonly(isMd),
+    isLg: readonly(isLg),
+    isXl: readonly(isXl),
+    is2xl: readonly(is2xl),
+    is3xl: readonly(is3xl),
     currentBreakpoint: readonly(currentBreakpoint),
     screenWidth: readonly(screenWidth),
     screenHeight: readonly(screenHeight),
@@ -138,11 +165,15 @@ export function useResponsive() {
 
     // 工具函數
     /** 是否為行動裝置（手機或平板） */
-    isMobileOrTablet: () => isMobile.value || isTablet.value,
+    isMobileOrTablet: () => isXs.value || isSm.value || isMd.value || isLg.value,
     /** 是否為桌面或更大 */
-    isDesktopOrWider: () => isDesktop.value || isWide.value,
+    isDesktopOrWider: () => isXl.value || is2xl.value || is3xl.value,
     /** 是否為小螢幕橫向模式 */
     isSmallLandscape: () => isLandscape.value && screenHeight.value < 500,
+    /** 是否為超小螢幕 */
+    isExtraSmall: () => isXs.value,
+    /** 是否為中等螢幕以上 */
+    isMediumOrLarger: () => isMd.value || isLg.value || isXl.value || is2xl.value || is3xl.value,
   }
 }
 

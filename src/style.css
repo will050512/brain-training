@@ -126,15 +126,81 @@
   --color-wordcard-selected: #f0f0ff;
   --color-wordcard-selected-border: #4f46e5;
   
-  /* 字體大小（長者友善） */
-  --font-size-base: 18px;
-  --font-size-lg: 20px;
-  --font-size-xl: 24px;
-  --font-size-2xl: 30px;
-  --font-size-3xl: 36px;
-  
-  /* 最小點擊區域 */
-  --min-touch-target: 48px;
+  /* ===== 流體字體系統 ===== */
+
+  /* 流體字體大小變數 - 使用 clamp() 實現響應式縮放 */
+  --text-xs: clamp(0.75rem, 2vw, 0.875rem);     /* 12px - 14px */
+  --text-sm: clamp(0.875rem, 2.5vw, 1rem);      /* 14px - 16px */
+  --text-base: clamp(1rem, 3vw, 1.125rem);      /* 16px - 18px */
+  --text-lg: clamp(1.125rem, 3.5vw, 1.25rem);   /* 18px - 20px */
+  --text-xl: clamp(1.25rem, 4vw, 1.5rem);       /* 20px - 24px */
+  --text-2xl: clamp(1.5rem, 5vw, 2rem);         /* 24px - 32px */
+  --text-3xl: clamp(2rem, 6vw, 2.5rem);         /* 32px - 40px */
+  --text-4xl: clamp(2.5rem, 8vw, 3.5rem);       /* 40px - 56px */
+
+  /* 標題字體 - 針對長者優化 */
+  --heading-1: clamp(1.75rem, 6vw, 3rem);       /* 28px - 48px */
+  --heading-2: clamp(1.5rem, 5vw, 2.25rem);     /* 24px - 36px */
+  --heading-3: clamp(1.25rem, 4vw, 1.875rem);   /* 20px - 30px */
+  --heading-4: clamp(1.125rem, 3.5vw, 1.5rem);  /* 18px - 24px */
+  --heading-5: clamp(1rem, 3vw, 1.25rem);       /* 16px - 20px */
+  --heading-6: clamp(0.875rem, 2.5vw, 1.125rem); /* 14px - 18px */
+
+  /* ===== 流體間距系統 ===== */
+
+  /* 流體容器間距 */
+  --space-xs: clamp(0.5rem, 1.5vw, 0.75rem);    /* 8px - 12px */
+  --space-sm: clamp(0.75rem, 2vw, 1rem);        /* 12px - 16px */
+  --space-md: clamp(1rem, 2.5vw, 1.5rem);       /* 16px - 24px */
+  --space-lg: clamp(1.5rem, 3vw, 2rem);         /* 24px - 32px */
+  --space-xl: clamp(2rem, 4vw, 3rem);           /* 32px - 48px */
+  --space-2xl: clamp(3rem, 6vw, 4rem);          /* 48px - 64px */
+
+  /* 佈局間距 */
+  --layout-padding: clamp(1rem, 4vw, 2rem);     /* 16px - 32px */
+  --layout-margin: clamp(1.5rem, 5vw, 3rem);    /* 24px - 48px */
+  --layout-gap: clamp(1rem, 3vw, 2rem);         /* 16px - 32px */
+
+  /* ===== 流體容器系統 ===== */
+
+  /* 內容寬度限制 */
+  --container-xs: clamp(100%, 90vw, 20rem);     /* 320px max */
+  --container-sm: clamp(100%, 85vw, 24rem);     /* 384px max */
+  --container-md: clamp(100%, 80vw, 28rem);     /* 448px max */
+  --container-lg: clamp(100%, 75vw, 32rem);     /* 512px max */
+  --container-xl: clamp(100%, 70vw, 36rem);     /* 576px max */
+  --container-2xl: clamp(100%, 65vw, 42rem);    /* 672px max */
+  --container-3xl: clamp(100%, 60vw, 48rem);    /* 768px max */
+  --container-4xl: clamp(100%, 55vw, 56rem);    /* 896px max */
+  --container-5xl: clamp(100%, 50vw, 64rem);    /* 1024px max */
+  --container-6xl: clamp(100%, 45vw, 72rem);    /* 1152px max */
+  --container-7xl: clamp(100%, 40vw, 80rem);    /* 1280px max */
+
+  /* 遊戲專用容器 */
+  --game-container-xs: clamp(100%, 95vw, 18rem); /* 288px max */
+  --game-container-sm: clamp(100%, 90vw, 22rem); /* 352px max */
+  --game-container-md: clamp(100%, 85vw, 26rem); /* 416px max */
+  --game-container-lg: clamp(100%, 80vw, 30rem); /* 480px max */
+  --game-container-xl: clamp(100%, 75vw, 34rem); /* 544px max */
+  --game-container-2xl: clamp(100%, 70vw, 38rem); /* 608px max */
+
+  /* ===== 長者友善觸控系統 ===== */
+
+  /* 觸控目標尺寸 */
+  --touch-target-min: 3.5rem;        /* 56px 最小觸控區域 */
+  --touch-target-comfort: 4rem;      /* 64px 舒適觸控區域 */
+  --touch-target-large: 4.5rem;      /* 72px 大型觸控區域 */
+
+  /* ===== 響應式斷點 ===== */
+
+  /* 斷點定義 */
+  --breakpoint-xs: 480px;    /* 超小手機 */
+  --breakpoint-sm: 640px;    /* 小手機 */
+  --breakpoint-md: 768px;    /* 大手機/小平板 */
+  --breakpoint-lg: 1024px;   /* 平板 */
+  --breakpoint-xl: 1280px;   /* 小桌面 */
+  --breakpoint-2xl: 1536px;  /* 桌面 */
+  --breakpoint-3xl: 1920px;  /* 大桌面 */
   
   /* 圓角 */
   --radius-sm: 8px;
@@ -959,7 +1025,253 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   }
 }
 
-/* ========== 年長者友善響應式設計 ========== */
+/* ========== 流體響應式設計系統 ========== */
+
+/* ===== 流體容器類別 ===== */
+.container-fluid { width: 100%; }
+.container-xs { max-width: var(--container-xs); margin: 0 auto; }
+.container-sm { max-width: var(--container-sm); margin: 0 auto; }
+.container-md { max-width: var(--container-md); margin: 0 auto; }
+.container-lg { max-width: var(--container-lg); margin: 0 auto; }
+.container-xl { max-width: var(--container-xl); margin: 0 auto; }
+.container-2xl { max-width: var(--container-2xl); margin: 0 auto; }
+.container-3xl { max-width: var(--container-3xl); margin: 0 auto; }
+
+/* 遊戲容器 */
+.game-container-fluid { width: 100%; }
+.game-container-xs { max-width: var(--game-container-xs); margin: 0 auto; }
+.game-container-sm { max-width: var(--game-container-sm); margin: 0 auto; }
+.game-container-md { max-width: var(--game-container-md); margin: 0 auto; }
+.game-container-lg { max-width: var(--game-container-lg); margin: 0 auto; }
+.game-container-xl { max-width: var(--game-container-xl); margin: 0 auto; }
+.game-container-2xl { max-width: var(--game-container-2xl); margin: 0 auto; }
+
+/* ===== 流體文字類別 ===== */
+.text-fluid-xs { font-size: var(--text-xs); }
+.text-fluid-sm { font-size: var(--text-sm); }
+.text-fluid-base { font-size: var(--text-base); }
+.text-fluid-lg { font-size: var(--text-lg); }
+.text-fluid-xl { font-size: var(--text-xl); }
+.text-fluid-2xl { font-size: var(--text-2xl); }
+.text-fluid-3xl { font-size: var(--text-3xl); }
+.text-fluid-4xl { font-size: var(--text-4xl); }
+
+/* 標題類別 */
+.heading-fluid-1 { font-size: var(--heading-1); font-weight: 700; }
+.heading-fluid-2 { font-size: var(--heading-2); font-weight: 600; }
+.heading-fluid-3 { font-size: var(--heading-3); font-weight: 600; }
+.heading-fluid-4 { font-size: var(--heading-4); font-weight: 600; }
+.heading-fluid-5 { font-size: var(--heading-5); font-weight: 600; }
+.heading-fluid-6 { font-size: var(--heading-6); font-weight: 600; }
+
+/* ===== 流體間距類別 ===== */
+.space-fluid-xs { gap: var(--space-xs); }
+.space-fluid-sm { gap: var(--space-sm); }
+.space-fluid-md { gap: var(--space-md); }
+.space-fluid-lg { gap: var(--space-lg); }
+.space-fluid-xl { gap: var(--space-xl); }
+.space-fluid-2xl { gap: var(--space-2xl); }
+
+/* 內邊距類別 */
+.p-fluid-xs { padding: var(--space-xs); }
+.p-fluid-sm { padding: var(--space-sm); }
+.p-fluid-md { padding: var(--space-md); }
+.p-fluid-lg { padding: var(--space-lg); }
+.p-fluid-xl { padding: var(--space-xl); }
+.p-fluid-2xl { padding: var(--space-2xl); }
+
+/* 外邊距類別 */
+.m-fluid-xs { margin: var(--space-xs); }
+.m-fluid-sm { margin: var(--space-sm); }
+.m-fluid-md { margin: var(--space-md); }
+.m-fluid-lg { margin: var(--space-lg); }
+.m-fluid-xl { margin: var(--space-xl); }
+.m-fluid-2xl { margin: var(--space-2xl); }
+
+/* ===== 長者友善觸控類別 ===== */
+.touch-min {
+  min-height: var(--touch-target-min);
+  min-width: var(--touch-target-min);
+}
+
+.touch-comfort {
+  min-height: var(--touch-target-comfort);
+  min-width: var(--touch-target-comfort);
+}
+
+.touch-large {
+  min-height: var(--touch-target-large);
+  min-width: var(--touch-target-large);
+}
+
+/* 防止誤觸間距 */
+.touch-safe {
+  margin: var(--space-sm);
+  position: relative;
+}
+
+.touch-safe::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--space-xs) * -1);
+  pointer-events: none;
+}
+
+/* ===== 方向自適應佈局 ===== */
+
+/* 豎屏優化 */
+@media (orientation: portrait) {
+  .portrait-optimized {
+    padding: clamp(1rem, 3vw, 1.5rem);
+    margin: clamp(0.5rem, 2vw, 1rem);
+  }
+}
+
+/* 橫屏優化 */
+@media (orientation: landscape) {
+  .landscape-optimized {
+    padding: clamp(0.5rem, 2vw, 1rem);
+    margin: clamp(0.25rem, 1vw, 0.5rem);
+  }
+}
+
+/* 小螢幕橫屏特殊處理 */
+@media (orientation: landscape) and (max-height: 500px) {
+  .small-landscape-optimized {
+    padding: clamp(0.25rem, 1vw, 0.5rem);
+    margin: clamp(0.125rem, 0.5vw, 0.25rem);
+  }
+}
+
+/* 橫屏並列佈局 */
+.landscape-layout {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (orientation: landscape) and (min-height: 600px) {
+  .landscape-layout {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .landscape-layout > * {
+    flex: 1;
+  }
+}
+
+/* ===== 新的7斷點媒體查詢 ===== */
+
+/* 超小手機 (xs) */
+@media (max-width: 479px) {
+  :root {
+    --touch-target-min: 4rem;        /* 小螢幕加大觸控區域 */
+    --touch-target-comfort: 4.5rem;
+    --touch-target-large: 5rem;
+  }
+
+  /* 超小螢幕優化 */
+  .container-xs,
+  .game-container-xs {
+    padding: var(--space-xs);
+  }
+
+  .text-fluid-xs { font-size: clamp(0.875rem, 3vw, 1rem); }
+}
+
+/* 小手機 (sm) */
+@media (min-width: 480px) and (max-width: 639px) {
+  :root {
+    --touch-target-min: 3.75rem;
+    --touch-target-comfort: 4.25rem;
+    --touch-target-large: 4.75rem;
+  }
+}
+
+/* 大手機/小平板 (md) */
+@media (min-width: 640px) and (max-width: 767px) {
+  /* 預設優化已足夠 */
+}
+
+/* 平板 (lg) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* 平板優化 */
+  .container-lg,
+  .game-container-lg {
+    padding: var(--space-md);
+  }
+}
+
+/* 小桌面 (xl) */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  /* 桌面優化 */
+  .container-xl,
+  .game-container-xl {
+    padding: var(--space-lg);
+  }
+}
+
+/* 桌面 (2xl) */
+@media (min-width: 1280px) and (max-width: 1535px) {
+  /* 大桌面優化 */
+  .container-2xl,
+  .game-container-2xl {
+    padding: var(--space-xl);
+  }
+}
+
+/* 大桌面 (3xl) */
+@media (min-width: 1536px) {
+  /* 超大螢幕優化 */
+  .container-3xl {
+    max-width: var(--container-7xl);
+    padding: var(--space-2xl);
+  }
+}
+
+/* ===== 安全區域和虛擬鍵盤處理 ===== */
+
+/* iOS 安全區域 */
+.safe-area-top {
+  padding-top: max(var(--space-sm), env(safe-area-inset-top));
+}
+
+.safe-area-bottom {
+  padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
+}
+
+.safe-area-left {
+  padding-left: max(var(--space-sm), env(safe-area-inset-left));
+}
+
+.safe-area-right {
+  padding-right: max(var(--space-sm), env(safe-area-inset-right));
+}
+
+/* 全安全區域 */
+.safe-area-all {
+  padding-top: max(var(--space-sm), env(safe-area-inset-top));
+  padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
+  padding-left: max(var(--space-sm), env(safe-area-inset-left));
+  padding-right: max(var(--space-sm), env(safe-area-inset-right));
+}
+
+/* 虛擬鍵盤處理 */
+.keyboard-visible {
+  padding-bottom: var(--keyboard-height, 0px);
+}
+
+.keyboard-safe {
+  min-height: calc(100vh - var(--keyboard-height, 0px));
+  transition: min-height 0.3s ease;
+}
+
+/* 輸入框聚焦時滾動處理 */
+.input-focused {
+  scroll-padding-bottom: calc(var(--keyboard-height, 0px) + var(--space-lg));
+}
+
+/* ===== 舊系統向後相容 ===== */
 
 /* 遊戲全螢幕容器 */
 .game-fullscreen {
@@ -969,40 +1281,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: var(--spacing-md);
-}
-
-/* 手機優化 - 統一使用 768px 斷點 */
-@media (max-width: 767px) {
-  :root {
-    --font-size-base: 16px;
-    --font-size-lg: 18px;
-    --font-size-xl: 22px;
-    --font-size-2xl: 28px;
-    --min-touch-target: 52px;
-  }
-
-  .game-container {
-    padding: var(--spacing-sm);
-    max-width: 100%;
-  }
-
-  .modal-content {
-    padding: var(--spacing-lg);
-    max-height: 95vh;
-    margin: var(--spacing-sm);
-  }
-
-  .btn {
-    min-height: 52px;
-    font-size: var(--font-size-base);
-    padding: var(--spacing-md) var(--spacing-lg);
-    width: 100%;
-  }
-
-  h1 { font-size: var(--font-size-2xl); }
-  h2 { font-size: var(--font-size-xl); }
-  h3 { font-size: var(--font-size-lg); }
+  padding: var(--layout-padding);
 }
 
 /* 平板優化 - 統一使用 768px 斷點 */

@@ -97,13 +97,13 @@
     </div>
 
     <!-- 工具列 -->
-    <div class="toolbar assemble-toolbar" v-if="!isComplete">
-      <div class="assemble-actions">
-        <button class="tool-btn reset-btn" @click="resetAssemble">
+    <div class="toolbar assemble-toolbar touch-safe" v-if="!isComplete">
+      <div class="assemble-actions space-fluid-sm">
+        <button class="tool-btn reset-btn touch-comfort" @click="resetAssemble">
           🔄 重置
         </button>
-        <button 
-          class="complete-btn" 
+        <button
+          class="complete-btn touch-comfort"
           @click="completeAssemble"
           :disabled="placedNumbersCount < 12"
         >
@@ -209,7 +209,17 @@ function isPositionOccupied(posNumber: number): boolean {
 }
 
 function initAssembleMode() {
-  const size = Math.min(window.innerWidth - 40, 350)
+  // 使用流體設計：根據螢幕寬度動態調整，但不超過合理最大值
+  const maxSize = 350
+  const minSize = 250
+  const viewportWidth = window.innerWidth
+  const padding = 40 // 左右邊距
+
+  // 計算可用寬度
+  const availableWidth = viewportWidth - padding * 2
+
+  // 使用 clamp 邏輯：最小 minSize，最大 maxSize，優先使用 availableWidth
+  const size = Math.min(maxSize, Math.max(minSize, availableWidth))
   clockFaceSize.value = size
   
   const numbers = Array.from({ length: 12 }, (_, i) => i + 1)
@@ -552,42 +562,43 @@ onMounted(() => {
 
 <style scoped>
 .clock-drawing-test {
-  max-width: 450px;
+  max-width: var(--game-container-lg);
   margin: 0 auto;
-  padding: 1rem;
+  padding: var(--space-md);
 }
 
 .instructions {
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-md);
 }
 
 .instructions h3 {
-  font-size: 1.25rem;
+  font-size: var(--heading-3);
+  font-weight: 600;
   color: var(--color-text);
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-sm);
 }
 
 .target-time {
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   color: var(--color-text-secondary);
 }
 
 .target-time strong {
   color: #2563eb;
-  font-size: 1.3rem;
+  font-size: var(--text-xl);
 }
 
 .time-hint {
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
   color: var(--color-text-muted);
   font-weight: normal;
 }
 
 .hint {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: var(--color-text-muted);
-  margin-top: 0.5rem;
+  margin-top: var(--space-sm);
 }
 
 .assemble-container {
@@ -759,14 +770,15 @@ onMounted(() => {
 
 .reset-btn {
   flex: 1;
-  padding: 0.75rem 1rem;
+  padding: var(--space-sm) var(--space-md);
   border: 2px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 1rem;
+  font-size: var(--text-base);
   cursor: pointer;
   transition: all 0.2s;
+  min-height: var(--touch-target-comfort);
 }
 
 .reset-btn:hover {
@@ -775,15 +787,16 @@ onMounted(() => {
 
 .complete-btn {
   flex: 2;
-  padding: 0.75rem 1.5rem;
+  padding: var(--space-sm) var(--space-lg);
   background: #2563eb;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
+  min-height: var(--touch-target-comfort);
 }
 
 .complete-btn:hover {

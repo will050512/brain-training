@@ -1,115 +1,100 @@
-# 🧠 健腦訓練 Brain Training
+"""
+新 README：保留專案重點與開發者快速上手指南。更詳細內容請參閱 `docs/DEVELOPER_GUIDE.md`。
+"""
 
-> 一款專為認知訓練設計的 PWA 應用程式，透過有趣的遊戲活化大腦，追蹤認知能力變化。
+# 🧠 健腦訓練 (brain-training)
 
-![Vue 3](https://img.shields.io/badge/Vue-3.4-4FC08D?style=flat&logo=vue.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat&logo=typescript)
-![Vite](https://img.shields.io/badge/Vite-5.0-646CFF?style=flat&logo=vite)
-![PWA](https://img.shields.io/badge/PWA-Ready-5A0FC8?style=flat)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat)
+輕量型、可離線的 PWA 前端應用，透過多種遊戲提供認知訓練、評估與行為分析。此專案以 Vue 3 + TypeScript + Vite 為基礎。
 
-## 📖 專案簡介
-
-健腦訓練是一款以科學為基礎的認知訓練應用程式，專為關注大腦健康的使用者設計。透過多元化的遊戲訓練六大認知維度，並提供專業的退化偵測與個人化建議。
-
-### ✨ 核心特色
-
-- 🎮 **16 種訓練遊戲** - 涵蓋記憶、邏輯、反應、注意力等多元訓練
-- 📊 **專業評估系統** - 整合 Mini-Cog 等專業認知評估工具
-- 🔍 **退化偵測** - 智能分析認知趨勢，早期發現潛在問題
-- 📈 **自適應難度** - 根據表現自動調整遊戲難度
-- 🎯 **每日訓練** - 個人化每日訓練計畫，依評估結果調整難度
-- 🥗 **營養建議** - 根據認知表現提供營養補充建議
-- 📱 **PWA 支援** - 可安裝至手機，支援離線使用，原生 APP 體驗
-- 🌙 **深色模式** - 支援淺色/深色主題切換
-- 🔔 **Toast 通知** - 即時操作回饋系統
+> • 完整開發指南與進階內容請見 `docs/DEVELOPER_GUIDE.md`
 
 ---
 
-## 🎨 主題系統
+## 🔧 主要資訊
 
-本專案採用統一的 CSS 變數主題系統，完整支援淺色與深色模式。
+- 技術：Vue 3 (Composition API), TypeScript 5+, Vite, Pinia, Tailwind CSS
+- PWA、IndexedDB (idb)、ECharts
+- 版本：`v1.1.2`（package.json）
 
-### CSS 變數命名規範
+---
 
-| 變數名稱 | 用途 | 淺色模式 | 深色模式 |
-|---------|------|----------|----------|
-| `--color-background` | 頁面背景 | `#ffffff` | `#0f172a` |
-| `--color-surface` | 卡片/元件表面 | `#ffffff` | `#1e293b` |
-| `--color-bg-soft` | 次要背景 | `#f8fafc` | `#1e293b` |
-| `--color-text` | 主要文字 | `#1e293b` | `#f1f5f9` |
-| `--color-text-secondary` | 次要文字 | `#475569` | `#94a3b8` |
-| `--color-text-muted` | 輔助文字 | `#94a3b8` | `#64748b` |
-| `--color-border` | 邊框 | `#e2e8f0` | `#334155` |
-| `--color-primary` | 主色調 | `#3b82f6` | `#60a5fa` |
+## 🚀 快速開始
 
-### 遊戲專用變數
+系統需求
+- Node.js 18+（建議 Node 20）
+- npm / pnpm / yarn
 
-| 變數名稱 | 用途 |
-|---------|------|
-| `--game-area-bg` | 遊戲區域背景 |
-| `--game-card-bg` | 遊戲卡片背景 |
-| `--game-button-bg` | 遊戲按鈕背景 |
-| `--game-correct` | 正確回饋顏色 |
-| `--game-wrong` | 錯誤回饋顏色 |
+步驟
 
-### 使用方式
+```bash
+# 1. 安裝依賴
+npm ci
 
-```css
-/* 在 scoped CSS 中使用 */
-.my-component {
-  background: var(--color-surface);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-}
+# 2. 啟動開發伺服器
+npm run dev
 
-/* 在 Tailwind CSS 中使用 */
-<div class="bg-[var(--color-surface)] text-[var(--color-text)]">
+# 3. 建構生產版本
+npm run build
+
+# 4. 本地預覽生產版本
+npm run preview
+
+# 5. 執行測試
+npm run test
 ```
 
-### 主題切換
+常用 scripts（依 `package.json`）
 
-透過 `useTheme` composable 控制主題：
+- `dev` - 啟動 Vite
+- `build` - 執行 `vue-tsc -b` 並 `vite build`
+- `preview` - `vite preview`
+- `test` / `test:run` / `test:ci` - Vitest
+- `generate-icons` - 產生 app icons
 
-```typescript
-import { useTheme } from '@/composables/useTheme'
+建議新增（選擇性）：
 
-const { isDark, toggleTheme, setTheme } = useTheme()
-
-// 切換主題
-toggleTheme()
-
-// 設定特定主題
-setTheme('dark')  // 'light' | 'dark' | 'system'
+```json
+"type-check": "vue-tsc --noEmit",
+"lint": "eslint --ext .ts,.vue ."
 ```
 
----
-
-## 🧩 認知訓練維度
-
-本應用訓練六大認知能力：
-
-| 維度 | 說明 | 相關遊戲 |
-|------|------|----------|
-| ⚡ **反應力** | 快速反應與處理速度 | 打地鼠、猜拳挑戰、Stroop 測試、節拍模仿 |
-| 🧩 **邏輯力** | 推理與問題解決能力 | 數學心算、天秤平衡、迷宮導航、圖案推理 |
-| 🧠 **記憶力** | 短期與工作記憶 | 撲克記憶、瞬間記憶、卡牌配對、聲音記憶、手勢記憶 |
-| 💡 **認知力** | 認知彈性與資訊處理 | Stroop 測試、大家來找碴、圖案推理 |
-| 🎯 **協調力** | 手眼協調與空間處理 | 打地鼠、迷宮導航、數字連連看、節拍模仿 |
-| 👁️ **專注力** | 持續注意與選擇性注意 | 大家來找碴、Stroop 測試、數字連連看 |
+> 注意：目前文件曾提到 `npm run type-check` 與 `npm run lint`，但 `package.json` 未一定包含此兩項；如需我也可以替你新增並設定 ESLint/Prettier。 
 
 ---
 
-## 🎮 遊戲列表
+## 📁 檔案與目錄
 
-### 記憶類遊戲
+- `src/` - Vue 元件、views、composables、games、services、stores 等
+- `docs/` - 開發者指南與規範
+- `scripts/` - 小工具（如 icons 產生腳本）
+- `public/` - 公開靜態資源
 
-#### 🃏 撲克記憶 (PokerMemory)
-- **說明**: 記住翻開的撲克牌，找出配對
-- **訓練**: 記憶力、專注力
-- **難度**: 簡單 4×3、中等 4×4、困難 6×4
+---
 
-#### 🔢 瞬間記憶 (InstantMemory)
+## 🛠️ 開發流程（簡要）
+
+1. 建立分支：`git checkout -b feat/xxx`
+2. 開發並加入測試：`npm run test` 或 `npm run test:watch`
+3. 執行型別檢查（如已配置）：`npm run type-check`
+4. 格式化/檢查（如已配置）：`npm run lint`
+5. 提交 PR，填寫變更說明與測試步驟
+
+更詳盡的實作細節、如何新增遊戲、測試策略、CI 與部署在：`docs/DEVELOPER_GUIDE.md`。
+
+---
+
+## 🤝 貢獻
+
+歡迎 PR 與 issue！請確保包含測試或說明如何驗證變更。
+
+---
+
+如需我直接替你：
+- 加入 `type-check` / `lint` scripts
+- 建立 ESLint/Prettier 配置
+- 或把這份 README 再精簡成英文版
+
+請告訴我你要我繼續執行哪些變更。
 - **說明**: 在極短時間內記住顯示的數字或符號
 - **訓練**: 工作記憶、處理速度
 - **難度**: 隨長度遞增
