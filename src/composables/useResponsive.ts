@@ -2,7 +2,7 @@
  * 響應式斷點偵測 Composable
  * 使用 matchMedia API 進行即時偵測
  */
-import { ref, readonly, onMounted, onUnmounted, watchEffect } from 'vue'
+import { ref, readonly, computed, onMounted, onUnmounted, watchEffect } from 'vue'
 
 export type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl'
 
@@ -159,6 +159,11 @@ export function useResponsive() {
     screenHeight: readonly(screenHeight),
     isLandscape: readonly(isLandscape),
     isTouchDevice: readonly(isTouchDevice),
+
+    // 兼容性屬性
+    isMobile: readonly(computed(() => isXs.value || isSm.value || isMd.value)),
+    isTablet: readonly(computed(() => isLg.value)),
+    isDesktop: readonly(computed(() => isXl.value || is2xl.value || is3xl.value)),
 
     // 常數
     BREAKPOINTS,
