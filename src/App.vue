@@ -185,7 +185,7 @@ onMounted(async () => {
   setTimeout(() => {
     // 1. 訓練提醒
     const trainingReminder = checkTrainingReminder()
-    if (trainingReminder.shouldRemind) {
+    if (trainingReminder.shouldRemind && route.path !== '/') {
       toast.info(trainingReminder.message, { duration: 5000, icon: '📅' })
     }
 
@@ -195,7 +195,7 @@ onMounted(async () => {
     if (assessmentReminder.shouldRemind) {
       // 如果從未評估過，且不是在 onboarding 或 assessment 頁面，才提醒
       const isAssessmentPage = route.path.includes('assessment') || route.path.includes('onboarding')
-      if (!isAssessmentPage) {
+      if (!isAssessmentPage && route.path !== '/') {
         toast.warning(assessmentReminder.message, { duration: 8000, icon: '📋' })
       }
     }

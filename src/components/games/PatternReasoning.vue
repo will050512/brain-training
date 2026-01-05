@@ -36,7 +36,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'game-start': []
   'game-end': [result: any]
-  'score-update': [score: number]
+  'score-change': [score: number]
   'state:change': [phase: string]
   'status-update': [status: GameStatusUpdate]
 }>()

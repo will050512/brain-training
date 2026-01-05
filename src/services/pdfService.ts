@@ -788,7 +788,7 @@ function drawNutritionPriorityGroup(
       const nameWidth = doc.getTextWidth(rec.name)
       doc.setFontSize(FONT_SIZES.tiny)
       doc.setTextColor(COLORS.warning)
-      doc.text('[推薦]', nameX + nameWidth + 3, y)
+      doc.text('[合作]', nameX + nameWidth + 3, y)
     }
     y += 5
     
@@ -806,7 +806,7 @@ function drawNutritionPriorityGroup(
     // 合作夥伴資訊
     if (rec.isPartnerProduct && rec.partnerName) {
       doc.setTextColor(COLORS.primary)
-      doc.text(`| 推薦來源：${rec.partnerName}`, margin + 60, y)
+      doc.text(`| 合作資訊：${rec.partnerName}`, margin + 60, y)
     }
     
     y += cardHeight - 14 + 3 // 移至下一個卡片

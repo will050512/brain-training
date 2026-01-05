@@ -35,7 +35,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'game-start': []
   'game-end': [result: any]
-  'score-update': [score: number]
+  'score-change': [score: number]
   'state:change': [phase: string]
   'status-update': [status: GameStatusUpdate]
 }>()
@@ -427,7 +427,7 @@ watch(() => props.difficulty, () => {
 
           <!-- 敲擊按鈕 -->
           <button
-            class="tap-btn w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-4xl sm:text-5xl md:text-6xl shadow-xl transition-all transform min-h-[128px] min-w-[128px] sm:min-h-[144px] sm:min-w-[144px] md:min-h-[160px] md:min-w-[160px]"
+            class="tap-btn w-[clamp(7rem,28vw,10rem)] h-[clamp(7rem,28vw,10rem)] rounded-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-[clamp(2.5rem,8vw,3.75rem)] shadow-xl transition-all transform"
             :class="{ 'scale-90 bg-blue-700': isTapping }"
             @click="handleTap"
             @touchstart.prevent="handleTap"

@@ -45,7 +45,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'game-start': []
   'game-end': [result: any]
-  'score-update': [score: number]
+  'score-change': [score: number]
   'state:change': [phase: string]
   'status-update': [status: GameStatusUpdate]
 }>()
@@ -113,7 +113,6 @@ const selectedCards = ref<number[]>([])
 // ===== 計算屬性 =====
 const gridCols = computed(() => config.value.gridCols)
 const matchedPairs = computed(() => getMatchedCount(cards.value))
-const gridMaxWidth = computed(() => Math.min(gridCols.value * 70, window.innerWidth - 40))
 
 // ===== 回饋映射 =====
 const feedbackData = computed(() => {
@@ -317,16 +316,15 @@ watch(() => props.difficulty, () => {
 
       <!-- 卡片網格 -->
         <div
-          class="card-grid mt-4 sm:mt-6 grid gap-2 sm:gap-3 md:gap-4 mx-auto px-4"
+          class="card-grid mt-4 sm:mt-6 grid gap-2 sm:gap-3 md:gap-4 mx-auto w-full px-2 sm:px-4"
           :style="{
-            gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
-            maxWidth: `${gridMaxWidth}px`
+            gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`
           }"
         >
         <div
           v-for="card in cards"
           :key="card.id"
-          class="poker-card aspect-[2/3] rounded-lg cursor-pointer transition-all duration-300 transform perspective-1000 min-h-[80px] sm:min-h-[90px] md:min-h-[100px]"
+          class="poker-card aspect-[2/3] rounded-lg cursor-pointer transition-all duration-300 transform perspective-1000 min-h-[clamp(64px,14vw,100px)]"
           :class="{
             'is-flipped': card.isFlipped,
             'is-matched': card.isMatched,

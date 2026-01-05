@@ -40,7 +40,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'game-start': []
   'game-end': [result: ReturnType<typeof summarizeResult>]
-  'score:update': [score: number]
+  'score-change': [score: number]
   'state:change': [phase: string]
   'status-update': [status: GameStatusUpdate]
   'back': []
@@ -240,7 +240,7 @@ function handleMatchSuccess(idx1: number, idx2: number, card1: Card, card2: Card
     // 計算並添加分數
     const matchScore = config.value.baseScore
     game.state.addScore(matchScore)
-    emit('score:update', game.state.score.value)
+    emit('score-change', game.state.score.value)
     
     // 顯示回饋
     game.showFeedback('correct', '配對成功！', matchScore)

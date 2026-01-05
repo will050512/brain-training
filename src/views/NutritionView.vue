@@ -7,17 +7,17 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import { 
-  checkNutritionTriggers,
   getAllSupplements,
   type NutritionRecommendation,
   type SupplementInfo,
   type SupplementType,
   type ScoreHistory as NutritionScoreHistory
 } from '@/services/nutritionPlaceholder'
-import { calculateScoreHistory, type ScoreHistory } from '@/services/scoreCalculator'
-import { getDB } from '@/services/db'
+import { getUserGameSessions } from '@/services/db'
+import { generateNutritionResultForUser } from '@/services/nutritionRecommendationService'
 import type { CognitiveDimension } from '@/types/cognitive'
 import type { GameSession } from '@/types'
+import { getTotalGamesPlayed, NUTRITION_UNLOCK_REQUIRED_TRAININGS } from '@/utils/trainingStats'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -25,7 +25,7 @@ const userStore = useUserStore()
 const isLoading = ref(true)
 const isLocked = ref(false)
 const completedSessionsCount = ref(0)
-const REQUIRED_SESSIONS = 10
+const REQUIRED_SESSIONS = NUTRITION_UNLOCK_REQUIRED_TRAININGS
 
 const activeRecommendations = ref<NutritionRecommendation[]>([])
 const allSupplements = ref<SupplementInfo[]>([])
@@ -70,11 +70,11 @@ async function loadRecommendations(): Promise<void> {
     const userId = userStore.currentUser?.id
     if (userId) {
       // 取得遊戲記錄
-      const db = await getDB()
-      const sessions = await db.getAll('gameSessions') as GameSession[]
-      const userSessions = sessions.filter(s => s.odId === userId)
-      
-      completedSessionsCount.value = userSessions.length
+      const userSessions = await getUserGameSessions(userId)
+      completedSessionsCount.value = getTotalGamesPlayed(
+        userStore.currentStats?.totalGamesPlayed,
+        userSessions.length
+      )
       
       // 檢查是否解鎖
       if (completedSessionsCount.value < REQUIRED_SESSIONS) {
@@ -82,27 +82,16 @@ async function loadRecommendations(): Promise<void> {
         isLoading.value = false
         return
       }
-      
-      // 計算歷史分數
-      const history = calculateScoreHistory(userSessions, 'day')
-      
-      // 取得最新分數
-      if (history.length > 0) {
-        const latest = history[history.length - 1]
-        const latestScores = latest?.scores || {
-          reaction: 70, logic: 70, memory: 70, cognition: 70, coordination: 70, attention: 70
-        }
-        
-        // 轉換歷史格式
-        const scoreHistory: NutritionScoreHistory[] = history.map((h: ScoreHistory) => ({
-          date: h.date,
-          scores: h.scores
-        }))
-        
-        // 取得根據表現觸發的推薦
-        const triggered = checkNutritionTriggers(latestScores, scoreHistory)
-        activeRecommendations.value = triggered
-      }
+
+      // 使用共用動態推薦管線（Mini-Cog + 退化偵測 + 分數趨勢）
+      const personalized = await generateNutritionResultForUser({
+        odId: userId,
+        age: userStore.userAge || 65,
+        educationYears: userStore.currentUser?.educationYears || 9,
+        sessions: userSessions
+      })
+
+      activeRecommendations.value = personalized.recommendations
     }
     
     // 所有營養品
@@ -226,8 +215,8 @@ onMounted(() => {
       
       <div class="progress-container">
         <div class="progress-info">
-          <span>訓練進度</span>
-          <span class="progress-text">{{ completedSessionsCount }} / {{ REQUIRED_SESSIONS }} 次</span>
+          <span>遊戲進度</span>
+          <span class="progress-text">{{ completedSessionsCount }} / {{ REQUIRED_SESSIONS }} 場</span>
         </div>
         <div class="progress-bar">
           <div 

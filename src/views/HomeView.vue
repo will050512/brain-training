@@ -68,7 +68,7 @@
       <div v-if="trainingReminder" class="mb-4">
         <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-3 flex items-center gap-3">
           <span class="text-2xl">💪</span>
-          <p class="text-sm text-blue-800 dark:text-blue-200 flex-1">{{ trainingReminder }}</p>
+          <p class="text-sm text-blue-800 dark:text-blue-200 flex-1">{{ trainingReminder.message }}</p>
           <button 
             @click="trainingReminder = null"
             class="text-blue-400 hover:text-blue-600 text-xl"
@@ -105,7 +105,7 @@
             </router-link>
           </div>
           <button 
-            @click="assessmentReminder = null"
+            @click="snoozeAssessmentReminder(); assessmentReminder = null"
             class="text-gray-400 hover:text-gray-600 text-xl shrink-0"
           >×</button>
         </div>
@@ -336,6 +336,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore, useSettingsStore } from '@/stores'
+import { useGameStore } from '@/stores/gameStore'
 import { COGNITIVE_DIMENSIONS, type CognitiveDimensionInfo, type CognitiveDimension } from '@/types/cognitive'
 import WelcomeModal from '@/components/ui/WelcomeModal.vue'
 import CircularProgress from '@/components/ui/CircularProgress.vue'
@@ -347,11 +348,18 @@ import { getTodayTrainingStatus, getTrainingStats } from '@/services/dailyTraini
 import { getGameSessionsByDate, getLatestMiniCogResult } from '@/services/db'
 import { useNotification } from '@/composables/useNotification'
 import type { GameSession } from '@/types/game'
+import {
+  getTotalGamesPlayed,
+  getNutritionUnlockPercent,
+  getNutritionUnlockProgress,
+  NUTRITION_UNLOCK_REQUIRED_TRAININGS
+} from '@/utils/trainingStats'
 
 const router = useRouter()
 const userStore = useUserStore()
+const gameStore = useGameStore()
 const settingsStore = useSettingsStore()
-const { checkTrainingReminder, checkAssessmentReminder, requestPermission } = useNotification()
+const { checkTrainingReminder, checkAssessmentReminder, snoozeAssessmentReminder, requestPermission } = useNotification()
 
 // 認知維度列表
 const cognitiveDimensions = Object.values(COGNITIVE_DIMENSIONS) as CognitiveDimensionInfo[]
@@ -390,18 +398,20 @@ const cognitiveTrend = ref<{
 const hasDeclineWarning = computed(() => cognitiveTrend.value?.hasDecline || false)
 
 // 遊戲次數
-const gamesPlayedCount = computed(() => userStore.currentStats?.totalGamesPlayed || 0)
+const gamesPlayedCount = computed(() =>
+  getTotalGamesPlayed(userStore.currentStats?.totalGamesPlayed, gameStore.sessions.length)
+)
 
 // 是否有足夠數據（5場遊戲）
-const hasSufficientData = computed(() => gamesPlayedCount.value >= 5)
+const hasSufficientData = computed(() => gamesPlayedCount.value >= NUTRITION_UNLOCK_REQUIRED_TRAININGS)
 
 // 解鎖進度
 const unlockProgress = computed(() => {
-  const current = Math.min(gamesPlayedCount.value, 5)
+  const current = getNutritionUnlockProgress(gamesPlayedCount.value)
   return {
     current,
-    percentage: (current / 5) * 100,
-    remaining: Math.max(0, 5 - current)
+    percentage: getNutritionUnlockPercent(gamesPlayedCount.value),
+    remaining: Math.max(0, NUTRITION_UNLOCK_REQUIRED_TRAININGS - current)
   }
 })
 
@@ -631,35 +641,26 @@ onMounted(async () => {
     // 檢查訓練提醒
     trainingReminder.value = checkTrainingReminder()
     
-    // 檢查月度評估提醒（30天）
+    // 檢查月度評估提醒（統一策略：30天，並支援 snooze / 可關閉）
     const userId = userStore.currentUser?.id
+    let lastAssessmentDate: string | null = settingsStore.assessmentResult?.completedAt || null
     if (userId) {
       try {
         const latestMiniCog = await getLatestMiniCogResult(userId)
         if (latestMiniCog?.completedAt) {
-          const lastAssessmentDate = new Date(latestMiniCog.completedAt)
-          const now = new Date()
-          const daysSince = Math.floor((now.getTime() - lastAssessmentDate.getTime()) / (1000 * 60 * 60 * 24))
-          
-          if (daysSince >= 30) {
-            assessmentReminder.value = {
-              needsAssessment: true,
-              daysSinceLastAssessment: daysSince,
-              message: daysSince >= 60 
-                ? `距上次評估已超過 ${daysSince} 天，強烈建議重新評估` 
-                : `距上次評估已 ${daysSince} 天，建議重新進行認知篩檢`
-            }
-          }
-        } else if (settingsStore.hasCompletedAssessment) {
-          // 標記完成但沒有 Mini-Cog 記錄，可能是舊資料
-          assessmentReminder.value = {
-            needsAssessment: true,
-            daysSinceLastAssessment: 999,
-            message: '建議進行一次認知篩檢，以獲得更精準的訓練建議'
-          }
+          lastAssessmentDate = latestMiniCog.completedAt
         }
       } catch (e) {
-        console.error('檢查評估提醒失敗', e)
+        console.error('取得 Mini-Cog 失敗', e)
+      }
+    }
+
+    const assessment = checkAssessmentReminder(lastAssessmentDate)
+    if (assessment.shouldRemind) {
+      assessmentReminder.value = {
+        needsAssessment: true,
+        daysSinceLastAssessment: assessment.daysSinceAssessment,
+        message: assessment.message
       }
     }
     

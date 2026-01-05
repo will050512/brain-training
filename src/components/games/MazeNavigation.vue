@@ -40,7 +40,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'game-start': []
   'game-end': [result: any]
-  'score-update': [score: number]
+  'score-change': [score: number]
   'state:change': [phase: string]
   'status-update': [status: GameStatusUpdate]
 }>()
@@ -349,7 +349,7 @@ watch(() => props.difficulty, () => {
 }
 
 .touch-area {
-  min-height: 300px;
+  min-height: clamp(220px, 40vh, 300px);
   padding: 1rem;
   border-radius: 12px;
   background: var(--color-surface);

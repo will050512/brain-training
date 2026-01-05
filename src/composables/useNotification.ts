@@ -8,6 +8,7 @@
 
 import { ref, computed, onMounted } from 'vue'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { ASSESSMENT_REMINDER_DAYS, ASSESSMENT_REMINDER_SNOOZE_DAYS } from '@/utils/trainingStats'
 
 // 通知權限狀態
 export type NotificationPermission = 'default' | 'granted' | 'denied'
@@ -29,6 +30,7 @@ const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
 // localStorage key
 const NOTIFICATION_SETTINGS_KEY = 'brain-training-notification-settings'
 const LAST_TRAINING_KEY = 'brain-training-last-training-date'
+const ASSESSMENT_SNOOZE_UNTIL_KEY = 'brain-training-assessment-reminder-snooze-until'
 
 /**
  * 通知 Composable
@@ -240,6 +242,19 @@ export function useNotification() {
     daysSinceAssessment: number
     message: string
   } {
+    if (!settingsStore.assessmentReminderEnabled) {
+      return { shouldRemind: false, daysSinceAssessment: 0, message: '' }
+    }
+
+    // Snooze（避免重複打擾）
+    const snoozeUntil = localStorage.getItem(ASSESSMENT_SNOOZE_UNTIL_KEY)
+    if (snoozeUntil) {
+      const until = new Date(snoozeUntil)
+      if (!Number.isNaN(until.getTime()) && until.getTime() > Date.now()) {
+        return { shouldRemind: false, daysSinceAssessment: 0, message: '' }
+      }
+    }
+
     if (!lastAssessmentDate) {
       return {
         shouldRemind: true,
@@ -253,7 +268,7 @@ export function useNotification() {
     const diffTime = today.getTime() - lastDate.getTime()
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
     
-    if (diffDays >= 30) {
+    if (diffDays >= ASSESSMENT_REMINDER_DAYS) {
       return {
         shouldRemind: true,
         daysSinceAssessment: diffDays,
@@ -265,6 +280,15 @@ export function useNotification() {
       shouldRemind: false,
       daysSinceAssessment: diffDays,
       message: ''
+    }
+  }
+
+  function snoozeAssessmentReminder(days: number = ASSESSMENT_REMINDER_SNOOZE_DAYS): void {
+    const until = new Date(Date.now() + days * 24 * 60 * 60 * 1000)
+    try {
+      localStorage.setItem(ASSESSMENT_SNOOZE_UNTIL_KEY, until.toISOString())
+    } catch (e) {
+      console.warn('儲存評估提醒 snooze 失敗:', e)
     }
   }
   
@@ -287,7 +311,8 @@ export function useNotification() {
     recordTrainingComplete,
     getLastTrainingDate,
     checkTrainingReminder,
-    checkAssessmentReminder
+    checkAssessmentReminder,
+    snoozeAssessmentReminder
   }
 }
 

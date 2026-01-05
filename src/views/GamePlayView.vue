@@ -1,5 +1,5 @@
 <template>
-  <div class="game-wrapper min-h-[100dvh] bg-[var(--color-bg)] flex flex-col">
+  <div class="game-wrapper h-[100dvh] bg-[var(--color-bg)] flex flex-col overflow-hidden">
     <div
       class="game-header bg-[var(--color-surface)] shadow-sm border-b border-[var(--color-border)] z-10 sticky top-0"
       :class="{ 'game-header-compact': isMobile, 'game-header-landscape': isLandscape }"
@@ -160,12 +160,14 @@
       </div>
 
       <!-- 遊戲進行中 - 填滿可用空間 -->
-      <div v-else-if="gameState === 'playing'" class="game-content-full w-full h-full min-h-0 overflow-hidden">
+      <div v-else-if="gameState === 'playing'" class="game-content-full w-full h-full min-h-0 overflow-x-hidden overflow-y-auto">
         <component
           :is="gameComponent"
           :difficulty="gameStore.currentDifficulty"
           :settings="difficultySettings"
           @score-change="handleScoreChange"
+          @score-update="handleScoreChange"
+          @score:update="handleScoreChange"
           @game-end="handleGameEnd"
           @status-update="handleStatusUpdate"
           class="w-full h-full min-h-0"
@@ -203,113 +205,39 @@
             <div class="text-xs sm:text-sm lg:text-xl text-[var(--color-text-secondary)] mt-1">分</div>
           </div>
 
-          <!-- 根據遊戲類型顯示不同的統計資訊 -->
-          <div class="grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6 lg:mb-8 text-left">
-            <!-- 反應類遊戲：重點顯示反應時間 -->
-            <template v-if="isReactionGame">
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">平均反應</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">{{ gameResult?.avgReactionTime || 0 }}<span class="text-xs">ms</span></div>
-              </div>
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">正確率</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">{{ Math.round((gameResult?.accuracy || 0) * 100) }}%</div>
-              </div>
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">遊戲時長</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">{{ formatTime(gameResult?.duration || 0) }}</div>
-              </div>
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">答對題數</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">
-                  {{ gameResult?.correctCount || 0 }} <span class="text-xs text-[var(--color-text-secondary)]">/ {{ gameResult?.totalCount || 0 }}</span>
+          <!-- 核心統計資訊（所有遊戲一致） -->
+          <div class="mb-3 sm:mb-4 grid grid-cols-2 gap-2 sm:gap-3 text-left">
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 p-2 sm:p-3 rounded-lg border border-blue-200 dark:border-blue-700 flex flex-col justify-center">
+              <div class="text-xs text-blue-700 dark:text-blue-300 font-medium mb-0.5">等級評定</div>
+              <div class="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{{ unifiedGameResult?.grade || 'N/A' }}</div>
+            </div>
+            <div class="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 p-2 sm:p-3 rounded-lg border border-purple-200 dark:border-purple-700 flex flex-col justify-center">
+              <div class="text-xs text-purple-700 dark:text-purple-300 font-medium mb-0.5">遊戲時長</div>
+              <div class="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">{{ formatTime(gameResult?.duration || 0) }}</div>
+            </div>
+          </div>
+
+          <!-- 遊戲專屬統計（由 displayStats 驅動） -->
+          <div v-if="unifiedGameResult?.displayStats && unifiedGameResult.displayStats.length > 0" class="mb-4 sm:mb-6 lg:mb-8">
+            <div class="text-xs sm:text-sm font-bold text-[var(--color-text-secondary)] mb-2 text-center">📊 詳細統計</div>
+            <div class="grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4 text-left">
+              <div
+                v-for="(stat, index) in unifiedGameResult.displayStats"
+                :key="index"
+                class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex items-center gap-2 border transition-all"
+                :class="[
+                  stat.highlight ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/20' : 'border-[var(--color-border)]'
+                ]"
+              >
+                <div v-if="stat.icon" class="text-xl sm:text-2xl flex-shrink-0">{{ stat.icon }}</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs text-[var(--color-text-secondary)] truncate">{{ stat.label }}</div>
+                  <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)] truncate">
+                    {{ typeof stat.value === 'number' ? stat.value : stat.value }}<span v-if="stat.unit" class="text-xs ml-0.5">{{ stat.unit }}</span>
+                  </div>
                 </div>
               </div>
-            </template>
-
-            <!-- 記憶類遊戲：重點顯示記憶表現 -->
-            <template v-else-if="isMemoryGame">
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">記憶準確率</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">{{ Math.round((gameResult?.accuracy || 0) * 100) }}%</div>
-              </div>
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">完成回合</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">{{ gameResult?.totalCount || 0 }}</div>
-              </div>
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">遊戲時長</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">{{ formatTime(gameResult?.duration || 0) }}</div>
-              </div>
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">平均反應</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">{{ gameResult?.avgReactionTime || 0 }}<span class="text-xs">ms</span></div>
-              </div>
-            </template>
-
-            <!-- 邏輯/推理類遊戲：重點顯示推理準確性 -->
-            <template v-else-if="isLogicGame">
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">推理正確率</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">{{ Math.round((gameResult?.accuracy || 0) * 100) }}%</div>
-              </div>
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">解題題數</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">
-                  {{ gameResult?.correctCount || 0 }} <span class="text-xs text-[var(--color-text-secondary)]">/ {{ gameResult?.totalCount || 0 }}</span>
-                </div>
-              </div>
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">思考時長</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">{{ formatTime(gameResult?.duration || 0) }}</div>
-              </div>
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">平均反應</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">{{ gameResult?.avgReactionTime || 0 }}<span class="text-xs">ms</span></div>
-              </div>
-            </template>
-
-            <!-- 協調/動作類遊戲：重點顯示動作表現 -->
-            <template v-else-if="isCoordinationGame">
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">動作準確率</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">{{ Math.round((gameResult?.accuracy || 0) * 100) }}%</div>
-              </div>
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">完成動作</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">{{ gameResult?.correctCount || 0 }}</div>
-              </div>
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">遊戲時長</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">{{ formatTime(gameResult?.duration || 0) }}</div>
-              </div>
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">平均反應</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">{{ gameResult?.avgReactionTime || 0 }}<span class="text-xs">ms</span></div>
-              </div>
-            </template>
-
-            <!-- 其他遊戲：通用統計 -->
-            <template v-else>
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">正確率</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">{{ Math.round((gameResult?.accuracy || 0) * 100) }}%</div>
-              </div>
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">遊戲時長</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">{{ formatTime(gameResult?.duration || 0) }}</div>
-              </div>
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">答對題數</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">
-                  {{ gameResult?.correctCount || 0 }} <span class="text-xs text-[var(--color-text-secondary)]">/ {{ gameResult?.totalCount || 0 }}</span>
-                </div>
-              </div>
-              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex flex-col justify-center">
-                <div class="text-xs text-[var(--color-text-secondary)]">平均反應</div>
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)]">{{ gameResult?.avgReactionTime || 0 }}<span class="text-xs">ms</span></div>
-              </div>
-            </template>
+            </div>
           </div>
           
           <div v-if="bestScore > 0" class="mb-6 p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700 flex justify-between items-center text-sm sm:text-base">
@@ -442,12 +370,14 @@ import { ref, computed, onMounted, onUnmounted, watch, defineAsyncComponent } fr
 import { useRoute, useRouter } from 'vue-router'
 import { useGameStore, useUserStore } from '@/stores'
 import { useResponsive } from '@/composables/useResponsive'
-import { DIFFICULTIES, type GameResult, type GameState, type GameDefinition, type GameStatusUpdate } from '@/types/game'
+import { DIFFICULTIES, type GameResult, type GameState, type GameDefinition, type GameStatusUpdate, type UnifiedGameResult } from '@/types/game'
 import { calculateDifficultyAdjustment, applyDifficultyAdjustment, getFullDifficultyLabel, type DifficultyAdjustment } from '@/services/adaptiveDifficultyService'
 import { markGameCompleted } from '@/services/dailyTrainingService'
 import TrainingCompleteModal from '@/components/ui/TrainingCompleteModal.vue'
 import { gameRegistry } from '@/core/gameRegistry'
 import type { CognitiveDimension } from '@/types/cognitive'
+import { isLegacyGameResult, normalizeToLegacyGameResult } from '@/services/gameResultAdapter'
+import { scoreNormalizer } from '@/services/scoreNormalizer'
 
 // 認知維度中文名稱對應
 const dimensionLabels: Record<CognitiveDimension, string> = {
@@ -483,13 +413,15 @@ const gameState = ref<GameState>('ready')
 const currentScore = ref(0)
 const elapsedTime = ref(0)
 const gameResult = ref<GameResult | null>(null)
+const unifiedGameResult = ref<UnifiedGameResult | null>(null)
 const difficultyAdjustment = ref<DifficultyAdjustment | null>(null)
 let timerInterval: ReturnType<typeof setInterval> | null = null
 
 // 遊戲元件回報的即時狀態
 const gameStatus = ref<GameStatusUpdate>({
   showTimer: true,
-  showScore: true,
+  // 避免「遊戲中分數」與「結算統一分數/等級」形成雙系統造成誤判
+  showScore: false,
   showCounts: false,
   showCombo: false,
   showProgress: false
@@ -519,27 +451,6 @@ const difficultySettings = computed(() =>
 const bestScore = computed(() =>
   gameStore.getBestScore(gameId.value, gameStore.currentDifficulty)
 )
-
-// 遊戲類型判斷
-const isReactionGame = computed(() => {
-  const reactionGames = ['whack-a-mole', 'rock-paper-scissors', 'stroop-test']
-  return gameId.value ? reactionGames.includes(gameId.value) : false
-})
-
-const isMemoryGame = computed(() => {
-  const memoryGames = ['card-match', 'instant-memory', 'poker-memory', 'audio-memory', 'gesture-memory']
-  return gameId.value ? memoryGames.includes(gameId.value) : false
-})
-
-const isLogicGame = computed(() => {
-  const logicGames = ['math-calc', 'pattern-reasoning', 'number-connect', 'spot-difference']
-  return gameId.value ? logicGames.includes(gameId.value) : false
-})
-
-const isCoordinationGame = computed(() => {
-  const coordinationGames = ['balance-scale', 'maze-navigation', 'clock-drawing', 'rhythm-mimic']
-  return gameId.value ? coordinationGames.includes(gameId.value) : false
-})
 
 // 難度調整反饋樣式
 const difficultyFeedbackStyle = computed(() => {
@@ -741,7 +652,7 @@ function handleScoreChange(score: number): void {
 // 處理遊戲狀態更新（來自遊戲元件的 throttled emit）
 function handleStatusUpdate(status: GameStatusUpdate): void {
   // 合併狀態，保留未更新的欄位
-  gameStatus.value = { ...gameStatus.value, ...status }
+  gameStatus.value = { ...gameStatus.value, ...status, showScore: false }
   
   // 同步分數到 currentScore（兼容舊版）
   if (status.score !== undefined) {
@@ -750,14 +661,55 @@ function handleStatusUpdate(status: GameStatusUpdate): void {
 }
 
 // 處理遊戲結束
-async function handleGameEnd(result: GameResult): Promise<void> {
+async function handleGameEnd(rawResult: unknown): Promise<void> {
   if (timerInterval) {
     clearInterval(timerInterval)
     timerInterval = null
   }
   
   try {
+    const durationSeconds = (() => {
+      const dur = typeof (rawResult as any)?.duration === 'number' ? Number((rawResult as any).duration) : NaN
+      if (!Number.isFinite(dur) || dur < 0) return elapsedTime.value
+
+      // 單位校驗：若看起來是毫秒（例如 60000），轉為秒。
+      // 一般單局遊戲不會超過 1 小時；若 > 3600 且 <= 3600*1000，視為毫秒。
+      if (dur > 3600 && dur <= 3600 * 1000) {
+        return Math.round(dur / 1000)
+      }
+
+      // 避免極端不合理值直接影響結算
+      if (dur > 24 * 60 * 60) return elapsedTime.value
+
+      return Math.round(dur)
+    })()
+
+    const result: GameResult = isLegacyGameResult(rawResult)
+      ? {
+          ...rawResult,
+          gameId: gameId.value,
+          difficulty: gameStore.currentDifficulty,
+          duration: durationSeconds,
+          timestamp: new Date()
+        }
+      : normalizeToLegacyGameResult({
+          gameId: gameId.value,
+          rawResult,
+          difficulty: gameStore.currentDifficulty,
+          durationSeconds
+        })
+
+    // 同時產生統一結果用於結算畫面顯示
+    const unified = scoreNormalizer.normalize(
+      gameId.value,
+      rawResult,
+      gameStore.currentDifficulty,
+      result.subDifficulty,
+      durationSeconds
+    )
+
     gameResult.value = result
+    unifiedGameResult.value = unified
     currentScore.value = result.score
     gameState.value = 'finished'
     
@@ -812,6 +764,7 @@ function playAgain(): void {
   currentScore.value = 0
   elapsedTime.value = 0
   gameResult.value = null
+  unifiedGameResult.value = null
   difficultyAdjustment.value = null
   recommendedGames.value = []
 }

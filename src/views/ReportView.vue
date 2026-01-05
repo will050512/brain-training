@@ -145,9 +145,9 @@
           <!-- 未解鎖 -->
           <div v-if="!nutritionUnlocked" class="text-center py-4">
             <div class="text-3xl mb-2">🔒</div>
-            <p class="text-sm text-[var(--color-text-secondary)]">完成 <span class="font-bold">{{ nutritionUnlockProgress }}/10</span> 次訓練後解鎖</p>
+            <p class="text-sm text-[var(--color-text-secondary)]">完成 <span class="font-bold">{{ nutritionUnlockProgress }}/{{ NUTRITION_UNLOCK_REQUIRED_TRAININGS }}</span> 場遊戲後解鎖</p>
             <div class="w-48 h-2 bg-[var(--color-bg-soft)] rounded-full mx-auto mt-2 overflow-hidden">
-              <div class="h-full bg-green-500 rounded-full" :style="{ width: `${nutritionUnlockProgress * 10}%` }"></div>
+              <div class="h-full bg-green-500 rounded-full" :style="{ width: `${nutritionUnlockPercent}%` }"></div>
             </div>
           </div>
 
@@ -163,7 +163,7 @@
               >
                 <div class="flex items-center gap-2 mb-1">
                   <span class="font-bold text-sm text-[var(--color-text)]">{{ rec.supplement.name }}</span>
-                  <span v-if="rec.supplement.isPartnerProduct" class="text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">推薦</span>
+                  <span v-if="rec.supplement.isPartnerProduct" class="text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">合作</span>
                 </div>
                 <p class="text-xs text-[var(--color-text-secondary)]">{{ rec.reason }}</p>
               </div>
@@ -558,11 +558,11 @@
           <!-- 未解鎖狀態 -->
           <div v-if="!nutritionUnlocked" class="text-center py-8">
             <div class="w-20 h-20 mx-auto mb-4 bg-[var(--color-bg-soft)] rounded-full flex items-center justify-center text-4xl">🔒</div>
-            <p class="text-[var(--color-text-secondary)] mb-4">完成 <span class="font-bold text-[var(--color-primary)]">{{ nutritionUnlockProgress }}/10</span> 次訓練後解鎖營養建議</p>
+            <p class="text-[var(--color-text-secondary)] mb-4">完成 <span class="font-bold text-[var(--color-primary)]">{{ nutritionUnlockProgress }}/{{ NUTRITION_UNLOCK_REQUIRED_TRAININGS }}</span> 場遊戲後解鎖營養建議</p>
             <div class="w-64 h-3 bg-[var(--color-bg-soft)] rounded-full mx-auto overflow-hidden">
               <div 
                 class="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500"
-                :style="{ width: `${nutritionUnlockProgress * 10}%` }"
+                :style="{ width: `${nutritionUnlockPercent}%` }"
               ></div>
             </div>
             <p class="text-xs text-[var(--color-text-muted)] mt-3">多次訓練後，系統將根據您的認知表現提供個人化營養建議</p>
@@ -604,7 +604,7 @@
                 >
                   <div class="flex items-center gap-2 mb-2">
                     <span class="font-bold text-[var(--color-text)]">{{ rec.supplement.name }}</span>
-                    <span v-if="rec.supplement.isPartnerProduct" class="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded">推薦</span>
+                    <span v-if="rec.supplement.isPartnerProduct" class="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded">合作</span>
                   </div>
                   <p class="text-sm text-[var(--color-text-secondary)] mb-2">{{ rec.reason }}</p>
                   <div class="text-xs text-[var(--color-text-muted)]">
@@ -637,7 +637,7 @@
                 >
                   <div class="flex items-center gap-2 mb-2">
                     <span class="font-bold text-[var(--color-text)]">{{ rec.supplement.name }}</span>
-                    <span v-if="rec.supplement.isPartnerProduct" class="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded">推薦</span>
+                    <span v-if="rec.supplement.isPartnerProduct" class="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded">合作</span>
                   </div>
                   <p class="text-sm text-[var(--color-text-secondary)] mb-2">{{ rec.reason }}</p>
                   <div class="text-xs text-[var(--color-text-muted)]">
@@ -737,17 +737,20 @@ import { getLatestMiniCogResult, getUserMiniCogResults } from '@/services/db'
 import { type MiniCogResult, getRiskLevelDescription, calculateMiniCogTotal } from '@/services/miniCogService'
 import type { ReportUserInfo } from '@/services/pdfService'
 import { getQuickReferenceCutoffs, getRiskLevel as getNormativeRiskLevel } from '@/services/taiwanNormativeData'
-import { 
-  generatePersonalizedRecommendations, 
-  type PersonalizedNutritionResult,
-  type NutritionRecommendation,
-  NUTRITION_DISCLAIMER
-} from '@/services/nutritionPlaceholder'
+import { type PersonalizedNutritionResult, type NutritionRecommendation, NUTRITION_DISCLAIMER } from '@/services/nutritionPlaceholder'
+import { generateNutritionResultForUser } from '@/services/nutritionRecommendationService'
 
 // 圖表元件
 import RadarChart from '@/components/charts/RadarChart.vue'
 import TrendChart from '@/components/charts/TrendChart.vue'
 import MiniCogCorrelationChart from '@/components/charts/MiniCogCorrelationChart.vue'
+import {
+  getTotalGamesPlayed,
+  NUTRITION_UNLOCK_REQUIRED_TRAININGS,
+  getNutritionUnlockPercent,
+  getNutritionUnlockProgress
+} from '@/utils/trainingStats'
+import type { NutritionReportData } from '@/services/pdfService'
 
 const { isMobile } = useResponsive()
 const userStore = useUserStore()
@@ -766,15 +769,20 @@ const showMiniCogHistory = ref(false)
 const nutritionResult = ref<PersonalizedNutritionResult | null>(null)
 const showNutritionDisclaimer = ref(false)
 
-// 檢查營養建議解鎖（10次遊戲）
+// 檢查營養建議解鎖（完成指定訓練次數）
 const nutritionUnlocked = computed(() => {
-  const totalGames = userStore.currentStats?.totalGamesPlayed || 0
-  return totalGames >= 10
+  const totalGames = getTotalGamesPlayed(userStore.currentStats?.totalGamesPlayed, gameStore.sessions.length)
+  return totalGames >= NUTRITION_UNLOCK_REQUIRED_TRAININGS
 })
 
 const nutritionUnlockProgress = computed(() => {
-  const totalGames = userStore.currentStats?.totalGamesPlayed || 0
-  return Math.min(totalGames, 10)
+  const totalGames = getTotalGamesPlayed(userStore.currentStats?.totalGamesPlayed, gameStore.sessions.length)
+  return getNutritionUnlockProgress(totalGames)
+})
+
+const nutritionUnlockPercent = computed(() => {
+  const totalGames = getTotalGamesPlayed(userStore.currentStats?.totalGamesPlayed, gameStore.sessions.length)
+  return getNutritionUnlockPercent(totalGames)
 })
 
 // 報告區塊定義
@@ -1021,6 +1029,22 @@ async function downloadReport() {
      const radarChartImage = radarChartRef.value?.getDataURL()
      const trendChartImage = trendChartRef.value?.getDataURL()
 
+     let nutritionData: NutritionReportData | null = null
+     if (nutritionUnlocked.value && nutritionResult.value) {
+       nutritionData = {
+         recommendations: nutritionResult.value.recommendations.map(r => ({
+           name: r.supplement.name,
+           reason: r.reason,
+           priority: r.priority,
+           dosage: r.supplement.dosageRange,
+           isPartnerProduct: r.supplement.isPartnerProduct,
+           partnerName: r.supplement.partnerName
+         })),
+         cognitiveAdvice: [...nutritionResult.value.cognitiveBasedAdvice, ...nutritionResult.value.ageBasedAdvice],
+         generalAdvice: nutritionResult.value.generalAdvice
+       }
+     }
+
      const pdfBlob = await generateCognitiveReport(
         userInfo,
         miniCogReportData,
@@ -1032,10 +1056,12 @@ async function downloadReport() {
           includeTrends: true, 
           includeBehavior: true, 
           includeRecommendations: true, 
+          includeNutrition: !!(nutritionUnlocked.value && nutritionData && nutritionData.recommendations.length > 0),
           language: 'bilingual',
           radarChartImage,
           trendChartImage
-        }
+        },
+        nutritionData
      )
      
      const filename = `認知評估報告_${userStore.currentUser?.name}_${new Date().toISOString().split('T')[0]}.pdf`
@@ -1063,18 +1089,13 @@ onMounted(async () => {
     // 生成營養建議（如已解鎖）
     if (nutritionUnlocked.value) {
       try {
-        const profile = {
+        nutritionResult.value = await generateNutritionResultForUser({
+          odId: userStore.currentUser.id,
           age: userStore.userAge || 65,
           educationYears: userStore.currentUser?.educationYears || 9,
-          miniCogScore: latestMiniCogResult.value?.totalScore,
-          miniCogAtRisk: latestMiniCogResult.value?.atRisk,
           cognitiveScores: gameStore.cognitiveScores,
-          scoreHistory: gameStore.scoreHistory.map(h => ({
-            date: h.date,
-            scores: h.scores
-          }))
-        }
-        nutritionResult.value = generatePersonalizedRecommendations(profile)
+          sessions: gameStore.sessions
+        })
       } catch (e) { 
         console.error('Failed generating nutrition recommendations', e) 
       }

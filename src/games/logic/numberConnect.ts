@@ -58,14 +58,20 @@ export interface NumberConnectResult {
   score: number
   /** 完成時間（秒） */
   completionTime: number
+  /** 供各處統一使用的 duration（秒） */
+  duration: number
   /** 錯誤次數 */
   errors: number
   /** 是否完成 */
   completed: boolean
   /** 連接數量 */
   connectedCount: number
+  /** scoreNormalizer 兼容欄位：progress = 已連接數字數 */
+  progress: number
   /** 總數量 */
   totalCount: number
+  /** scoreNormalizer 兼容欄位：totalNumbers = 總數字數 */
+  totalNumbers: number
 }
 
 // ==================== 常數配置 ====================
@@ -78,26 +84,36 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, NumberConnectConfig> = {
     count: 10,
     canvasWidth: 400,
     canvasHeight: 400,
-    minDistance: 60,
+    // 以手機/小螢幕可點擊尺寸為優先，避免節點重疊造成誤觸
+    minDistance: 65,
     timeLimit: 60,
     format: 'arabic',
   },
   medium: {
     count: 15,
-    canvasWidth: 500,
-    canvasHeight: 500,
-    minDistance: 50,
+    canvasWidth: 400,
+    canvasHeight: 400,
+    minDistance: 60,
     timeLimit: 90,
     format: 'arabic',
   },
   hard: {
     count: 20,
-    canvasWidth: 600,
-    canvasHeight: 600,
-    minDistance: 45,
+    canvasWidth: 400,
+    canvasHeight: 400,
+    minDistance: 55,
     timeLimit: 120,
     format: 'mixed',
   },
+}
+
+function shuffleInPlace<T>(arr: T[]): void {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const tmp = arr[i]!
+    arr[i] = arr[j]!
+    arr[j] = tmp
+  }
 }
 
 // ==================== 工具函數 ====================
@@ -162,23 +178,63 @@ export function generateRandomPosition(
  * 產生所有節點
  */
 export function generateNodes(config: NumberConnectConfig): NumberNode[] {
-  const nodes: NumberNode[] = []
-  const positions: Position[] = []
+  // 過去用純隨機 + 嘗試次數上限時，可能產生節點不足（缺號），導致玩家永遠無法完成。
+  // 改用「等距格點候選 -> 隨機抽樣」：
+  // - 保證能產生完整 1..count
+  // - 在常用 config 下保證最小間距
+  const padding = 30
 
-  for (let i = 1; i <= config.count; i++) {
-    const position = generateRandomPosition(positions, config)
-    if (position) {
-      positions.push(position)
-      nodes.push({
-        value: i,
-        position,
-        connected: false,
-        display: getDisplayText(i, config.format),
-      })
+  const minStep = Math.max(30, Math.floor(config.minDistance * 0.75))
+  let step = Math.max(minStep, config.minDistance)
+
+  const buildCandidates = (s: number): Position[] => {
+    const candidates: Position[] = []
+    const usableW = Math.max(0, config.canvasWidth - padding * 2)
+    const usableH = Math.max(0, config.canvasHeight - padding * 2)
+    if (usableW === 0 || usableH === 0) return candidates
+
+    for (let y = padding; y <= padding + usableH; y += s) {
+      for (let x = padding; x <= padding + usableW; x += s) {
+        candidates.push({ x, y })
+      }
     }
+    return candidates
   }
 
-  return nodes
+  let candidates = buildCandidates(step)
+  while (candidates.length < config.count && step > minStep) {
+    step = Math.max(minStep, Math.floor(step * 0.9))
+    candidates = buildCandidates(step)
+  }
+
+  shuffleInPlace(candidates)
+
+  const picked: Position[] = candidates.slice(0, config.count)
+
+  // 萬一畫布/配置異常導致候選不足（理論上不會），最後補齊到 count，避免缺號卡關。
+  while (picked.length < config.count) {
+    const fallback = generateRandomPosition(picked, { ...config, minDistance: minStep }, 10)
+    if (fallback) {
+      picked.push(fallback)
+      continue
+    }
+
+    // 最後退一步：允許重疊也要把號碼補齊（比卡死更好）
+    picked.push({
+      x: padding + Math.random() * Math.max(1, config.canvasWidth - padding * 2),
+      y: padding + Math.random() * Math.max(1, config.canvasHeight - padding * 2)
+    })
+  }
+
+  return picked.map((position, index) => {
+    const value = index + 1
+    return {
+      value,
+      position,
+      connected: false,
+      display: getDisplayText(value, config.format)
+    }
+  })
 }
 
 /**
@@ -259,7 +315,9 @@ export function calculateScore(
   timeLimit: number
 ): number {
   // 基礎分數：連接進度
-  const progressScore = (connectedCount / totalCount) * 60
+  const safeTotal = Math.max(1, totalCount)
+  const safeConnected = Math.max(0, Math.min(connectedCount, safeTotal))
+  const progressScore = (safeConnected / safeTotal) * 60
 
   // 時間獎勵
   const timeBonus = Math.max(0, (timeLimit - completionTime) / timeLimit) * 20
@@ -268,7 +326,7 @@ export function calculateScore(
   const errorPenalty = Math.min(errors * 3, 20)
 
   // 完成獎勵
-  const completionBonus = connectedCount === totalCount ? 20 : 0
+  const completionBonus = safeConnected === safeTotal ? 20 : 0
 
   return Math.round(
     Math.max(0, progressScore + timeBonus - errorPenalty + completionBonus)
@@ -307,9 +365,12 @@ export function summarizeResult(
   return {
     score,
     completionTime,
+    duration: completionTime,
     errors: state.errors,
     completed,
     connectedCount,
+    progress: connectedCount,
     totalCount: config.count,
+    totalNumbers: config.count,
   }
 }
