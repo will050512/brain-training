@@ -524,15 +524,11 @@ export function checkNutritionTriggers(
     }
   }
 
-  // 依優先級排序，合作產品加權提升優先級
+  // 依優先級排序（保守策略：不對合作產品做加權）
   return recommendations.sort((a, b) => {
     const priorityOrder = { high: 0, medium: 1, low: 2 }
     let scoreA = priorityOrder[a.priority]
     let scoreB = priorityOrder[b.priority]
-    
-    // 合作產品加權 -1（優先顯示）
-    if (a.supplement.isPartnerProduct) scoreA -= 1
-    if (b.supplement.isPartnerProduct) scoreB -= 1
     
     // 根據維度權重進一步排序
     const weightA = a.supplement.dimensionWeights?.[a.dimension] || 0
@@ -656,6 +652,8 @@ export interface UserNutritionProfile {
   miniCogAtRisk?: boolean
   cognitiveScores: CognitiveScores
   scoreHistory: ScoreHistory[]
+  /** 退化偵測出的下降維度（來自 declineDetectionService），用於更保守的動態建議 */
+  declineAreas?: CognitiveDimension[]
 }
 
 /** 年齡特定營養建議 */
@@ -803,6 +801,51 @@ export function generatePersonalizedRecommendations(
     // 如果有風險，添加特別提醒
     if (profile.miniCogAtRisk) {
       cognitiveBasedAdvice.push('🔔 建議定期進行認知評估，並諮詢專業醫療人員')
+    }
+  }
+
+  // 3.5 基於退化偵測（declineAreas）的保守補充
+  if (profile.declineAreas && profile.declineAreas.length > 0) {
+    const uniqueDeclines = Array.from(new Set(profile.declineAreas))
+    cognitiveBasedAdvice.push(
+      `📉 偵測到近期在 ${uniqueDeclines.map(getDimensionName).join('、')} 可能有下降趨勢，建議持續訓練並留意變化。`
+    )
+
+    const boostedPriority: TriggerPriority = profile.miniCogAtRisk || (profile.miniCogScore !== undefined && profile.miniCogScore <= 2)
+      ? 'medium'
+      : 'low'
+
+    const declineSupplementMap: Partial<Record<CognitiveDimension, SupplementType[]>> = {
+      memory: ['phosphatidylserine', 'omega3'],
+      attention: ['ginkgo'],
+      reaction: ['vitaminB', 'coq10'],
+      cognition: ['omega3', 'vitaminD'],
+      logic: ['vitaminB'],
+      coordination: ['coq10']
+    }
+
+    let addedFromDecline = 0
+    for (const dim of uniqueDeclines) {
+      if (addedFromDecline >= 2) break
+      const candidates = declineSupplementMap[dim] ?? []
+      for (const supplementType of candidates) {
+        if (addedSupplements.has(supplementType)) continue
+        const supplement = getSupplementInfo(supplementType)
+        recommendations.push({
+          id: `decline_${Date.now()}_${dim}_${supplementType}`,
+          triggerId: 'decline_based',
+          supplement,
+          reason: `近期${getDimensionName(dim)}可能有下降趨勢，建議以飲食/生活方式為主並可評估補充`,
+          dimension: dim,
+          priority: boostedPriority,
+          recommendedAt: new Date().toISOString(),
+          viewed: false,
+          dismissed: false
+        })
+        addedSupplements.add(supplementType)
+        addedFromDecline++
+        break
+      }
     }
   }
 

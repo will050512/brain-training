@@ -363,7 +363,7 @@
               <div>
                 <div class="text-[var(--color-text-muted)]">平均反應時間</div>
                 <div class="text-xl font-bold text-[var(--color-text)]">
-                  {{ (result?.averageReactionTime ?? 0 / 1000).toFixed(1) }} 秒
+                  {{ ((result?.averageReactionTime ?? 0) / 1000).toFixed(1) }} 秒
                 </div>
               </div>
             </div>

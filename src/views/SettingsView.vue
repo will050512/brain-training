@@ -138,6 +138,25 @@
           </div>
         </div>
 
+        <!-- 提醒設定 -->
+        <div class="card p-4">
+          <h3 class="font-semibold text-[var(--color-text)] mb-4">🔔 提醒設定</h3>
+
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium text-[var(--color-text)]">每月評估提醒</div>
+              <div class="text-xs text-[var(--color-text-muted)]">距離上次 Mini-Cog/評估超過 30 天會提醒</div>
+            </div>
+            <button
+              @click="settingsStore.assessmentReminderEnabled = !settingsStore.assessmentReminderEnabled"
+              class="toggle-switch"
+              :class="{ 'toggle-on': settingsStore.assessmentReminderEnabled }"
+            >
+              <span class="toggle-thumb"></span>
+            </button>
+          </div>
+        </div>
+
         <!-- 帳號資訊 -->
         <div v-if="userStore.isLoggedIn" class="card p-4">
           <h3 class="font-semibold text-[var(--color-text)] mb-3">👤 帳號資訊</h3>

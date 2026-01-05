@@ -15,16 +15,21 @@ import {
 } from '@/services/professionalScoreCalculator'
 import { calculateScoreHistory, type ScoreHistory } from '@/services/scoreCalculator'
 import { 
-  generatePersonalizedRecommendations, 
   type PersonalizedNutritionResult,
   type NutritionRecommendation
 } from '@/services/nutritionPlaceholder'
-import { getLatestMiniCogResult } from '@/services/db'
+import { generateNutritionResultForUser } from '@/services/nutritionRecommendationService'
 import DisclaimerBanner from '@/components/ui/DisclaimerBanner.vue'
 import RadarChart from '@/components/charts/RadarChart.vue'
 import TrendChart from '@/components/charts/TrendChart.vue'
 import type { CognitiveScores, CognitiveDimension } from '@/types/cognitive'
 import type { GameSession } from '@/types/game'
+import {
+  getTotalGamesPlayed,
+  getNutritionUnlockPercent,
+  getNutritionUnlockProgress,
+  NUTRITION_UNLOCK_REQUIRED_TRAININGS
+} from '@/utils/trainingStats'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -123,7 +128,20 @@ function getTrendArrow(dim: CognitiveDimension): { arrow: string; class: string;
 }
 
 // 營養建議是否解鎖
-const nutritionUnlocked = computed(() => sessions.value.length >= 10)
+const nutritionUnlocked = computed(() => {
+  const total = getTotalGamesPlayed(userStore.currentStats?.totalGamesPlayed, gameStore.sessions.length)
+  return total >= NUTRITION_UNLOCK_REQUIRED_TRAININGS
+})
+
+const nutritionUnlockProgress = computed(() => {
+  const total = getTotalGamesPlayed(userStore.currentStats?.totalGamesPlayed, gameStore.sessions.length)
+  return getNutritionUnlockProgress(total)
+})
+
+const nutritionUnlockPercent = computed(() => {
+  const total = getTotalGamesPlayed(userStore.currentStats?.totalGamesPlayed, gameStore.sessions.length)
+  return getNutritionUnlockPercent(total)
+})
 
 // 認知分數
 const cognitiveScores = computed<CognitiveScores>(() => {
@@ -172,7 +190,7 @@ async function loadData() {
   
   try {
     // 取得最近30天的遊戲記錄
-    sessions.value = gameStore.recentSessions
+    sessions.value = gameStore.sessions
     
     // 計算專業評估
     if (sessions.value.length >= 5) {
@@ -228,23 +246,21 @@ async function loadData() {
     // 載入營養建議（如已解鎖）
     if (nutritionUnlocked.value) {
       try {
-        const userId = userStore.currentUser?.id
-        const latestMiniCog = userId ? await getLatestMiniCogResult(userId) : null
-        
-        const profile = {
-          age: userStore.currentUser?.birthday 
-            ? new Date().getFullYear() - new Date(userStore.currentUser.birthday).getFullYear() 
-            : 65,
-          educationYears: userStore.currentUser?.educationYears || 9,
-          miniCogScore: latestMiniCog?.totalScore,
-          miniCogAtRisk: latestMiniCog?.atRisk,
-          cognitiveScores: cognitiveScores.value,
-          scoreHistory: scoreHistory.value.map(h => ({
-            date: h.date,
-            scores: h.scores
-          }))
+        const odId = userStore.currentUser?.id
+        if (odId) {
+          const age = userStore.currentUser?.birthday
+            ? new Date().getFullYear() - new Date(userStore.currentUser.birthday).getFullYear()
+            : 65
+          const educationYears = userStore.currentUser?.educationYears || 9
+
+          nutritionResult.value = await generateNutritionResultForUser({
+            odId,
+            age,
+            educationYears,
+            cognitiveScores: cognitiveScores.value,
+            sessions: sessions.value
+          })
         }
-        nutritionResult.value = generatePersonalizedRecommendations(profile)
       } catch (e) {
         console.error('載入營養建議失敗:', e)
       }
@@ -564,13 +580,16 @@ onMounted(() => {
         <!-- 未解鎖 -->
         <div v-if="!nutritionUnlocked" class="no-data">
           <div class="no-data-icon">🔒</div>
-          <p>完成 10 次遊戲後解鎖營養建議</p>
-          <p class="sub">目前已完成 {{ sessions.length }} 次</p>
+          <p>完成 {{ NUTRITION_UNLOCK_REQUIRED_TRAININGS }} 場遊戲後解鎖營養建議</p>
+          <p class="sub">目前已完成 {{ nutritionUnlockProgress }} 場</p>
           <div class="unlock-progress">
             <div class="progress-bar">
-              <div class="progress-fill" :style="{ width: `${Math.min(sessions.length, 10) * 10}%` }"></div>
+              <div
+                class="progress-fill"
+                :style="{ width: `${nutritionUnlockPercent}%` }"
+              ></div>
             </div>
-            <span class="progress-text">{{ sessions.length }}/10</span>
+            <span class="progress-text">{{ nutritionUnlockProgress }}/{{ NUTRITION_UNLOCK_REQUIRED_TRAININGS }}</span>
           </div>
         </div>
 
@@ -593,7 +612,7 @@ onMounted(() => {
               >
                 <div class="supplement-header">
                   <span class="supplement-name">{{ rec.supplement.name }}</span>
-                  <span v-if="rec.supplement.isPartnerProduct" class="partner-badge">推薦</span>
+                  <span v-if="rec.supplement.isPartnerProduct" class="partner-badge">合作</span>
                 </div>
                 <p class="supplement-reason">{{ rec.reason }}</p>
                 <div class="supplement-benefits">

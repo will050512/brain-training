@@ -36,7 +36,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'game-start': []
   'game-end': [result: any]
-  'score-update': [score: number]
+  'score-change': [score: number]
   'state:change': [phase: string]
   'status-update': [status: GameStatusUpdate]
 }>()
@@ -103,11 +103,14 @@ const nodes = computed(() => gameState.value?.nodes || [])
 const connectedPath = computed(() => gameState.value?.connectedPath || [])
 const currentTarget = computed(() => gameState.value?.currentTarget || 1)
 const errors = computed(() => gameState.value?.errors || 0)
-const connectionCount = computed(() => connectedPath.value.length)
+const connectedNumbersCount = computed(() => {
+  if (!gameState.value) return 0
+  return gameState.value.nodes.filter(n => n.connected).length
+})
 
 const progress = computed(() => {
-  const total = config.value.count - 1 // N-1 connections needed
-  return Math.round((connectionCount.value / total) * 100)
+  const total = Math.max(1, config.value.count)
+  return Math.round((connectedNumbersCount.value / total) * 100)
 })
 
 // ===== 回饋映射 =====
@@ -242,7 +245,7 @@ function handleGameEnd() {
   
   const elapsed = (Date.now() - startTime.value) / 1000
   const finalScore = calculateScore(
-    connectionCount.value,
+    connectedNumbersCount.value,
     config.value.count,
     errors.value,
     elapsed,
@@ -258,8 +261,11 @@ function handleGameEnd() {
         completionTime: elapsed,
         errors: errors.value,
         completed: false,
-        connectedCount: connectionCount.value,
+        connectedCount: connectedNumbersCount.value,
         totalCount: config.value.count,
+        progress: connectedNumbersCount.value,
+        totalNumbers: config.value.count,
+        duration: elapsed,
       }
   
   finishGame()
@@ -283,8 +289,8 @@ watchEffect(() => {
     throttledEmit({
       timeLeft: timeRemaining.value,
       score: score.value,
-      currentRound: connectionCount.value,
-      totalRounds: config.value.count - 1,
+      currentRound: connectedNumbersCount.value,
+      totalRounds: config.value.count,
       showTimer: true,
       showScore: true,
       showProgress: true
@@ -338,7 +344,7 @@ watch(() => props.difficulty, () => {
         <div class="flex flex-wrap justify-center gap-2 sm:gap-4">
           <span>下一個：<strong class="text-blue-600">{{ currentTarget }}</strong></span>
           <span class="hidden sm:inline">|</span>
-          <span>連接：{{ connectionCount }} / {{ config.count - 1 }}</span>
+          <span>已連接：{{ connectedNumbersCount }} / {{ config.count }}</span>
           <span class="hidden sm:inline">|</span>
           <span>錯誤：{{ errors }}</span>
         </div>

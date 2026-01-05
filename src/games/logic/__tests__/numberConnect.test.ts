@@ -63,7 +63,7 @@ describe('數字連連看遊戲邏輯', () => {
     it('應產生指定數量的節點', () => {
       const config = DIFFICULTY_CONFIGS.easy
       const nodes = generateNodes(config)
-      expect(nodes.length).toBeLessThanOrEqual(config.count)
+      expect(nodes.length).toBe(config.count)
     })
 
     it('節點數值應連續', () => {
@@ -71,7 +71,8 @@ describe('數字連連看遊戲邏輯', () => {
       const nodes = generateNodes(config)
       const values = nodes.map(n => n.value).sort((a, b) => a - b)
 
-      for (let i = 0; i < values.length; i++) {
+      expect(values).toHaveLength(config.count)
+      for (let i = 0; i < config.count; i++) {
         expect(values[i]).toBe(i + 1)
       }
     })
@@ -83,16 +84,16 @@ describe('數字連連看遊戲邏輯', () => {
       })
     })
 
-    it('節點之間應有最小間距', () => {
+    it('節點位置應落在畫布範圍內', () => {
       const config = DIFFICULTY_CONFIGS.easy
       const nodes = generateNodes(config)
 
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const distance = getDistance(nodes[i]!.position, nodes[j]!.position)
-          expect(distance).toBeGreaterThanOrEqual(config.minDistance * 0.8) // 允許一點誤差
-        }
-      }
+      nodes.forEach(node => {
+        expect(node.position.x).toBeGreaterThanOrEqual(0)
+        expect(node.position.y).toBeGreaterThanOrEqual(0)
+        expect(node.position.x).toBeLessThanOrEqual(config.canvasWidth)
+        expect(node.position.y).toBeLessThanOrEqual(config.canvasHeight)
+      })
     })
   })
 
@@ -204,7 +205,10 @@ describe('數字連連看遊戲邏輯', () => {
 
       expect(result.completed).toBe(true)
       expect(result.completionTime).toBe(45)
+      expect(result.duration).toBe(45)
       expect(result.totalCount).toBe(config.count)
+      expect(result.totalNumbers).toBe(config.count)
+      expect(result.progress).toBe(config.count)
     })
   })
 

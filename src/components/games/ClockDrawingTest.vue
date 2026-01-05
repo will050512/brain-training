@@ -23,6 +23,7 @@
       <!-- 時鐘面盤 -->
       <div 
         class="clock-face"
+        ref="clockFaceRef"
         :style="{ width: clockFaceSize + 'px', height: clockFaceSize + 'px' }"
       >
         <!-- 吸附區域指示器 (不顯示數字，避免提示) -->
@@ -132,8 +133,10 @@ const props = withDefaults(defineProps<{
 })
 
 // Emits
+// `game-end` is used by the generic game flow; `complete` is used by Mini-Cog flow.
 const emit = defineEmits<{
   (e: 'game-end', result: ClockDrawingResult): void
+  (e: 'complete', result: ClockDrawingResult): void
 }>()
 
 // 實際使用的目標時間
@@ -176,21 +179,34 @@ const minuteHandAngle = ref(0)
 const clockFaceSize = ref(300)
 const draggingNumber = ref<AssembleNumber | null>(null)
 const rotatingHand = ref<'hour' | 'minute' | null>(null)
+const clockFaceRef = ref<HTMLElement | null>(null)
+
+const NUMBER_SIZE = 36
+const NUMBER_HALF = NUMBER_SIZE / 2
+const dragOffsetX = ref(NUMBER_HALF)
+const dragOffsetY = ref(NUMBER_HALF)
+
+function getClockFaceRect(): DOMRect | null {
+  const el = clockFaceRef.value
+    ?? (assembleContainerRef.value?.querySelector('.clock-face') as HTMLElement | null)
+  return el ? el.getBoundingClientRect() : null
+}
 
 // 12 個數字的正確位置
 const snapPositions = computed(() => {
   const size = clockFaceSize.value
   const centerX = size / 2
   const centerY = size / 2
-  const radius = size / 2 - 40
+  // 讓數字保持在面盤內側、且對齊實際數字尺寸
+  const radius = size / 2 - NUMBER_SIZE
   
   return Array.from({ length: 12 }, (_, i) => {
     const number = i === 0 ? 12 : i
     const angle = ((i * 30) - 90) * (Math.PI / 180)
     return {
       number,
-      x: centerX + radius * Math.cos(angle) - 15,
-      y: centerY + radius * Math.sin(angle) - 15,
+      x: centerX + radius * Math.cos(angle) - NUMBER_HALF,
+      y: centerY + radius * Math.sin(angle) - NUMBER_HALF,
       angle: i * 30
     }
   })
@@ -245,15 +261,24 @@ function initAssembleMode() {
 // 拖曳邏輯
 function startDragNumber(event: MouseEvent, num: AssembleNumber) {
   event.preventDefault()
+  const faceRect = getClockFaceRect()
+  if (!faceRect) return
+
+  const targetEl = event.currentTarget as HTMLElement | null
+  if (targetEl) {
+    const r = targetEl.getBoundingClientRect()
+    dragOffsetX.value = event.clientX - r.left
+    dragOffsetY.value = event.clientY - r.top
+  } else {
+    dragOffsetX.value = NUMBER_HALF
+    dragOffsetY.value = NUMBER_HALF
+  }
+
   draggingNumber.value = num
   num.isDragging = true
   
-  const container = assembleContainerRef.value
-  if (!container) return
-  
-  const rect = container.getBoundingClientRect()
-  num.x = event.clientX - rect.left - 15
-  num.y = event.clientY - rect.top - 15
+  num.x = event.clientX - faceRect.left - dragOffsetX.value
+  num.y = event.clientY - faceRect.top - dragOffsetY.value
   
   if (num.snapped) {
     num.snapped = false
@@ -266,18 +291,28 @@ function startDragNumber(event: MouseEvent, num: AssembleNumber) {
 }
 
 function startDragNumberTouch(event: TouchEvent, num: AssembleNumber) {
+  event.preventDefault()
   const touch = event.touches[0]
   if (!touch) return
+
+  const faceRect = getClockFaceRect()
+  if (!faceRect) return
+
+  const targetEl = event.currentTarget as HTMLElement | null
+  if (targetEl) {
+    const r = targetEl.getBoundingClientRect()
+    dragOffsetX.value = touch.clientX - r.left
+    dragOffsetY.value = touch.clientY - r.top
+  } else {
+    dragOffsetX.value = NUMBER_HALF
+    dragOffsetY.value = NUMBER_HALF
+  }
   
   draggingNumber.value = num
   num.isDragging = true
-  
-  const container = assembleContainerRef.value
-  if (!container) return
-  
-  const rect = container.getBoundingClientRect()
-  num.x = touch.clientX - rect.left - 15
-  num.y = touch.clientY - rect.top - 15
+
+  num.x = touch.clientX - faceRect.left - dragOffsetX.value
+  num.y = touch.clientY - faceRect.top - dragOffsetY.value
   
   if (num.snapped) {
     num.snapped = false
@@ -287,30 +322,29 @@ function startDragNumberTouch(event: TouchEvent, num: AssembleNumber) {
   
   document.addEventListener('touchmove', handleDragMoveTouch, { passive: false })
   document.addEventListener('touchend', handleDragEndTouch)
+  document.addEventListener('touchcancel', handleDragEndTouch)
 }
 
 function handleDragMove(event: MouseEvent) {
   if (!draggingNumber.value) return
-  
-  const container = assembleContainerRef.value
-  if (!container) return
-  
-  const rect = container.getBoundingClientRect()
-  draggingNumber.value.x = event.clientX - rect.left - 15
-  draggingNumber.value.y = event.clientY - rect.top - 15
+
+  const faceRect = getClockFaceRect()
+  if (!faceRect) return
+
+  draggingNumber.value.x = event.clientX - faceRect.left - dragOffsetX.value
+  draggingNumber.value.y = event.clientY - faceRect.top - dragOffsetY.value
 }
 
 function handleDragMoveTouch(event: TouchEvent) {
   event.preventDefault()
   const touch = event.touches[0]
   if (!touch || !draggingNumber.value) return
-  
-  const container = assembleContainerRef.value
-  if (!container) return
-  
-  const rect = container.getBoundingClientRect()
-  draggingNumber.value.x = touch.clientX - rect.left - 15
-  draggingNumber.value.y = touch.clientY - rect.top - 15
+
+  const faceRect = getClockFaceRect()
+  if (!faceRect) return
+
+  draggingNumber.value.x = touch.clientX - faceRect.left - dragOffsetX.value
+  draggingNumber.value.y = touch.clientY - faceRect.top - dragOffsetY.value
 }
 
 function handleDragEnd() {
@@ -333,10 +367,11 @@ function handleDragEndTouch() {
   
   document.removeEventListener('touchmove', handleDragMoveTouch)
   document.removeEventListener('touchend', handleDragEndTouch)
+  document.removeEventListener('touchcancel', handleDragEndTouch)
 }
 
 function checkSnapPosition(num: AssembleNumber) {
-  const SNAP_RADIUS = 40
+  const SNAP_RADIUS = 45
   
   for (const pos of snapPositions.value) {
     if (isPositionOccupied(pos.number)) continue
@@ -481,6 +516,7 @@ function completeAssemble() {
   
   isComplete.value = true
   emit('game-end', result)
+  emit('complete', result)
 }
 
 function generateAssemblePreview() {
@@ -511,8 +547,8 @@ function generateAssemblePreview() {
       if (pos) {
         ctx.fillText(
           num.value.toString(), 
-          pos.x + 15 + (size - clockFaceSize.value) / 2, 
-          pos.y + 15 + (size - clockFaceSize.value) / 2
+          pos.x + NUMBER_HALF + (size - clockFaceSize.value) / 2, 
+          pos.y + NUMBER_HALF + (size - clockFaceSize.value) / 2
         )
       }
     }
@@ -558,6 +594,18 @@ onMounted(() => {
   initializeTargetTime()
   initAssembleMode()
 })
+
+onUnmounted(() => {
+  document.removeEventListener('mousemove', handleDragMove)
+  document.removeEventListener('mouseup', handleDragEnd)
+  document.removeEventListener('touchmove', handleDragMoveTouch)
+  document.removeEventListener('touchend', handleDragEndTouch)
+  document.removeEventListener('touchcancel', handleDragEndTouch)
+  document.removeEventListener('mousemove', handleRotateMove)
+  document.removeEventListener('mouseup', handleRotateEnd)
+  document.removeEventListener('touchmove', handleRotateMoveTouch)
+  document.removeEventListener('touchend', handleRotateEndTouch)
+})
 </script>
 
 <style scoped>
@@ -585,7 +633,7 @@ onMounted(() => {
 }
 
 .target-time strong {
-  color: #2563eb;
+  color: var(--color-accent-blue);
   font-size: var(--text-xl);
 }
 
@@ -605,23 +653,24 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
 }
 
 .clock-face {
   position: relative;
-  background: #ffffff;
+  background: var(--color-surface);
   border: 3px solid var(--color-border);
   border-radius: 50%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
+  touch-action: none;
 }
 
 .snap-indicator {
   position: absolute;
-  width: 30px;
-  height: 30px;
-  border: 2px dashed #e5e7eb;
+  width: 36px;
+  height: 36px;
+  border: 2px dashed var(--color-border);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -639,29 +688,30 @@ onMounted(() => {
   justify-content: center;
   font-size: 1.1rem;
   font-weight: bold;
-  color: #1f2937;
-  background: #ffffff;
-  border: 2px solid #667eea;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 2px solid var(--color-accent-blue);
   border-radius: 50%;
   cursor: grab;
   user-select: none;
   transition: transform 0.1s, box-shadow 0.2s;
   z-index: 10;
+  touch-action: none;
 }
 
 .draggable-number:hover {
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: var(--shadow-sm);
 }
 
 .draggable-number.dragging {
   cursor: grabbing;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-lg);
   z-index: 100;
 }
 
 .draggable-number.snapped {
-  border-color: #667eea;
-  background: #f5f3ff;
+  border-color: var(--color-accent-blue);
+  background: var(--color-bg-soft);
 }
 
 .clock-hand {
@@ -676,7 +726,7 @@ onMounted(() => {
 .hour-hand {
   width: 8px;
   height: 30%;
-  background: linear-gradient(to top, #1f2937, #374151);
+  background: var(--color-text);
   border-radius: 4px;
   margin-left: -4px;
 }
@@ -684,7 +734,7 @@ onMounted(() => {
 .minute-hand {
   width: 5px;
   height: 40%;
-  background: linear-gradient(to top, #3b82f6, #60a5fa);
+  background: var(--color-accent-blue);
   border-radius: 3px;
   margin-left: -2.5px;
 }
@@ -709,7 +759,7 @@ onMounted(() => {
   transform: translate(-50%, -50%);
   width: 16px;
   height: 16px;
-  background: #1f2937;
+  background: var(--color-text);
   border-radius: 50%;
   z-index: 30;
 }
@@ -717,7 +767,7 @@ onMounted(() => {
 .number-pool {
   width: 100%;
   max-width: 350px;
-  padding: 1rem;
+  padding: var(--space-sm);
   background: var(--color-bg-soft);
   border-radius: 12px;
   text-align: center;

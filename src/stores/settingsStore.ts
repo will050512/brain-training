@@ -137,6 +137,9 @@ export const useSettingsStore = defineStore('settings', () => {
   const enableVoicePrompts = ref(false) // 語音提示
   const enableHapticFeedback = ref(true) // 震動反饋
 
+  // ===== 提醒設定 =====
+  const assessmentReminderEnabled = ref(true) // 月度評估提醒（預設開啟）
+
   // ===== 佈局設定 =====
   const sidebarCollapsed = ref(false) // 側邊欄預設展開
 
@@ -178,6 +181,7 @@ export const useSettingsStore = defineStore('settings', () => {
         highContrast.value = data.highContrast ?? false
         enableVoicePrompts.value = data.enableVoicePrompts ?? false
         enableHapticFeedback.value = data.enableHapticFeedback ?? true
+        assessmentReminderEnabled.value = data.assessmentReminderEnabled ?? true
         // 佈局設定
         sidebarCollapsed.value = data.sidebarCollapsed ?? false
         // 遊戲難度設定
@@ -219,6 +223,7 @@ export const useSettingsStore = defineStore('settings', () => {
       highContrast: highContrast.value,
       enableVoicePrompts: enableVoicePrompts.value,
       enableHapticFeedback: enableHapticFeedback.value,
+      assessmentReminderEnabled: assessmentReminderEnabled.value,
       // 佈局設定
       sidebarCollapsed: sidebarCollapsed.value,
       // 遊戲難度設定
@@ -246,7 +251,7 @@ export const useSettingsStore = defineStore('settings', () => {
   watch(
     [soundEnabled, musicEnabled, soundVolume, musicVolume, hasSeenWelcome, fontSize, 
      hasCompletedAssessment, assessmentResult, themeMode, orientationPreference, declineDetectionMode, dailyTrainingDuration, weeklyTrainingGoal,
-     enableBehaviorTracking, reduceMotion, highContrast, enableVoicePrompts, enableHapticFeedback,
+     enableBehaviorTracking, reduceMotion, highContrast, enableVoicePrompts, enableHapticFeedback, assessmentReminderEnabled,
      sidebarCollapsed, defaultDifficulty, defaultSubDifficulty, gameDifficultySettings],
     () => saveToStorage(),
     { deep: true }
@@ -450,6 +455,7 @@ export const useSettingsStore = defineStore('settings', () => {
     highContrast,
     enableVoicePrompts,
     enableHapticFeedback,
+    assessmentReminderEnabled,
     currentDeclineConfig,
     // 佈局狀態
     sidebarCollapsed,

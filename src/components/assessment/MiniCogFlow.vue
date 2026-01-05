@@ -115,6 +115,7 @@
         <ClockDrawingTest
           :target-time="clockTime"
           :randomize="false"
+          :behavior-tracking-consent="clockBehaviorTrackingConsent"
           @complete="handleClockComplete"
         />
       </div>
@@ -304,6 +305,7 @@ const result = ref<MiniCogResult | null>(null)
 const clockAssessment = ref<ClockDrawingSelfAssessment | null>(null)
 const clockImageData = ref<string | undefined>(undefined)
 const clockCompletionTime = ref(0)
+const clockBehaviorTrackingConsent = ref(false)
 
 // 儲存狀態
 const isSaving = ref(false)
@@ -418,23 +420,29 @@ const startWordDisplay = () => {
   }, 1000)
 }
 
-const proceedToClockDrawing = () => {
+const proceedToClockDrawing = async () => {
+  const odId = userStore.currentUser?.id
+  if (!odId) {
+    clockBehaviorTrackingConsent.value = false
+    currentStep.value = 2
+    return
+  }
+
+  try {
+    const consent = await getDataConsent(odId)
+    clockBehaviorTrackingConsent.value = Boolean(consent?.behaviorTrackingConsent)
+  } catch {
+    clockBehaviorTrackingConsent.value = false
+  }
+
   currentStep.value = 2
 }
 
-const handleClockComplete = async (data: ClockDrawingResult) => {
+const handleClockComplete = (data: ClockDrawingResult) => {
   clockAssessment.value = data.selfAssessment
   clockCompletionTime.value = data.completionTime
-  
-  // Check consent before storing image
-  const odId = userStore.currentUser?.id
-  if (!odId) {
-    currentStep.value = 3
-    return
-  }
-  
-  const consent = await getDataConsent(odId)
-  if (consent?.behaviorTrackingConsent && data.imageData) {
+
+  if (clockBehaviorTrackingConsent.value && data.imageData) {
     clockImageData.value = data.imageData
   }
   
@@ -513,6 +521,7 @@ const retakeTest = () => {
   clockAssessment.value = null
   clockImageData.value = undefined
   clockCompletionTime.value = 0
+  clockBehaviorTrackingConsent.value = false
   sessionStartTime = 0
 }
 
