@@ -472,6 +472,7 @@ export function convertStroopResult(
 ): UnifiedGameResult {
   const config = GAME_SCORE_CONFIGS['stroop-test']!
   const { correctCount, wrongCount, totalCount, avgReactionTime } = rawResult
+  const durationSeconds = duration ?? Number((rawResult as any)?.duration ?? 0)
   
   const accuracy = totalCount > 0 ? correctCount / totalCount : 0
   const speedScore = calculateSpeedScore(avgReactionTime, config.reactionBenchmark)
@@ -567,7 +568,7 @@ export function convertMazeResult(
     metrics,
     tracking: {
       correctCount: completed ? moves : 0,
-      wrongCount: Math.max(0, maxPossible - Math.max(0, Math.min(maxPossible, Math.round(rawScore)))),
+      wrongCount: Math.max(0, moves - optimalMoves),
       totalActions: moves,
       avgReactionTime: avgMoveTime
     },
@@ -796,6 +797,7 @@ export function convertPokerMemoryResult(
 ): UnifiedGameResult {
   const config = GAME_SCORE_CONFIGS['poker-memory']!
   const { matchedPairs, totalPairs, moves, timeLeft } = rawResult
+  const durationSeconds = duration ?? Number((rawResult as any)?.duration ?? 0)
   
   const completion = totalPairs > 0 ? matchedPairs / totalPairs : 0
   const optimalMoves = totalPairs
@@ -858,6 +860,7 @@ export function convertRockPaperScissorsResult(
 ): UnifiedGameResult {
   const config = GAME_SCORE_CONFIGS['rock-paper-scissors']!
   const { wins, losses, ties, totalRounds, avgResponseTime } = rawResult
+  const durationSeconds = duration ?? Number((rawResult as any)?.duration ?? 0)
   
   const winRate = totalRounds > 0 ? wins / totalRounds : 0
   const speedScore = calculateSpeedScore(avgResponseTime, config.reactionBenchmark)
@@ -1117,6 +1120,7 @@ export function convertPatternReasoningResult(
   
   const accuracy = totalQuestions > 0 ? correctCount / totalQuestions : 0
   const speedScore = calculateSpeedScore(avgReactionTime, config.reactionBenchmark)
+  const durationSeconds = duration ?? Number(rawResult?.duration ?? 0)
   
   const metrics: StandardizedMetrics = {
     completion: 1,

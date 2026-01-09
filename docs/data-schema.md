@@ -27,6 +27,20 @@
 - `gameSpecific.*`（依各遊戲 schema；建議序列化成 JSON 儲存於一欄 `gameSpecific`）
 - `displayStats`（可選：JSON，前端顯示用）
 
+### Sheet 版型建議（供 Apps Script 直接寫入）
+1. 表單標題：`GameResults`
+2. 首列欄位：
+   ```
+   userId,sessionId,gameId,difficulty,subDifficulty,timestamp,durationSec,score,grade,
+   metrics.completion,metrics.accuracy,metrics.speed,metrics.efficiency,
+   tracking.correctCount,tracking.wrongCount,tracking.missedCount,tracking.maxCombo,
+   tracking.avgReactionTimeMs,tracking.avgThinkingTimeMs,tracking.totalActions,
+   bestScore,gameSpecific,displayStats
+   ```
+3. JSON 欄位（`gameSpecific`,`displayStats`）建議 `JSON.stringify` 後寫入；讀取時用 `JSON.parse`。
+4. timestamp 請存 ISO（`new Date().toISOString()`），避免時區誤判。
+5. 若需分表：可將每日訓練/一般遊戲分不同 Sheet，欄位相同即可。
+
 ## rawResult 需求（各遊戲 emit 到 GamePlayView 的形狀）
 ### whack-a-mole
 - `hitMoles`, `missedMoles`, `hitBombs`, `totalMoles`, `avgReactionTime`, `maxCombo`, `score`
