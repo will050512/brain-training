@@ -68,6 +68,7 @@ npm run test
 - `docs/` - 開發者指南與規範
 - `scripts/` - 小工具（如 icons 產生腳本）
 - `public/` - 公開靜態資源
+- `docs/data-schema.md` - 各遊戲 rawResult 與 Google Sheet 對接欄位定義
 
 ---
 
