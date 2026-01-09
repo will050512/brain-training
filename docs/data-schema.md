@@ -41,6 +41,38 @@
 4. timestamp 請存 ISO（`new Date().toISOString()`），避免時區誤判。
 5. 若需分表：可將每日訓練/一般遊戲分不同 Sheet，欄位相同即可。
 
+### Apps Script 對接（已建置）
+- Web App URL：`https://script.google.com/macros/s/AKfycbzN1BnvG1hHI8pVZpbbZ2hcCixD4knV2pgM1yG2hAvl2a1S3E8DLxCUKe5v3KmNokra/exec`
+- 建議以 `POST` 傳送 JSON，範例：
+  ```json
+  {
+    "userId": "od-123",
+    "sessionId": "session-uuid",
+    "gameId": "whack-a-mole",
+    "difficulty": "medium",
+    "subDifficulty": 2,
+    "timestamp": "2025-12-17T08:00:00.000Z",
+    "durationSec": 92,
+    "score": 84,
+    "grade": "A",
+    "metrics": { "completion": 1, "accuracy": 0.92, "speed": 78, "efficiency": 95 },
+    "tracking": { "correctCount": 46, "wrongCount": 4, "missedCount": 2, "maxCombo": 8, "avgReactionTimeMs": 620 },
+    "bestScore": 90,
+    "gameSpecific": { "hitBombs": 1, "totalMoles": 52 },
+    "displayStats": [
+      { "label": "正確率", "value": 92, "unit": "%", "icon": "✅", "highlight": true },
+      { "label": "平均反應", "value": 0.62, "unit": "秒", "icon": "⚡" }
+    ]
+  }
+  ```
+- Apps Script 端建議：驗證必填欄位（userId、gameId、timestamp、score），將 `gameSpecific` / `displayStats` 以字串存入，若欄位缺漏則回傳 400。
+
+### 舊用戶資料回填流程（連線後自動補寫）
+1. 客戶端啟動時，讀取本地 IndexedDB/LocalStorage 的舊紀錄（若有 legacy `GameResult` 形狀）。
+2. 逐筆用 `scoreNormalizer.normalize(gameId, rawResult, difficulty, subDifficulty, durationSec)` 轉為 `UnifiedGameResult`，再用 `unifiedToLegacyGameResult` 或 `normalizeToLegacyGameResult` 確保欄位完整。
+3. 將結果映射成「Google Sheet 欄位」格式（同上表頭，JSON 欄位用 `JSON.stringify`）。
+4. 以批次或逐筆 `POST` 到 Apps Script URL；建議攜帶 `sessionId`/`timestamp` 避免重複寫入，可由 Apps Script 端去重。
+
 ## rawResult 需求（各遊戲 emit 到 GamePlayView 的形狀）
 ### whack-a-mole
 - `hitMoles`, `missedMoles`, `hitBombs`, `totalMoles`, `avgReactionTime`, `maxCombo`, `score`
