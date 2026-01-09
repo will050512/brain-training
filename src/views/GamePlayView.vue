@@ -54,7 +54,7 @@
           >
             <div class="status-label text-[10px] text-[var(--color-text-secondary)] leading-none mb-0.5">連擊</div>
             <div class="status-value text-sm sm:text-lg font-bold text-orange-500 dark:text-orange-400 leading-none animate-bounce">
-              🔥{{ gameStatus.combo }}
+              {{ gameStatus.combo }}x
             </div>
           </div>
 
@@ -163,11 +163,16 @@
       <div v-else-if="gameState === 'playing'" class="game-content-full w-full h-full min-h-0 overflow-hidden">
         <component
           :is="gameComponent"
+          :key="gameComponentKey"
           :difficulty="gameStore.currentDifficulty"
           :settings="difficultySettings"
           @score-change="handleScoreChange"
+          @score-update="handleScoreChange"
+          @score:update="handleScoreChange"
+          @game-start="handleGameStart"
           @game-end="handleGameEnd"
           @status-update="handleStatusUpdate"
+          :auto-start="shouldAutoStart"
           class="w-full h-full min-h-0"
         />
       </div>
@@ -445,6 +450,7 @@ import { useResponsive } from '@/composables/useResponsive'
 import { DIFFICULTIES, type GameResult, type GameState, type GameDefinition, type GameStatusUpdate } from '@/types/game'
 import { calculateDifficultyAdjustment, applyDifficultyAdjustment, getFullDifficultyLabel, type DifficultyAdjustment } from '@/services/adaptiveDifficultyService'
 import { markGameCompleted } from '@/services/dailyTrainingService'
+import { convertGameEndResult } from '@/services/gameResultConverter'
 import TrainingCompleteModal from '@/components/ui/TrainingCompleteModal.vue'
 import { gameRegistry } from '@/core/gameRegistry'
 import type { CognitiveDimension } from '@/types/cognitive'
@@ -478,13 +484,19 @@ function checkOrientation() {
   isLandscape.value = window.innerHeight < 500 && window.innerWidth > window.innerHeight
 }
 
-// 遊戲狀態
-const gameState = ref<GameState>('ready')
+// 遊戲狀態（由遊戲元件內部 ReadyScreen 控制開始）
+const gameState = ref<GameState>('playing')
 const currentScore = ref(0)
 const elapsedTime = ref(0)
 const gameResult = ref<GameResult | null>(null)
 const difficultyAdjustment = ref<DifficultyAdjustment | null>(null)
 let timerInterval: ReturnType<typeof setInterval> | null = null
+const gameComponentKey = ref(0)
+const autoStartOverride = ref(false)
+
+const shouldAutoStart = computed(() => {
+  return route.query.autoStart === 'true' || autoStartOverride.value
+})
 
 // 遊戲元件回報的即時狀態
 const gameStatus = ref<GameStatusUpdate>({
@@ -688,23 +700,9 @@ function getFinalEmoji(score: number): string {
 
 // 開始遊戲
 function startGame(): void {
-  gameState.value = 'playing'
-  currentScore.value = 0
-  elapsedTime.value = 0
-  
-  // 重置遊戲狀態顯示
-  gameStatus.value = {
-    showTimer: true,
-    showScore: true,
-    showCounts: false,
-    showCombo: false,
-    showProgress: false
-  }
-  
-  // 開始計時
-  timerInterval = setInterval(() => {
-    elapsedTime.value++
-  }, 1000)
+  // 兼容舊版「開始」按鈕：強制重建遊戲元件並自動開始
+  autoStartOverride.value = true
+  gameComponentKey.value++
 }
 
 // 暫停遊戲
@@ -719,6 +717,19 @@ function pauseGame(): void {
 // 繼續遊戲
 function resumeGame(): void {
   gameState.value = 'playing'
+  timerInterval = setInterval(() => {
+    elapsedTime.value++
+  }, 1000)
+}
+
+function handleGameStart(): void {
+  // 倒數完成後由遊戲元件觸發
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+  autoStartOverride.value = false
+  elapsedTime.value = 0
   timerInterval = setInterval(() => {
     elapsedTime.value++
   }, 1000)
@@ -750,13 +761,26 @@ function handleStatusUpdate(status: GameStatusUpdate): void {
 }
 
 // 處理遊戲結束
-async function handleGameEnd(result: GameResult): Promise<void> {
+async function handleGameEnd(rawResult: unknown): Promise<void> {
   if (timerInterval) {
     clearInterval(timerInterval)
     timerInterval = null
   }
   
   try {
+    const durationSeconds =
+      typeof (rawResult as any)?.duration === 'number'
+        ? Number((rawResult as any).duration)
+        : elapsedTime.value
+
+    const result = convertGameEndResult(
+      gameId.value,
+      rawResult,
+      gameStore.currentDifficulty,
+      undefined,
+      durationSeconds
+    )
+
     gameResult.value = result
     currentScore.value = result.score
     gameState.value = 'finished'
@@ -808,12 +832,25 @@ async function handleGameEnd(result: GameResult): Promise<void> {
 
 // 再玩一次
 function playAgain(): void {
-  gameState.value = 'ready'
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+  gameState.value = 'playing'
   currentScore.value = 0
   elapsedTime.value = 0
   gameResult.value = null
   difficultyAdjustment.value = null
   recommendedGames.value = []
+  gameStatus.value = {
+    showTimer: true,
+    showScore: true,
+    showCounts: false,
+    showCombo: false,
+    showProgress: false
+  }
+  autoStartOverride.value = true
+  gameComponentKey.value++
 }
 
 // 繼續下一個訓練遊戲

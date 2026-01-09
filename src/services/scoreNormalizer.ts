@@ -66,7 +66,7 @@ export const GAME_SCORE_CONFIGS: Record<string, GameScoreConfig> = {
     hasCombo: false,
     trackMissed: true
   },
-  'math-game': {
+  'math-calc': {
     type: 'accuracy',
     weights: { accuracy: 70, speed: 20, combo: 10 },
     reactionBenchmark: 'quick',
@@ -115,14 +115,14 @@ export const GAME_SCORE_CONFIGS: Record<string, GameScoreConfig> = {
     hasCombo: false,
     trackMissed: false
   },
-  'auditory-memory': {
+  'audio-memory': {
     type: 'memory',
     weights: { accuracy: 80, combo: 20 },
     reactionBenchmark: 'quick',
     hasCombo: true,
     trackMissed: false
   },
-  'rhythm-imitation': {
+  'rhythm-mimic': {
     type: 'precision',
     weights: { accuracy: 100 },
     reactionBenchmark: 'quick',
@@ -616,25 +616,22 @@ export function convertSpotDifferenceResult(
  * 加減乘除結果轉換
  */
 export function convertMathGameResult(
-  rawResult: {
-    correctCount: number
-    wrongCount: number
-    totalQuestions: number
-    avgReactionTime: number
-    maxCombo: number
-    score: number
-    maxPossibleScore: number
-  },
+  rawResult: any,
   difficulty: Difficulty,
   subDifficulty?: SubDifficulty,
   duration?: number
 ): UnifiedGameResult {
-  const config = GAME_SCORE_CONFIGS['math-game']!
-  const { correctCount, wrongCount, totalQuestions, avgReactionTime, maxCombo, maxPossibleScore } = rawResult
+  const config = GAME_SCORE_CONFIGS['math-calc']!
+  const correctCount = Number(rawResult?.correctCount ?? 0)
+  const wrongCount = Number(rawResult?.wrongCount ?? 0)
+  const totalCount = Number(rawResult?.totalCount ?? (correctCount + wrongCount))
+  const avgReactionTime = Number(rawResult?.avgReactionTime ?? rawResult?.avgResponseTime ?? 0)
+  const maxCombo = Number(rawResult?.maxCombo ?? 0)
+  const totalQuestions = totalCount
   
-  const accuracy = totalQuestions > 0 ? correctCount / totalQuestions : 0
-  const speedScore = calculateSpeedScore(avgReactionTime, config.reactionBenchmark)
-  const comboBonus = calculateComboBonus(maxCombo, totalQuestions)
+  const accuracy = totalCount > 0 ? correctCount / totalCount : 0
+  const speedScore = avgReactionTime > 0 ? calculateSpeedScore(avgReactionTime, config.reactionBenchmark) : 50
+  const comboBonus = calculateComboBonus(maxCombo, totalCount)
   
   const metrics: StandardizedMetrics = {
     completion: 1,
@@ -646,11 +643,11 @@ export function convertMathGameResult(
   const finalScore = calculateFinalScore(metrics, config, comboBonus)
   
   return {
-    gameId: 'math-game',
+    gameId: 'math-calc',
     difficulty,
     subDifficulty,
     timestamp: new Date(),
-    duration: duration || 0,
+    duration: duration || Number(rawResult?.duration ?? 0),
     score: finalScore,
     maxScore: 100,
     grade: getGradeFromScore(finalScore),
@@ -1022,20 +1019,19 @@ export function convertPatternReasoningResult(
  * 聽覺記憶結果轉換
  */
 export function convertAuditoryMemoryResult(
-  rawResult: {
-    correctCount: number
-    wrongCount: number
-    maxStreak: number
-    maxLength: number
-    score: number
-    maxPossibleScore: number
-  },
+  rawResult: any,
   difficulty: Difficulty,
   subDifficulty?: SubDifficulty,
   duration?: number
 ): UnifiedGameResult {
-  const config = GAME_SCORE_CONFIGS['auditory-memory']!
-  const { correctCount, wrongCount, maxStreak, maxLength, score, maxPossibleScore } = rawResult
+  const config = GAME_SCORE_CONFIGS['audio-memory']!
+  const correctCount = Number(rawResult?.correctRounds ?? rawResult?.correctCount ?? 0)
+  const totalRounds = Number(rawResult?.totalRounds ?? 0)
+  const wrongCount = Math.max(0, totalRounds - correctCount)
+  const maxStreak = Number(rawResult?.maxStreak ?? 0)
+  const maxLength = Number(rawResult?.maxLength ?? 0)
+  const score = Number(rawResult?.score ?? rawResult?.accuracy ?? 0)
+  const maxPossibleScore = 100
   
   const normalizedScore = normalizeScore(score, maxPossibleScore)
   const comboBonus = calculateComboBonus(maxStreak, correctCount + wrongCount)
@@ -1050,11 +1046,11 @@ export function convertAuditoryMemoryResult(
   const finalScore = Math.round(normalizedScore * 0.8 + comboBonus * 0.2)
   
   return {
-    gameId: 'auditory-memory',
+    gameId: 'audio-memory',
     difficulty,
     subDifficulty,
     timestamp: new Date(),
-    duration: duration || 0,
+    duration: duration || Number(rawResult?.duration ?? 0),
     score: clampScore(finalScore),
     maxScore: 100,
     grade: getGradeFromScore(finalScore),
@@ -1081,21 +1077,18 @@ export function convertAuditoryMemoryResult(
  * 節奏模仿結果轉換
  */
 export function convertRhythmImitationResult(
-  rawResult: {
-    perfectCount: number
-    goodCount: number
-    okCount: number
-    missCount: number
-    totalNotes: number
-    avgError: number
-    score: number
-  },
+  rawResult: any,
   difficulty: Difficulty,
   subDifficulty?: SubDifficulty,
   duration?: number
 ): UnifiedGameResult {
-  const config = GAME_SCORE_CONFIGS['rhythm-imitation']!
-  const { perfectCount, goodCount, okCount, missCount, totalNotes, avgError } = rawResult
+  const config = GAME_SCORE_CONFIGS['rhythm-mimic']!
+  const perfectCount = Number(rawResult?.perfectCount ?? 0)
+  const goodCount = Number(rawResult?.goodCount ?? 0)
+  const missCount = Number(rawResult?.missCount ?? 0)
+  const totalNotes = Number(rawResult?.totalNotes ?? rawResult?.totalBeats ?? (perfectCount + goodCount + missCount))
+  const okCount = Number(rawResult?.okCount ?? Math.max(0, totalNotes - perfectCount - goodCount - missCount))
+  const avgError = Number(rawResult?.avgError ?? 0)
   
   // 加權計算準確率：Perfect=100%, Good=80%, Ok=50%, Miss=0%
   const weightedAccuracy = totalNotes > 0 
@@ -1112,11 +1105,11 @@ export function convertRhythmImitationResult(
   const finalScore = clampScore(weightedAccuracy * 100)
   
   return {
-    gameId: 'rhythm-imitation',
+    gameId: 'rhythm-mimic',
     difficulty,
     subDifficulty,
     timestamp: new Date(),
-    duration: duration || 0,
+    duration: duration || Number(rawResult?.duration ?? 0),
     score: finalScore,
     maxScore: 100,
     grade: getGradeFromScore(finalScore),
@@ -1142,6 +1135,57 @@ export function convertRhythmImitationResult(
   }
 }
 
+/**
+ * 時鐘繪圖結果轉換
+ */
+export function convertClockDrawingResult(
+  rawResult: any,
+  difficulty: Difficulty,
+  subDifficulty?: SubDifficulty,
+  duration?: number
+): UnifiedGameResult {
+  const score = Number(rawResult?.score ?? 0)
+  const maxRawScore = 3
+  const normalizedScore = clampScore(normalizeScore(score, maxRawScore))
+  const completionTimeMs = Number(rawResult?.completionTime ?? 0)
+  const durationSeconds = duration ?? (completionTimeMs > 0 ? Math.round(completionTimeMs / 1000) : 0)
+  const accuracy = maxRawScore > 0 ? Math.min(score / maxRawScore, 1) : 0
+
+  const metrics: StandardizedMetrics = {
+    completion: 1,
+    accuracy,
+    speed: 50,
+    efficiency: 100
+  }
+
+  return {
+    gameId: 'clock-drawing',
+    difficulty,
+    subDifficulty,
+    timestamp: new Date(),
+    duration: durationSeconds,
+    score: normalizedScore,
+    maxScore: 100,
+    grade: getGradeFromScore(normalizedScore),
+    metrics,
+    tracking: {
+      correctCount: Math.round(score),
+      wrongCount: Math.max(0, maxRawScore - Math.round(score)),
+      avgThinkingTime: completionTimeMs > 0 ? completionTimeMs : undefined
+    },
+    gameSpecific: {
+      targetTime: rawResult?.targetTime,
+      selfAssessment: rawResult?.selfAssessment,
+      completionTime: completionTimeMs,
+      imageData: rawResult?.imageData
+    },
+    displayStats: [
+      { label: '完成度', value: Math.round(accuracy * 100), unit: '%', icon: 'OK', highlight: true },
+      { label: '用時', value: Math.round(durationSeconds), unit: '秒', icon: 'TIME' }
+    ]
+  }
+}
+
 // ========== 主要轉換函數 ==========
 
 /**
@@ -1161,15 +1205,16 @@ export function normalizeGameResult(
     'stroop-test': convertStroopResult,
     'maze-navigation': convertMazeResult,
     'spot-difference': convertSpotDifferenceResult,
-    'math-game': convertMathGameResult,
+    'math-calc': convertMathGameResult,
     'instant-memory': convertInstantMemoryResult,
     'poker-memory': convertPokerMemoryResult,
     'rock-paper-scissors': convertRockPaperScissorsResult,
     'gesture-memory': convertGestureMemoryResult,
     'number-connect': convertNumberConnectResult,
     'pattern-reasoning': convertPatternReasoningResult,
-    'auditory-memory': convertAuditoryMemoryResult,
-    'rhythm-imitation': convertRhythmImitationResult
+    'audio-memory': convertAuditoryMemoryResult,
+    'rhythm-mimic': convertRhythmImitationResult,
+    'clock-drawing': convertClockDrawingResult
   }
   
   const converter = converters[gameId]

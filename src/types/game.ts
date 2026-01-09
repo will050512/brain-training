@@ -122,6 +122,16 @@ export interface GameResult {
   avgReactionTime: number // 毫秒
   duration: number        // 實際遊戲時長（秒）
   timestamp: Date
+  /** 可選：等級評定 */
+  grade?: GameGrade
+  /** 可選：四維標準化指標（跨遊戲一致） */
+  metrics?: StandardizedMetrics
+  /** 可選：統一追蹤數據（反應/思考/漏答等） */
+  tracking?: TrackingData
+  /** 可選：遊戲專屬數據（保留原始細節） */
+  gameSpecific?: Record<string, unknown>
+  /** 可選：結算畫面顯示項目（資料驅動） */
+  displayStats?: DisplayStat[]
 }
 
 // 遊戲會話記錄
