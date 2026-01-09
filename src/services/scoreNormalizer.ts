@@ -138,6 +138,19 @@ export const GAME_SCORE_CONFIGS: Record<string, GameScoreConfig> = {
   }
 }
 
+// ========== 遊戲 ID 相容別名 ==========
+
+const GAME_ID_ALIASES: Record<string, string> = {
+  // 舊命名 / 異動命名 -> 現行註冊命名（src/games/index.ts）
+  'math-game': 'math-calc',
+  'auditory-memory': 'audio-memory',
+  'rhythm-imitation': 'rhythm-mimic'
+}
+
+function resolveGameId(gameId: string): string {
+  return GAME_ID_ALIASES[gameId] ?? gameId
+}
+
 // ========== 工具函數 ==========
 
 /**
@@ -147,21 +160,30 @@ export function calculateSpeedScore(
   avgReactionTime: number,
   benchmark: ReactionTimeBenchmark
 ): number {
+  // 單位校驗：若看起來是「秒」(例如 1.2、5、12)，轉為毫秒。
+  // 人類反應時間不太可能 < 50ms，因此小於 50 且 > 0 時，優先視為秒。
+  const rtMs = (() => {
+    const rt = Number(avgReactionTime)
+    if (!Number.isFinite(rt) || rt < 0) return 0
+    if (rt > 0 && rt < 50) return rt * 1000
+    return rt
+  })()
+
   const { excellent, good, acceptable } = REACTION_TIME_BENCHMARKS[benchmark]
   
-  if (avgReactionTime <= excellent) return 100
-  if (avgReactionTime <= good) {
+  if (rtMs <= excellent) return 100
+  if (rtMs <= good) {
     // excellent 到 good 之間線性插值（100 到 80）
-    const ratio = (avgReactionTime - excellent) / (good - excellent)
+    const ratio = (rtMs - excellent) / (good - excellent)
     return 100 - ratio * 20
   }
-  if (avgReactionTime <= acceptable) {
+  if (rtMs <= acceptable) {
     // good 到 acceptable 之間線性插值（80 到 60）
-    const ratio = (avgReactionTime - good) / (acceptable - good)
+    const ratio = (rtMs - good) / (acceptable - good)
     return 80 - ratio * 20
   }
   // 超過 acceptable，逐漸降低但不低於 20
-  const overRatio = Math.min((avgReactionTime - acceptable) / acceptable, 1)
+  const overRatio = Math.min((rtMs - acceptable) / acceptable, 1)
   return Math.max(60 - overRatio * 40, 20)
 }
 
@@ -320,19 +342,16 @@ function generateWhackAMoleDisplayStats(
  * 天平比重結果轉換
  */
 export function convertBalanceScaleResult(
-  rawResult: {
-    correctCount: number
-    wrongCount: number
-    totalQuestions: number
-    avgReactionTime: number
-    score: number
-  },
+  rawResult: any,
   difficulty: Difficulty,
   subDifficulty?: SubDifficulty,
   duration?: number
 ): UnifiedGameResult {
   const config = GAME_SCORE_CONFIGS['balance-scale']!
-  const { correctCount, wrongCount, totalQuestions, avgReactionTime } = rawResult
+  const correctCount = Number(rawResult?.correctCount ?? 0)
+  const totalQuestions = Number(rawResult?.totalQuestions ?? rawResult?.totalRounds ?? 0)
+  const wrongCount = Number(rawResult?.wrongCount ?? Math.max(0, totalQuestions - correctCount))
+  const avgReactionTime = Number(rawResult?.avgReactionTime ?? rawResult?.avgResponseTime ?? 0)
   
   const accuracy = totalQuestions > 0 ? correctCount / totalQuestions : 0
   const speedScore = calculateSpeedScore(avgReactionTime, config.reactionBenchmark)
@@ -351,7 +370,7 @@ export function convertBalanceScaleResult(
     difficulty,
     subDifficulty,
     timestamp: new Date(),
-    duration: duration || 0,
+    duration: duration || Number(rawResult?.duration ?? 0) || 0,
     score: finalScore,
     maxScore: 100,
     grade: getGradeFromScore(finalScore),
@@ -471,7 +490,7 @@ export function convertStroopResult(
     difficulty,
     subDifficulty,
     timestamp: new Date(),
-    duration: duration || 0,
+    duration: durationSeconds,
     score: finalScore,
     maxScore: 100,
     grade: getGradeFromScore(finalScore),
@@ -497,23 +516,35 @@ export function convertStroopResult(
  * 迷宮導航結果轉換
  */
 export function convertMazeResult(
-  rawResult: {
-    completed: boolean
-    moves: number
-    optimalMoves: number
-    duration: number
-    score: number
-  },
+  rawResult: any,
   difficulty: Difficulty,
   subDifficulty?: SubDifficulty,
   duration?: number
 ): UnifiedGameResult {
   const config = GAME_SCORE_CONFIGS['maze-navigation']!
-  const { completed, moves, optimalMoves } = rawResult
+  const completed = Boolean(rawResult?.completed ?? true)
+  const moves = Number(rawResult?.moves ?? 0)
+  const optimalMoves = Number(rawResult?.optimalMoves ?? 0)
+  const timeSpent = Number(rawResult?.timeSpent ?? rawResult?.duration ?? 0)
+  const avgMoveTime = Number(rawResult?.avgMoveTime ?? rawResult?.avgReactionTime ?? 0)
+
+  const efficiency = (() => {
+    const rawEfficiency = Number(
+      rawResult?.efficiency ??
+        (optimalMoves > 0 && moves > 0 ? optimalMoves / moves : 0)
+    )
+    if (!Number.isFinite(rawEfficiency) || rawEfficiency < 0) return 0
+    if (rawEfficiency > 1) return Math.min(1, rawEfficiency / 100)
+    return rawEfficiency
+  })()
   
   const completion = completed ? 1 : 0
-  const efficiencyScore = completed ? calculateEfficiencyScore(moves, optimalMoves) : 0
-  const speedScore = completed ? Math.max(100 - (rawResult.duration / 60) * 20, 40) : 0
+  const efficiencyScore = completed
+    ? (optimalMoves > 0 ? calculateEfficiencyScore(moves, optimalMoves) : Math.round(efficiency * 100))
+    : 0
+  const speedScore = completed
+    ? (avgMoveTime > 0 ? calculateSpeedScore(avgMoveTime, config.reactionBenchmark) : 50)
+    : 0
   
   const metrics: StandardizedMetrics = {
     completion,
@@ -529,27 +560,28 @@ export function convertMazeResult(
     difficulty,
     subDifficulty,
     timestamp: new Date(),
-    duration: duration || rawResult.duration,
+    duration: duration || timeSpent || 0,
     score: finalScore,
     maxScore: 100,
     grade: getGradeFromScore(finalScore),
     metrics,
     tracking: {
-      correctCount: completed ? 1 : 0,
-      wrongCount: 0,
-      totalActions: moves
+      correctCount: completed ? moves : 0,
+      wrongCount: Math.max(0, maxPossible - Math.max(0, Math.min(maxPossible, Math.round(rawScore)))),
+      totalActions: moves,
+      avgReactionTime: avgMoveTime
     },
     gameSpecific: {
       completed,
       moves,
       optimalMoves,
-      efficiency: optimalMoves > 0 ? Math.round((optimalMoves / moves) * 100) : 0
+      efficiency: Math.round(efficiency * 100)
     },
     displayStats: [
       { label: '完成狀態', value: completed ? '成功' : '未完成', icon: completed ? '🏆' : '❌', highlight: true },
       { label: '移動步數', value: moves, icon: '👣' },
       { label: '最佳步數', value: optimalMoves, icon: '⭐' },
-      { label: '效率', value: optimalMoves > 0 ? Math.round((optimalMoves / moves) * 100) : 0, unit: '%', icon: '📊' }
+      { label: '效率', value: Math.round(efficiency * 100), unit: '%', icon: '📊' }
     ]
   }
 }
@@ -558,20 +590,25 @@ export function convertMazeResult(
  * 找不同結果轉換
  */
 export function convertSpotDifferenceResult(
-  rawResult: {
-    foundCount: number
-    totalDifferences: number
-    wrongClicks: number
-    avgFoundTime: number
-    duration: number
-    score: number
-  },
+  rawResult: any,
   difficulty: Difficulty,
   subDifficulty?: SubDifficulty,
   duration?: number
 ): UnifiedGameResult {
   const config = GAME_SCORE_CONFIGS['spot-difference']!
-  const { foundCount, totalDifferences, wrongClicks, avgFoundTime } = rawResult
+
+  const foundCount =
+    (typeof rawResult?.foundCount === 'number' ? rawResult.foundCount : null) ??
+    (typeof rawResult?.totalFound === 'number' ? rawResult.totalFound : null) ??
+    0
+
+  const totalDifferences =
+    (typeof rawResult?.totalDifferences === 'number' ? rawResult.totalDifferences : null) ??
+    (typeof rawResult?.total === 'number' ? rawResult.total : null) ??
+    0
+
+  const wrongClicks = typeof rawResult?.wrongClicks === 'number' ? rawResult.wrongClicks : 0
+  const avgFoundTime = typeof rawResult?.avgFoundTime === 'number' ? rawResult.avgFoundTime : 0
   
   const accuracy = totalDifferences > 0 ? foundCount / totalDifferences : 0
   const speedScore = calculateSpeedScore(avgFoundTime, config.reactionBenchmark)
@@ -592,7 +629,7 @@ export function convertSpotDifferenceResult(
     difficulty,
     subDifficulty,
     timestamp: new Date(),
-    duration: duration || rawResult.duration,
+    duration: duration || (typeof rawResult?.duration === 'number' ? rawResult.duration : 0),
     score: finalScore,
     maxScore: 100,
     grade: getGradeFromScore(finalScore),
@@ -600,7 +637,7 @@ export function convertSpotDifferenceResult(
     tracking: {
       correctCount: foundCount,
       wrongCount: wrongClicks,
-      missedCount: totalDifferences - foundCount,
+      missedCount: Math.max(0, totalDifferences - foundCount),
       avgReactionTime: avgFoundTime
     },
     displayStats: [
@@ -622,32 +659,38 @@ export function convertMathGameResult(
   duration?: number
 ): UnifiedGameResult {
   const config = GAME_SCORE_CONFIGS['math-calc']!
+
+  // 兼容：
+  // - 新版 (src/games/logic/mathCalc.ts) MathCalcResult
+  // - 舊版（可能仍存在）
   const correctCount = Number(rawResult?.correctCount ?? 0)
   const wrongCount = Number(rawResult?.wrongCount ?? 0)
-  const totalCount = Number(rawResult?.totalCount ?? (correctCount + wrongCount))
-  const avgReactionTime = Number(rawResult?.avgReactionTime ?? rawResult?.avgResponseTime ?? 0)
+  const totalCount = Number(
+    rawResult?.totalCount ?? rawResult?.totalQuestions ?? (correctCount + wrongCount)
+  )
+  const avgReactionTime = Number(rawResult?.avgResponseTime ?? rawResult?.avgReactionTime ?? 0)
   const maxCombo = Number(rawResult?.maxCombo ?? 0)
-  const totalQuestions = totalCount
-  
+
   const accuracy = totalCount > 0 ? correctCount / totalCount : 0
-  const speedScore = avgReactionTime > 0 ? calculateSpeedScore(avgReactionTime, config.reactionBenchmark) : 50
+  const speedScore = avgReactionTime > 0
+    ? calculateSpeedScore(avgReactionTime, config.reactionBenchmark)
+    : 50
   const comboBonus = calculateComboBonus(maxCombo, totalCount)
-  
   const metrics: StandardizedMetrics = {
     completion: 1,
     accuracy,
     speed: speedScore,
     efficiency: 100
   }
-  
+
   const finalScore = calculateFinalScore(metrics, config, comboBonus)
-  
+
   return {
     gameId: 'math-calc',
     difficulty,
     subDifficulty,
     timestamp: new Date(),
-    duration: duration || Number(rawResult?.duration ?? 0),
+    duration: duration || Number(rawResult?.duration ?? 0) || 0,
     score: finalScore,
     maxScore: 100,
     grade: getGradeFromScore(finalScore),
@@ -660,8 +703,8 @@ export function convertMathGameResult(
     },
     displayStats: [
       { label: '正確率', value: Math.round(accuracy * 100), unit: '%', icon: '✅', highlight: true },
-      { label: '正確題數', value: `${correctCount}/${totalQuestions}`, icon: '📝' },
-      { label: '平均反應', value: Math.round(avgReactionTime), unit: 'ms', icon: '⚡' },
+      { label: '正確題數', value: `${correctCount}/${totalCount}`, icon: '📝' },
+      { label: '平均反應', value: Math.round(avgReactionTime / 1000 * 10) / 10, unit: '秒', icon: '⚡' },
       { label: '最高連擊', value: maxCombo, icon: '🔥' }
     ]
   }
@@ -671,22 +714,34 @@ export function convertMathGameResult(
  * 瞬間記憶結果轉換
  */
 export function convertInstantMemoryResult(
-  rawResult: {
-    correctCount: number
-    wrongCount: number
-    maxReached: number
-    score: number
-    maxPossibleScore: number
-  },
+  rawResult: any,
   difficulty: Difficulty,
   subDifficulty?: SubDifficulty,
   duration?: number
 ): UnifiedGameResult {
   const config = GAME_SCORE_CONFIGS['instant-memory']!
-  const { correctCount, wrongCount, maxReached, score, maxPossibleScore } = rawResult
-  
+
+  const correctCount = typeof rawResult?.correctCount === 'number' ? rawResult.correctCount : 0
+  const wrongCount = typeof rawResult?.wrongCount === 'number' ? rawResult.wrongCount : 0
+  const maxReached = typeof rawResult?.maxReached === 'number' ? rawResult.maxReached : 0
+
+  const score = typeof rawResult?.score === 'number' ? rawResult.score : 0
+  const maxPossibleScore =
+    (typeof rawResult?.maxPossibleScore === 'number' ? rawResult.maxPossibleScore : null) ??
+    (typeof rawResult?.maxScore === 'number' ? rawResult.maxScore : null) ??
+    100
+
   const normalizedScore = normalizeScore(score, maxPossibleScore)
-  const accuracy = maxPossibleScore > 0 ? score / maxPossibleScore : 0
+
+  const accuracy = (() => {
+    const a = typeof rawResult?.accuracy === 'number' ? rawResult.accuracy : null
+    if (a !== null) {
+      if (a <= 1) return Math.max(0, Math.min(1, a))
+      if (a <= 100) return Math.max(0, Math.min(1, a / 100))
+    }
+    const total = correctCount + wrongCount
+    return total > 0 ? Math.max(0, Math.min(1, correctCount / total)) : 0
+  })()
   
   const metrics: StandardizedMetrics = {
     completion: 1,
@@ -700,7 +755,11 @@ export function convertInstantMemoryResult(
     difficulty,
     subDifficulty,
     timestamp: new Date(),
-    duration: duration || 0,
+    duration:
+      duration ||
+      (typeof rawResult?.timeSpent === 'number' ? rawResult.timeSpent : 0) ||
+      (typeof rawResult?.duration === 'number' ? rawResult.duration : 0) ||
+      0,
     score: normalizedScore,
     maxScore: 100,
     grade: getGradeFromScore(normalizedScore),
@@ -756,7 +815,7 @@ export function convertPokerMemoryResult(
     difficulty,
     subDifficulty,
     timestamp: new Date(),
-    duration: duration || 0,
+    duration: durationSeconds,
     score: finalScore,
     maxScore: 100,
     grade: getGradeFromScore(finalScore),
@@ -817,7 +876,7 @@ export function convertRockPaperScissorsResult(
     difficulty,
     subDifficulty,
     timestamp: new Date(),
-    duration: duration || 0,
+    duration: durationSeconds,
     score: finalScore,
     maxScore: 100,
     grade: getGradeFromScore(finalScore),
@@ -845,23 +904,53 @@ export function convertRockPaperScissorsResult(
  * 手勢記憶結果轉換
  */
 export function convertGestureMemoryResult(
-  rawResult: {
-    correctCount: number
-    wrongCount: number
-    maxStreak: number
-    maxLength: number
-    score: number
-    maxPossibleScore: number
-  },
+  rawResult: any,
   difficulty: Difficulty,
   subDifficulty?: SubDifficulty,
   duration?: number
 ): UnifiedGameResult {
   const config = GAME_SCORE_CONFIGS['gesture-memory']!
-  const { correctCount, wrongCount, maxStreak, maxLength, score, maxPossibleScore } = rawResult
-  
-  const normalizedScore = normalizeScore(score, maxPossibleScore)
-  const accuracy = maxPossibleScore > 0 ? score / maxPossibleScore : 0
+
+  const correctCount =
+    (typeof rawResult?.correctCount === 'number' ? rawResult.correctCount : null) ??
+    (typeof rawResult?.correctRounds === 'number' ? rawResult.correctRounds : null) ??
+    0
+
+  const totalRounds =
+    (typeof rawResult?.totalRounds === 'number' ? rawResult.totalRounds : null) ??
+    (typeof rawResult?.totalCount === 'number' ? rawResult.totalCount : null) ??
+    0
+
+  const wrongCount =
+    (typeof rawResult?.wrongCount === 'number' ? rawResult.wrongCount : null) ??
+    Math.max(0, totalRounds - correctCount)
+
+  const maxStreak = typeof rawResult?.maxStreak === 'number' ? rawResult.maxStreak : 0
+  const maxLength = typeof rawResult?.maxLength === 'number' ? rawResult.maxLength : 0
+
+  const rawScore = typeof rawResult?.score === 'number' ? rawResult.score : 0
+  const maxPossibleScore =
+    (typeof rawResult?.maxPossibleScore === 'number' ? rawResult.maxPossibleScore : null) ??
+    (typeof rawResult?.maxScore === 'number' ? rawResult.maxScore : null) ??
+    null
+
+  const normalizedScore = (() => {
+    if (maxPossibleScore && maxPossibleScore > 0) return normalizeScore(rawScore, maxPossibleScore)
+    // 若看起來已是 0..100
+    if (rawScore >= 0 && rawScore <= 100) return clampScore(rawScore)
+    // 否則用 config maxScore 做保守正規化
+    return normalizeScore(rawScore, 100)
+  })()
+
+  const accuracy = (() => {
+    const a = typeof rawResult?.accuracy === 'number' ? rawResult.accuracy : null
+    if (a !== null) {
+      if (a <= 1) return Math.max(0, Math.min(1, a))
+      if (a <= 100) return Math.max(0, Math.min(1, a / 100))
+    }
+    return totalRounds > 0 ? Math.max(0, Math.min(1, correctCount / totalRounds)) : 0
+  })()
+
   const comboBonus = calculateComboBonus(maxStreak, correctCount + wrongCount)
   
   const metrics: StandardizedMetrics = {
@@ -878,7 +967,10 @@ export function convertGestureMemoryResult(
     difficulty,
     subDifficulty,
     timestamp: new Date(),
-    duration: duration || 0,
+    duration:
+      duration ||
+      (typeof rawResult?.duration === 'number' ? rawResult.duration : 0) ||
+      0,
     score: clampScore(finalScore),
     maxScore: 100,
     grade: getGradeFromScore(finalScore),
@@ -906,28 +998,45 @@ export function convertGestureMemoryResult(
  */
 export function convertNumberConnectResult(
   rawResult: {
-    completed: boolean
-    progress: number
-    totalNumbers: number
-    errors: number
-    duration: number
-    score: number
+    completed?: boolean
+    progress?: number
+    totalNumbers?: number
+    errors?: number
+    duration?: number
+    score?: number
+    // 兼容舊/其他欄位命名
+    connectedCount?: number
+    totalCount?: number
+    completionTime?: number
   },
   difficulty: Difficulty,
   subDifficulty?: SubDifficulty,
   duration?: number
 ): UnifiedGameResult {
   const config = GAME_SCORE_CONFIGS['number-connect']!
-  const { completed, progress, totalNumbers, errors } = rawResult
+  const completed = Boolean(rawResult.completed)
+  const progress =
+    Number.isFinite(rawResult.progress) ? Number(rawResult.progress) :
+    Number.isFinite(rawResult.connectedCount) ? Number(rawResult.connectedCount) :
+    0
+  const totalNumbers =
+    Number.isFinite(rawResult.totalNumbers) ? Number(rawResult.totalNumbers) :
+    Number.isFinite(rawResult.totalCount) ? Number(rawResult.totalCount) :
+    0
+  const errors = Number.isFinite(rawResult.errors) ? Number(rawResult.errors) : 0
+  const rawDuration =
+    Number.isFinite(rawResult.duration) ? Number(rawResult.duration) :
+    Number.isFinite(rawResult.completionTime) ? Number(rawResult.completionTime) :
+    0
   
   const completion = totalNumbers > 0 ? progress / totalNumbers : 0
   const errorPenalty = Math.min(errors * 5, 30)
   const efficiencyScore = Math.max(100 - errorPenalty, 50)
-  const speedScore = completed ? Math.max(100 - (rawResult.duration / 60) * 20, 40) : 50
+  const speedScore = completed ? Math.max(100 - (rawDuration / 60) * 20, 40) : 50
   
   const metrics: StandardizedMetrics = {
     completion,
-    accuracy: 1 - (errors / Math.max(progress, 1)),
+    accuracy: Math.max(0, Math.min(1, 1 - (errors / Math.max(progress, 1)))),
     speed: speedScore,
     efficiency: efficiencyScore
   }
@@ -939,7 +1048,7 @@ export function convertNumberConnectResult(
     difficulty,
     subDifficulty,
     timestamp: new Date(),
-    duration: duration || rawResult.duration,
+    duration: duration || rawDuration,
     score: finalScore,
     maxScore: 100,
     grade: getGradeFromScore(finalScore),
@@ -966,19 +1075,45 @@ export function convertNumberConnectResult(
  * 圖形推理結果轉換
  */
 export function convertPatternReasoningResult(
-  rawResult: {
-    correctCount: number
-    wrongCount: number
-    totalQuestions: number
-    avgReactionTime: number
-    score: number
-  },
+  rawResult: any,
   difficulty: Difficulty,
   subDifficulty?: SubDifficulty,
   duration?: number
 ): UnifiedGameResult {
   const config = GAME_SCORE_CONFIGS['pattern-reasoning']!
-  const { correctCount, wrongCount, totalQuestions, avgReactionTime } = rawResult
+  const correctCount = Number(
+    rawResult?.correctCount ??
+      rawResult?.correct ??
+      rawResult?.correctRounds ??
+      0
+  )
+
+  const totalQuestions = Number(
+    rawResult?.totalQuestions ??
+      rawResult?.total ??
+      rawResult?.totalRounds ??
+      rawResult?.totalCount ??
+      0
+  )
+
+  const wrongCount = Number(
+    rawResult?.wrongCount ??
+      rawResult?.wrongRounds ??
+      Math.max(0, totalQuestions - correctCount)
+  )
+
+  const avgReactionTime = (() => {
+    const rawTime = Number(
+      rawResult?.avgReactionTime ??
+        rawResult?.avgResponseTime ??
+        rawResult?.avgTime ??
+        0
+    )
+    if (!Number.isFinite(rawTime) || rawTime < 0) return 0
+    // 若看起來是秒（例如 1.2, 4, 12），轉為毫秒
+    if (rawTime > 0 && rawTime < 50) return rawTime * 1000
+    return rawTime
+  })()
   
   const accuracy = totalQuestions > 0 ? correctCount / totalQuestions : 0
   const speedScore = calculateSpeedScore(avgReactionTime, config.reactionBenchmark)
@@ -997,7 +1132,7 @@ export function convertPatternReasoningResult(
     difficulty,
     subDifficulty,
     timestamp: new Date(),
-    duration: duration || 0,
+    duration: durationSeconds,
     score: finalScore,
     maxScore: 100,
     grade: getGradeFromScore(finalScore),
@@ -1025,33 +1160,43 @@ export function convertAuditoryMemoryResult(
   duration?: number
 ): UnifiedGameResult {
   const config = GAME_SCORE_CONFIGS['audio-memory']!
+
+  // 兼容新版 (src/games/logic/audioMemory.ts) AudioMemoryResult
   const correctCount = Number(rawResult?.correctRounds ?? rawResult?.correctCount ?? 0)
-  const totalRounds = Number(rawResult?.totalRounds ?? 0)
-  const wrongCount = Math.max(0, totalRounds - correctCount)
+  const totalCount = Number(rawResult?.totalRounds ?? rawResult?.totalCount ?? 0)
+  const wrongCount = Number(
+    rawResult?.wrongCount ?? rawResult?.wrongRounds ?? Math.max(0, totalCount - correctCount)
+  )
   const maxStreak = Number(rawResult?.maxStreak ?? 0)
   const maxLength = Number(rawResult?.maxLength ?? 0)
-  const score = Number(rawResult?.score ?? rawResult?.accuracy ?? 0)
-  const maxPossibleScore = 100
-  
-  const normalizedScore = normalizeScore(score, maxPossibleScore)
-  const comboBonus = calculateComboBonus(maxStreak, correctCount + wrongCount)
-  
+
+  const accuracyPercent = (() => {
+    const a = Number(rawResult?.accuracy)
+    if (Number.isFinite(a)) return clampScore(a)
+    const total = Math.max(0, totalCount)
+    if (total <= 0) return 0
+    return clampScore((Math.max(0, correctCount) / total) * 100)
+  })()
+
+  const accuracy = accuracyPercent / 100
+  const comboBonus = calculateComboBonus(maxStreak, Math.max(1, totalCount))
   const metrics: StandardizedMetrics = {
     completion: 1,
-    accuracy: maxPossibleScore > 0 ? score / maxPossibleScore : 0,
+    accuracy,
     speed: 100,
     efficiency: 100
   }
-  
-  const finalScore = Math.round(normalizedScore * 0.8 + comboBonus * 0.2)
-  
+
+  // 以準確率為主，連擊略微加權（避免 score 公式不同導致跨遊戲不公平）
+  const finalScore = clampScore(accuracyPercent * 0.9 + comboBonus * 0.1)
+
   return {
     gameId: 'audio-memory',
     difficulty,
     subDifficulty,
     timestamp: new Date(),
-    duration: duration || Number(rawResult?.duration ?? 0),
-    score: clampScore(finalScore),
+    duration: duration || Number(rawResult?.duration ?? 0) || 0,
+    score: finalScore,
     maxScore: 100,
     grade: getGradeFromScore(finalScore),
     metrics,
@@ -1067,8 +1212,8 @@ export function convertAuditoryMemoryResult(
     displayStats: [
       { label: '最長序列', value: maxLength, unit: '個', icon: '🎵', highlight: true },
       { label: '最高連擊', value: maxStreak, icon: '🔥' },
-      { label: '正確回合', value: correctCount, icon: '✅' },
-      { label: '錯誤回合', value: wrongCount, icon: '❌' }
+      { label: '正確回合', value: `${correctCount}/${totalCount}`, icon: '✅' },
+      { label: '準確率', value: clampScore(accuracyPercent), unit: '%', icon: '🎯' }
     ]
   }
 }
@@ -1083,16 +1228,19 @@ export function convertRhythmImitationResult(
   duration?: number
 ): UnifiedGameResult {
   const config = GAME_SCORE_CONFIGS['rhythm-mimic']!
+
+  // 兼容新版 (src/games/logic/rhythmMimic.ts) RhythmMimicResult
   const perfectCount = Number(rawResult?.perfectCount ?? 0)
   const goodCount = Number(rawResult?.goodCount ?? 0)
   const missCount = Number(rawResult?.missCount ?? 0)
-  const totalNotes = Number(rawResult?.totalNotes ?? rawResult?.totalBeats ?? (perfectCount + goodCount + missCount))
+  const totalNotes = Number(
+    rawResult?.totalBeats ?? rawResult?.totalNotes ?? (perfectCount + goodCount + missCount)
+  )
   const okCount = Number(rawResult?.okCount ?? Math.max(0, totalNotes - perfectCount - goodCount - missCount))
   const avgError = Number(rawResult?.avgError ?? 0)
-  
   // 加權計算準確率：Perfect=100%, Good=80%, Ok=50%, Miss=0%
-  const weightedAccuracy = totalNotes > 0 
-    ? (perfectCount * 1 + goodCount * 0.8 + okCount * 0.5) / totalNotes 
+  const weightedAccuracy = totalNotes > 0
+    ? (perfectCount * 1 + goodCount * 0.8 + okCount * 0.5) / totalNotes
     : 0
   
   const metrics: StandardizedMetrics = {
@@ -1115,7 +1263,7 @@ export function convertRhythmImitationResult(
     grade: getGradeFromScore(finalScore),
     metrics,
     tracking: {
-      correctCount: perfectCount + goodCount,
+      correctCount: perfectCount + goodCount + okCount,
       wrongCount: missCount
     },
     gameSpecific: {
@@ -1136,7 +1284,8 @@ export function convertRhythmImitationResult(
 }
 
 /**
- * 時鐘繪圖結果轉換
+ * 畫鐘測驗結果轉換
+ * 來源：src/components/games/ClockDrawingTest.vue emit 的 ClockDrawingResult
  */
 export function convertClockDrawingResult(
   rawResult: any,
@@ -1144,19 +1293,41 @@ export function convertClockDrawingResult(
   subDifficulty?: SubDifficulty,
   duration?: number
 ): UnifiedGameResult {
-  const score = Number(rawResult?.score ?? 0)
-  const maxRawScore = 3
-  const normalizedScore = clampScore(normalizeScore(score, maxRawScore))
-  const completionTimeMs = Number(rawResult?.completionTime ?? 0)
-  const durationSeconds = duration ?? (completionTimeMs > 0 ? Math.round(completionTimeMs / 1000) : 0)
-  const accuracy = maxRawScore > 0 ? Math.min(score / maxRawScore, 1) : 0
+  const config = GAME_SCORE_CONFIGS['clock-drawing']!
+
+  // ClockDrawingResult.score 目前為 Mini-Cog 時計畫 0-2 分
+  const rawScore = Number(rawResult?.score ?? 0)
+  const maxPossible = 2
+
+  const accuracy = (() => {
+    if (!Number.isFinite(rawScore) || rawScore <= 0) return 0
+    // 若有人改成 0-100，仍可相容
+    if (rawScore > maxPossible) return clampScore(rawScore) / 100
+    return Math.max(0, Math.min(1, rawScore / maxPossible))
+  })()
+
+  const completionTimeMs = (() => {
+    const t = Number(rawResult?.completionTime ?? 0)
+    return Number.isFinite(t) && t >= 0 ? t : 0
+  })()
+
+  const durationSeconds = (() => {
+    const d = duration ?? (completionTimeMs > 0 ? Math.round(completionTimeMs / 1000) : 0)
+    return Number.isFinite(d) && d >= 0 ? d : 0
+  })()
 
   const metrics: StandardizedMetrics = {
     completion: 1,
     accuracy,
-    speed: 50,
+    speed: calculateSpeedScore(completionTimeMs, config.reactionBenchmark),
     efficiency: 100
   }
+
+  const finalScore = calculateFinalScore(metrics, config)
+
+  const selfAssessment = rawResult?.selfAssessment as
+    | { hasCompleteCircle?: boolean; hasCorrectNumbers?: boolean; hasCorrectHands?: boolean }
+    | undefined
 
   return {
     gameId: 'clock-drawing',
@@ -1164,24 +1335,26 @@ export function convertClockDrawingResult(
     subDifficulty,
     timestamp: new Date(),
     duration: durationSeconds,
-    score: normalizedScore,
+    score: finalScore,
     maxScore: 100,
-    grade: getGradeFromScore(normalizedScore),
+    grade: getGradeFromScore(finalScore),
     metrics,
     tracking: {
-      correctCount: Math.round(score),
-      wrongCount: Math.max(0, maxRawScore - Math.round(score)),
-      avgThinkingTime: completionTimeMs > 0 ? completionTimeMs : undefined
+      correctCount: Math.max(0, Math.min(maxPossible, Math.round(rawScore))),
+      wrongCount: Math.max(0, maxPossible - Math.max(0, Math.min(maxPossible, Math.round(rawScore)))),
+      avgThinkingTime: completionTimeMs
     },
     gameSpecific: {
       targetTime: rawResult?.targetTime,
-      selfAssessment: rawResult?.selfAssessment,
       completionTime: completionTimeMs,
+      selfAssessment,
       imageData: rawResult?.imageData
     },
     displayStats: [
-      { label: '完成度', value: Math.round(accuracy * 100), unit: '%', icon: 'OK', highlight: true },
-      { label: '用時', value: Math.round(durationSeconds), unit: '秒', icon: 'TIME' }
+      { label: '完成時間', value: (completionTimeMs / 1000).toFixed(1), unit: '秒', icon: '??', highlight: true },
+      { label: '完成度', value: Math.round(accuracy * 100), unit: '%', icon: '??' },
+      { label: '數字位置', value: selfAssessment?.hasCorrectNumbers ? '正確' : '待加強', icon: '??' },
+      { label: '指針位置', value: selfAssessment?.hasCorrectHands ? '正確' : '待加強', icon: '???' }
     ]
   }
 }
@@ -1198,33 +1371,53 @@ export function normalizeGameResult(
   subDifficulty?: SubDifficulty,
   duration?: number
 ): UnifiedGameResult {
-  const converters: Record<string, (raw: any, d: Difficulty, sd?: SubDifficulty, dur?: number) => UnifiedGameResult> = {
-    'whack-a-mole': convertWhackAMoleResult,
-    'balance-scale': convertBalanceScaleResult,
-    'card-match': convertCardMatchResult,
-    'stroop-test': convertStroopResult,
-    'maze-navigation': convertMazeResult,
-    'spot-difference': convertSpotDifferenceResult,
-    'math-calc': convertMathGameResult,
-    'instant-memory': convertInstantMemoryResult,
-    'poker-memory': convertPokerMemoryResult,
-    'rock-paper-scissors': convertRockPaperScissorsResult,
-    'gesture-memory': convertGestureMemoryResult,
-    'number-connect': convertNumberConnectResult,
-    'pattern-reasoning': convertPatternReasoningResult,
-    'audio-memory': convertAuditoryMemoryResult,
-    'rhythm-mimic': convertRhythmImitationResult,
-    'clock-drawing': convertClockDrawingResult
-  }
-  
-  const converter = converters[gameId]
+  const canonicalGameId = resolveGameId(gameId)
+
+  const converter = GAME_RESULT_CONVERTERS[canonicalGameId] ?? GAME_RESULT_CONVERTERS[gameId]
   
   if (converter) {
-    return converter(rawResult, difficulty, subDifficulty, duration)
+    const unified = converter(rawResult, difficulty, subDifficulty, duration)
+    // 最終輸出統一使用現行註冊的 canonical gameId
+    return { ...unified, gameId: canonicalGameId }
   }
   
   // 未知遊戲的通用轉換
-  return createGenericResult(gameId, rawResult as Record<string, unknown>, difficulty, subDifficulty, duration)
+  return createGenericResult(canonicalGameId, rawResult as Record<string, unknown>, difficulty, subDifficulty, duration)
+}
+
+// ========== Converter 覆蓋檢查（供測試/品質保證） ==========
+
+type ConverterFn = (raw: any, d: Difficulty, sd?: SubDifficulty, dur?: number) => UnifiedGameResult
+
+const GAME_RESULT_CONVERTERS: Record<string, ConverterFn> = {
+  'whack-a-mole': convertWhackAMoleResult,
+  'balance-scale': convertBalanceScaleResult,
+  'card-match': convertCardMatchResult,
+  'stroop-test': convertStroopResult,
+  'maze-navigation': convertMazeResult,
+  'spot-difference': convertSpotDifferenceResult,
+  'math-calc': convertMathGameResult,
+  // alias
+  'math-game': convertMathGameResult,
+  'instant-memory': convertInstantMemoryResult,
+  'poker-memory': convertPokerMemoryResult,
+  'rock-paper-scissors': convertRockPaperScissorsResult,
+  'gesture-memory': convertGestureMemoryResult,
+  'number-connect': convertNumberConnectResult,
+  'pattern-reasoning': convertPatternReasoningResult,
+  'audio-memory': convertAuditoryMemoryResult,
+  // alias
+  'auditory-memory': convertAuditoryMemoryResult,
+  'rhythm-mimic': convertRhythmImitationResult,
+  // alias
+  'rhythm-imitation': convertRhythmImitationResult,
+  // clock drawing
+  'clock-drawing': convertClockDrawingResult,
+}
+
+export function hasGameResultConverter(gameId: string): boolean {
+  const canonicalGameId = resolveGameId(gameId)
+  return Boolean(GAME_RESULT_CONVERTERS[canonicalGameId] ?? GAME_RESULT_CONVERTERS[gameId])
 }
 
 /**
@@ -1287,7 +1480,7 @@ export class ScoreNormalizer {
    * 取得遊戲評分配置
    */
   getConfig(gameId: string): GameScoreConfig | undefined {
-    return GAME_SCORE_CONFIGS[gameId]
+    return GAME_SCORE_CONFIGS[resolveGameId(gameId)]
   }
   
   /**
@@ -1307,3 +1500,4 @@ export class ScoreNormalizer {
 
 // 導出單例
 export const scoreNormalizer = new ScoreNormalizer()
+

@@ -35,7 +35,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'game-start': []
   'game-end': [result: any]
-  'score:update': [score: number]
+  'score-change': [score: number]
   'state:change': [phase: string]
   'status-update': [status: GameStatusUpdate]
 }>()
@@ -428,7 +428,7 @@ watch(() => props.difficulty, () => {
 
 .scale-arm {
   position: relative;
-  width: 400px;
+  width: min(400px, 100%);
   height: 12px;
   background: linear-gradient(to bottom, #D4AF37, #B8860B);
   border-radius: 6px;
@@ -450,11 +450,11 @@ watch(() => props.difficulty, () => {
 }
 
 .scale-pan.left {
-  left: -60px;
+  left: 0;
 }
 
 .scale-pan.right {
-  right: -60px;
+  right: 0;
 }
 
 .pan-items {
@@ -490,7 +490,7 @@ watch(() => props.difficulty, () => {
 
 @media (max-width: 640px) {
   .scale-arm {
-    width: 300px;
+    width: min(300px, 100%);
   }
   
   .scale-pan {
@@ -502,12 +502,5 @@ watch(() => props.difficulty, () => {
     min-height: 60px;
   }
   
-  .scale-pan.left {
-    left: -40px;
-  }
-  
-  .scale-pan.right {
-    right: -40px;
-  }
 }
 </style>
