@@ -7,6 +7,7 @@ import { useTheme } from '@/composables/useTheme'
 import { useResponsive } from '@/composables/useResponsive'
 import { useNotification } from '@/composables/useNotification'
 import { useToast } from '@/composables/useToast'
+import { backfillUserSessionsToSheet } from '@/services/googleSheetSyncService'
 import AppShell from '@/components/layout/AppShell.vue'
 import DesktopLayout from '@/components/layout/DesktopLayout.vue'
 import MobileBottomNav from '@/components/ui/MobileBottomNav.vue'
@@ -176,6 +177,8 @@ onMounted(async () => {
   // 恢復登入後檢查同意狀態（確保 ID 存在）
   if (userStore.currentUser?.id) {
     await checkConsentStatus()
+    // 舊用戶資料回填至 Google Sheet（背景執行）
+    backfillUserSessionsToSheet(userStore.currentUser.id)
   }
 
   // 初始化數據同步服務

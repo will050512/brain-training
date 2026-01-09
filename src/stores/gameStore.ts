@@ -20,6 +20,7 @@ import {
   generateId,
   getTodayTrainingSession
 } from '@/services/db'
+import { syncSessionToSheet } from '@/services/googleSheetSyncService'
 import { 
   calculateCognitiveScoresFromResult,
   calculateOverallCognitiveScores,
@@ -160,6 +161,14 @@ export const useGameStore = defineStore('game', () => {
 
     // 更新使用者統計
     await userStore.recordGamePlayed(result.score, result.duration, result.gameId)
+
+    // 即時同步到 Google Sheet（失敗時不影響主流程）
+    try {
+      const bestScore = getBestScore(result.gameId, result.difficulty)
+      await syncSessionToSheet(session, bestScore)
+    } catch (error) {
+      console.error('syncSessionToSheet failed', error)
+    }
 
     return session
   }
