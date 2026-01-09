@@ -4,6 +4,11 @@ import { getUserGameSessions } from '@/services/db'
 // 已部署的 Apps Script Web App
 const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzN1BnvG1hHI8pVZpbbZ2hcCixD4knV2pgM1yG2hAvl2a1S3E8DLxCUKe5v3KmNokra/exec'
 
+type SheetTracking = TrackingData & {
+  avgReactionTimeMs?: number
+  avgThinkingTimeMs?: number
+}
+
 type SheetPayload = {
   userId: string
   sessionId: string
@@ -15,7 +20,7 @@ type SheetPayload = {
   score: number
   grade?: string
   metrics: StandardizedMetrics
-  tracking: TrackingData
+  tracking: SheetTracking
   bestScore?: number
   gameSpecific?: Record<string, unknown>
   displayStats?: unknown[]
