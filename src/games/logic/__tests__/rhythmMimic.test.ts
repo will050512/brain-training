@@ -116,6 +116,28 @@ describe('節拍模仿遊戲邏輯', () => {
       expect(result.accuracy).toBeGreaterThan(80)
       expect(result.score).toBeGreaterThan(80)
     })
+
+    it('同一個 tap 不應重複配對多個節拍', () => {
+      const pattern = {
+        id: 'two_beats',
+        name: 'Two Beats',
+        bpm: 60,
+        difficulty: 'easy' as const,
+        beats: [
+          { time: 0, type: 'tap' as const },
+          { time: 1000, type: 'tap' as const },
+        ],
+      }
+      const config = DIFFICULTY_CONFIGS.easy
+      const userTaps = [0]
+
+      const result = evaluateRound(userTaps, pattern, config)
+
+      expect(result.taps.length).toBe(2)
+      expect(result.taps.filter(t => t.rating === 'miss').length).toBe(1)
+      expect(result.accuracy).toBe(50)
+      expect(result.score).toBe(50)
+    })
   })
 
   describe('getPatternDuration', () => {

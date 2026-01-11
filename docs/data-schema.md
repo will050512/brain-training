@@ -43,7 +43,9 @@
 
 ### Apps Script 對接（已建置）
 - Web App URL：`https://script.google.com/macros/s/AKfycbzN1BnvG1hHI8pVZpbbZ2hcCixD4knV2pgM1yG2hAvl2a1S3E8DLxCUKe5v3KmNokra/exec`
-- 建議以 `POST` 傳送 JSON，範例：
+- 瀏覽器端 `fetch` 注意：Apps Script Web App 通常無法設定 CORS header；若用 `Content-Type: application/json` 會觸發 preflight 導致請求被瀏覽器擋下。
+  - 本專案已改用 `mode: 'no-cors'` 並直接送出 JSON 字串（`text/plain`），確保請求可送達。
+- 建議以 `POST` 傳送 JSON（字串），範例：
   ```json
   {
     "userId": "od-123",
@@ -65,7 +67,11 @@
     ]
   }
   ```
-- Apps Script 端建議：驗證必填欄位（userId、gameId、timestamp、score），將 `gameSpecific` / `displayStats` 以字串存入，若欄位缺漏則回傳 400。
+- Apps Script 端建議：
+  - 驗證必填欄位（`userId`,`sessionId`,`gameId`,`timestamp`,`score`），若欄位缺漏則回傳 400。
+  - `displayStats` 建議存 `[]`（JSON 字串），`gameSpecific` 建議存 `{}`（JSON 字串）。
+  - 以 `sessionId` 去重：同一 sessionId 重送時不要重複 append（可改成 update 該列）。
+  - 可支援批次回填：接受 `{ "items": [ ...SheetPayload ] }`，用 `setValues()` 一次寫入提升速度。
 
 ### 舊用戶資料回填流程（連線後自動補寫）
 1. 客戶端啟動時，讀取本地 IndexedDB/LocalStorage 的舊紀錄（若有 legacy `GameResult` 形狀）。

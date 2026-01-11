@@ -17,6 +17,7 @@ import {
   calculateTypeAccuracy,
   summarizeResult,
   SHAPES,
+  ROTATABLE_SHAPES,
   COLORS,
   SIZES,
   DIFFICULTY_CONFIGS,
@@ -48,6 +49,17 @@ describe('圖案推理遊戲邏輯', () => {
     it('正確答案應在選項中', () => {
       const question = generateRotationQuestion(4)
       expect(question.options[question.correctIndex]).toBeDefined()
+    })
+
+    it('旋轉題型不應產生視覺等價的圖形', () => {
+      const question = generateRotationQuestion(5)
+      const shape = question.sequence[0]?.shape
+
+      expect(shape).toBeDefined()
+      expect(ROTATABLE_SHAPES).toContain(shape as any)
+
+      const signatures = question.options.map(o => `${o.shape}|${o.color}|${o.size}|${o.rotation}`)
+      expect(new Set(signatures).size).toBe(question.options.length)
     })
   })
 

@@ -58,6 +58,8 @@ export interface PatternReasoningResult {
 // ==================== 常數配置 ====================
 
 export const SHAPES = ['●', '■', '▲', '◆', '★', '♥', '○', '□', '△', '◇']
+// 用於「旋轉」題型：避免選到旋轉後外觀不變的圖形（如圓/方/菱形等），造成選項看起來一樣而無法作答
+export const ROTATABLE_SHAPES = ['▲', '△'] as const
 export const COLORS = [
   '#E53E3E', // 紅
   '#3182CE', // 藍
@@ -118,9 +120,9 @@ function shuffle<T>(arr: T[]): T[] {
 /**
  * 產生基礎元素
  */
-export function createBaseElement(): PatternElement {
+export function createBaseElement(shapePool: readonly string[] = SHAPES): PatternElement {
   return {
-    shape: randomFrom(SHAPES),
+    shape: randomFrom(shapePool),
     color: randomFrom(COLORS),
     size: randomFrom(SIZES),
     rotation: 0,
@@ -131,7 +133,7 @@ export function createBaseElement(): PatternElement {
  * 產生旋轉題目
  */
 export function generateRotationQuestion(optionCount: number): PatternQuestion {
-  const base = createBaseElement()
+  const base = createBaseElement(ROTATABLE_SHAPES)
   const rotationStep = 90
   const sequence: PatternElement[] = []
 
@@ -150,7 +152,8 @@ export function generateRotationQuestion(optionCount: number): PatternQuestion {
 
   // 產生錯誤選項
   const wrongOptions: PatternElement[] = []
-  const usedRotations = new Set([answer.rotation])
+  // 避免錯誤選項與題目序列重複，降低誤判（長者容易被「看過的圖形」干擾）
+  const usedRotations = new Set<number>([answer.rotation, ...sequence.map(s => s.rotation)])
 
   while (wrongOptions.length < optionCount - 1) {
     const rotation = randomFrom(ROTATIONS)

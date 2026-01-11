@@ -324,21 +324,30 @@ export function evaluateRound(
 ): RoundResult {
   const expectedTimes = pattern.beats.map(b => b.time)
   const taps: TapResult[] = []
+  const remainingTaps = [...userTaps]
 
-  // 對每個預期節拍找到最近的使用者點擊
+  // 對每個預期節拍找到最近的使用者點擊（每次點擊只能配對一次，避免一個 tap 被重複計分）
   for (const expected of expectedTimes) {
-    // 找到最近的使用者點擊
-    let closestTap = userTaps[0] || expected + config.tolerance * 2
+    if (remainingTaps.length === 0) {
+      taps.push(evaluateTap(expected + config.tolerance * 2, expected, config.tolerance))
+      continue
+    }
+
+    let closestIndex = 0
+    let closestTap = remainingTaps[0]!
     let minDistance = Math.abs(closestTap - expected)
 
-    for (const tap of userTaps) {
+    for (let i = 1; i < remainingTaps.length; i++) {
+      const tap = remainingTaps[i]!
       const distance = Math.abs(tap - expected)
       if (distance < minDistance) {
         minDistance = distance
         closestTap = tap
+        closestIndex = i
       }
     }
 
+    remainingTaps.splice(closestIndex, 1)
     taps.push(evaluateTap(closestTap, expected, config.tolerance))
   }
 

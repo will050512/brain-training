@@ -744,25 +744,10 @@ export function generatePersonalizedRecommendations(
   
   if (ageConfig) {
     ageBasedAdvice.push(ageConfig.reason)
-    
-    for (const supplementType of ageConfig.prioritySupplements) {
-      if (!addedSupplements.has(supplementType)) {
-        const supplement = getSupplementInfo(supplementType)
-        recommendations.push({
-          id: `age_${Date.now()}_${supplementType}`,
-          triggerId: 'age_based',
-          supplement,
-          reason: `${profile.age}歲年齡層建議補充`,
-          dimension: supplement.relatedDimensions[0] || 'cognition',
-          priority: 'low',
-          recommendedAt: new Date().toISOString(),
-          viewed: false,
-          dismissed: false
-        })
-        addedSupplements.add(supplementType)
-        ageBasedAdvice.push(`${supplement.name}：${supplement.benefits[0]}`)
-      }
-    }
+
+    // 保守策略：年齡只提供「方向性提醒」，不直接因年齡就推具體產品，避免新用戶感到被推銷。
+    // 具體營養品建議以「認知分數觸發 / Mini-Cog / 退化偵測」為主。
+    ageBasedAdvice.push(`可優先從均衡飲食、規律運動、充足睡眠開始，再視需要諮詢專業人員評估營養補充。`)
   }
 
   // 3. 基於 Mini-Cog 結果的建議

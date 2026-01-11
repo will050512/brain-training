@@ -727,13 +727,31 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
       durationSeconds
     )
 
-    gameResult.value = result
+    // 最終寫入的 GameResult：修正歷史資料常見問題
+    // - score 爆表（>100）導致 Sheet/報表誤判
+    // - 缺少 grade/metrics/tracking 造成 Sheet 顯示為 F、completion=0
+    const clampedScore = Math.max(0, Math.min(100, Math.round(Number(result.score ?? 0))))
+    const finalizedResult: GameResult = {
+      ...result,
+      gameId: gameId.value,
+      difficulty: gameStore.currentDifficulty,
+      score: clampedScore,
+      maxScore: 100,
+      timestamp: new Date(),
+      grade: unified.grade,
+      metrics: unified.metrics,
+      tracking: unified.tracking,
+      gameSpecific: unified.gameSpecific ?? result.gameSpecific,
+      displayStats: unified.displayStats ?? result.displayStats
+    }
+
+    gameResult.value = finalizedResult
     unifiedGameResult.value = unified
-    currentScore.value = result.score
+    currentScore.value = finalizedResult.score
     gameState.value = 'finished'
     
     // 記錄遊戲結果
-    await gameStore.recordGameResult(result)
+    await gameStore.recordGameResult(finalizedResult)
     
     // 如果是每日訓練，標記完成並更新狀態
     if (isFromDailyTraining.value) {
