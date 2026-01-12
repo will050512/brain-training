@@ -687,6 +687,13 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
   }
   
   try {
+    const subDifficulty = (() => {
+      const raw = Number(route.query.subDifficulty ?? gameStore.currentSubDifficulty ?? 2)
+      if (!Number.isFinite(raw)) return 2
+      const clamped = Math.max(1, Math.min(3, Math.round(raw)))
+      return clamped as 1 | 2 | 3
+    })()
+
     const durationSeconds = (() => {
       const dur = typeof (rawResult as any)?.duration === 'number' ? Number((rawResult as any).duration) : NaN
       if (!Number.isFinite(dur) || dur < 0) return elapsedTime.value
@@ -708,6 +715,7 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
           ...rawResult,
           gameId: gameId.value,
           difficulty: gameStore.currentDifficulty,
+          subDifficulty,
           duration: durationSeconds,
           timestamp: new Date()
         }
@@ -715,6 +723,7 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
           gameId: gameId.value,
           rawResult,
           difficulty: gameStore.currentDifficulty,
+          subDifficulty,
           durationSeconds
         })
 
@@ -723,7 +732,7 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
       gameId.value,
       rawResult,
       gameStore.currentDifficulty,
-      result.subDifficulty,
+      subDifficulty,
       durationSeconds
     )
 
@@ -735,6 +744,7 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
       ...result,
       gameId: gameId.value,
       difficulty: gameStore.currentDifficulty,
+      subDifficulty,
       score: clampedScore,
       maxScore: 100,
       timestamp: new Date(),
@@ -755,12 +765,12 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
     
     // 如果是每日訓練，標記完成並更新狀態
     if (isFromDailyTraining.value) {
-      gameStore.completeCurrentTrainingGame(result.score, result.duration)
+      gameStore.completeCurrentTrainingGame(finalizedResult.score, finalizedResult.duration)
       
       // 同步更新到後端服務，確保進度持久化
       const odId = userStore.currentUser?.id
       if (odId) {
-        await markGameCompleted(odId, result.gameId, result.duration)
+        await markGameCompleted(odId, finalizedResult.gameId, finalizedResult.duration)
       }
       
       // 檢查是否完成所有訓練
@@ -823,21 +833,20 @@ function playAgain(): void {
 function continueToNextGame(): void {
   const nextGame = gameStore.getNextTrainingGame()
   if (nextGame) {
-    // 先重置當前狀態
-    playAgain()
-    
     // 移動到下一個遊戲
     gameStore.moveToNextTrainingGame()
     gameStore.selectGame(nextGame.gameId)
     gameStore.selectDifficulty(nextGame.difficulty)
+    if (nextGame.subDifficulty) {
+      gameStore.selectSubDifficulty(nextGame.subDifficulty)
+    }
     
-    // 強制跳轉（如果是同一個路由，Vue Router 可能不會重新加載組件）
-    // 使用 replace 避免在歷史記錄中堆積
+    // 進入下一個遊戲：保持在「準備畫面」顯示遊戲說明，避免無意義自動開始造成誤判
     router.replace({
       path: `/games/${nextGame.gameId}`,
       query: { 
-        autoStart: 'true', 
         fromDaily: 'true',
+        subDifficulty: String(nextGame.subDifficulty ?? gameStore.currentSubDifficulty),
         t: Date.now().toString() // 加入時間戳強制刷新
       }
     })
@@ -879,20 +888,39 @@ function goBack(): void {
 }
 
 // 監聯路由變化，選擇遊戲
+function resetToReadyState(): void {
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+  gameState.value = 'ready'
+  currentScore.value = 0
+  elapsedTime.value = 0
+  gameResult.value = null
+  unifiedGameResult.value = null
+  difficultyAdjustment.value = null
+  recommendedGames.value = []
+  gameStatus.value = {
+    showTimer: true,
+    showScore: false,
+    showCounts: false,
+    showCombo: false,
+    showProgress: false
+  }
+  autoStartOverride.value = false
+  gameComponentKey.value++
+}
+
 watch(() => route.params.gameId, (newId: string | string[] | undefined) => {
   if (newId) {
     const id = Array.isArray(newId) ? newId[0] : newId
     if (id) gameStore.selectGame(id)
-    
-    // 如果是從每日訓練自動跳轉過來的，且帶有 autoStart 參數
-    if (route.query.autoStart === 'true') {
-      // 重置狀態
-      playAgain()
-      // 延遲開始，確保組件已掛載
-      setTimeout(() => {
-        startGame()
-      }, 100)
+    const sd = Number(route.query.subDifficulty)
+    if (Number.isFinite(sd)) {
+      const clamped = Math.max(1, Math.min(3, Math.round(sd))) as 1 | 2 | 3
+      gameStore.selectSubDifficulty(clamped)
     }
+    resetToReadyState()
   }
 }, { immediate: true })
 
@@ -914,15 +942,6 @@ onMounted(() => {
   checkOrientation()
   window.addEventListener('resize', checkOrientation)
   window.addEventListener('orientationchange', checkOrientation)
-  
-  // 檢查是否從 GamePreviewView 進入 - 若是則自動開始遊戲
-  const autoStart = route.query.autoStart === 'true'
-  if (autoStart && gameStore.currentGame) {
-    // 短暫延遲讓畫面載入完成後再開始
-    setTimeout(() => {
-      startGame()
-    }, 100)
-  }
 })
 </script>
 

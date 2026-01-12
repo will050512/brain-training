@@ -233,7 +233,8 @@ async function startGame(game: TrainingGameItem) {
   // 設定訓練隊列
   const queue = trainingPlan.value!.games.map(g => ({
     gameId: g.gameId,
-    difficulty: g.difficulty
+    difficulty: g.difficulty,
+    subDifficulty: g.subDifficulty
   }))
   
   gameStore.setDailyTrainingQueue(queue)
@@ -249,7 +250,11 @@ async function startGame(game: TrainingGameItem) {
   // 選擇遊戲並跳轉
   gameStore.selectGame(game.gameId)
   gameStore.selectDifficulty(game.difficulty)
-  router.push(`/games/${game.gameId}?autoStart=true&fromDaily=true`)
+  gameStore.selectSubDifficulty(game.subDifficulty)
+  router.push({
+    path: `/games/${game.gameId}`,
+    query: { fromDaily: 'true', subDifficulty: String(game.subDifficulty) }
+  })
 }
 
 // 難度文字

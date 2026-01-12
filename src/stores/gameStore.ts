@@ -8,6 +8,7 @@ import type {
   GameSession, 
   GameResult, 
   Difficulty,
+  SubDifficulty,
   SettingValue,
   CognitiveDimension,
   CognitiveScores,
@@ -37,6 +38,7 @@ export interface TrainingQueueItem {
   gameId: string
   game: GameDefinition
   difficulty: Difficulty
+  subDifficulty?: SubDifficulty
   isCompleted: boolean
   score?: number
   duration?: number
@@ -57,6 +59,7 @@ export const useGameStore = defineStore('game', () => {
   const sessions = ref<GameSession[]>([])
   const currentGameId = ref<string | null>(null)
   const currentDifficulty = ref<Difficulty>('easy')
+  const currentSubDifficulty = ref<SubDifficulty>(2)
   const isLoading = ref(false)
   
   // 每日訓練相關狀態
@@ -135,6 +138,13 @@ export const useGameStore = defineStore('game', () => {
   }
 
   /**
+   * 選擇子難度
+   */
+  function selectSubDifficulty(subDifficulty: SubDifficulty): void {
+    currentSubDifficulty.value = subDifficulty
+  }
+
+  /**
    * 記錄遊戲結果
    */
   async function recordGameResult(result: GameResult): Promise<GameSession> {
@@ -151,6 +161,7 @@ export const useGameStore = defineStore('game', () => {
       odId,
       gameId: result.gameId,
       difficulty: result.difficulty,
+      subDifficulty: result.subDifficulty,
       result,
       cognitiveScores,
       createdAt: new Date(),
@@ -253,6 +264,7 @@ export const useGameStore = defineStore('game', () => {
   function clearSelection(): void {
     currentGameId.value = null
     currentDifficulty.value = 'easy'
+    currentSubDifficulty.value = 2
   }
 
   // ===== 每日訓練相關功能 =====
@@ -260,13 +272,14 @@ export const useGameStore = defineStore('game', () => {
   /**
    * 設定每日訓練隊列
    */
-  function setDailyTrainingQueue(games: Array<{ gameId: string; difficulty: Difficulty }>): void {
+  function setDailyTrainingQueue(games: Array<{ gameId: string; difficulty: Difficulty; subDifficulty?: SubDifficulty }>): void {
     dailyTrainingQueue.value = games.map(item => {
       const game = gameRegistry.get(item.gameId)
       return {
         gameId: item.gameId,
         game: game!,
         difficulty: item.difficulty,
+        subDifficulty: item.subDifficulty,
         isCompleted: false
       }
     }).filter(item => item.game)
@@ -464,6 +477,7 @@ export const useGameStore = defineStore('game', () => {
     sessions,
     currentGameId,
     currentDifficulty,
+    currentSubDifficulty,
     isLoading,
     dailyTrainingQueue,
     currentTrainingIndex,
@@ -482,6 +496,7 @@ export const useGameStore = defineStore('game', () => {
     loadUserSessions,
     selectGame,
     selectDifficulty,
+    selectSubDifficulty,
     recordGameResult,
     getSessionsByGame,
     getBestScore,

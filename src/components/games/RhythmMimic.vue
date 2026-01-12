@@ -87,7 +87,7 @@ const { playCorrect, playWrong, playEnd, preloadDefaultSounds } = useGameAudio()
 // ===== 遊戲資料 =====
 const patterns = ref<RhythmPattern[]>([])
 const currentPattern = computed(() => patterns.value[currentRound.value])
-const gamePhase = ref<'listening' | 'input' | 'result'>('listening')
+const gamePhase = ref<'listening' | 'countdown' | 'input' | 'result'>('listening')
 const currentBeatIndex = ref(-1)
 const userTaps = ref<number[]>([])
 const roundResults = ref<RoundResult[]>([])
@@ -97,6 +97,10 @@ const isTapping = ref(false)
 let audioContext: AudioContext | null = null
 let inputStartTime = 0
 let playCount = 0
+const countdown = ref(3)
+const replayRemaining = ref(1)
+const inputOffsetMs = 900
+let playToken = 0
 
 // ===== 計算屬性 =====
 const currentBeats = computed(() => currentPattern.value?.beats || [])
@@ -172,50 +176,79 @@ function startNewRound() {
   currentBeatIndex.value = -1
   userTaps.value = []
   playCount = 0
+  replayRemaining.value = 1
+  countdown.value = 3
+  playToken++
   
   // 延遲後開始播放
   setTimeout(() => {
-    playPattern()
+    playPatternSequence(playToken)
   }, 1000)
 }
 
-async function playPattern() {
+async function playPatternSequence(token: number) {
   if (!currentPattern.value) return
-  
   const beats = currentBeats.value
+  if (beats.length === 0) return
   
-  for (let i = 0; i < beats.length; i++) {
-    currentBeatIndex.value = i
-    playBeat()
-    
-    // 等待到下一個節拍
-    if (i < beats.length - 1) {
-      const currentBeat = beats[i]
-      const nextBeat = beats[i + 1]
-      if (currentBeat && nextBeat) {
-        const interval = nextBeat.time - currentBeat.time
-        await delay(interval)
+  for (let repeat = 0; repeat < config.value.playCount; repeat++) {
+    if (token !== playToken) return
+
+    // 從頭播放一次 pattern
+    for (let i = 0; i < beats.length; i++) {
+      if (token !== playToken) return
+      currentBeatIndex.value = i
+      playBeat()
+
+      // 等待到下一個節拍
+      if (i < beats.length - 1) {
+        const currentBeat = beats[i]
+        const nextBeat = beats[i + 1]
+        if (currentBeat && nextBeat) {
+          const interval = nextBeat.time - currentBeat.time
+          await delay(interval)
+        }
       }
     }
+
+    currentBeatIndex.value = -1
+    playCount = repeat + 1
+
+    // repeat 間隔
+    if (repeat < config.value.playCount - 1) {
+      await delay(config.value.waitTime)
+    }
   }
-  
-  currentBeatIndex.value = -1
-  playCount++
-  
-  // 檢查是否需要再播放一次
-  if (playCount < config.value.playCount) {
-    await delay(config.value.waitTime)
-    playPattern()
-  } else {
-    // 進入輸入階段
-    await delay(500)
-    gamePhase.value = 'input'
-    inputStartTime = Date.now()
-  }
+
+  await delay(500)
+  startCountdownToInput(token)
 }
 
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+function startCountdownToInput(token: number) {
+  if (token !== playToken) return
+
+  gamePhase.value = 'countdown'
+  countdown.value = 3
+
+  const tick = () => {
+    if (token !== playToken) return
+    if (countdown.value <= 1) {
+      // 開始輸入：給一個明確的開始點，並把期望節拍整體往後移，避免第一拍在 0ms 造成「不可能準時」
+      countdown.value = 0
+      gamePhase.value = 'input'
+      inputStartTime = Date.now()
+      playBeat()
+      return
+    }
+    countdown.value--
+    setTimeout(tick, 1000)
+  }
+
+  setTimeout(tick, 1000)
 }
 
 function handleTap() {
@@ -244,7 +277,12 @@ function handleInputComplete() {
   gamePhase.value = 'result'
   
   // 評估結果
-  const result = evaluateRound(userTaps.value, currentPattern.value, config.value)
+  // 輸入階段加入 lead-in offset，避免第一拍 0ms 導致長者難以理解與完成
+  const shiftedPattern: RhythmPattern = {
+    ...currentPattern.value,
+    beats: currentPattern.value.beats.map(b => ({ ...b, time: b.time + inputOffsetMs }))
+  }
+  const result = evaluateRound(userTaps.value, shiftedPattern, config.value)
   roundResults.value.push(result)
   
   const isGood = result.accuracy >= 60
@@ -279,11 +317,25 @@ function handleInputComplete() {
 
 function skipInput() {
   if (gamePhase.value !== 'input') return
-  
-  // 如果敲擊數量不足，補上空敲
-  while (userTaps.value.length < currentBeats.value.length) {
-    handleTap()
-  }
+  handleInputComplete()
+}
+
+function replayPattern() {
+  if (!isPlaying.value || gamePhase.value !== 'input') return
+  if (replayRemaining.value <= 0) return
+  if (!currentPattern.value) return
+
+  replayRemaining.value--
+  userTaps.value = []
+  currentBeatIndex.value = -1
+  playCount = 0
+
+  gamePhase.value = 'listening'
+  playToken++
+  const token = playToken
+  setTimeout(() => {
+    playPatternSequence(token)
+  }, 500)
 }
 
 function handleGameEnd() {
@@ -408,7 +460,7 @@ watch(() => props.difficulty, () => {
           class="input-phase text-center"
         >
           <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4">
-            點擊下方按鈕複製節奏
+            看到倒數結束後開始敲擊，盡量跟上剛才的節奏
           </div>
 
           <!-- 輸入進度 -->
@@ -440,12 +492,34 @@ watch(() => props.difficulty, () => {
           </div>
 
           <!-- 跳過按鈕 -->
-          <button
-            class="skip-btn mt-3 sm:mt-4 px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-sm sm:text-base font-medium min-h-[44px]"
-            @click="skipInput"
-          >
-            完成輸入
-          </button>
+          <div class="mt-3 sm:mt-4 flex justify-center gap-2 flex-wrap">
+            <button
+              v-if="replayRemaining > 0"
+              class="skip-btn px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-sm sm:text-base font-medium min-h-[44px]"
+              @click="replayPattern"
+            >
+              再聽一次（剩 {{ replayRemaining }} 次）
+            </button>
+            <button
+              class="skip-btn px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-sm sm:text-base font-medium min-h-[44px]"
+              @click="skipInput"
+            >
+              直接結算
+            </button>
+          </div>
+        </div>
+
+        <!-- 倒數階段 -->
+        <div v-else-if="gamePhase === 'countdown'" class="text-center">
+          <div class="text-base sm:text-lg font-medium mb-4 sm:mb-6">
+            準備開始
+          </div>
+          <div class="text-6xl sm:text-7xl font-extrabold text-blue-600 dark:text-blue-400 tabular-nums">
+            {{ countdown }}
+          </div>
+          <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-4">
+            倒數結束後開始敲擊
+          </div>
         </div>
 
         <!-- 結果階段 -->

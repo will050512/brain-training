@@ -161,12 +161,15 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useGameStore } from '@/stores'
+import { useUserStore } from '@/stores/userStore'
 import { COGNITIVE_DIMENSIONS, type CognitiveDimension } from '@/types/cognitive'
 import { DIFFICULTIES, type Difficulty, type GameDefinition } from '@/types/game'
+import { getSuggestedDifficulty } from '@/services/adaptiveDifficultyService'
 
 const route = useRoute()
 const router = useRouter()
 const gameStore = useGameStore()
+const userStore = useUserStore()
 
 // --- 狀態管理 ---
 const showDifficultyPanel = ref(false)
@@ -214,9 +217,12 @@ function startGame(): void {
   if (!currentGame.value) return
   gameStore.selectGame(currentGame.value.id)
   gameStore.selectDifficulty(selectedDifficulty.value)
+  // 沒有 UI 讓使用者選子難度：沿用建議子難度/目前子難度
+  const subDifficulty = gameStore.currentSubDifficulty ?? 2
+  gameStore.selectSubDifficulty(subDifficulty)
   router.push({
     path: `/games/${currentGame.value.id}`,
-    query: { autoStart: 'true' }
+    query: { subDifficulty: String(subDifficulty) }
   })
 }
 
@@ -224,6 +230,20 @@ onMounted(() => {
   if (gameId.value) gameStore.selectGame(gameId.value)
   const savedDifficulty = gameStore.currentDifficulty
   if (savedDifficulty) selectedDifficulty.value = savedDifficulty
+
+  // 動態難度：預設使用系統建議（避免長者被不適合的難度打擊）
+  const odId = userStore.currentUser?.id
+  if (odId && gameId.value) {
+    getSuggestedDifficulty(odId, gameId.value)
+      .then(suggested => {
+        selectedDifficulty.value = suggested.difficulty
+        gameStore.selectDifficulty(suggested.difficulty)
+        gameStore.selectSubDifficulty(suggested.subDifficulty)
+      })
+      .catch(() => {
+        // ignore
+      })
+  }
 })
 </script>
 
