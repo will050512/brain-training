@@ -22,6 +22,20 @@ import {
 } from '@/services/db'
 import { dataInitService } from '@/services/dataInitService'
 
+function normalizeUser(user: User): User {
+  const now = new Date()
+  return {
+    ...user,
+    gender: user.gender ?? 'unknown',
+    authProvider: user.authProvider ?? 'local',
+    clientSource: user.clientSource,
+    profileVersion: user.profileVersion ?? 1,
+    updatedAt: user.updatedAt ?? user.lastActiveAt ?? user.createdAt ?? now,
+    createdAt: user.createdAt ?? now,
+    lastActiveAt: user.lastActiveAt ?? now,
+  }
+}
+
 export const useUserStore = defineStore('user', () => {
   // 狀態
   const currentUser = ref<User | null>(null)
@@ -59,7 +73,7 @@ export const useUserStore = defineStore('user', () => {
   /**
    * 登入（使用姓名+生日）
    */
-  async function login(name: string, birthday: string, educationYears?: number): Promise<boolean> {
+  async function login(name: string, birthday: string, educationYears?: number, gender: User['gender'] = 'unknown'): Promise<boolean> {
     isLoading.value = true
     error.value = null
 
@@ -76,8 +90,12 @@ export const useUserStore = defineStore('user', () => {
           name: name.trim(),
           birthday,
           educationYears: educationYears ?? 0,  // 預設教育年數為 0
+          gender: gender || 'unknown',
+          authProvider: 'local',
           createdAt: new Date(),
           lastActiveAt: new Date(),
+          updatedAt: new Date(),
+          profileVersion: 1,
         }
         await saveUser(user as User)
         
@@ -90,15 +108,23 @@ export const useUserStore = defineStore('user', () => {
         await saveUserStats(stats)
       } else {
         // 更新最後活動時間和教育年數（如果有提供）
-        user.lastActiveAt = new Date()
+        const now = new Date()
+        user.lastActiveAt = now
         if (educationYears !== undefined) {
           user.educationYears = educationYears
         }
+        if (gender) {
+          user.gender = gender
+        }
+        user.authProvider = user.authProvider ?? 'local'
+        user.updatedAt = now
+        user.profileVersion = user.profileVersion ?? 1
+        user.gender = (user as User).gender || 'unknown'
         await saveUser(user as User)
       }
 
       // 載入使用者資料
-      currentUser.value = user as User
+      currentUser.value = normalizeUser(user as User)
       currentSettings.value = await getUserSettings(odId) || defaultUserSettings(odId)
       currentStats.value = await getUserStats(odId) || defaultUserStats(odId)
 
@@ -216,7 +242,8 @@ export const useUserStore = defineStore('user', () => {
    * 取得所有使用者列表（用於切換帳號）
    */
   async function fetchAllUsers(): Promise<User[]> {
-    return getAllUsers()
+    const users = await getAllUsers()
+    return users.map(u => normalizeUser(u as User))
   }
 
   /**
@@ -233,10 +260,12 @@ export const useUserStore = defineStore('user', () => {
         return false
       }
 
-      user.lastActiveAt = new Date()
-      await saveUser(user)
+      const normalized = normalizeUser(user as User)
+      normalized.lastActiveAt = new Date()
+      normalized.updatedAt = normalized.lastActiveAt
+      await saveUser(normalized)
 
-      currentUser.value = user
+      currentUser.value = normalized
       currentSettings.value = await getUserSettings(odId) || defaultUserSettings(odId)
       currentStats.value = await getUserStats(odId) || defaultUserStats(odId)
 
@@ -249,6 +278,96 @@ export const useUserStore = defineStore('user', () => {
       return true
     } catch (e) {
       error.value = e instanceof Error ? e.message : '登入失敗'
+      return false
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * 外部登入（APP WebView / Firebase 等）
+   * - 以外部 uid 作為固定 userId，避免用姓名+生日推導造成變動
+   * - 需要提供 name + birthday（用於常模與報表）
+   */
+  async function loginWithExternalProfile(profile: {
+    provider: 'firebase'
+    uid: string
+    name: string
+    birthday: string
+    educationYears?: number
+    gender?: User['gender']
+    clientSource?: string
+  }): Promise<boolean> {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const uid = profile.uid?.trim()
+      if (!uid) {
+        error.value = '外部登入缺少 uid'
+        return false
+      }
+      const name = profile.name?.trim()
+      if (!name) {
+        error.value = '外部登入缺少姓名'
+        return false
+      }
+      const birthday = profile.birthday?.trim()
+      if (!birthday) {
+        error.value = '外部登入缺少生日'
+        return false
+      }
+
+      const odId = `fb_${uid}`
+      const now = new Date()
+
+      let user = await getUser(odId)
+      if (!user) {
+        user = {
+          id: odId,
+          name,
+          birthday,
+          educationYears: profile.educationYears ?? 0,
+          gender: profile.gender ?? 'unknown',
+          clientSource: profile.clientSource,
+          authProvider: 'firebase',
+          createdAt: now,
+          lastActiveAt: now,
+          updatedAt: now,
+          profileVersion: 1,
+        }
+        await saveUser(user as User)
+
+        const settings = defaultUserSettings(odId)
+        await saveUserSettings(settings)
+
+        const stats = defaultUserStats(odId)
+        await saveUserStats(stats)
+      } else {
+        const normalized = normalizeUser(user as User)
+        normalized.name = name
+        normalized.birthday = birthday
+        if (profile.educationYears !== undefined) normalized.educationYears = profile.educationYears
+        if (profile.gender) normalized.gender = profile.gender
+        if (profile.clientSource) normalized.clientSource = profile.clientSource
+        normalized.authProvider = 'firebase'
+        normalized.lastActiveAt = now
+        normalized.updatedAt = now
+        user = normalized
+        await saveUser(user as User)
+      }
+
+      currentUser.value = normalizeUser(user as User)
+      currentSettings.value = await getUserSettings(odId) || defaultUserSettings(odId)
+      currentStats.value = await getUserStats(odId) || defaultUserStats(odId)
+
+      localStorage.setItem('brain-training-last-user', odId)
+      localStorage.setItem('brain-training-current-user', odId)
+
+      await dataInitService.initUserData(odId)
+      return true
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : '外部登入失敗'
       return false
     } finally {
       isLoading.value = false
@@ -281,6 +400,7 @@ export const useUserStore = defineStore('user', () => {
     
     // 動作
     login,
+    loginWithExternalProfile,
     logout,
     quickLogin,
     restoreSession,

@@ -3,11 +3,13 @@ import { getGradeFromScore } from '@/types/game'
 import { getDataConsent, getUserGameSessions } from '@/services/db'
 
 // 已部署的 Apps Script Web App
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxTYoOZyhYTJCVxWTbQRaDtdo4trfpA2AXBOwWnRJRSLZmRO5I2jZRS6lU_Aic1uXr8/exec'
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyCLuyPiJL3Loqe6HHouu5pA3rmXns97fsIhC0SqNoFeI8mcKbfFYkn3O8m-sZa0oUO/exec'
 const BACKFILL_THROTTLE_MS = 24 * 60 * 60 * 1000
 const BACKFILL_KEY_PREFIX = 'sheetBackfillAt:'
 const SYNCED_IDS_KEY_PREFIX = 'sheetSyncedSessionIds:'
 const MAX_SYNCED_IDS = 5000
+const SHEET_SYNC_PROTOCOL_VERSION = 2
+const SYNC_PROTOCOL_KEY_PREFIX = 'sheetSyncProtocol:'
 
 type SheetTracking = TrackingData & {
   avgReactionTimeMs?: number
@@ -15,6 +17,8 @@ type SheetTracking = TrackingData & {
 }
 
 type SheetPayload = {
+  action?: 'upsertGameResults'
+  protocolVersion?: number
   userId: string
   sessionId: string
   gameId: string
@@ -86,6 +90,20 @@ function saveSyncedIds(odId: string, ids: Set<string>): void {
   }
 }
 
+function ensureSyncProtocolVersion(odId: string): void {
+  // 當同步協議/Apps Script 升級時，避免沿用舊的「已同步 sessionId」而導致資料無法被修正（例如早期上傳造成 score>100 或空 gameId）。
+  try {
+    const key = `${SYNC_PROTOCOL_KEY_PREFIX}${odId}`
+    const current = Number(localStorage.getItem(key) || 0)
+    if (current === SHEET_SYNC_PROTOCOL_VERSION) return
+    localStorage.setItem(key, String(SHEET_SYNC_PROTOCOL_VERSION))
+    localStorage.removeItem(`${SYNCED_IDS_KEY_PREFIX}${odId}`)
+    localStorage.removeItem(`${BACKFILL_KEY_PREFIX}${odId}`)
+  } catch {
+    // ignore
+  }
+}
+
 function markSessionSynced(odId: string, sessionId: string): void {
   if (!sessionId) return
   const ids = loadSyncedIds(odId)
@@ -126,6 +144,8 @@ function mapSessionToPayload(session: GameSession, bestScore?: number): SheetPay
   const score = clampScore0to100(result.score)
 
   return {
+    action: 'upsertGameResults',
+    protocolVersion: SHEET_SYNC_PROTOCOL_VERSION,
     userId: session.odId,
     sessionId: session.id,
     // 舊資料有機會 result.gameId 為空；以 session.gameId 作為保底，避免 Sheet 出現空 gameId
@@ -148,7 +168,7 @@ function mapSessionToPayload(session: GameSession, bestScore?: number): SheetPay
   }
 }
 
-async function postToSheet(payload: SheetPayload | { items: SheetPayload[] }): Promise<boolean> {
+async function postToSheet(payload: SheetPayload | { action: 'upsertGameResults'; protocolVersion?: number; items: SheetPayload[] }): Promise<boolean> {
   try {
     // Apps Script Web App 通常無法自訂 CORS header，若用 application/json 會觸發 preflight 而導致瀏覽器直接擋下。
     // 因此使用 no-cors + 不指定 Content-Type，讓請求能送達（回應為 opaque，無法讀取內容）。
@@ -173,6 +193,7 @@ async function postToSheet(payload: SheetPayload | { items: SheetPayload[] }): P
  */
 export async function syncSessionToSheet(session: GameSession, bestScore?: number): Promise<void> {
   if (!isBrowserOnline()) return
+  ensureSyncProtocolVersion(session.odId)
   if (!(await isSheetSyncAllowed(session.odId))) return
   if (isSessionSynced(session.odId, session.id)) return
   const payload = mapSessionToPayload(session, bestScore)
@@ -188,6 +209,7 @@ export async function syncSessionToSheet(session: GameSession, bestScore?: numbe
 export async function backfillUserSessionsToSheet(odId: string): Promise<void> {
   try {
     if (!isBrowserOnline()) return
+    ensureSyncProtocolVersion(odId)
     if (!(await isSheetSyncAllowed(odId))) return
 
     // 節流：避免每次啟動都回填（避免重複寫入/浪費流量）
@@ -209,20 +231,8 @@ export async function backfillUserSessionsToSheet(odId: string): Promise<void> {
     const batchSize = 50
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize)
-      const ok = await postToSheet({ items: batch })
-      if (!ok) {
-        // 回退：逐筆寫入（兼容尚未支援 items 的 Apps Script）
-        for (const item of batch) {
-          const okItem = await postToSheet(item)
-          if (okItem) {
-            markSessionSynced(odId, item.sessionId)
-          }
-        }
-      } else {
-        for (const item of batch) {
-          markSessionSynced(odId, item.sessionId)
-        }
-      }
+      const ok = await postToSheet({ action: 'upsertGameResults', protocolVersion: SHEET_SYNC_PROTOCOL_VERSION, items: batch })
+      if (ok) for (const item of batch) markSessionSynced(odId, item.sessionId)
     }
   } catch (error) {
     console.error('Backfill to Google Sheet failed', error)

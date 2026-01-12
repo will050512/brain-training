@@ -2,6 +2,8 @@
 
 統一 rawResult 形狀與匯出欄位，避免結算畫面混用與報表誤判。若遊戲新開發，請依下列範本擴充。
 
+> Apps Script「完整版本」請使用 `docs/apps-script.gs`（支援 `GameResults` + `Users`、batch、upsert 去重、JSONP 讀取）。
+
 ## Google Sheet 欄位（每筆 GameResult）
 - `userId`：使用者/odId
 - `sessionId`：遊戲會話 UUID
@@ -26,6 +28,7 @@
 - `bestScore`（可選：更新後端最佳成績）
 - `gameSpecific.*`（依各遊戲 schema；建議序列化成 JSON 儲存於一欄 `gameSpecific`）
 - `displayStats`（可選：JSON，前端顯示用）
+- `protocolVersion`（同步協議版本；用於回填修正與相容性）
 
 ### Sheet 版型建議（供 Apps Script 直接寫入）
 1. 表單標題：`GameResults`
@@ -35,14 +38,27 @@
    metrics.completion,metrics.accuracy,metrics.speed,metrics.efficiency,
    tracking.correctCount,tracking.wrongCount,tracking.missedCount,tracking.maxCombo,
    tracking.avgReactionTimeMs,tracking.avgThinkingTimeMs,tracking.totalActions,
-   bestScore,gameSpecific,displayStats
+   bestScore,gameSpecific,displayStats,protocolVersion
    ```
 3. JSON 欄位（`gameSpecific`,`displayStats`）建議 `JSON.stringify` 後寫入；讀取時用 `JSON.parse`。
 4. timestamp 請存 ISO（`new Date().toISOString()`），避免時區誤判。
 5. 若需分表：可將每日訓練/一般遊戲分不同 Sheet，欄位相同即可。
 
+## Google Sheet 欄位（每筆 User）
+建議建立 `Users` 工作表（每個 `userId` 一列；以 `userId` upsert 更新，避免重複列）。
+
+- `userId`
+- `name`
+- `birthday`（YYYY-MM-DD）
+- `educationYears`
+- `gender`（`male|female|other|unknown`）
+- `createdAt`（ISO）
+- `lastActiveAt`（ISO）
+- `updatedAt`（ISO）
+- `profileVersion`（用於未來擴充）
+
 ### Apps Script 對接（已建置）
-- Web App URL：`https://script.google.com/macros/s/AKfycbzN1BnvG1hHI8pVZpbbZ2hcCixD4knV2pgM1yG2hAvl2a1S3E8DLxCUKe5v3KmNokra/exec`
+- Web App URL：`https://script.google.com/macros/s/AKfycbyCLuyPiJL3Loqe6HHouu5pA3rmXns97fsIhC0SqNoFeI8mcKbfFYkn3O8m-sZa0oUO/exec`
 - 瀏覽器端 `fetch` 注意：Apps Script Web App 通常無法設定 CORS header；若用 `Content-Type: application/json` 會觸發 preflight 導致請求被瀏覽器擋下。
   - 本專案已改用 `mode: 'no-cors'` 並直接送出 JSON 字串（`text/plain`），確保請求可送達。
 - 建議以 `POST` 傳送 JSON（字串），範例：
@@ -67,11 +83,12 @@
     ]
   }
   ```
+- 若使用完整 Apps Script 版本：請在 payload 加上 `action: "upsertGameResults"` 及 `protocolVersion: 2`；批次寫入使用 `{ "action": "upsertGameResults", "items": [ ... ] }`。Users 同理使用 `{ "action": "upsertUsers", "items": [ ...UserPayload ] }`。
 - Apps Script 端建議：
   - 驗證必填欄位（`userId`,`sessionId`,`gameId`,`timestamp`,`score`），若欄位缺漏則回傳 400。
   - `displayStats` 建議存 `[]`（JSON 字串），`gameSpecific` 建議存 `{}`（JSON 字串）。
   - 以 `sessionId` 去重：同一 sessionId 重送時不要重複 append（可改成 update 該列）。
-  - 可支援批次回填：接受 `{ "items": [ ...SheetPayload ] }`，用 `setValues()` 一次寫入提升速度。
+  - 批次回填：接受 `{ "action": "upsertGameResults", "items": [ ...SheetPayload ] }`，用 `setValues()` 一次寫入提升速度。
 
 ### 舊用戶資料回填流程（連線後自動補寫）
 1. 客戶端啟動時，讀取本地 IndexedDB/LocalStorage 的舊紀錄（若有 legacy `GameResult` 形狀）。

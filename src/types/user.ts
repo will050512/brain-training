@@ -107,8 +107,15 @@ export interface User {
   name: string
   birthday: string  // YYYY-MM-DD 格式
   educationYears: number  // 教育年數（0=不識字, 1-6=國小, 7-9=國中, 10-12=高中, 13+=大專以上）
+  gender: 'male' | 'female' | 'other' | 'unknown'
+  /** 使用者來源（例：app-android / app-ios / pwa / web） */
+  clientSource?: string
+  /** 外部認證來源（例：firebase） */
+  authProvider?: 'local' | 'firebase'
   createdAt: Date
   lastActiveAt: Date
+  updatedAt?: Date
+  profileVersion?: number
 }
 
 // 使用者設定

@@ -69,9 +69,27 @@
               <option :value="16">大學畢業 (16年)</option>
               <option :value="18">碩士以上 (18年+)</option>
             </select>
-            <p class="text-sm text-[var(--color-text-muted)] mt-1">
-              用於對照台灣認知功能常模資料
-            </p>
+          <p class="text-sm text-[var(--color-text-muted)] mt-1">
+            用於對照台灣認知功能常模資料
+          </p>
+        </div>
+
+          <!-- 性別 -->
+          <div>
+            <label for="gender" class="block text-lg font-medium text-[var(--color-text)] mb-2">
+              性別
+            </label>
+            <select
+              id="gender"
+              v-model="form.gender"
+              class="input"
+              required
+            >
+              <option value="male">男性</option>
+              <option value="female">女性</option>
+              <option value="other">其他 / 不方便提供</option>
+              <option value="unknown">未填寫</option>
+            </select>
           </div>
 
           <!-- 錯誤訊息 -->
@@ -140,6 +158,7 @@ const form = ref({
   name: '',
   birthday: '',
   educationYears: '' as string | number,
+  gender: 'unknown' as 'male' | 'female' | 'other' | 'unknown',
 })
 
 // 狀態
@@ -156,7 +175,8 @@ const maxDate = computed(() => {
 const isFormValid = computed(() => {
   return form.value.name.trim().length > 0 && 
          form.value.birthday.length > 0 &&
-         form.value.educationYears !== ''
+         form.value.educationYears !== '' &&
+         !!form.value.gender
 })
 
 // 格式化日期
@@ -176,7 +196,8 @@ async function handleSubmit(): Promise<void> {
     const success = await userStore.login(
       form.value.name, 
       form.value.birthday,
-      Number(form.value.educationYears)
+      Number(form.value.educationYears),
+      form.value.gender
     )
     
     if (success) {

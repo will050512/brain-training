@@ -8,6 +8,7 @@ import { useResponsive } from '@/composables/useResponsive'
 import { useNotification } from '@/composables/useNotification'
 import { useToast } from '@/composables/useToast'
 import { backfillUserSessionsToSheet } from '@/services/googleSheetSyncService'
+import { syncUserProfileToSheet } from '@/services/userSheetSyncService'
 import AppShell from '@/components/layout/AppShell.vue'
 import DesktopLayout from '@/components/layout/DesktopLayout.vue'
 import MobileBottomNav from '@/components/ui/MobileBottomNav.vue'
@@ -160,6 +161,7 @@ watch(() => userStore.currentUser, (newUser) => {
     // 延遲檢查，確保 ID 已完全載入
     setTimeout(() => {
       checkConsentStatus()
+      syncUserProfileToSheet(newUser)
     }, 100)
   }
 }, { immediate: false })
@@ -179,6 +181,7 @@ onMounted(async () => {
     await checkConsentStatus()
     // 舊用戶資料回填至 Google Sheet（背景執行）
     backfillUserSessionsToSheet(userStore.currentUser.id)
+    syncUserProfileToSheet(userStore.currentUser)
   }
 
   // 初始化數據同步服務
