@@ -1,6 +1,7 @@
 import type { GameGrade, GameSession, GameResult, StandardizedMetrics, TrackingData } from '@/types/game'
 import { getGradeFromScore } from '@/types/game'
 import { getDataConsent, getUserGameSessions } from '@/services/db'
+import { detectClientSource, loadClientSourceForUser } from '@/services/clientSource'
 
 // 已部署的 Apps Script Web App
 const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyCLuyPiJL3Loqe6HHouu5pA3rmXns97fsIhC0SqNoFeI8mcKbfFYkn3O8m-sZa0oUO/exec'
@@ -33,6 +34,8 @@ type SheetPayload = {
   bestScore?: number
   gameSpecific?: Record<string, unknown>
   displayStats?: unknown[]
+  clientSource?: string
+  authProvider?: string
 }
 
 function clampScore0to100(value: number): number {
@@ -143,6 +146,12 @@ function mapSessionToPayload(session: GameSession, bestScore?: number): SheetPay
   const tracking = ensureTracking(result)
   const score = clampScore0to100(result.score)
 
+  const inferredClientSource =
+    (result.gameSpecific as any)?.clientSource ||
+    loadClientSourceForUser(session.odId) ||
+    detectClientSource()
+  const inferredAuthProvider = (result.gameSpecific as any)?.authProvider || 'local'
+
   return {
     action: 'upsertGameResults',
     protocolVersion: SHEET_SYNC_PROTOCOL_VERSION,
@@ -165,6 +174,8 @@ function mapSessionToPayload(session: GameSession, bestScore?: number): SheetPay
     bestScore,
     gameSpecific: result.gameSpecific,
     displayStats: result.displayStats,
+    clientSource: inferredClientSource,
+    authProvider: inferredAuthProvider,
   }
 }
 

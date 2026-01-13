@@ -5,6 +5,7 @@ import App from './App.vue'
 import { registerAllGames } from './games'
 import { initDatabase } from './services/db'
 import { initMigrations } from './services/migrationService'
+import { initExternalAuthBridge } from './services/externalAuthBridge'
 import './style.css'
 
 // 建立應用程式
@@ -31,6 +32,9 @@ async function bootstrap() {
     // 註冊所有遊戲
     registerAllGames()
     console.log('Games registered')
+
+    // 啟動外部登入橋接（供 App / Firebase WebView 傳遞用戶資料）
+    initExternalAuthBridge()
     
     // 掛載應用程式
     app.mount('#app')
