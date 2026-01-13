@@ -57,16 +57,19 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    // 舊版「說明/難度頁」：已整合到 GamePlayView 的 ready 畫面，保留 redirect 兼容舊連結
     path: '/games/:gameId/preview',
-    name: 'GamePreview',
-    component: () => import('@/views/GamePreviewView.vue'),
+    redirect: to => ({
+      name: 'GamePlay',
+      params: to.params,
+      query: to.query,
+    }),
     meta: { 
       requiresAuth: true, 
       requiresAssessment: true,
       layout: 'fullscreen',
       title: '遊戲預覽',
     },
-    props: true,
   },
   {
     path: '/games/:gameId',

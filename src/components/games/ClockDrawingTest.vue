@@ -116,7 +116,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import type { ClockDrawingResult } from '@/services/miniCogService'
 import { calculateClockDrawingScore } from '@/services/miniCogService'
 import { getRandomClockTime, getTimeDescription } from '@/services/clockDrawingAnalyzer'
@@ -186,6 +186,28 @@ const NUMBER_HALF = NUMBER_SIZE / 2
 const dragOffsetX = ref(NUMBER_HALF)
 const dragOffsetY = ref(NUMBER_HALF)
 
+function getElementContentWidth(el: HTMLElement | null): number | null {
+  if (!el) return null
+  const style = window.getComputedStyle(el)
+  const paddingLeft = Number.parseFloat(style.paddingLeft || '0') || 0
+  const paddingRight = Number.parseFloat(style.paddingRight || '0') || 0
+  const contentWidth = el.clientWidth - paddingLeft - paddingRight
+  return Number.isFinite(contentWidth) && contentWidth > 0 ? contentWidth : null
+}
+
+function computeClockFaceSize(): number {
+  const maxSize = 350
+  const minSize = 240
+
+  const baseEl = (assembleContainerRef.value ?? containerRef.value) as HTMLElement | null
+  const contentWidth = getElementContentWidth(baseEl) ?? window.innerWidth
+
+  // 留一些空間給邊框與陰影，避免在窄螢幕被裁切（尤其在 overflow 容器內 box-shadow 會被吃掉）
+  const safeWidth = Math.max(0, contentWidth - 32)
+  const size = Math.min(maxSize, Math.max(minSize, safeWidth))
+  return Math.round(size)
+}
+
 function getClockFaceRect(): DOMRect | null {
   const el = clockFaceRef.value
     ?? (assembleContainerRef.value?.querySelector('.clock-face') as HTMLElement | null)
@@ -225,18 +247,7 @@ function isPositionOccupied(posNumber: number): boolean {
 }
 
 function initAssembleMode() {
-  // 使用流體設計：根據螢幕寬度動態調整，但不超過合理最大值
-  const maxSize = 350
-  const minSize = 250
-  const viewportWidth = window.innerWidth
-  const padding = 40 // 左右邊距
-
-  // 計算可用寬度
-  const availableWidth = viewportWidth - padding * 2
-
-  // 使用 clamp 邏輯：最小 minSize，最大 maxSize，優先使用 availableWidth
-  const size = Math.min(maxSize, Math.max(minSize, availableWidth))
-  clockFaceSize.value = size
+  clockFaceSize.value = computeClockFaceSize()
   
   const numbers = Array.from({ length: 12 }, (_, i) => i + 1)
   const shuffled = numbers.sort(() => Math.random() - 0.5)
@@ -256,6 +267,26 @@ function initAssembleMode() {
   minuteHandAngle.value = 0
   
   startTime.value = Date.now()
+}
+
+function updateClockFaceSize(): void {
+  const nextSize = computeClockFaceSize()
+  if (nextSize === clockFaceSize.value) return
+
+  clockFaceSize.value = nextSize
+
+  // 重新定位已吸附的數字，避免縮放後偏移/裁切
+  nextTick(() => {
+    const positions = snapPositions.value
+    for (const n of assembleNumbers.value) {
+      if (!n.snapped || !n.snappedTo || n.isDragging) continue
+      const pos = positions.find(p => p.number === n.snappedTo)
+      if (pos) {
+        n.x = pos.x
+        n.y = pos.y
+      }
+    }
+  })
 }
 
 // 拖曳邏輯
@@ -593,9 +624,14 @@ function generateAssemblePreview() {
 onMounted(() => {
   initializeTargetTime()
   initAssembleMode()
+  nextTick(() => updateClockFaceSize())
+  window.addEventListener('resize', updateClockFaceSize)
+  window.addEventListener('orientationchange', updateClockFaceSize)
 })
 
 onUnmounted(() => {
+  window.removeEventListener('resize', updateClockFaceSize)
+  window.removeEventListener('orientationchange', updateClockFaceSize)
   document.removeEventListener('mousemove', handleDragMove)
   document.removeEventListener('mouseup', handleDragEnd)
   document.removeEventListener('touchmove', handleDragMoveTouch)
@@ -655,6 +691,16 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-sm);
+}
+
+@media (max-width: 640px) {
+  .clock-drawing-test {
+    padding: var(--space-sm);
+  }
+
+  .assemble-container {
+    padding: var(--space-xs);
+  }
 }
 
 .clock-face {

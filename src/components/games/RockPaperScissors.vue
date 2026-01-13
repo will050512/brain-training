@@ -34,8 +34,10 @@ import GameFeedback from './ui/GameFeedback.vue'
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
+  autoStart?: boolean
 }>(), {
-  difficulty: 'easy'
+  difficulty: 'easy',
+  autoStart: false,
 })
 
 const emit = defineEmits<{
@@ -257,7 +259,8 @@ watch(() => props.difficulty, () => {
       v-if="phase === 'ready'"
       title="猜拳遊戲"
       icon="✊"
-      :difficulty="difficulty === 'medium' ? 'normal' : difficulty"
+      :difficulty="difficulty"
+      :auto-start="props.autoStart"
       @start="handleStart"
     />
 

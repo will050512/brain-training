@@ -147,6 +147,6 @@ function getScoreClass(score: number | undefined): string {
 // 直接跳轉到遊戲預覽頁
 function openGameModal(game: GameDefinition): void {
   gameStore.selectGame(game.id)
-  router.push(`/games/${game.id}/preview`)
+  router.push(`/games/${game.id}`)
 }
 </script>

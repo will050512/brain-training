@@ -66,9 +66,9 @@ function isActive(item: NavItem): boolean {
 // 不顯示底部導航的頁面
 const hiddenPages = ['/login', '/onboarding', '/assessment']
 const shouldHide = computed(() => {
-  return hiddenPages.some(p => route.path.startsWith(p)) || 
-         route.path.includes('/play') ||
-         route.path.includes('/preview')
+  const matchedHide = route.matched.some(r => r.meta.hideBottomNav === true)
+  return hiddenPages.some(p => route.path.startsWith(p)) ||
+         matchedHide
 })
 </script>
 

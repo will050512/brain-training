@@ -443,10 +443,17 @@ export const useGameStore = defineStore('game', () => {
     }
 
     // 按多樣性分數排序，取前 N 個
-    return otherDimensionGames
+    const picked = otherDimensionGames
       .sort((a, b) => b.score - a.score)
       .slice(0, count)
       .map(item => item.game)
+
+    // 若今天已玩過太多導致沒有候選，退而求其次：至少給「其他遊戲」避免結算畫面空白
+    if (picked.length > 0) return picked
+
+    return allGames
+      .filter(g => g.id !== currentGameId)
+      .slice(0, count)
   }
 
   /**

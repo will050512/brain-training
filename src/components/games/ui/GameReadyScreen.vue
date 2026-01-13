@@ -8,14 +8,14 @@ import { ref, watch, onUnmounted } from 'vue'
 interface Props {
   /** 遊戲名稱 */
   title: string
-  /** 遊戲說明 - 已移至 GamePreviewView 統一顯示 */
+  /** 遊戲說明（目前多數遊戲由外層頁面統一顯示） */
   description?: string
-  /** 遊戲規則列表 - 已移至 GamePreviewView 統一顯示 */
+  /** 遊戲規則列表（目前多數遊戲由外層頁面統一顯示） */
   rules?: string[]
   /** 遊戲圖示 */
   icon?: string
   /** 難度 */
-  difficulty?: 'easy' | 'normal' | 'hard'
+  difficulty?: 'easy' | 'medium' | 'hard' | 'normal'
   /** 難度顯示文字 */
   difficultyLabel?: string
   /** 是否顯示倒數 */
@@ -44,7 +44,8 @@ let countdownTimer: ReturnType<typeof setInterval> | null = null
 // 難度顯示
 const difficultyDisplay: Record<string, { label: string; class: string }> = {
   easy: { label: '簡單', class: 'difficulty-easy' },
-  normal: { label: '普通', class: 'difficulty-normal' },
+  medium: { label: '中等', class: 'difficulty-medium' },
+  normal: { label: '中等', class: 'difficulty-medium' }, // legacy alias
   hard: { label: '困難', class: 'difficulty-hard' },
 }
 
@@ -191,6 +192,7 @@ onUnmounted(() => {
   color: white;
 }
 
+.difficulty-medium,
 .difficulty-normal {
   background: var(--color-warning);
   color: white;

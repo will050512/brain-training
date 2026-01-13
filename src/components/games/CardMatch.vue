@@ -33,8 +33,10 @@ import CardMatchResult from './ui/CardMatchResult.vue'
 const props = withDefaults(defineProps<{
   difficulty?: GameDifficulty
   settings?: Record<string, unknown>
+  autoStart?: boolean
 }>(), {
-  difficulty: 'easy'
+  difficulty: 'easy',
+  autoStart: false,
 })
 
 const emit = defineEmits<{
@@ -354,7 +356,8 @@ onUnmounted(() => {
       v-if="phase === 'ready'"
       title="翻牌配對"
       icon="🃏"
-      :difficulty="difficulty === 'medium' ? 'normal' : difficulty"
+      :difficulty="difficulty"
+      :auto-start="props.autoStart"
       @start="handleStart"
     />
 
