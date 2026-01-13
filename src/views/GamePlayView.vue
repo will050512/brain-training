@@ -160,8 +160,11 @@
           </div>
 
           <div class="space-y-3">
+            <div v-if="startError" class="p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm text-left">
+              {{ startError }}
+            </div>
             <button @click="startGame" class="btn btn-primary btn-xl w-full text-base sm:text-lg shadow-md active:scale-95 transition-transform">
-              開始遊戲 ??
+              開始遊戲
             </button>
             <button @click="goBack" class="btn btn-secondary w-full">
               ← 返回選擇難度
@@ -379,7 +382,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, defineAsyncComponent } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, defineAsyncComponent, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useGameStore, useUserStore } from '@/stores'
 import { useResponsive } from '@/composables/useResponsive'
@@ -431,6 +434,7 @@ const difficultyAdjustment = ref<DifficultyAdjustment | null>(null)
 let timerInterval: ReturnType<typeof setInterval> | null = null
 const gameComponentKey = ref(0)
 const autoStartOverride = ref(false)
+const startError = ref<string | null>(null)
 
 const shouldAutoStart = computed(() => {
   return route.query.autoStart === 'true' || autoStartOverride.value
@@ -455,20 +459,27 @@ const isFromDailyTraining = computed(() => {
   return route.query.fromDaily === 'true' || gameStore.isFromDailyTraining
 })
 
-// 取得遊戲 ID
-const gameId = computed(() => route.params.gameId as string)
+// 取得遊戲 ID（容錯：支援 route param 為 array / 遺失時 fallback 到 store）
+const routeGameId = computed(() => {
+  const raw = route.params.gameId
+  if (typeof raw === 'string') return raw
+  if (Array.isArray(raw)) return raw[0] || ''
+  return ''
+})
+
+const resolvedGameId = computed(() => routeGameId.value || gameStore.currentGameId || '')
 
 // 當前遊戲
 const currentGame = computed(() => gameStore.currentGame)
 
 // 難度設定
 const difficultySettings = computed(() => 
-  gameStore.getDifficultySettings(gameId.value, gameStore.currentDifficulty)
+  resolvedGameId.value ? gameStore.getDifficultySettings(resolvedGameId.value, gameStore.currentDifficulty) : {}
 )
 
 // 最佳成績
 const bestScore = computed(() =>
-  gameStore.getBestScore(gameId.value, gameStore.currentDifficulty)
+  resolvedGameId.value ? gameStore.getBestScore(resolvedGameId.value, gameStore.currentDifficulty) : 0
 )
 
 // 難度調整反饋樣式
@@ -562,7 +573,8 @@ const createGameComponent = (loader: () => Promise<any>) => {
 
 // 動態載入遊戲元件
 const gameComponent = computed(() => {
-  if (!gameId.value) return null
+  const id = resolvedGameId.value
+  if (!id) return null
   
   // 根據遊戲 ID 載入對應元件 - 完整 15 款遊戲
   const componentMap: Record<string, ReturnType<typeof defineAsyncComponent>> = {
@@ -590,7 +602,7 @@ const gameComponent = computed(() => {
     'stroop-test': createGameComponent(() => import('@/components/games/StroopTest.vue')),
   }
   
-  return componentMap[gameId.value] || null
+  return componentMap[id] || null
 })
 
 // 格式化時間（防止負數）
@@ -618,7 +630,26 @@ function getFinalEmoji(score: number): string {
 
 // 開始遊戲
 function startGame(): void {
-  // 兼容舊版「開始」按鈕：強制重建遊戲元件並自動開始
+  if (!gameComponent.value) {
+    startError.value = '此遊戲目前無法載入，請返回列表重新選擇。'
+    return
+  }
+  startError.value = null
+
+  // 重置狀態，避免停留在「準備」畫面或用舊分數繼續
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+  currentScore.value = 0
+  elapsedTime.value = 0
+  gameResult.value = null
+  unifiedGameResult.value = null
+  difficultyAdjustment.value = null
+  recommendedGames.value = []
+
+  // 進入遊戲畫面並要求元件自動開始（各遊戲會自行決定倒數/起跑）
+  gameState.value = 'playing'
   autoStartOverride.value = true
   gameComponentKey.value++
 }
@@ -710,17 +741,22 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
       return Math.round(dur)
     })()
 
+    const id = resolvedGameId.value
+    if (!id) {
+      throw new Error('Missing gameId for result normalization')
+    }
+
     const result: GameResult = isLegacyGameResult(rawResult)
       ? {
           ...rawResult,
-          gameId: gameId.value,
+          gameId: id,
           difficulty: gameStore.currentDifficulty,
           subDifficulty,
           duration: durationSeconds,
           timestamp: new Date()
         }
       : normalizeToLegacyGameResult({
-          gameId: gameId.value,
+          gameId: id,
           rawResult,
           difficulty: gameStore.currentDifficulty,
           subDifficulty,
@@ -729,7 +765,7 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
 
     // 同時產生統一結果用於結算畫面顯示
     const unified = scoreNormalizer.normalize(
-      gameId.value,
+      id,
       rawResult,
       gameStore.currentDifficulty,
       subDifficulty,
@@ -742,7 +778,7 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
     const clampedScore = Math.max(0, Math.min(100, Math.round(Number(result.score ?? 0))))
     const finalizedResult: GameResult = {
       ...result,
-      gameId: gameId.value,
+      gameId: id,
       difficulty: gameStore.currentDifficulty,
       subDifficulty,
       score: clampedScore,
@@ -780,22 +816,22 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
       }
     } else {
       // 從普通遊戲選擇進入，載入推薦遊戲
-      recommendedGames.value = gameStore.getUnplayedGamesByOtherDimensions(gameId.value, 4)
+      recommendedGames.value = gameStore.getUnplayedGamesByOtherDimensions(id, 4)
     }
     
     // 計算難度調整
     const odId = userStore.currentUser?.id || ''
-    if (odId && gameId.value) {
+    if (odId && id) {
       const adjustment = await calculateDifficultyAdjustment(
         odId,
-        gameId.value,
+        id,
         result
       )
       difficultyAdjustment.value = adjustment
       
       // 如果需要調整，套用調整
       if (adjustment.shouldAdjust) {
-        await applyDifficultyAdjustment(odId, gameId.value, adjustment, result.accuracy)
+        await applyDifficultyAdjustment(odId, id, adjustment, result.accuracy)
       }
     }
   } catch (error) {
@@ -880,8 +916,15 @@ function handleBack(): void {
 
 // 返回選擇難度頁面
 function goBack(): void {
-  if (gameId.value) {
-    router.push(`/games/${gameId.value}/preview`)
+  const id = resolvedGameId.value
+  if (id) {
+    router.push({
+      path: `/games/${id}/preview`,
+      query: {
+        fromDaily: route.query.fromDaily === 'true' ? 'true' : undefined,
+        subDifficulty: String(route.query.subDifficulty ?? gameStore.currentSubDifficulty ?? 2),
+      },
+    })
   } else {
     router.push('/games')
   }
@@ -908,19 +951,28 @@ function resetToReadyState(): void {
     showProgress: false
   }
   autoStartOverride.value = false
+  startError.value = null
   gameComponentKey.value++
 }
 
-watch(() => route.params.gameId, (newId: string | string[] | undefined) => {
+watch(routeGameId, (newId) => {
   if (newId) {
-    const id = Array.isArray(newId) ? newId[0] : newId
-    if (id) gameStore.selectGame(id)
+    gameStore.selectGame(newId)
     const sd = Number(route.query.subDifficulty)
     if (Number.isFinite(sd)) {
       const clamped = Math.max(1, Math.min(3, Math.round(sd))) as 1 | 2 | 3
       gameStore.selectSubDifficulty(clamped)
     }
     resetToReadyState()
+    return
+  }
+
+  // 若路由缺少 gameId，但 store 有選中遊戲，補上正確路徑避免進入無效狀態
+  if (gameStore.currentGameId) {
+    router.replace({
+      path: `/games/${gameStore.currentGameId}`,
+      query: route.query,
+    })
   }
 }, { immediate: true })
 
@@ -935,13 +987,24 @@ onUnmounted(() => {
 
 // 初始化
 onMounted(() => {
-  if (gameId.value) {
-    gameStore.selectGame(gameId.value)
+  if (resolvedGameId.value && !routeGameId.value) {
+    router.replace({
+      path: `/games/${resolvedGameId.value}`,
+      query: route.query,
+    })
+  } else if (routeGameId.value) {
+    gameStore.selectGame(routeGameId.value)
   }
+
   // 初始化橫屏檢測
   checkOrientation()
   window.addEventListener('resize', checkOrientation)
   window.addEventListener('orientationchange', checkOrientation)
+
+  // 若從「選擇難度/說明頁」明確按下開始，可用 autoStart 直接進入遊戲，避免「開始→又回到開始」的循環體感
+  if (route.query.autoStart === 'true') {
+    nextTick(() => startGame())
+  }
 })
 </script>
 

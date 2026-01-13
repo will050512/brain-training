@@ -146,18 +146,19 @@
           </div>
         </div>
 
-        <p class="selection-count" v-if="!showResults">
-          已選擇 {{ selectedWords.length }} / 3 個詞語
-        </p>
+        <div v-if="!showResults" class="recall-actions">
+          <p class="selection-count">
+            已選擇 {{ selectedWords.length }} / 3 個詞語
+          </p>
 
-        <button
-          v-if="!showResults"
-          class="btn-primary"
-          :disabled="selectedWords.length === 0"
-          @click="submitRecall"
-        >
-          確認提交
-        </button>
+          <button
+            class="btn-primary"
+            :disabled="selectedWords.length === 0"
+            @click="submitRecall"
+          >
+            確認提交
+          </button>
+        </div>
       </div>
 
       <!-- Step 4: Results -->
@@ -841,6 +842,10 @@ onUnmounted(() => {
 }
 
 /* Recall Step */
+.recall-step {
+  overflow: hidden;
+}
+
 .recall-step h2 {
   text-align: center;
   color: var(--color-text);
@@ -852,6 +857,19 @@ onUnmounted(() => {
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 1rem;
   margin: 2rem 0;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: 1rem;
+}
+
+.recall-actions {
+  position: sticky;
+  bottom: 0;
+  background: var(--color-surface);
+  padding-top: 0.75rem;
+  margin-top: auto;
+  border-top: 1px solid var(--color-border);
 }
 
 .recall-option {
@@ -914,7 +932,7 @@ onUnmounted(() => {
 .selection-count {
   text-align: center;
   color: var(--color-text-muted);
-  margin-bottom: 2rem;
+  margin-bottom: 0.75rem;
 }
 
 /* Results Step */

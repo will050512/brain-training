@@ -156,7 +156,7 @@
       </div>
 
       <!-- 測試進行中 -->
-      <div v-else-if="stage === 'testing'" class="max-w-2xl mx-auto">
+      <div v-else-if="stage === 'testing'" class="max-w-2xl mx-auto assessment-testing">
         <!-- 進度條 -->
         <div class="mb-6">
           <div class="flex justify-between text-sm text-[var(--color-text-muted)] mb-2">
@@ -1124,6 +1124,41 @@ watch(stage, (newStage: string) => {
   .flex.gap-4.justify-center .btn {
     padding: 0.625rem 1.25rem !important;
     font-size: 0.9375rem !important;
+  }
+}
+
+/* 手機直向：避免為了「看題目/找答案」反覆上下捲動 */
+@media (max-width: 640px) {
+  .assessment-testing {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100dvh - 120px);
+  }
+
+  .assessment-testing .card {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  /* 反應題的色塊與算式區域縮小，降低裁切機率 */
+  .assessment-testing .text-6xl.font-bold {
+    font-size: 2.5rem !important;
+    padding: 1rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .assessment-testing .text-5xl.font-bold {
+    font-size: 2rem !important;
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .assessment-testing .btn.btn-secondary.text-xl.py-4,
+  .assessment-testing .btn.btn-secondary.text-2xl.py-4 {
+    font-size: 1rem !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
   }
 }
 </style>

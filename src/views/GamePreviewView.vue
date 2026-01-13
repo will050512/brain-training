@@ -222,7 +222,11 @@ function startGame(): void {
   gameStore.selectSubDifficulty(subDifficulty)
   router.push({
     path: `/games/${currentGame.value.id}`,
-    query: { subDifficulty: String(subDifficulty) }
+    query: {
+      subDifficulty: String(subDifficulty),
+      autoStart: 'true',
+      fromDaily: route.query.fromDaily === 'true' ? 'true' : undefined,
+    }
   })
 }
 
