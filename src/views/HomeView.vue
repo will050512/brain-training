@@ -354,6 +354,7 @@ import {
   getNutritionUnlockProgress,
   NUTRITION_UNLOCK_REQUIRED_TRAININGS
 } from '@/utils/trainingStats'
+import { getLocalDateKey } from '@/utils/dateKey'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -541,7 +542,7 @@ async function loadWeeklyData(): Promise<void> {
     for (let i = 0; i < 7; i++) {
       const date = new Date(weekStart)
       date.setDate(date.getDate() + i)
-      const dateKey = date.toISOString().split('T')[0]
+      const dateKey = getLocalDateKey(date)
       if (!dateKey) continue
       
       // 從資料庫查詢該日的訓練記錄
@@ -601,8 +602,8 @@ async function handleWeekChange(startDate: string, endDate: string): Promise<voi
     const start = new Date(startDate)
     const end = new Date(endDate)
     
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const dateKey = d.toISOString().split('T')[0]
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateKey = getLocalDateKey(d)
       if (!dateKey) continue
       
       const records: GameSession[] = await getGameSessionsByDate(odId, dateKey)

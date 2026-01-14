@@ -197,14 +197,16 @@ function getElementContentWidth(el: HTMLElement | null): number | null {
 
 function computeClockFaceSize(): number {
   const maxSize = 350
-  const minSize = 240
+  const minSize = 200
 
   const baseEl = (assembleContainerRef.value ?? containerRef.value) as HTMLElement | null
   const contentWidth = getElementContentWidth(baseEl) ?? window.innerWidth
 
-  // 留一些空間給邊框與陰影，避免在窄螢幕被裁切（尤其在 overflow 容器內 box-shadow 會被吃掉）
+  // 留一些空間給邊框與陰影，避免在窄螢幕或低高度被裁切（尤其在 overflow 容器內 box-shadow 會被吃掉）
   const safeWidth = Math.max(0, contentWidth - 32)
-  const size = Math.min(maxSize, Math.max(minSize, safeWidth))
+  const safeHeight = Math.max(0, Math.min(window.innerHeight - 160, safeWidth))
+  const candidate = Math.min(safeWidth, safeHeight || safeWidth)
+  const size = Math.min(maxSize, Math.max(minSize, candidate))
   return Math.round(size)
 }
 

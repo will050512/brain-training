@@ -21,6 +21,7 @@ import {
   generateId,
   getTodayTrainingSession
 } from '@/services/db'
+import type { DailyTrainingPlan } from '@/services/dailyTrainingService'
 import { syncSessionToSheet } from '@/services/googleSheetSyncService'
 import { 
   calculateCognitiveScoresFromResult,
@@ -272,7 +273,7 @@ export const useGameStore = defineStore('game', () => {
   /**
    * 設定每日訓練隊列
    */
-  function setDailyTrainingQueue(games: Array<{ gameId: string; difficulty: Difficulty; subDifficulty?: SubDifficulty }>): void {
+  function setDailyTrainingQueue(games: Array<{ gameId: string; difficulty: Difficulty; subDifficulty?: SubDifficulty; isCompleted?: boolean; score?: number; duration?: number }>): void {
     dailyTrainingQueue.value = games.map(item => {
       const game = gameRegistry.get(item.gameId)
       return {
@@ -280,7 +281,9 @@ export const useGameStore = defineStore('game', () => {
         game: game!,
         difficulty: item.difficulty,
         subDifficulty: item.subDifficulty,
-        isCompleted: false
+        isCompleted: item.isCompleted ?? false,
+        score: item.score,
+        duration: item.duration
       }
     }).filter(item => item.game)
     currentTrainingIndex.value = 0
@@ -463,19 +466,37 @@ export const useGameStore = defineStore('game', () => {
     const session = await getTodayTrainingSession(odId)
     if (!session) return
 
-    if (dailyTrainingQueue.value.length > 0) {
+    // 若目前沒有隊列，直接用資料庫重建（避免重新載入後無法「繼續訓練」）
+    if (dailyTrainingQueue.value.length === 0) {
+      dailyTrainingQueue.value = session.plannedGames
+        .map(item => {
+          const game = gameRegistry.get(item.gameId)
+          if (!game) return null
+          return {
+            gameId: item.gameId,
+            game,
+            difficulty: item.difficulty,
+            subDifficulty: item.subDifficulty,
+            isCompleted: session.completedGames.includes(item.gameId),
+          } as TrainingQueueItem
+        })
+        .filter((g): g is TrainingQueueItem => Boolean(g))
+      isFromDailyTraining.value = dailyTrainingQueue.value.length > 0
+    } else {
+      // 隊列已存在時，依據 DB 同步完成狀態
       dailyTrainingQueue.value.forEach(item => {
         if (session.completedGames.includes(item.gameId)) {
           item.isCompleted = true
         }
       })
-      
+    }
+
+    // 根據已完成狀態更新目前索引
+    if (dailyTrainingQueue.value.length > 0) {
       const firstUnfinished = dailyTrainingQueue.value.findIndex(item => !item.isCompleted)
-      if (firstUnfinished !== -1) {
-        currentTrainingIndex.value = firstUnfinished
-      } else {
-        currentTrainingIndex.value = dailyTrainingQueue.value.length
-      }
+      currentTrainingIndex.value = firstUnfinished !== -1
+        ? firstUnfinished
+        : dailyTrainingQueue.value.length
     }
   }
 

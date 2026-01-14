@@ -8,6 +8,7 @@
 import type { CognitiveDimension, CognitiveScores } from '@/types/cognitive'
 import type { Difficulty, SubDifficulty, GameDefinition } from '@/types/game'
 import { gameRegistry } from '@/core/gameRegistry'
+import { getLocalDateKey, parseLocalDateKey } from '@/utils/dateKey'
 import { 
   getTodayTrainingSession, 
   saveDailyTrainingSession,
@@ -292,7 +293,7 @@ export async function createDailyTrainingPlan(
     prioritizeUntested?: boolean
   } = {}
 ): Promise<DailyTrainingPlan> {
-  const today = new Date().toISOString().split('T')[0] || new Date().toLocaleDateString('sv-SE')
+  const today = getLocalDateKey()
   
   // 檢查是否已有今日計畫
   const existingSession = await getTodayTrainingSession(odId)
@@ -509,7 +510,7 @@ export async function restartTraining(
     prioritizeUntested?: boolean
   } = {}
 ): Promise<DailyTrainingPlan> {
-  const today = new Date().toISOString().split('T')[0] || new Date().toLocaleDateString('sv-SE')
+  const today = getLocalDateKey()
   const recentGames = recentSessions.slice(0, 5).map(s => s.gameId)
   const { games: selectedGames, useMiniMode } = selectGamesForTraining(duration, cognitiveScores, recentGames, options)
   
@@ -592,7 +593,8 @@ export async function getTrainingStats(odId: string, days: number = 7): Promise<
   startDate.setDate(startDate.getDate() - days)
   
   const recentSessions = sessions.filter(s => {
-    const date = new Date(s.date)
+    const date = parseLocalDateKey(s.date)
+    if (!date) return false
     return date >= startDate && date <= now
   })
   
@@ -615,8 +617,11 @@ export async function getTrainingStats(odId: string, days: number = 7): Promise<
   
   // 計算連續天數
   let streak = 0
-  const sortedSessions = sessions
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const sortedSessions = [...sessions].sort((a, b) => {
+    const da = parseLocalDateKey(a.date)?.getTime() ?? 0
+    const db = parseLocalDateKey(b.date)?.getTime() ?? 0
+    return db - da
+  })
   
   for (const session of sortedSessions) {
     if (session.completedGames.length === session.plannedGames.length) {
@@ -815,7 +820,7 @@ export async function createPersonalizedTrainingPlan(
     prioritizeUntested?: boolean
   } = {}
 ): Promise<DailyTrainingPlan> {
-  const today = new Date().toISOString().split('T')[0] || new Date().toLocaleDateString('sv-SE')
+  const today = getLocalDateKey()
   
   // 檢查是否已有今日計畫
   const existingSession = await getTodayTrainingSession(odId)
@@ -1027,7 +1032,7 @@ export async function getWeeklyCompletedDays(
   for (let i = 0; i < 7; i++) {
     const date = new Date(weekStart)
     date.setDate(weekStart.getDate() + i)
-    const dateKey = date.toISOString().split('T')[0]
+    const dateKey = getLocalDateKey(date)
     
     if (!dateKey) continue
     
@@ -1049,7 +1054,7 @@ export async function getWeeklyCompletedDays(
     }
     
     const completed = dayMinutes >= dailyGoalMinutes
-    const isToday = dateKey === now.toISOString().split('T')[0]
+    const isToday = dateKey === getLocalDateKey(now)
     
     if (completed) {
       completedDays++
@@ -1072,8 +1077,8 @@ export async function getWeeklyCompletedDays(
   return {
     completedDays,
     totalDays: 7,
-    weekStartDate: weekStart.toISOString().split('T')[0] || '',
-    weekEndDate: weekEnd.toISOString().split('T')[0] || '',
+    weekStartDate: getLocalDateKey(weekStart),
+    weekEndDate: getLocalDateKey(weekEnd),
     weekDates,
     totalMinutes,
     totalSessions,

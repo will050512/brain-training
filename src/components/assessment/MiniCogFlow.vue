@@ -841,6 +841,19 @@ onUnmounted(() => {
   font-weight: normal;
 }
 
+.clock-step {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.clock-step :deep(.clock-drawing-test) {
+  width: 100%;
+  max-width: min(520px, 100%);
+  margin: 0 auto;
+  padding: 0.5rem;
+}
+
 /* Recall Step */
 .recall-step {
   overflow: hidden;

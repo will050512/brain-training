@@ -5,6 +5,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import type { User, UserSettings, UserStats, GameSession, DataConsentOptions } from '@/types'
 import type { MiniCogResult } from '@/services/miniCogService'
+import { getLocalDateKey } from '@/utils/dateKey'
 
 // 每日訓練會話記錄
 export interface DailyTrainingSession {
@@ -476,7 +477,7 @@ export async function getGameSessionsByDate(
 ): Promise<GameSession[]> {
   const sessions = await getUserGameSessions(odId)
   return sessions.filter(s => {
-    const sessionDate = new Date(s.createdAt).toISOString().split('T')[0]
+    const sessionDate = getLocalDateKey(new Date(s.createdAt))
     return sessionDate === dateKey
   })
 }
@@ -621,7 +622,7 @@ export async function anonymizeGameSession(session: GameSession): Promise<Record
     duration: session.result.duration,
     cognitiveScores: session.cognitiveScores,
     // 模糊化日期（只保留日期，不保留精確時間）
-    date: new Date(session.createdAt).toISOString().split('T')[0],
+    date: getLocalDateKey(new Date(session.createdAt)),
   }
 }
 
@@ -784,7 +785,7 @@ async function calculateWeeklyTrends(
     const day = d.getDay()
     const diff = d.getDate() - day + (day === 0 ? -6 : 1)
     d.setDate(diff)
-    return d.toISOString().split('T')[0] || ''
+    return getLocalDateKey(d)
   }
   
   // 分組遊戲會話
@@ -987,7 +988,7 @@ export async function saveDailyTrainingSession(session: DailyTrainingSession): P
  * 取得今日訓練會話
  */
 export async function getTodayTrainingSession(odId: string): Promise<DailyTrainingSession | undefined> {
-  const today = new Date().toISOString().split('T')[0]
+  const today = getLocalDateKey()
   const db = await getDB()
   const sessions = await db.getAllFromIndex('dailyTrainingSessions', 'by-odId', odId)
   return sessions.find(s => s.date === today)

@@ -234,7 +234,8 @@ async function startGame(game: TrainingGameItem) {
   const queue = trainingPlan.value!.games.map(g => ({
     gameId: g.gameId,
     difficulty: g.difficulty,
-    subDifficulty: g.subDifficulty
+    subDifficulty: g.subDifficulty,
+    isCompleted: g.isCompleted
   }))
   
   gameStore.setDailyTrainingQueue(queue)

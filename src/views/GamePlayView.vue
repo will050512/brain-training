@@ -313,13 +313,13 @@
               </div>
             </div>
 
-            <div v-if="!isFromDailyTraining && recommendedGames.length > 1" class="mt-4">
+            <div v-if="!isFromDailyTraining && recommendedGames.length > 0" class="mt-4">
               <h3 class="text-sm font-medium text-[var(--color-text)] mb-3 text-left">
                 🎯 其他推薦
               </h3>
               <div class="grid grid-cols-2 gap-2 sm:gap-3">
                 <button
-                  v-for="game in recommendedGames.slice(1)"
+                  v-for="game in recommendedGames"
                   :key="game.id"
                   @click="startRecommendedGame(game)"
                   class="recommended-game-card"
@@ -843,7 +843,9 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
 
     // 先準備好「推薦/下一步」所需資料（避免 DB 寫入失敗導致結算頁沒有按鈕/推薦）
     if (isFromDailyTraining.value) {
-      recommendedGames.value = []
+      // 每日訓練：若沒有下一個訓練項目，提供其他推薦避免結算頁空白
+      const hasNext = Boolean(gameStore.getNextTrainingGame())
+      recommendedGames.value = hasNext ? [] : gameStore.getUnplayedGamesByOtherDimensions(id, 4)
     } else {
       recommendedGames.value = gameStore.getUnplayedGamesByOtherDimensions(id, 4)
     }
@@ -987,6 +989,26 @@ function handleDifficultyConfirm(difficulty: Difficulty, subDifficulty: SubDiffi
   })
 }
 
+// 從資料庫還原每日訓練隊列，避免重新整理後無法「繼續下一個」
+async function ensureDailyQueueHydrated(): Promise<void> {
+  if (!isFromDailyTraining.value) return
+  const odId = userStore.currentUser?.id
+  if (!odId) return
+
+  if (gameStore.dailyTrainingQueue.length === 0) {
+    await gameStore.syncDailyTrainingFromDB(odId)
+  }
+
+  const current = gameStore.getCurrentTrainingGame()
+  if (current) {
+    gameStore.selectGame(current.gameId)
+    gameStore.selectDifficulty(current.difficulty)
+    if (current.subDifficulty) {
+      gameStore.selectSubDifficulty(current.subDifficulty)
+    }
+  }
+}
+
 // 監聯路由變化，選擇遊戲
 function resetToReadyState(): void {
   if (timerInterval) {
@@ -1079,6 +1101,8 @@ onMounted(() => {
   checkOrientation()
   window.addEventListener('resize', checkOrientation)
   window.addEventListener('orientationchange', checkOrientation)
+
+  ensureDailyQueueHydrated().catch(err => console.error('恢復每日訓練失敗', err))
 
   // 若從「選擇難度/說明頁」明確按下開始，可用 autoStart 直接進入遊戲，避免「開始→又回到開始」的循環體感
   if (route.query.autoStart === 'true') {

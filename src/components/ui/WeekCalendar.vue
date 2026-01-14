@@ -64,6 +64,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { getLocalDateKey } from '@/utils/dateKey'
 
 interface DayInfo {
   date: Date
@@ -123,8 +124,7 @@ function getWeekStart(date: Date, offset: number = 0): Date {
 
 // 格式化日期為 key
 function formatDateKey(date: Date): string {
-  const result = date.toISOString().split('T')[0]
-  return result || ''
+  return getLocalDateKey(date)
 }
 
 // 本週日期
