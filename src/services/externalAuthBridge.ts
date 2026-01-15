@@ -44,6 +44,18 @@ function storeAppEntry(profile: ExternalUserProfile): void {
   }
 }
 
+function storeLastExternalProfile(profile: ExternalUserProfile): void {
+  try {
+    const payload = JSON.stringify({
+      receivedAt: new Date().toISOString(),
+      profile,
+    })
+    localStorage.setItem('brain-training-last-external-profile', payload)
+  } catch {
+    // ignore
+  }
+}
+
 function parseProfileFromQuery(): ExternalUserProfile | null {
   // Optional: ?externalProfile=base64url(json)
   try {
@@ -80,6 +92,7 @@ async function applyExternalProfile(profile: ExternalUserProfile): Promise<void>
   const userStore = useUserStore()
   storeIdToken(profile)
   storeAppEntry(profile)
+  storeLastExternalProfile(profile)
 
   const clientSource = normalizeClientSource(profile)
   await userStore.loginWithExternalProfile({
@@ -132,6 +145,7 @@ export function initExternalAuthBridge(): void {
       if (!data || data.type !== 'brain-training/external-profile') return
       const payload = data.payload as ExternalUserProfile
       if (!payload) return
+      storeLastExternalProfile(payload)
       await applyExternalProfile(payload)
     } catch (e) {
       console.error('External auth bridge failed', e)
