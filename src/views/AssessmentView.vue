@@ -17,7 +17,7 @@
     </div>
 
     <div
-      class="container mx-auto px-3 sm:px-4"
+      class="page-shell"
       :class="stage === 'mini-cog' ? 'flex-1 overflow-hidden py-2 sm:py-4' : 'py-4 sm:py-8'"
     >
       <!-- Mini-Cog 測驗模式 -->
@@ -39,7 +39,7 @@
         <div class="grid md:grid-cols-2 gap-6">
           <!-- Mini-Cog 快速篩檢 -->
           <div class="assessment-card mini-cog-card" @click="startMiniCog">
-            <div class="card-badge">推薦</div>
+            <span class="badge badge--primary absolute top-4 right-4">推薦</span>
             <div class="card-icon">⏱️</div>
             <h3 class="card-title">Mini-Cog™ 快速篩檢</h3>
             <p class="card-description">
@@ -710,17 +710,6 @@ watch(stage, (newStage: string) => {
   border-color: var(--color-primary);
 }
 
-.card-badge {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: var(--gradient-primary);
-  color: var(--color-text-inverse);
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-}
 
 .card-icon {
   font-size: 3rem;
@@ -937,13 +926,6 @@ watch(stage, (newStage: string) => {
   .card-action {
     padding-top: 0.5rem;
     font-size: 0.875rem;
-  }
-
-  .card-badge {
-    top: 0.5rem;
-    right: 0.5rem;
-    font-size: 0.625rem;
-    padding: 0.125rem 0.5rem;
   }
 
   .language-selector {

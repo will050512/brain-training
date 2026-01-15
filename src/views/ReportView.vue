@@ -17,9 +17,9 @@
 
       <main class="flex-1 p-4 space-y-6 overflow-x-hidden">
         <!-- 免責聲明 -->
-        <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3 rounded-xl flex gap-3 items-start">
-          <div class="text-lg">⚠️</div>
-          <p class="text-sm text-amber-900 dark:text-amber-100 leading-relaxed">
+        <div class="alert alert--warning">
+          <div class="alert__icon">??</div>
+          <p class="alert__content text-sm leading-relaxed">
             數據僅供參考，非醫療診斷。
           </p>
         </div>
@@ -40,6 +40,7 @@
           </div>
         </section>
         
+        <div class="section-label">能力分布</div>
         <!-- 認知雷達圖 -->
         <section class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
           <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-[var(--color-text)]">🧠 認知能力分佈</h3>
@@ -66,6 +67,7 @@
            </div>
         </section>
 
+        <div class="section-label">趨勢</div>
         <!-- 歷史趨勢 -->
         <section class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
            <div class="flex justify-between items-center mb-4">
@@ -77,6 +79,7 @@
            </div>
         </section>
 
+        <div class="section-label">統計</div>
         <!-- 統計數據 (2x2 Grid) -->
         <section class="grid grid-cols-2 gap-3">
             <div class="bg-[var(--color-surface)] p-3 rounded-xl border border-[var(--color-border)] text-center shadow-sm">
@@ -97,6 +100,7 @@
             </div>
         </section>
 
+        <div v-if="latestMiniCogResult" class="section-label">Mini-Cog</div>
         <!-- Mini-Cog (手機版簡化) -->
         <section v-if="latestMiniCogResult" class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
             <div class="flex justify-between items-center mb-4">
@@ -125,6 +129,7 @@
             </div>
         </section>
 
+        <div v-if="trainingSuggestions.length > 0" class="section-label">智能建議</div>
         <!-- 訓練建議 -->
         <section v-if="trainingSuggestions.length > 0" class="space-y-3">
             <h3 class="text-lg font-bold text-[var(--color-text)]">💡 智能建議</h3>
@@ -138,6 +143,7 @@
             </div>
         </section>
 
+        <div class="section-label">營養建議</div>
         <!-- 手機版營養建議 -->
         <section class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
           <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-[var(--color-text)]">🥗 營養建議</h3>
@@ -176,6 +182,7 @@
           </div>
         </section>
 
+        <div v-if="gameStore.recentSessions.length > 0" class="section-label">最近記錄</div>
         <!-- 最近記錄 -->
         <section v-if="gameStore.recentSessions.length > 0" class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
            <h3 class="text-lg font-bold mb-4 text-[var(--color-text)]">🕐 最近記錄</h3>
@@ -252,11 +259,11 @@
 
       <main class="space-y-8 min-w-0 pb-12">
         
-        <div class="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/10 border border-amber-200 dark:border-amber-800 p-5 rounded-2xl flex gap-4 items-center shadow-sm">
-          <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800 flex items-center justify-center text-2xl flex-shrink-0">⚠️</div>
-          <div>
-            <p class="font-bold text-amber-900 dark:text-amber-100">醫療免責聲明</p>
-            <p class="text-sm text-amber-800 dark:text-amber-200 mt-1 leading-relaxed">
+        <div class="alert alert--warning">
+          <div class="alert__icon">??</div>
+          <div class="alert__content">
+            <p class="alert__title">醫療免責聲明</p>
+            <p class="text-sm leading-relaxed">
               本報告數據基於遊戲表現估算，僅供自我健康管理參考，不可作為正式醫療診斷依據。如有疑慮請諮詢專業醫師。
             </p>
           </div>
@@ -283,8 +290,10 @@
               <div class="text-5xl font-bold tracking-tight" :class="getScoreClass(cognitiveIndex)">
                 {{ cognitiveIndex }}
               </div>
-              <div v-if="normativeComparison" class="mt-3 text-sm px-3 py-1.5 rounded-full inline-flex items-center gap-1 font-medium" :class="normativeComparison.statusClass">
-                {{ normativeComparison.statusText }}
+              <div v-if="normativeComparison" class="mt-3 inline-flex items-center gap-1">
+                <span class="badge badge--lg" :class="normativeComparison.statusClass">
+                  {{ normativeComparison.statusText }}
+                </span>
               </div>
             </div>
           </div>
@@ -707,7 +716,7 @@
                 <div class="font-bold text-lg" :class="getScoreClass(session.result.score)">
                   {{ session.result.score }} 分
                 </div>
-                <span class="text-xs px-2 py-0.5 rounded bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)]">
+                <span class="badge badge--neutral">
                   {{ DIFFICULTIES[session.difficulty]?.name }}
                 </span>
               </div>
@@ -847,12 +856,12 @@ const normativeComparison = computed(() => {
   const riskLevel = getNormativeRiskLevel(estimatedMMSE, 'MMSE', age, eduYears)
   
   const statusMap: Record<string, { statusText: string; statusClass: string }> = {
-    'normal': { statusText: '表現良好 ✓', statusClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-    'warning': { statusText: '邊緣值 ⚠', statusClass: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
-    'mci': { statusText: '需注意 ⚠', statusClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
-    'dementia': { statusText: '建議諮詢 ⚠', statusClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }
+    'normal': { statusText: '表現良好 ?', statusClass: 'badge--success' },
+    'warning': { statusText: '邊緣值 ?', statusClass: 'badge--warning' },
+    'mci': { statusText: '需注意 ?', statusClass: 'badge--warning' },
+    'dementia': { statusText: '建議諮詢 ?', statusClass: 'badge--danger' }
   }
-  
+
   return statusMap[riskLevel] || statusMap['normal']
 })
 

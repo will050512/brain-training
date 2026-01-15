@@ -166,6 +166,12 @@ watch(() => userStore.currentUser, (newUser) => {
   }
 }, { immediate: false })
 
+function handleOnline(): void {
+  if (!userStore.currentUser?.id) return
+  backfillUserSessionsToSheet(userStore.currentUser.id)
+  syncUserProfileToSheet(userStore.currentUser)
+}
+
 onMounted(async () => {
   // 初始化主題
   initTheme()
@@ -186,13 +192,14 @@ onMounted(async () => {
 
   // 初始化數據同步服務
   dataInitService.initialize()
+  window.addEventListener('online', handleOnline)
 
   // 檢查提醒（延遲執行以免影響首屏載入）
   setTimeout(() => {
     // 1. 訓練提醒
     const trainingReminder = checkTrainingReminder()
     if (trainingReminder.shouldRemind && route.path !== '/') {
-      toast.info(trainingReminder.message, { duration: 5000, icon: '📅' })
+      toast.info(trainingReminder.message, { duration: 5000, icon: 'i' })
     }
 
     // 2. 評估提醒
@@ -202,7 +209,7 @@ onMounted(async () => {
       // 如果從未評估過，且不是在 onboarding 或 assessment 頁面，才提醒
       const isAssessmentPage = route.path.includes('assessment') || route.path.includes('onboarding')
       if (!isAssessmentPage && route.path !== '/') {
-        toast.warning(assessmentReminder.message, { duration: 8000, icon: '📋' })
+        toast.warning(assessmentReminder.message, { duration: 8000, icon: '!' })
       }
     }
   }, 2000)
@@ -210,6 +217,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   dataInitService.destroy()
+  window.removeEventListener('online', handleOnline)
 })
 </script>
 

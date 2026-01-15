@@ -50,6 +50,19 @@ function normalizeClientSource(profile: ExternalUserProfile): string {
   return profile.clientSource || detectClientSource()
 }
 
+function normalizeBirthday(birthday: string): string {
+  if (!birthday) return ''
+  try {
+    const parsed = new Date(birthday)
+    if (!Number.isNaN(parsed.valueOf())) {
+      return parsed.toISOString().split('T')[0] ?? birthday
+    }
+  } catch {
+    // ignore
+  }
+  return birthday.split('T')[0] ?? birthday
+}
+
 async function applyExternalProfile(profile: ExternalUserProfile): Promise<void> {
   const userStore = useUserStore()
   storeIdToken(profile)
@@ -59,7 +72,7 @@ async function applyExternalProfile(profile: ExternalUserProfile): Promise<void>
     provider: profile.provider,
     uid: profile.uid,
     name: profile.name,
-    birthday: profile.birthday,
+    birthday: normalizeBirthday(profile.birthday),
     educationYears: profile.educationYears,
     gender: profile.gender,
     clientSource,
@@ -115,4 +128,3 @@ export function initExternalAuthBridge(): void {
     applyExternalProfile(qp).catch(e => console.error('External profile query bootstrap failed', e))
   }
 }
-

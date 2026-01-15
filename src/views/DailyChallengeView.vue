@@ -308,6 +308,7 @@ watch(() => route.path, (newPath) => {
       </div>
 
       <template v-else-if="trainingPlan">
+        <div class="section-label px-4 pt-4">今日摘要</div>
         <!-- 訓練摘要 (卡片) -->
         <section class="training-summary card">
           <h2 class="sr-only">訓練摘要</h2>
@@ -410,7 +411,7 @@ watch(() => route.path, (newPath) => {
                   <div class="game-name">{{ game.game.name }}</div>
                   <div class="game-meta">
                     <span
-                      class="difficulty-tag"
+                      class="badge"
                       :style="{ backgroundColor: getDifficultyColor(game.difficulty) + '20', color: getDifficultyColor(game.difficulty) }"
                     >
                       {{ getDifficultyText(game.difficulty) }}
@@ -508,14 +509,6 @@ watch(() => route.path, (newPath) => {
   font-size: 1rem;
   background: transparent;
   border: 1px solid var(--color-border);
-}
-
-/* 卡片基底 */
-.card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
 }
 
 /* 訓練摘要 */
@@ -625,7 +618,6 @@ watch(() => route.path, (newPath) => {
 .game-icon-box { font-size:2.5rem; }
 .game-name { font-weight:700; font-size:1.1rem; margin-bottom:0.4rem; }
 .game-meta { display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; }
-.difficulty-tag { font-size:0.8rem; font-weight:600; padding:0.15rem 0.5rem; border-radius:6px; }
 
 .dim-dots { display:flex; gap:0.3rem; }
 .dim-dot { width:8px; height:8px; border-radius:50%; }

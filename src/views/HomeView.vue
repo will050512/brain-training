@@ -52,6 +52,7 @@
     <!-- 可滾動內容區 -->
     <div class="app-content-scroll">
       <div class="container mx-auto px-4 py-4 sm:px-6 sm:py-6 max-w-4xl">
+      <div class="space-y-6">
 
       <!-- 使用者狀態（精簡版） -->
       <div v-if="userStore.isLoggedIn" class="flex items-center gap-3 mb-6 p-3 bg-[var(--color-surface)] rounded-xl">
@@ -63,51 +64,56 @@
           <p class="text-sm text-[var(--color-text-muted)]">{{ userStore.userAge }} 歲</p>
         </div>
       </div>
-
-      <!-- 訓練提醒 -->
-      <div v-if="trainingReminder" class="mb-4">
-        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-3 flex items-center gap-3">
-          <span class="text-2xl">💪</span>
-          <p class="text-sm text-blue-800 dark:text-blue-200 flex-1">{{ trainingReminder.message }}</p>
-          <button 
-            @click="trainingReminder = null"
-            class="text-blue-400 hover:text-blue-600 text-xl"
-          >×</button>
-        </div>
-      </div>
-
-      <!-- 月度評估提醒 -->
-      <div v-if="assessmentReminder?.needsAssessment" class="mb-4">
-        <div 
-          class="rounded-xl p-3 flex items-start gap-3"
-          :class="assessmentReminder.daysSinceLastAssessment >= 60 
-            ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800' 
-            : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800'"
-        >
-          <span class="text-2xl shrink-0">🧪</span>
-          <div class="flex-1">
-            <p 
-              class="text-sm font-medium"
-              :class="assessmentReminder.daysSinceLastAssessment >= 60 
-                ? 'text-red-800 dark:text-red-200' 
-                : 'text-amber-800 dark:text-amber-200'"
-            >
-              {{ assessmentReminder.message }}
-            </p>
-            <router-link 
-              to="/assessment" 
-              class="inline-block mt-2 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
-              :class="assessmentReminder.daysSinceLastAssessment >= 60 
-                ? 'bg-red-500 text-white hover:bg-red-600' 
-                : 'bg-amber-500 text-white hover:bg-amber-600'"
-            >
-              前往評估
-            </router-link>
+      <div v-if="trainingReminder || assessmentReminder?.needsAssessment" class="space-y-3">
+        <h2 class="text-sm font-semibold text-[var(--color-text-muted)]">提醒與通知</h2>
+        <!-- 訓練提醒 -->
+        <div v-if="trainingReminder?.shouldRemind">
+          <div class="alert alert--info">
+            <span class="alert__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7"></path>
+                <path d="M13.7 21a2 2 0 01-3.4 0"></path>
+              </svg>
+            </span>
+            <p class="alert__content text-sm">{{ trainingReminder.message }}</p>
+            <button 
+              @click="trainingReminder = null"
+              class="alert__action text-xl"
+            >×</button>
           </div>
-          <button 
-            @click="snoozeAssessmentReminder(); assessmentReminder = null"
-            class="text-gray-400 hover:text-gray-600 text-xl shrink-0"
-          >×</button>
+        </div>
+
+        <!-- 月度評估提醒 -->
+        <div v-if="assessmentReminder?.needsAssessment">
+          <div 
+            class="alert"
+            :class="assessmentReminder.daysSinceLastAssessment >= 60 ? 'alert--danger' : 'alert--warning'"
+          >
+            <span class="alert__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                <path d="M16 3v4M8 3v4M3 11h18"></path>
+              </svg>
+            </span>
+            <div class="alert__content">
+              <p class="text-sm font-medium">
+                {{ assessmentReminder.message }}
+              </p>
+              <router-link 
+                to="/assessment" 
+                class="inline-block mt-2 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
+                :class="assessmentReminder.daysSinceLastAssessment >= 60 
+                  ? 'bg-red-500 text-white hover:bg-red-600' 
+                  : 'bg-amber-500 text-white hover:bg-amber-600'"
+              >
+                前往評估
+              </router-link>
+            </div>
+            <button 
+              @click="snoozeAssessmentReminder(); assessmentReminder = null"
+              class="alert__action text-xl"
+            >×</button>
+          </div>
         </div>
       </div>
 
@@ -132,6 +138,7 @@
         </div>
       </div>
 
+      <h2 v-if="userStore.isLoggedIn" class="text-sm font-semibold text-[var(--color-text-muted)]">今日訓練</h2>
       <!-- 訓練目標卡片（新增：圓形進度 + 目標設定） -->
       <div v-if="userStore.isLoggedIn" class="mb-6">
         <div class="bg-gradient-to-r from-[var(--color-primary)] to-purple-500 dark:from-indigo-600 dark:to-purple-600 rounded-2xl p-4 sm:p-5 text-white shadow-lg">
@@ -205,6 +212,7 @@
         </div>
       </div>
 
+      <h2 v-if="userStore.isLoggedIn" class="text-sm font-semibold text-[var(--color-text-muted)]">本週紀錄</h2>
       <!-- 週曆 -->
       <div v-if="userStore.isLoggedIn" class="mb-6">
         <WeekCalendar
@@ -214,6 +222,7 @@
         />
       </div>
 
+      <h2 v-if="userStore.isLoggedIn && settingsStore.hasCompletedAssessment" class="text-sm font-semibold text-[var(--color-text-muted)]">趨勢摘要</h2>
       <!-- 認知趨勢概覽（精簡版） -->
       <div v-if="userStore.isLoggedIn && settingsStore.hasCompletedAssessment" class="mb-6">
         <div class="card p-4">
@@ -261,6 +270,7 @@
         </div>
       </div>
 
+      <h2 class="text-sm font-semibold text-[var(--color-text-muted)]">快速開始</h2>
       <!-- 主要按鈕區（更緊湊） -->
       <div class="space-y-3 mb-6">
         <template v-if="userStore.isLoggedIn">
@@ -324,10 +334,11 @@
 
       </div>
     </div>
+    </div>
 
     <!-- 版本資訊 -->
     <footer class="flex-shrink-0 py-2 text-center text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)]">
-      健腦訓練 Brain Training © 2025
+      愛護腦 Al MindCare © 2026
     </footer>
   </div>
 </template>
@@ -640,7 +651,8 @@ onMounted(async () => {
     ])
     
     // 檢查訓練提醒
-    trainingReminder.value = checkTrainingReminder()
+    const reminder = checkTrainingReminder()
+    trainingReminder.value = reminder.shouldRemind ? reminder : null
     
     // 檢查月度評估提醒（統一策略：30天，並支援 snooze / 可關閉）
     const userId = userStore.currentUser?.id

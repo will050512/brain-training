@@ -1,12 +1,12 @@
 <template>
   <div class="min-h-screen bg-[var(--color-bg)] py-8 transition-colors duration-300">
-    <div class="container mx-auto px-4">
+    <div class="page-shell">
       <!-- 返回按鈕 -->
       <router-link to="/" class="btn btn-secondary mb-8">
         ← 返回首頁
       </router-link>
 
-      <div class="max-w-md mx-auto">
+      <div class="max-w-md mx-auto section-stack">
         <!-- 標題 -->
         <div class="text-center mb-8">
           <img src="/logo-64.png" alt="愛護腦" class="w-16 h-16 mx-auto mb-4 drop-shadow-lg" />
@@ -16,6 +16,7 @@
           </p>
         </div>
 
+        <div class="section-label">基本資料</div>
         <!-- 登入表單 -->
         <form @submit.prevent="handleSubmit" class="card space-y-6">
           <!-- 姓名 -->
@@ -109,7 +110,7 @@
         </form>
 
         <!-- 說明文字 -->
-        <div class="mt-8 text-center text-[var(--color-text-muted)]">
+        <div class="info-banner text-center text-[var(--color-text-muted)]">
           <p>💡 小提示</p>
           <p class="text-sm mt-2">
             系統會根據姓名和生日識別您的帳號，<br>
@@ -118,8 +119,8 @@
         </div>
 
         <!-- 已存在的使用者列表 -->
-        <div v-if="existingUsers.length > 0" class="mt-8">
-          <h3 class="text-center text-[var(--color-text-secondary)] mb-4">或選擇已有帳號</h3>
+        <div v-if="existingUsers.length > 0" class="mt-2">
+          <div class="section-label text-center">快速登入</div>
           <div class="space-y-2">
             <button
               v-for="user in existingUsers"

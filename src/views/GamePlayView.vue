@@ -17,7 +17,7 @@
           </h1>
           <span
             v-if="!isMobile || gameState !== 'playing'"
-            class="difficulty-badge text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full inline-block mt-0.5"
+            class="badge text-[10px] sm:text-xs mt-0.5"
             :class="`difficulty-${gameStore.currentDifficulty}`"
           >
             {{ DIFFICULTIES[gameStore.currentDifficulty].name }}
@@ -150,7 +150,7 @@
 
           <div class="flex items-center justify-center gap-2 mb-4 sm:mb-6">
             <span
-              class="difficulty-badge text-[10px] sm:text-xs px-2 py-1 rounded-full"
+              class="badge text-[10px] sm:text-xs"
               :class="`difficulty-${gameStore.currentDifficulty}`"
             >
               {{ DIFFICULTIES[gameStore.currentDifficulty].name }}
@@ -165,7 +165,7 @@
           </div>
 
           <div class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 max-h-52 overflow-auto">
-            <div class="text-xs sm:text-sm font-semibold text-[var(--color-text-secondary)] mb-2">遊戲說明</div>
+            <div class="section-label text-[var(--color-text-secondary)] mb-2">遊戲說明</div>
             <ul class="space-y-1 text-left text-sm sm:text-base text-[var(--color-text)] leading-snug">
               <li v-if="!currentGame?.instructions || currentGame.instructions.length === 0" class="text-[var(--color-text-secondary)]">此遊戲未提供額外說明，請依畫面提示操作。</li>
               <li v-for="(line, idx) in currentGame?.instructions" :key="idx" class="flex items-start gap-2">

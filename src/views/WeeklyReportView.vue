@@ -283,7 +283,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="weekly-report">
+  <div class="weekly-report section-stack">
     <header class="page-header">
       <button class="back-btn" @click="router.back()">
         ← 返回
@@ -297,6 +297,7 @@ onMounted(() => {
     <!-- 免責聲明 -->
     <DisclaimerBanner />
 
+    <div class="section-label">本週範圍</div>
     <!-- 週期範圍 -->
     <div class="week-range">
       {{ weekRange.formatted }}
@@ -309,6 +310,7 @@ onMounted(() => {
     </div>
 
     <template v-else>
+      <div class="section-label">報告視角</div>
       <!-- Tab 切換 -->
       <div class="tabs">
         <button 
@@ -612,11 +614,11 @@ onMounted(() => {
               >
                 <div class="supplement-header">
                   <span class="supplement-name">{{ rec.supplement.name }}</span>
-                  <span v-if="rec.supplement.isPartnerProduct" class="partner-badge">合作</span>
+                  <span v-if="rec.supplement.isPartnerProduct" class="badge badge--warning">合作</span>
                 </div>
                 <p class="supplement-reason">{{ rec.reason }}</p>
                 <div class="supplement-benefits">
-                  <span v-for="(benefit, i) in rec.supplement.benefits.slice(0, 2)" :key="i" class="benefit-tag">
+                  <span v-for="(benefit, i) in rec.supplement.benefits.slice(0, 2)" :key="i" class="badge badge--neutral">
                     {{ benefit }}
                   </span>
                 </div>
@@ -1151,14 +1153,6 @@ onMounted(() => {
   color: var(--color-text);
 }
 
-.partner-badge {
-  font-size: 0.625rem;
-  padding: 0.125rem 0.375rem;
-  background: rgba(251, 191, 36, 0.2);
-  color: #d97706;
-  border-radius: 4px;
-  font-weight: bold;
-}
 
 .supplement-reason {
   font-size: 0.875rem;
@@ -1173,13 +1167,6 @@ onMounted(() => {
   margin-bottom: 0.5rem;
 }
 
-.benefit-tag {
-  font-size: 0.75rem;
-  padding: 0.125rem 0.5rem;
-  background: var(--color-surface-alt);
-  border-radius: 4px;
-  color: var(--color-text-muted);
-}
 
 .supplement-dosage {
   font-size: 0.75rem;

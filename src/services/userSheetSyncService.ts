@@ -4,6 +4,21 @@ import { detectClientSource, loadClientSourceForUser } from '@/services/clientSo
 
 const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyCLuyPiJL3Loqe6HHouu5pA3rmXns97fsIhC0SqNoFeI8mcKbfFYkn3O8m-sZa0oUO/exec'
 const USER_SYNC_KEY_PREFIX = 'sheetSyncedUser:'
+const USER_SYNC_STATUS_KEY_PREFIX = 'sheetSyncStatusUser:'
+
+type UserSyncStatus = {
+  lastAttemptAt: string | null
+  lastSuccessAt: string | null
+  lastErrorAt: string | null
+  lastErrorMessage: string | null
+}
+
+const EMPTY_STATUS: UserSyncStatus = {
+  lastAttemptAt: null,
+  lastSuccessAt: null,
+  lastErrorAt: null,
+  lastErrorMessage: null,
+}
 
 type UserSheetPayload = {
   action: 'upsertUsers'
@@ -18,6 +33,35 @@ type UserSheetPayload = {
   lastActiveAt: string
   updatedAt: string
   profileVersion?: number
+}
+
+export function loadUserSyncStatus(odId: string): UserSyncStatus {
+  try {
+    const raw = localStorage.getItem(`${USER_SYNC_STATUS_KEY_PREFIX}${odId}`)
+    if (!raw) return { ...EMPTY_STATUS }
+    const parsed = JSON.parse(raw) as Partial<UserSyncStatus>
+    return {
+      lastAttemptAt: parsed.lastAttemptAt ?? null,
+      lastSuccessAt: parsed.lastSuccessAt ?? null,
+      lastErrorAt: parsed.lastErrorAt ?? null,
+      lastErrorMessage: parsed.lastErrorMessage ?? null,
+    }
+  } catch {
+    return { ...EMPTY_STATUS }
+  }
+}
+
+function saveUserSyncStatus(odId: string, status: UserSyncStatus): void {
+  try {
+    localStorage.setItem(`${USER_SYNC_STATUS_KEY_PREFIX}${odId}`, JSON.stringify(status))
+  } catch {
+    // ignore
+  }
+}
+
+function updateUserSyncStatus(odId: string, patch: Partial<UserSyncStatus>): void {
+  const current = loadUserSyncStatus(odId)
+  saveUserSyncStatus(odId, { ...current, ...patch })
 }
 
 function isBrowserOnline(): boolean {
@@ -101,9 +145,20 @@ export async function syncUserProfileToSheet(user: User | null | undefined): Pro
   const lastUploaded = loadUserSyncStamp(user.id)
   if (lastUploaded && lastUploaded === updatedAt) return
 
+  updateUserSyncStatus(user.id, { lastAttemptAt: new Date().toISOString() })
   const payload = mapUser(user)
   const ok = await postToSheet(payload)
   if (ok) {
     saveUserSyncStamp(user.id, updatedAt)
+    updateUserSyncStatus(user.id, {
+      lastSuccessAt: new Date().toISOString(),
+      lastErrorAt: null,
+      lastErrorMessage: null,
+    })
+  } else {
+    updateUserSyncStatus(user.id, {
+      lastErrorAt: new Date().toISOString(),
+      lastErrorMessage: 'user profile sync failed',
+    })
   }
 }

@@ -176,7 +176,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="nutrition-view">
+  <div class="nutrition-view section-stack">
     <header class="page-header">
       <button class="back-btn" @click="router.back()">
         ← 返回
@@ -184,11 +184,12 @@ onMounted(() => {
       <h1>🥗 營養建議</h1>
     </header>
 
+    <div class="section-label">重要聲明</div>
     <!-- 重要免責聲明 -->
-    <div class="disclaimer-box">
+    <div class="alert alert--warning disclaimer-box">
       <div class="disclaimer-icon">⚠️</div>
-      <div class="disclaimer-content">
-        <h3>重要聲明</h3>
+      <div class="alert__content disclaimer-content">
+        <h3 class="alert__title">重要聲明</h3>
         <p>
           本頁面提供的營養建議僅供參考，不能替代專業醫療建議。
           在開始任何營養補充計劃之前，請務必諮詢醫師或營養師。
@@ -241,6 +242,7 @@ onMounted(() => {
     </div>
 
     <template v-else>
+      <div class="section-label">內容模式</div>
       <!-- 切換顯示 -->
       <div class="toggle-section">
         <button 
@@ -270,6 +272,7 @@ onMounted(() => {
         </button>
       </div>
 
+      <div v-if="(showAllSupplements ? filteredSupplements.length : filteredRecommendations.length) > 0" class="section-label">篩選條件</div>
       <!-- 類型篩選 -->
       <div v-if="(showAllSupplements ? filteredSupplements.length : filteredRecommendations.length) > 0" class="type-filter">
         <button
@@ -293,13 +296,13 @@ onMounted(() => {
           :class="{ 'partner-card': rec.supplement.isPartnerProduct }"
         >
           <!-- 合作夥伴標籤 -->
-          <div v-if="rec.supplement.isPartnerProduct" class="partner-badge">
+          <div v-if="rec.supplement.isPartnerProduct" class="badge badge--primary partner-badge">
             🤝 合作夥伴
           </div>
           
           <!-- 優先級標籤 -->
           <div 
-            class="priority-tag"
+            class="badge priority-tag"
             :style="{ backgroundColor: getPriorityColor(rec.priority) }"
           >
             {{ getPriorityText(rec.priority) }}
@@ -330,7 +333,7 @@ onMounted(() => {
             <span 
               v-for="dim in rec.supplement.relatedDimensions" 
               :key="dim"
-              class="dim-tag"
+              class="badge badge--neutral"
             >
               {{ dimensionNames[dim] }}
             </span>
@@ -401,7 +404,7 @@ onMounted(() => {
           :class="{ 'partner-card': supplement.isPartnerProduct }"
         >
           <!-- 合作夥伴標籤 -->
-          <div v-if="supplement.isPartnerProduct" class="partner-badge">
+          <div v-if="supplement.isPartnerProduct" class="badge badge--primary partner-badge">
             🤝 合作夥伴
           </div>
           
@@ -422,9 +425,9 @@ onMounted(() => {
           <div class="sup-dimensions">
             <span class="dim-label">相關維度：</span>
             <span 
-              v-for="dim in supplement.relatedDimensions" 
+              v-for="dim in supplement.relatedDimensions"
               :key="dim"
-              class="dim-tag"
+              class="badge badge--neutral"
             >
               {{ dimensionNames[dim] }}
             </span>
@@ -486,6 +489,7 @@ onMounted(() => {
         </div>
       </div>
 
+      <div class="section-label">提醒</div>
       <!-- 底部提醒 -->
       <div class="bottom-reminder">
         <p>💡 營養補充應配合均衡飲食，不應取代正常飲食。</p>
@@ -538,10 +542,6 @@ onMounted(() => {
 .disclaimer-box {
   display: flex;
   gap: 1rem;
-  padding: 1.25rem;
-  background: var(--color-disclaimer);
-  border: 2px solid var(--color-disclaimer-border);
-  border-radius: 16px;
   margin-bottom: 1.5rem;
 }
 
@@ -836,11 +836,8 @@ onMounted(() => {
   position: absolute;
   top: 1rem;
   right: 1rem;
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: bold;
+  color: #ffffff;
+  z-index: 1;
 }
 
 .rec-header,
@@ -923,14 +920,6 @@ onMounted(() => {
   color: var(--color-text-secondary);
 }
 
-.dim-tag {
-  padding: 0.25rem 0.5rem;
-  background: rgba(59, 130, 246, 0.15);
-  color: var(--color-primary);
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
 
 .rec-dosage,
 .sup-dosage,
@@ -1028,12 +1017,6 @@ onMounted(() => {
   position: absolute;
   top: 0.75rem;
   right: 0.75rem;
-  padding: 0.25rem 0.75rem;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
-  color: white;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: 9999px;
   z-index: 1;
 }
 

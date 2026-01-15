@@ -188,11 +188,11 @@
         <div class="score-breakdown">
           <div class="score-item">
             <span class="score-label">詞語回憶</span>
-            <span class="score-badge">{{ result?.wordRecall.score }} / 3</span>
+            <span class="badge badge--neutral">{{ result?.wordRecall.score }} / 3</span>
           </div>
           <div class="score-item">
             <span class="score-label">時鐘繪圖</span>
-            <span class="score-badge">{{ result?.clockDrawing.score }} / 2</span>
+            <span class="badge badge--neutral">{{ result?.clockDrawing.score }} / 2</span>
           </div>
         </div>
 
@@ -1018,13 +1018,6 @@ onUnmounted(() => {
   font-size: 0.875rem;
 }
 
-.score-badge {
-  padding: 0.5rem 1rem;
-  background: var(--color-infocard);
-  border-radius: 9999px;
-  font-weight: 600;
-  color: var(--color-text);
-}
 
 .interpretation-card {
   display: flex;
@@ -1613,11 +1606,6 @@ onUnmounted(() => {
 
   .score-label {
     font-size: 0.75rem;
-  }
-
-  .score-badge {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
   }
 
   .interpretation-card {

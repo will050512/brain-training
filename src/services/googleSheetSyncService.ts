@@ -11,6 +11,21 @@ const SYNCED_IDS_KEY_PREFIX = 'sheetSyncedSessionIds:'
 const MAX_SYNCED_IDS = 5000
 const SHEET_SYNC_PROTOCOL_VERSION = 2
 const SYNC_PROTOCOL_KEY_PREFIX = 'sheetSyncProtocol:'
+const SYNC_STATUS_KEY_PREFIX = 'sheetSyncStatusSession:'
+
+type SheetSyncStatus = {
+  lastAttemptAt: string | null
+  lastSuccessAt: string | null
+  lastErrorAt: string | null
+  lastErrorMessage: string | null
+}
+
+const EMPTY_STATUS: SheetSyncStatus = {
+  lastAttemptAt: null,
+  lastSuccessAt: null,
+  lastErrorAt: null,
+  lastErrorMessage: null,
+}
 
 type SheetTracking = TrackingData & {
   avgReactionTimeMs?: number
@@ -36,6 +51,35 @@ type SheetPayload = {
   displayStats?: unknown[]
   clientSource?: string
   authProvider?: string
+}
+
+export function loadSessionSyncStatus(odId: string): SheetSyncStatus {
+  try {
+    const raw = localStorage.getItem(`${SYNC_STATUS_KEY_PREFIX}${odId}`)
+    if (!raw) return { ...EMPTY_STATUS }
+    const parsed = JSON.parse(raw) as Partial<SheetSyncStatus>
+    return {
+      lastAttemptAt: parsed.lastAttemptAt ?? null,
+      lastSuccessAt: parsed.lastSuccessAt ?? null,
+      lastErrorAt: parsed.lastErrorAt ?? null,
+      lastErrorMessage: parsed.lastErrorMessage ?? null,
+    }
+  } catch {
+    return { ...EMPTY_STATUS }
+  }
+}
+
+function saveSessionSyncStatus(odId: string, status: SheetSyncStatus): void {
+  try {
+    localStorage.setItem(`${SYNC_STATUS_KEY_PREFIX}${odId}`, JSON.stringify(status))
+  } catch {
+    // ignore
+  }
+}
+
+function updateSessionSyncStatus(odId: string, patch: Partial<SheetSyncStatus>): void {
+  const current = loadSessionSyncStatus(odId)
+  saveSessionSyncStatus(odId, { ...current, ...patch })
 }
 
 function clampScore0to100(value: number): number {
@@ -207,10 +251,21 @@ export async function syncSessionToSheet(session: GameSession, bestScore?: numbe
   ensureSyncProtocolVersion(session.odId)
   if (!(await isSheetSyncAllowed(session.odId))) return
   if (isSessionSynced(session.odId, session.id)) return
+  updateSessionSyncStatus(session.odId, { lastAttemptAt: new Date().toISOString() })
   const payload = mapSessionToPayload(session, bestScore)
   const ok = await postToSheet(payload)
   if (ok) {
     markSessionSynced(session.odId, session.id)
+    updateSessionSyncStatus(session.odId, {
+      lastSuccessAt: new Date().toISOString(),
+      lastErrorAt: null,
+      lastErrorMessage: null,
+    })
+  } else {
+    updateSessionSyncStatus(session.odId, {
+      lastErrorAt: new Date().toISOString(),
+      lastErrorMessage: 'session sync failed',
+    })
   }
 }
 
@@ -242,10 +297,28 @@ export async function backfillUserSessionsToSheet(odId: string): Promise<void> {
     const batchSize = 50
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize)
+      updateSessionSyncStatus(odId, { lastAttemptAt: new Date().toISOString() })
       const ok = await postToSheet({ action: 'upsertGameResults', protocolVersion: SHEET_SYNC_PROTOCOL_VERSION, items: batch })
-      if (ok) for (const item of batch) markSessionSynced(odId, item.sessionId)
+      if (ok) {
+        for (const item of batch) markSessionSynced(odId, item.sessionId)
+        updateSessionSyncStatus(odId, {
+          lastSuccessAt: new Date().toISOString(),
+          lastErrorAt: null,
+          lastErrorMessage: null,
+        })
+      } else {
+        updateSessionSyncStatus(odId, {
+          lastErrorAt: new Date().toISOString(),
+          lastErrorMessage: 'backfill sync failed',
+        })
+        break
+      }
     }
   } catch (error) {
     console.error('Backfill to Google Sheet failed', error)
+    updateSessionSyncStatus(odId, {
+      lastErrorAt: new Date().toISOString(),
+      lastErrorMessage: 'backfill sync error',
+    })
   }
 }

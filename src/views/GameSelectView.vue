@@ -37,12 +37,13 @@
 
     <!-- 遊戲列表（可滾動） -->
     <div class="app-content-scroll">
-      <div class="p-3 sm:p-4">
+      <div class="p-3 sm:p-4 section-stack">
+        <div class="section-label">遊戲清單</div>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
           <div
             v-for="game in filteredGames"
             :key="game.id"
-            class="bg-[var(--color-surface)] rounded-xl p-3 sm:p-4 shadow-sm border border-[var(--color-border-light)] active:scale-[0.98] transition-transform cursor-pointer hover:shadow-md"
+            class="card card-clickable p-3 sm:p-4"
             @click="openGameModal(game)"
           >
             <!-- 遊戲圖示 -->
@@ -55,7 +56,7 @@
             <div class="flex justify-center mb-2 sm:mb-3">
               <span
                 v-if="primaryDimension(game)"
-                class="text-xs px-1.5 sm:px-2 py-0.5 rounded-full truncate max-w-full"
+                class="badge truncate max-w-full"
                 :style="{
                   backgroundColor: getDimensionColor(primaryDimension(game)!) + '20',
                   color: getDimensionColor(primaryDimension(game)!)

@@ -9,7 +9,7 @@
 
     <!-- 可滾動內容區 -->
     <div class="app-content-scroll">
-      <div class="p-4 space-y-4">
+      <div class="p-4 section-stack">
         <!-- 外觀主題設定（已禁用，固定為明亮模式）
         <div class="card p-4">
           <h3 class="font-semibold text-[var(--color-text)] mb-4">🎨 外觀主題</h3>
@@ -157,6 +157,34 @@
           </div>
         </div>
 
+        <!-- 資料同步 -->
+        <div v-if="userStore.isLoggedIn" class="card p-4">
+          <h3 class="font-semibold text-[var(--color-text)] mb-3">資料同步</h3>
+          <p class="text-xs text-[var(--color-text-muted)] mb-3">
+            會將遊戲與個人資料同步到 Google Sheet，方便後續分析。
+          </p>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-[var(--color-text-muted)]">同步狀態</span>
+              <span :class="syncStatusClass">{{ syncStatusLabel }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[var(--color-text-muted)]">最近上傳（遊戲）</span>
+              <span class="text-[var(--color-text)]">{{ formatSyncTime(syncStatus.session.lastSuccessAt) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[var(--color-text-muted)]">最近上傳（個人）</span>
+              <span class="text-[var(--color-text)]">{{ formatSyncTime(syncStatus.user.lastSuccessAt) }}</span>
+            </div>
+            <div v-if="syncStatus.session.lastErrorAt || syncStatus.user.lastErrorAt" class="text-xs text-red-600">
+              最近同步失敗：{{ formatSyncTime(syncStatus.session.lastErrorAt || syncStatus.user.lastErrorAt) }}
+            </div>
+          </div>
+          <div class="text-xs text-[var(--color-text-muted)] mt-3">
+            需開啟「分析數據收集同意」才會同步，離線時將在恢復連線後補傳。
+          </div>
+        </div>
+
         <!-- 帳號資訊 -->
         <div v-if="userStore.isLoggedIn" class="card p-4">
           <h3 class="font-semibold text-[var(--color-text)] mb-3">👤 帳號資訊</h3>
@@ -169,6 +197,14 @@
             <div class="flex justify-between">
               <span class="text-[var(--color-text-muted)]">年齡</span>
               <span class="text-[var(--color-text)]">{{ userStore.userAge }} 歲</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[var(--color-text-muted)]">登入來源</span>
+              <span class="text-[var(--color-text)]">{{ authProviderLabel }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[var(--color-text-muted)]">使用裝置</span>
+              <span class="text-[var(--color-text)]">{{ clientSourceLabel }}</span>
             </div>
           </div>
           
@@ -242,16 +278,79 @@ import { useRouter } from 'vue-router'
 import { useUserStore, useSettingsStore, useGameStore } from '@/stores'
 import { clearUserGameSessions } from '@/services/db'
 import TrainingGoalSettings from '@/components/ui/TrainingGoalSettings.vue'
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { getTotalGamesPlayed } from '@/utils/trainingStats'
+import { loadClientSourceForUser } from '@/services/clientSource'
+import { getDataConsent } from '@/services/db'
+import { loadSessionSyncStatus } from '@/services/googleSheetSyncService'
+import { loadUserSyncStatus } from '@/services/userSheetSyncService'
 
 const router = useRouter()
 const userStore = useUserStore()
 const settingsStore = useSettingsStore()
 const gameStore = useGameStore()
 
+const syncStatus = ref({
+  session: {
+    lastAttemptAt: null as string | null,
+    lastSuccessAt: null as string | null,
+    lastErrorAt: null as string | null,
+    lastErrorMessage: null as string | null,
+  },
+  user: {
+    lastAttemptAt: null as string | null,
+    lastSuccessAt: null as string | null,
+    lastErrorAt: null as string | null,
+    lastErrorMessage: null as string | null,
+  },
+  consent: 'unknown' as 'allowed' | 'blocked' | 'unknown',
+  online: true,
+})
+
 const totalGamesPlayed = computed(() => {
   return getTotalGamesPlayed(userStore.currentStats?.totalGamesPlayed, gameStore.sessions.length)
+})
+
+const authProviderLabel = computed(() => {
+  const provider = userStore.currentUser?.authProvider
+  if (provider === 'firebase') return 'App / Firebase'
+  if (provider === 'local') return '本機帳號'
+  return '未知'
+})
+
+const clientSourceLabel = computed(() => {
+  const odId = userStore.currentUser?.id
+  const source = userStore.currentUser?.clientSource || (odId ? loadClientSourceForUser(odId) : undefined)
+  switch (source) {
+    case 'app-android':
+      return 'App Android'
+    case 'app-ios':
+      return 'App iOS'
+    case 'app-web':
+      return 'App Web'
+    case 'pwa':
+      return 'PWA'
+    case 'web':
+      return '瀏覽器'
+    case 'unknown':
+      return '未知'
+    default:
+      return source ? String(source) : '未知'
+  }
+})
+
+const syncStatusLabel = computed(() => {
+  if (!userStore.isLoggedIn) return '未登入'
+  if (!syncStatus.value.online) return '離線'
+  if (syncStatus.value.consent === 'blocked') return '未啟用'
+  if (syncStatus.value.consent === 'unknown') return '未知'
+  return '啟用中'
+})
+
+const syncStatusClass = computed(() => {
+  if (!userStore.isLoggedIn) return 'text-[var(--color-text-muted)]'
+  if (!syncStatus.value.online || syncStatus.value.consent !== 'allowed') return 'text-amber-600'
+  return 'text-green-600'
 })
 
 // 格式化遊玩時間
@@ -260,6 +359,37 @@ function formatPlayTime(seconds: number): string {
   if (seconds < 3600) return `${Math.floor(seconds / 60)}分`
   const hours = Math.floor(seconds / 3600)
   return `${hours}時`
+}
+
+function formatSyncTime(value: string | null): string {
+  if (!value) return '尚未同步'
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '尚未同步'
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  return `${y}/${m}/${day} ${hh}:${mm}`
+}
+
+function refreshSyncStatus(): void {
+  const odId = userStore.currentUser?.id
+  if (!odId) return
+  syncStatus.value.session = loadSessionSyncStatus(odId)
+  syncStatus.value.user = loadUserSyncStatus(odId)
+  syncStatus.value.online = typeof navigator !== 'undefined' ? navigator.onLine : true
+}
+
+async function refreshConsentStatus(): Promise<void> {
+  const odId = userStore.currentUser?.id
+  if (!odId) return
+  try {
+    const consent = await getDataConsent(odId)
+    syncStatus.value.consent = consent?.analyticsConsent ? 'allowed' : 'blocked'
+  } catch {
+    syncStatus.value.consent = 'unknown'
+  }
 }
 
 // 登出
@@ -298,6 +428,28 @@ async function confirmClearData(): Promise<void> {
     alert('清除失敗，請稍後再試')
   }
 }
+
+function handleStatusRefresh(): void {
+  refreshSyncStatus()
+  refreshConsentStatus()
+}
+
+watch(() => userStore.currentUser?.id, (id) => {
+  if (id) {
+    handleStatusRefresh()
+  }
+})
+
+onMounted(() => {
+  handleStatusRefresh()
+  window.addEventListener('online', handleStatusRefresh)
+  window.addEventListener('focus', handleStatusRefresh)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('online', handleStatusRefresh)
+  window.removeEventListener('focus', handleStatusRefresh)
+})
 </script>
 
 <style scoped>

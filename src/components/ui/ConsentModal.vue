@@ -46,7 +46,7 @@
                   <label for="essential-consent" class="consent-label">
                     <span class="consent-label-title">
                       基本功能資料
-                      <span class="required-badge">必要</span>
+                      <span class="badge badge--primary">必要</span>
                     </span>
                   </label>
                 </div>
@@ -77,7 +77,7 @@
                   <label for="analytics-consent" class="consent-label">
                     <span class="consent-label-title">
                       匿名分析資料
-                      <span class="optional-badge">選用</span>
+                      <span class="badge badge--neutral">選用</span>
                     </span>
                   </label>
                 </div>
@@ -108,7 +108,7 @@
                   <label for="behavior-consent" class="consent-label">
                     <span class="consent-label-title">
                       行為追蹤資料
-                      <span class="optional-badge">選用</span>
+                      <span class="badge badge--neutral">選用</span>
                     </span>
                   </label>
                 </div>
@@ -140,7 +140,7 @@
                   <label for="detailed-behavior-consent" class="consent-label">
                     <span class="consent-label-title">
                       精細行為分析
-                      <span class="optional-badge">選用</span>
+                      <span class="badge badge--neutral">選用</span>
                     </span>
                   </label>
                 </div>
@@ -173,7 +173,7 @@
                   <label for="medical-consent" class="consent-label">
                     <span class="consent-label-title">
                       醫療資料分享
-                      <span class="optional-badge">選用</span>
+                      <span class="badge badge--neutral">選用</span>
                     </span>
                   </label>
                 </div>
@@ -622,32 +622,6 @@ defineExpose({
   color: #f1f5f9;
 }
 
-.required-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.125rem 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  color: white;
-  border-radius: 9999px;
-}
-
-.optional-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.125rem 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  background: #e2e8f0;
-  color: #64748b;
-  border-radius: 9999px;
-}
-
-:where(.dark, .dark *) .optional-badge {
-  background: #334155;
-  color: #94a3b8;
-}
 
 .consent-description {
   padding-left: 2.25rem;

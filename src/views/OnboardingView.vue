@@ -203,7 +203,7 @@ function startTraining(): void {
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-slate-900 dark:to-slate-800 p-4">
-    <div class="max-w-md mx-auto">
+    <div class="max-w-md mx-auto section-stack">
       <!-- 進度條 -->
       <div class="mb-8">
         <div class="h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -418,7 +418,7 @@ function startTraining(): void {
               <div class="flex-1">
                 <div class="flex items-center gap-2 flex-wrap">
                   <p class="font-bold text-lg text-gray-800 dark:text-white">Mini-Cog 認知篩檢</p>
-                  <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full font-bold">強烈推薦</span>
+                  <span class="badge badge--success">強烈推薦</span>
                 </div>
                 <p class="text-sm text-gray-600 dark:text-slate-300 mt-1">
                   國際標準認知篩檢工具，包含詞語回憶與時鐘繪圖測試，約 3-5 分鐘。
