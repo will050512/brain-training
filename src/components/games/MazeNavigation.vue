@@ -21,6 +21,7 @@ import {
   hasReachedEnd,
   indexToPosition,
   getCellType,
+  getShortestPathLength,
   summarizeResult,
   calculateGrade,
   DIFFICULTY_CONFIGS,
@@ -213,11 +214,21 @@ function handleKeyDown(event: KeyboardEvent) {
 function handleGameEnd() {
   stopTimer()
   playEnd()
+
+  const optimalMoves = mazeState.value
+    ? getShortestPathLength(
+        mazeState.value.cells,
+        mazeState.value.size,
+        mazeState.value.startPosition,
+        mazeState.value.endPosition
+      )
+    : config.value.size * 2
   
   const result = summarizeResult(
     moves.value,
     elapsedTime.value,
-    config.value.size
+    config.value.size,
+    optimalMoves
   )
   
   finishGame()

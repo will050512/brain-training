@@ -96,11 +96,12 @@ function finishGame() {
 }
 
 // ===== 音效 =====
-const { playCorrect, playWrong, playEnd, playCustomSound, preloadDefaultSounds, preloadSounds } = useGameAudio({
+const { playCorrect, playWrong, playEnd, playStart, playCustomSound, preloadDefaultSounds, preloadSounds } = useGameAudio({
   gameFolder: 'rhythm-mimic',
+  volume: 0.95,
   customSounds: [
-    { id: 'beat', name: 'Beat', frequency: 800, duration: 100 },
-    { id: 'miss', name: 'Miss', frequency: 200, duration: 150 },
+    { id: 'beat', name: 'Beat', frequency: 760, duration: 110, volume: 0.9, oscillatorType: 'sine' },
+    { id: 'miss', name: 'Miss', frequency: 200, duration: 180, volume: 0.9, oscillatorType: 'square' },
   ],
 })
 
@@ -117,8 +118,8 @@ const isTapping = ref(false)
 let inputStartTime = 0
 let playCount = 0
 const countdown = ref(3)
-const replayRemaining = ref(1)
-const inputOffsetMs = 900
+const replayRemaining = ref(0)
+const inputReady = ref(false)
 let playToken = 0
 
 // ===== 計算屬性 =====
@@ -142,10 +143,10 @@ const feedbackData = computed(() => {
 
 // ===== 遊戲說明 =====
 const gameInstructions = [
-  '仔細聆聽節奏模式',
-  '記住每個敲擊的時間間隔',
-  '盡可能精確地複製節奏',
-  '越接近原始節奏分數越高',
+  '先聆聽節奏，注意每拍的間隔',
+  '聽到「開始提示音」後再開始敲擊',
+  '敲擊節奏越貼近，評分越高',
+  '可重播次數會隨難度下降',
 ]
 
 function playBeat() {
@@ -168,8 +169,9 @@ function startNewRound() {
   currentBeatIndex.value = -1
   userTaps.value = []
   playCount = 0
-  replayRemaining.value = 1
+  replayRemaining.value = config.value.replayLimit
   countdown.value = 3
+  inputReady.value = false
   playToken++
   
   // 延遲後開始播放
@@ -233,7 +235,11 @@ function startCountdownToInput(token: number) {
       countdown.value = 0
       gamePhase.value = 'input'
       inputStartTime = Date.now()
-      playBeat()
+      playStart()
+      setTimeout(() => {
+        if (token !== playToken) return
+        inputReady.value = true
+      }, config.value.leadInMs)
       return
     }
     countdown.value--
@@ -244,7 +250,7 @@ function startCountdownToInput(token: number) {
 }
 
 function handleTap() {
-  if (!isPlaying.value || gamePhase.value !== 'input') return
+  if (!isPlaying.value || gamePhase.value !== 'input' || !inputReady.value) return
   
   // 播放敲擊聲音
   playBeat()
@@ -272,7 +278,7 @@ function handleInputComplete() {
   // 輸入階段加入 lead-in offset，避免第一拍 0ms 導致長者難以理解與完成
   const shiftedPattern: RhythmPattern = {
     ...currentPattern.value,
-    beats: currentPattern.value.beats.map(b => ({ ...b, time: b.time + inputOffsetMs }))
+    beats: currentPattern.value.beats.map(b => ({ ...b, time: b.time + config.value.leadInMs }))
   }
   const result = evaluateRound(userTaps.value, shiftedPattern, config.value)
   roundResults.value.push(result)
@@ -322,6 +328,7 @@ function replayPattern() {
   userTaps.value = []
   currentBeatIndex.value = -1
   playCount = 0
+  inputReady.value = false
 
   gamePhase.value = 'listening'
   playToken++
@@ -407,6 +414,14 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
             <span class="text-gray-500 dark:text-gray-400">連續正確：</span>
             <span class="font-bold text-orange-500">{{ streak }}</span>
           </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400">容許誤差：</span>
+            <span class="font-bold text-purple-500">{{ config.tolerance }}ms</span>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400">可重播：</span>
+            <span class="font-bold text-emerald-500">{{ config.replayLimit }}</span>
+          </div>
         </div>
       </div>
 
@@ -448,7 +463,8 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           class="input-phase text-center"
         >
           <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4">
-            看到倒數結束後開始敲擊，盡量跟上剛才的節奏
+            <span v-if="!inputReady">等待提示音後開始敲擊</span>
+            <span v-else>跟著剛才的節奏敲擊，盡量保持間隔</span>
           </div>
 
           <!-- 輸入進度 -->
@@ -468,7 +484,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           <!-- 敲擊按鈕 -->
           <button
             class="tap-btn w-[clamp(7rem,28vw,10rem)] h-[clamp(7rem,28vw,10rem)] rounded-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-[clamp(2.5rem,8vw,3.75rem)] shadow-xl transition-all transform"
-            :class="{ 'scale-90 bg-blue-700': isTapping }"
+            :class="{ 'scale-90 bg-blue-700': isTapping, 'opacity-50 pointer-events-none': !inputReady }"
             @click="handleTap"
             @touchstart.prevent="handleTap"
           >
@@ -476,7 +492,8 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           </button>
 
           <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-4 sm:mt-6">
-            剩餘 {{ currentBeats.length - userTaps.length }} 次敲擊
+            <span v-if="inputReady">剩餘 {{ currentBeats.length - userTaps.length }} 次敲擊</span>
+            <span v-else>準備中...</span>
           </div>
 
           <!-- 跳過按鈕 -->
@@ -506,7 +523,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
             {{ countdown }}
           </div>
           <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-4">
-            倒數結束後開始敲擊
+            倒數結束後會播放提示音，聽到後開始敲擊
           </div>
         </div>
 

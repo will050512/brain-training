@@ -38,6 +38,10 @@ export interface RhythmMimicConfig {
   playCount: number
   /** 間隔等待時間（毫秒） */
   waitTime: number
+  /** 輸入階段開始前的提示延遲（毫秒） */
+  leadInMs: number
+  /** 允許重播次數 */
+  replayLimit: number
 }
 
 export interface TapResult {
@@ -89,18 +93,24 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, RhythmMimicConfig> = {
     tolerance: 300,
     playCount: 2,
     waitTime: 1000,
+    leadInMs: 700,
+    replayLimit: 2,
   },
   medium: {
     totalRounds: 7,
     tolerance: 200,
     playCount: 2,
     waitTime: 800,
+    leadInMs: 600,
+    replayLimit: 1,
   },
   hard: {
     totalRounds: 10,
     tolerance: 150,
     playCount: 1,
     waitTime: 600,
+    leadInMs: 500,
+    replayLimit: 0,
   },
 }
 
@@ -274,11 +284,30 @@ export function generateRoundPatterns(
   totalRounds: number,
   difficulty: Difficulty
 ): RhythmPattern[] {
-  const availablePatterns = getPatternsByDifficulty(difficulty)
   const patterns: RhythmPattern[] = []
+  const easyPool = getPatternsByDifficulty('easy')
+  const mediumPool = getPatternsByDifficulty('medium')
+  const hardPool = getPatternsByDifficulty('hard')
 
   for (let i = 0; i < totalRounds; i++) {
-    patterns.push(selectRandomPattern(availablePatterns))
+    const progress = (i + 1) / totalRounds
+    let pool: RhythmPattern[]
+
+    if (difficulty === 'easy') {
+      pool = easyPool
+    } else if (difficulty === 'medium') {
+      pool = progress < 0.4 ? easyPool : mediumPool
+    } else {
+      if (progress < 0.3) {
+        pool = mediumPool
+      } else if (progress < 0.7) {
+        pool = mediumPool
+      } else {
+        pool = hardPool
+      }
+    }
+
+    patterns.push(selectRandomPattern(pool))
   }
 
   return patterns
@@ -324,31 +353,32 @@ export function evaluateRound(
 ): RoundResult {
   const expectedTimes = pattern.beats.map(b => b.time)
   const taps: TapResult[] = []
-  const remainingTaps = [...userTaps]
 
-  // 對每個預期節拍找到最近的使用者點擊（每次點擊只能配對一次，避免一個 tap 被重複計分）
-  for (const expected of expectedTimes) {
-    if (remainingTaps.length === 0) {
+  // 依序比對：每個預期節拍對應同序號點擊，避免「最近點」造成錯亂
+  for (let i = 0; i < expectedTimes.length; i++) {
+    const expected = expectedTimes[i]!
+    const actual = userTaps[i]
+    if (typeof actual !== 'number') {
       taps.push(evaluateTap(expected + config.tolerance * 2, expected, config.tolerance))
       continue
     }
+    taps.push(evaluateTap(actual, expected, config.tolerance))
+  }
 
-    let closestIndex = 0
-    let closestTap = remainingTaps[0]!
-    let minDistance = Math.abs(closestTap - expected)
-
-    for (let i = 1; i < remainingTaps.length; i++) {
-      const tap = remainingTaps[i]!
-      const distance = Math.abs(tap - expected)
-      if (distance < minDistance) {
-        minDistance = distance
-        closestTap = tap
-        closestIndex = i
+  // 多餘點擊視為失誤
+  if (userTaps.length > expectedTimes.length) {
+    for (let i = expectedTimes.length; i < userTaps.length; i++) {
+      const actual = userTaps[i]
+      if (typeof actual === 'number') {
+        taps.push({
+          expected: actual,
+          actual,
+          error: config.tolerance * 2,
+          isGood: false,
+          rating: 'miss',
+        })
       }
     }
-
-    remainingTaps.splice(closestIndex, 1)
-    taps.push(evaluateTap(closestTap, expected, config.tolerance))
   }
 
   const goodTaps = taps.filter(t => t.isGood).length

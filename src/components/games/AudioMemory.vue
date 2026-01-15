@@ -100,35 +100,29 @@ function finishGame() {
 }
 
 // ===== 音效 =====
-const NOTE_SOUND_IDS = [
-  'note-do',
-  'note-re',
-  'note-mi',
-  'note-fa',
-  'note-sol',
-  'note-la',
-  'note-si',
-  'note-do2',
-]
+const NOTE_PROFILES = [
+  { id: 'note-do', name: 'Do', frequency: 262, oscillatorType: 'sine', volume: 0.9 },
+  { id: 'note-re', name: 'Re', frequency: 294, oscillatorType: 'triangle', volume: 0.9 },
+  { id: 'note-mi', name: 'Mi', frequency: 330, oscillatorType: 'square', volume: 0.9 },
+  { id: 'note-fa', name: 'Fa', frequency: 349, oscillatorType: 'sawtooth', volume: 0.9 },
+  { id: 'note-sol', name: 'Sol', frequency: 392, oscillatorType: 'sine', volume: 0.95 },
+  { id: 'note-la', name: 'La', frequency: 440, oscillatorType: 'triangle', volume: 0.95 },
+  { id: 'note-si', name: 'Si', frequency: 494, oscillatorType: 'square', volume: 0.95 },
+  { id: 'note-do2', name: 'Do+', frequency: 523, oscillatorType: 'sawtooth', volume: 0.95 },
+] as const
 
-const NOTE_FREQUENCIES: Record<string, number> = {
-  'note-do': 262,
-  'note-re': 294,
-  'note-mi': 330,
-  'note-fa': 349,
-  'note-sol': 392,
-  'note-la': 440,
-  'note-si': 494,
-  'note-do2': 523,
-}
+const NOTE_SOUND_IDS = NOTE_PROFILES.map(note => note.id)
 
 const { playCorrect, playWrong, playEnd, playCustomSound, preloadDefaultSounds, preloadSounds } = useGameAudio({
   gameFolder: 'audio-memory',
-  customSounds: NOTE_SOUND_IDS.map(id => ({
-    id,
-    name: id,
-    frequency: NOTE_FREQUENCIES[id],
-    duration: 500,
+  volume: 0.95,
+  customSounds: NOTE_PROFILES.map(note => ({
+    id: note.id,
+    name: note.name,
+    frequency: note.frequency,
+    duration: 420,
+    volume: note.volume,
+    oscillatorType: note.oscillatorType,
   })),
 })
 
@@ -169,7 +163,7 @@ const gameInstructions = [
 function getSoundAudioId(soundId: string): string {
   const index = soundPool.value.findIndex(sound => sound.id === soundId)
   const mappedIndex = index >= 0 ? index % NOTE_SOUND_IDS.length : 0
-  return NOTE_SOUND_IDS[mappedIndex] ?? 'note-do'
+  return NOTE_SOUND_IDS[mappedIndex] ?? NOTE_SOUND_IDS[0]!
 }
 
 // ===== 遊戲方法 =====

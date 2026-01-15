@@ -697,15 +697,21 @@ export function adjustSettingsForSubDifficulty<T extends object>(
     // 調整數值型設定
     for (const key of Object.keys(adjusted)) {
       const value = adjusted[key]
-      if (typeof value === 'number') {
-        // 對於時間類設定，反向調整
-        if (key.includes('time') || key.includes('Time') || key.includes('duration') || key.includes('interval')) {
-          adjusted[key] = Math.round(value / modifier)
-        } else {
-          adjusted[key] = Math.round(value * modifier)
+        if (typeof value === 'number') {
+          // 對於時間類設定，反向調整
+          if (
+            key.includes('time') ||
+            key.includes('Time') ||
+            key.includes('duration') ||
+            key.includes('interval') ||
+            key.includes('leadIn')
+          ) {
+            adjusted[key] = Math.round(value / modifier)
+          } else {
+            adjusted[key] = Math.round(value * modifier)
+          }
         }
       }
-    }
     
     return adjusted as T
   }

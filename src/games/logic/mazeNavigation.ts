@@ -55,16 +55,16 @@ export interface MazeResult {
 
 export const DIFFICULTY_CONFIGS: Record<Difficulty, MazeConfig> = {
   easy: {
-    size: 7,
-    complexity: 0.3,
+    size: 9,
+    complexity: 0.35,
   },
   medium: {
-    size: 9,
-    complexity: 0.4,
-  },
-  hard: {
     size: 11,
     complexity: 0.5,
+  },
+  hard: {
+    size: 13,
+    complexity: 0.7,
   },
 }
 
@@ -135,6 +135,98 @@ function getWallBetween(a: number, b: number, size: number): number {
 }
 
 /**
+ * 計算最短路徑距離（BFS）
+ */
+export function getShortestPathLength(
+  cells: CellType[],
+  size: number,
+  startIndex: number,
+  endIndex: number
+): number {
+  const queue: number[] = [startIndex]
+  const distances = new Array<number>(cells.length).fill(-1)
+  distances[startIndex] = 0
+
+  while (queue.length > 0) {
+    const current = queue.shift()
+    if (typeof current !== 'number') continue
+    if (current === endIndex) return distances[current] ?? 0
+
+    const { row, col } = indexToPosition(current, size)
+    const neighbors = [
+      { row: row - 1, col },
+      { row: row + 1, col },
+      { row, col: col - 1 },
+      { row, col: col + 1 },
+    ]
+
+    for (const n of neighbors) {
+      if (n.row < 0 || n.row >= size || n.col < 0 || n.col >= size) continue
+      const idx = positionToIndex(n.row, n.col, size)
+      if (cells[idx] === 'wall' || distances[idx] !== -1) continue
+      const currentDistance = distances[current] ?? 0
+      distances[idx] = currentDistance + 1
+      queue.push(idx)
+    }
+  }
+
+  return Math.max(0, distances[endIndex] ?? 0)
+}
+
+function getDistancesFromStart(
+  cells: CellType[],
+  size: number,
+  startIndex: number
+): number[] {
+  const queue: number[] = [startIndex]
+  const distances = new Array<number>(cells.length).fill(-1)
+  distances[startIndex] = 0
+
+  while (queue.length > 0) {
+    const current = queue.shift()
+    if (typeof current !== 'number') continue
+    const { row, col } = indexToPosition(current, size)
+    const neighbors = [
+      { row: row - 1, col },
+      { row: row + 1, col },
+      { row, col: col - 1 },
+      { row, col: col + 1 },
+    ]
+
+    for (const n of neighbors) {
+      if (n.row < 0 || n.row >= size || n.col < 0 || n.col >= size) continue
+      const idx = positionToIndex(n.row, n.col, size)
+      if (cells[idx] === 'wall' || distances[idx] !== -1) continue
+      const currentDistance = distances[current] ?? 0
+      distances[idx] = currentDistance + 1
+      queue.push(idx)
+    }
+  }
+
+  return distances
+}
+
+function selectEndByComplexity(
+  distances: number[],
+  complexity: number
+): number {
+  const indexed = distances
+    .map((dist, index) => ({ dist, index }))
+    .filter(item => item.dist >= 0)
+    .sort((a, b) => b.dist - a.dist)
+
+  if (indexed.length === 0) return 0
+
+  const bias = Math.max(0, Math.min(1, 1 - complexity))
+  const pickIndex = Math.min(
+    indexed.length - 1,
+    Math.floor(bias * bias * (indexed.length - 1))
+  )
+
+  return indexed[pickIndex]?.index ?? indexed[0]!.index
+}
+
+/**
  * 使用遞歸回溯法生成迷宮
  */
 export function generateMaze(config: MazeConfig): MazeState {
@@ -146,12 +238,9 @@ export function generateMaze(config: MazeConfig): MazeState {
 
   // 起點（左上角內部）
   const startIndex = positionToIndex(1, 1, size)
-  cells[startIndex] = 'start'
+  cells[startIndex] = 'path'
   visited.add(startIndex)
   stack.push(startIndex)
-
-  // 終點（右下角內部）
-  const endIndex = positionToIndex(size - 2, size - 2, size)
 
   // 使用遞歸回溯法生成迷宮
   while (stack.length > 0) {
@@ -175,16 +264,12 @@ export function generateMaze(config: MazeConfig): MazeState {
     }
   }
 
-  // 設置終點
-  cells[endIndex] = 'end'
+  // 選擇距離最遠的終點（依複雜度調整）
+  const distances = getDistancesFromStart(cells, size, startIndex)
+  const endIndex = selectEndByComplexity(distances, config.complexity)
 
-  // 確保終點附近有通路
-  const endNeighbors = [endIndex - 1, endIndex - size]
-  for (const n of endNeighbors) {
-    if (n >= 0 && n < size * size && cells[n] === 'wall') {
-      cells[n] = 'path'
-    }
-  }
+  cells[startIndex] = 'start'
+  cells[endIndex] = 'end'
 
   return {
     cells,
@@ -296,6 +381,7 @@ export function estimateOptimalMoves(size: number): number {
  * 計算效率
  */
 export function calculateEfficiency(moves: number, optimalMoves: number): number {
+  if (optimalMoves <= 0) return 0
   if (moves <= optimalMoves) return 1
   return Math.max(0, 1 - (moves - optimalMoves) / (optimalMoves * 2))
 }
@@ -306,16 +392,14 @@ export function calculateEfficiency(moves: number, optimalMoves: number): number
 export function calculateScore(
   moves: number,
   timeSpent: number,
-  size: number
+  optimalMoves: number
 ): number {
-  const optimalMoves = estimateOptimalMoves(size)
-  
   // 效率分數 60%
   const efficiency = calculateEfficiency(moves, optimalMoves)
   const efficiencyScore = efficiency * 60
 
   // 時間分數 40%
-  const maxTime = size * 15 // 預估最大時間
+  const maxTime = Math.max(15, Math.round(optimalMoves * 3))
   const timeScore = Math.max(0, (1 - timeSpent / maxTime) * 40)
 
   return Math.round(Math.min(100, Math.max(0, efficiencyScore + timeScore)))
@@ -338,11 +422,12 @@ export function calculateGrade(score: number): string {
 export function summarizeResult(
   moves: number,
   timeSpent: number,
-  size: number
+  size: number,
+  optimalMovesOverride?: number
 ): MazeResult {
-  const optimalMoves = estimateOptimalMoves(size)
+  const optimalMoves = optimalMovesOverride ?? estimateOptimalMoves(size)
   const efficiency = calculateEfficiency(moves, optimalMoves)
-  const score = calculateScore(moves, timeSpent, size)
+  const score = calculateScore(moves, timeSpent, optimalMoves)
   const avgMoveTime = moves > 0 ? Math.round((timeSpent * 1000) / moves) : 0
 
   return {

@@ -341,7 +341,7 @@ export function useGameAudio(options: UseGameAudioOptions = {}) {
       playSynthSound(
         config.frequency,
         config.duration ?? 150,
-        'sine',
+        config.oscillatorType ?? 'sine',
         config.volume ?? customVolume
       )
     }

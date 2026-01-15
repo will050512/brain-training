@@ -336,7 +336,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
             <div
               v-for="(emoji, index) in currentRoundData.originalGrid"
               :key="`original-${index}`"
-              class="grid-cell aspect-square flex items-center justify-center text-lg sm:text-2xl md:text-3xl bg-gray-100 dark:bg-gray-700 rounded min-h-[32px] min-w-[32px] sm:min-h-[40px] sm:min-w-[40px] md:min-h-[48px] md:min-w-[48px]"
+              class="grid-cell flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded"
             >
               {{ emoji }}
             </div>
@@ -357,7 +357,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
             <button
               v-for="(emoji, index) in currentRoundData.compareGrid"
               :key="`compare-${index}`"
-              class="grid-cell aspect-square flex items-center justify-center text-lg sm:text-2xl md:text-3xl rounded cursor-pointer transition-all min-h-[32px] min-w-[32px] sm:min-h-[40px] sm:min-w-[40px] md:min-h-[48px] md:min-w-[48px]"
+              class="grid-cell flex items-center justify-center rounded cursor-pointer transition-all"
               :class="{
                 'bg-green-200 dark:bg-green-800 ring-2 ring-green-500': foundDifferences.includes(index),
                 'bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900': !foundDifferences.includes(index),
@@ -386,16 +386,32 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 .image-grid {
   display: grid;
   gap: 4px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  grid-auto-rows: 1fr;
 }
 
 .grid-cell {
-  min-width: 30px;
-  min-height: 30px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  font-size: clamp(1rem, 3.2vw, 2.25rem);
+  line-height: 1;
+}
+
+.image-container {
+  width: min(100%, 420px);
+  margin: 0 auto;
 }
 
 .hint-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (min-width: 640px) {
+  .image-container {
+    width: min(100%, 420px);
+  }
 }
 </style>
 

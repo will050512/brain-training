@@ -177,6 +177,8 @@ export interface CustomSoundConfig {
   duration?: number
   /** 音量 (0-1) */
   volume?: number
+  /** 波形類型（Web Audio 合成用） */
+  oscillatorType?: OscillatorType
 }
 
 // ===== 回饋類型 =====
