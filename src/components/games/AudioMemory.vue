@@ -3,11 +3,14 @@
  * 聲音記憶遊戲（重構版）
  * 使用新的遊戲核心架構
  */
-import { ref, computed, watch, watchEffect, onMounted, onBeforeUnmount, onUnmounted } from 'vue'
+import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useGameAudio } from '@/games/core/useGameAudio'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
+import { useResponsive } from '@/composables/useResponsive'
+import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
 import type { GameStatusUpdate } from '@/types'
+import type { SubDifficulty } from '@/types/game'
 import {
   createGameState,
   addUserInput,
@@ -32,9 +35,11 @@ import GameFeedback from './ui/GameFeedback.vue'
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
+  subDifficulty?: SubDifficulty
   autoStart?: boolean
 }>(), {
   difficulty: 'easy',
+  subDifficulty: 2,
   autoStart: false,
 })
 
@@ -51,9 +56,16 @@ const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
   (event, data) => emit('status-update', data),
   100
 )
+const { isSmallLandscape } = useResponsive()
 
 // ===== 遊戲配置 =====
-const config = computed<AudioMemoryConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const baseConfig = computed<AudioMemoryConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const config = computed<AudioMemoryConfig>(() => {
+  return adjustSettingsForSubDifficulty(
+    baseConfig.value,
+    props.subDifficulty ?? 2
+  )
+})
 
 // ===== 遊戲狀態 =====
 const {
@@ -88,7 +100,37 @@ function finishGame() {
 }
 
 // ===== 音效 =====
-const { playCorrect, playWrong, playEnd, preloadDefaultSounds } = useGameAudio()
+const NOTE_SOUND_IDS = [
+  'note-do',
+  'note-re',
+  'note-mi',
+  'note-fa',
+  'note-sol',
+  'note-la',
+  'note-si',
+  'note-do2',
+]
+
+const NOTE_FREQUENCIES: Record<string, number> = {
+  'note-do': 262,
+  'note-re': 294,
+  'note-mi': 330,
+  'note-fa': 349,
+  'note-sol': 392,
+  'note-la': 440,
+  'note-si': 494,
+  'note-do2': 523,
+}
+
+const { playCorrect, playWrong, playEnd, playCustomSound, preloadDefaultSounds, preloadSounds } = useGameAudio({
+  gameFolder: 'audio-memory',
+  customSounds: NOTE_SOUND_IDS.map(id => ({
+    id,
+    name: id,
+    frequency: NOTE_FREQUENCIES[id],
+    duration: 500,
+  })),
+})
 
 // ===== 遊戲資料 =====
 const gameState = ref<AudioMemoryState | null>(null)
@@ -98,7 +140,6 @@ const gamePhase = ref<'listening' | 'input' | 'result'>('listening')
 const currentPlayingIndex = ref(-1)
 const streak = ref(0)
 const maxStreak = ref(0)
-let audioContext: AudioContext | null = null
 
 // ===== 計算屬性 =====
 const userInput = computed(() => gameState.value?.userInput || [])
@@ -125,41 +166,10 @@ const gameInstructions = [
 ]
 
 // ===== 音效生成 =====
-function initAudioContext() {
-  if (!audioContext) {
-    audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
-  }
-  return audioContext
-}
-
-// 為每個聲音類別分配不同頻率
-const SOUND_FREQUENCIES: Record<string, number> = {
-  dog: 200, cat: 400, bird: 800, cow: 150, pig: 250, rooster: 600,
-  piano: 440, guitar: 330, drum: 100, violin: 550, trumpet: 466, bell: 880,
-  rain: 300, thunder: 80, wind: 200, wave: 250,
-  doorbell: 523, phone: 440, clock: 261, whistle: 700,
-}
-
-function playSoundById(soundId: string) {
-  const ctx = initAudioContext()
-  if (!ctx) return
-
-  const frequency = SOUND_FREQUENCIES[soundId] || 440
-  
-  const oscillator = ctx.createOscillator()
-  const gainNode = ctx.createGain()
-  
-  oscillator.connect(gainNode)
-  gainNode.connect(ctx.destination)
-  
-  oscillator.type = 'sine'
-  oscillator.frequency.value = frequency
-  
-  gainNode.gain.setValueAtTime(0.5, ctx.currentTime)
-  gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5)
-  
-  oscillator.start(ctx.currentTime)
-  oscillator.stop(ctx.currentTime + 0.5)
+function getSoundAudioId(soundId: string): string {
+  const index = soundPool.value.findIndex(sound => sound.id === soundId)
+  const mappedIndex = index >= 0 ? index % NOTE_SOUND_IDS.length : 0
+  return NOTE_SOUND_IDS[mappedIndex] ?? 'note-do'
 }
 
 // ===== 遊戲方法 =====
@@ -168,9 +178,6 @@ function handleStart() {
   maxLength.value = config.value.startLength
   streak.value = 0
   maxStreak.value = 0
-  
-  // 初始化音頻
-  initAudioContext()
   
   startGame()
   startNewRound()
@@ -194,7 +201,7 @@ async function playSequence() {
     currentPlayingIndex.value = i
     const sound = sequence.value[i]
     if (sound) {
-      playSoundById(sound.id)
+      playCustomSound(getSoundAudioId(sound.id))
     }
     await delay(interval)
     currentPlayingIndex.value = -1
@@ -213,7 +220,7 @@ function handleSoundClick(sound: SoundItem) {
   if (!isPlaying.value || gamePhase.value !== 'input' || !gameState.value) return
   
   // 播放選中的聲音
-  playSoundById(sound.id)
+  playCustomSound(getSoundAudioId(sound.id))
   
   gameState.value = addUserInput(gameState.value, sound)
   
@@ -299,6 +306,7 @@ function handleGameEnd() {
 // ===== 生命週期 =====
 onMounted(() => {
   preloadDefaultSounds()
+  preloadSounds(NOTE_SOUND_IDS)
 })
 
 // 監聽狀態變化，節流 emit 給父層
@@ -318,19 +326,12 @@ watchEffect(() => {
   }
 })
 
-onBeforeUnmount(() => {
-  if (audioContext) {
-    audioContext.close()
-    audioContext = null
-  }
-})
-
 onUnmounted(() => {
   cleanupThrottle()
 })
 
 // 監聽難度變化
-watch(() => props.difficulty, () => {
+watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     resetGame()
   }
@@ -338,7 +339,7 @@ watch(() => props.difficulty, () => {
 </script>
 
 <template>
-  <div class="audio-memory-game w-full max-w-2xl mx-auto p-4">
+  <div class="audio-memory-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -503,3 +504,4 @@ watch(() => props.difficulty, () => {
   box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.3);
 }
 </style>
+

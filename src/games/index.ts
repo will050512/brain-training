@@ -43,9 +43,9 @@ export function registerAllGames(): void {
       cognition: 0.1,
     },
     defaultSettings: {
-      easy: { rounds: 8, maxItems: 4, timePerRound: 10, showWeightHint: true },
-      medium: { rounds: 12, maxItems: 5, timePerRound: 8, showWeightHint: false },
-      hard: { rounds: 15, maxItems: 6, timePerRound: 6, showWeightHint: false },
+      easy: { rounds: 8, maxItems: 4, minDiff: 2, maxDiff: 4, timePerRound: 10, showWeightHint: true, showTilt: true, tiltStrength: 3.5, maxTilt: 20 },
+      medium: { rounds: 12, maxItems: 5, minDiff: 2, maxDiff: 3, timePerRound: 8, showWeightHint: false, showTilt: true, tiltStrength: 3, maxTilt: 18 },
+      hard: { rounds: 15, maxItems: 6, minDiff: 1, maxDiff: 2, timePerRound: 6, showWeightHint: false, showTilt: true, tiltStrength: 2.5, maxTilt: 14 },
     },
     instructions: [
       '觀察天平兩側的物品',

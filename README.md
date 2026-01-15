@@ -62,10 +62,20 @@ npm run build
 npm run test:run
 ```
 
+Storybook：
+
+```bash
+npm run storybook
+```
+
 ## 資料儲存與同步
 
 - 本地端：使用 IndexedDB（見 `src/services/db.ts`）保存使用者、遊戲紀錄、每日訓練會話、評估結果等。
 - 選配：可同步到 Google Sheet（見 `src/services/googleSheetSyncService.ts`、`docs/apps-script.gs`）。
+
+## 評分標準
+
+- 參考 `docs/SCORING.md`（標準化計分、權重與難度倍率）。
 
 ## 專案結構（簡略）
 

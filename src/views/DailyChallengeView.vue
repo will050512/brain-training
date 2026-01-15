@@ -235,7 +235,8 @@ async function startGame(game: TrainingGameItem) {
     gameId: g.gameId,
     difficulty: g.difficulty,
     subDifficulty: g.subDifficulty,
-    isCompleted: g.isCompleted
+    isCompleted: g.isCompleted,
+    manualOverride: g.manualOverride ?? false
   }))
   
   gameStore.setDailyTrainingQueue(queue)

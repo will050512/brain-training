@@ -3,11 +3,14 @@
  * 節奏模仿遊戲（重構版）
  * 使用新的遊戲核心架構
  */
-import { ref, computed, watch, watchEffect, onMounted, onBeforeUnmount, onUnmounted } from 'vue'
+import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useGameAudio } from '@/games/core/useGameAudio'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
+import { useResponsive } from '@/composables/useResponsive'
+import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
 import type { GameStatusUpdate } from '@/types'
+import type { SubDifficulty } from '@/types/game'
 import {
   generateRoundPatterns,
   evaluateRound,
@@ -28,9 +31,11 @@ import GameFeedback from './ui/GameFeedback.vue'
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
+  subDifficulty?: SubDifficulty
   autoStart?: boolean
 }>(), {
   difficulty: 'easy',
+  subDifficulty: 2,
   autoStart: false,
 })
 
@@ -47,9 +52,16 @@ const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
   (event, data) => emit('status-update', data),
   100
 )
+const { isSmallLandscape } = useResponsive()
 
 // ===== 遊戲配置 =====
-const config = computed<RhythmMimicConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const baseConfig = computed<RhythmMimicConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const config = computed<RhythmMimicConfig>(() => {
+  return adjustSettingsForSubDifficulty(
+    baseConfig.value,
+    props.subDifficulty ?? 2
+  )
+})
 
 // ===== 遊戲狀態 =====
 const {
@@ -84,7 +96,13 @@ function finishGame() {
 }
 
 // ===== 音效 =====
-const { playCorrect, playWrong, playEnd, preloadDefaultSounds } = useGameAudio()
+const { playCorrect, playWrong, playEnd, playCustomSound, preloadDefaultSounds, preloadSounds } = useGameAudio({
+  gameFolder: 'rhythm-mimic',
+  customSounds: [
+    { id: 'beat', name: 'Beat', frequency: 800, duration: 100 },
+    { id: 'miss', name: 'Miss', frequency: 200, duration: 150 },
+  ],
+})
 
 // ===== 遊戲資料 =====
 const patterns = ref<RhythmPattern[]>([])
@@ -96,7 +114,6 @@ const roundResults = ref<RoundResult[]>([])
 const streak = ref(0)
 const maxStreak = ref(0)
 const isTapping = ref(false)
-let audioContext: AudioContext | null = null
 let inputStartTime = 0
 let playCount = 0
 const countdown = ref(3)
@@ -131,32 +148,8 @@ const gameInstructions = [
   '越接近原始節奏分數越高',
 ]
 
-// ===== 音效生成 =====
-function initAudioContext() {
-  if (!audioContext) {
-    audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
-  }
-  return audioContext
-}
-
 function playBeat() {
-  const ctx = initAudioContext()
-  if (!ctx) return
-  
-  const oscillator = ctx.createOscillator()
-  const gainNode = ctx.createGain()
-  
-  oscillator.connect(gainNode)
-  gainNode.connect(ctx.destination)
-  
-  oscillator.type = 'sine'
-  oscillator.frequency.value = 800
-  
-  gainNode.gain.setValueAtTime(0.8, ctx.currentTime)
-  gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1)
-  
-  oscillator.start(ctx.currentTime)
-  oscillator.stop(ctx.currentTime + 0.1)
+  playCustomSound('beat')
 }
 
 // ===== 遊戲方法 =====
@@ -165,9 +158,6 @@ function handleStart() {
   roundResults.value = []
   streak.value = 0
   maxStreak.value = 0
-  
-  // 初始化音頻
-  initAudioContext()
   
   startGame()
   startNewRound()
@@ -301,6 +291,7 @@ function handleInputComplete() {
   } else {
     streak.value = 0
     playWrong()
+    playCustomSound('miss')
     setFeedback('wrong', `準確度僅 ${result.accuracy}%`)
   }
   
@@ -352,6 +343,7 @@ function handleGameEnd() {
 // ===== 生命週期 =====
 onMounted(() => {
   preloadDefaultSounds()
+  preloadSounds(['beat', 'miss'])
 })
 
 // 監聽狀態變化，節流 emit 給父層
@@ -371,19 +363,12 @@ watchEffect(() => {
   }
 })
 
-onBeforeUnmount(() => {
-  if (audioContext) {
-    audioContext.close()
-    audioContext = null
-  }
-})
-
 onUnmounted(() => {
   cleanupThrottle()
 })
 
 // 監聽難度變化
-watch(() => props.difficulty, () => {
+watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     resetGame()
   }
@@ -391,7 +376,7 @@ watch(() => props.difficulty, () => {
 </script>
 
 <template>
-  <div class="rhythm-mimic-game w-full max-w-2xl mx-auto p-4">
+  <div class="rhythm-mimic-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -586,3 +571,4 @@ watch(() => props.difficulty, () => {
   }
 }
 </style>
+

@@ -8,7 +8,10 @@ import { useGameState } from '@/games/core/useGameState'
 import { useGameTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
+import { useResponsive } from '@/composables/useResponsive'
+import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
 import type { GameStatusUpdate } from '@/types'
+import type { SubDifficulty } from '@/types/game'
 import {
   createInitialHoles,
   findInactiveHoles,
@@ -28,12 +31,19 @@ import {
 import GameReadyScreen from './ui/GameReadyScreen.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 
+import holeImg from '@/assets/images/whack-a-mole/hole.svg'
+import moleImg from '@/assets/images/whack-a-mole/mole.svg'
+import moleHitImg from '@/assets/images/whack-a-mole/mole-hit.svg'
+import bombImg from '@/assets/images/whack-a-mole/bomb.svg'
+
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
+  subDifficulty?: SubDifficulty
   autoStart?: boolean
 }>(), {
   difficulty: 'easy',
+  subDifficulty: 2,
   autoStart: false,
 })
 
@@ -50,9 +60,16 @@ const { throttledEmit, immediateEmit, cleanup: cleanupThrottle } = useThrottledE
   (event, data) => emit('status-update', data),
   100
 )
+const { isSmallLandscape } = useResponsive()
 
 // ===== 遊戲配置 =====
-const config = computed<WhackAMoleConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const baseConfig = computed<WhackAMoleConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const config = computed<WhackAMoleConfig>(() => {
+  return adjustSettingsForSubDifficulty(
+    baseConfig.value,
+    props.subDifficulty ?? 2
+  )
+})
 
 // ===== 遊戲狀態 =====
 const {
@@ -98,7 +115,14 @@ const {
 })
 
 // ===== 音效 =====
-const { playCorrect, playWrong, playEnd, preloadDefaultSounds } = useGameAudio()
+const { playEnd, playCustomSound, preloadDefaultSounds, preloadSounds } = useGameAudio({
+  gameFolder: 'whack-a-mole',
+  customSounds: [
+    { id: 'mole-appear', name: 'Mole Appear', frequency: 720, duration: 120 },
+    { id: 'mole-hit', name: 'Mole Hit', frequency: 880, duration: 160 },
+    { id: 'bomb-explode', name: 'Bomb Explode', frequency: 180, duration: 220 },
+  ],
+})
 
 // ===== 遊戲資料 =====
 const holes = ref<Hole[]>([])
@@ -194,6 +218,7 @@ function spawnMole() {
   if (spawnType === 'mole') {
     totalMoles.value++
     lastMoleTime = Date.now()
+    playCustomSound('mole-appear')
   }
   
   // 自動消失
@@ -230,7 +255,7 @@ function handleHoleClick(index: number) {
     hitMoles.value++
     reactionTimes.value.push(reactionTime)
     addScore(result.scoreChange)
-    playCorrect()
+    playCustomSound('mole-hit')
     
     if (currentCombo.value > currentMaxCombo.value) {
       currentMaxCombo.value = currentCombo.value
@@ -244,7 +269,7 @@ function handleHoleClick(index: number) {
   } else if (result.isBombHit) {
     hitBombs.value++
     addScore(result.scoreChange)
-    playWrong()
+    playCustomSound('bomb-explode')
     setFeedback('wrong', '💣 炸彈！', result.scoreChange)
   }
   
@@ -283,6 +308,7 @@ function handleGameEnd() {
 // ===== 生命週期 =====
 onMounted(() => {
   preloadDefaultSounds()
+  preloadSounds(['mole-appear', 'mole-hit', 'bomb-explode'])
 })
 
 onUnmounted(() => {
@@ -293,7 +319,7 @@ onUnmounted(() => {
 })
 
 // 監聽難度變化
-watch(() => props.difficulty, () => {
+watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     stopTimer()
     if (spawnTimer) {
@@ -306,7 +332,7 @@ watch(() => props.difficulty, () => {
 </script>
 
 <template>
-  <div class="whack-a-mole-game w-full max-w-2xl mx-auto p-4">
+  <div class="whack-a-mole-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -330,22 +356,27 @@ watch(() => props.difficulty, () => {
           class="hole relative aspect-square flex items-center justify-center cursor-pointer select-none min-h-[80px] sm:min-h-[100px] md:min-h-[120px]"
           @click="handleHoleClick(index)"
         >
-          <!-- 洞 -->
-          <div class="absolute inset-0 bg-gradient-to-b from-amber-800 to-amber-900 rounded-full shadow-inner"></div>
+          <img class="hole-img" :src="holeImg" alt="" aria-hidden="true" />
 
-          <!-- 地鼠/炸彈 -->
           <Transition name="pop">
-            <div
-              v-if="hole.active"
-              class="absolute text-4xl sm:text-5xl md:text-6xl lg:text-7xl transform transition-transform"
+            <img
+              v-if="hole.active && hole.type === 'mole'"
+              class="actor-img"
               :class="{
-                'animate-pulse': hole.type === 'mole',
-                'scale-110': hole.hit,
-                'opacity-50': hole.hit
+                'animate-pulse': !hole.hit,
+                'hit': hole.hit
               }"
-            >
-              {{ hole.type === 'mole' ? '🐹' : '💣' }}
-            </div>
+              :src="hole.hit ? moleHitImg : moleImg"
+              alt=""
+              aria-hidden="true"
+            />
+            <img
+              v-else-if="hole.active && hole.type === 'bomb'"
+              class="actor-img bomb"
+              :src="bombImg"
+              alt=""
+              aria-hidden="true"
+            />
           </Transition>
 
           <!-- 得分提示 -->
@@ -379,6 +410,28 @@ watch(() => props.difficulty, () => {
   min-height: 100px;
 }
 
+.hole-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.actor-img {
+  position: absolute;
+  width: clamp(48px, 12vw, 96px);
+  height: clamp(48px, 12vw, 96px);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  pointer-events: none;
+}
+
+.actor-img.hit {
+  transform: scale(1.1);
+  opacity: 0.6;
+}
+
 .pop-enter-active,
 .pop-leave-active {
   transition: all 0.15s ease;
@@ -405,3 +458,4 @@ watch(() => props.difficulty, () => {
   transform: translateY(10px);
 }
 </style>
+

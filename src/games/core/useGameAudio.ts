@@ -33,6 +33,18 @@ const AUDIO_BASE_PATH = '/audio/games'
 /** 支援的音效格式（按優先順序） */
 const AUDIO_FORMATS = ['.ogg', '.mp3']
 
+/** Vite assets mapping (src/assets/audio/games) */
+const AUDIO_ASSET_GLOB = import.meta.glob('/src/assets/audio/games/**/*.{ogg,mp3}', {
+  eager: true,
+  as: 'url',
+}) as Record<string, string>
+
+const AUDIO_ASSET_MAP = new Map<string, string>()
+for (const [path, url] of Object.entries(AUDIO_ASSET_GLOB)) {
+  const normalized = path.replace('/src/assets/audio/games/', '')
+  AUDIO_ASSET_MAP.set(normalized, url)
+}
+
 // ===== 類型定義 =====
 
 export interface UseGameAudioOptions {
@@ -95,7 +107,26 @@ export function useGameAudio(options: UseGameAudioOptions = {}) {
    */
   function getAudioPath(soundId: string): string[] {
     const folder = gameFolder ? `${AUDIO_BASE_PATH}/${gameFolder}` : AUDIO_BASE_PATH
-    return AUDIO_FORMATS.map(ext => `${folder}/${soundId}${ext}`)
+    const baseFolder = AUDIO_BASE_PATH
+    const folderPrefix = gameFolder ? `${gameFolder}/` : ''
+
+    return AUDIO_FORMATS.flatMap(ext => {
+      const assetKey = `${folderPrefix}${soundId}${ext}`
+      const assetUrl = AUDIO_ASSET_MAP.get(assetKey)
+      const baseAssetKey = `${soundId}${ext}`
+      const baseAssetUrl = AUDIO_ASSET_MAP.get(baseAssetKey)
+      const urls: string[] = []
+
+      if (assetUrl) urls.push(assetUrl)
+      urls.push(`${folder}/${soundId}${ext}`)
+
+      if (gameFolder) {
+        if (baseAssetUrl) urls.push(baseAssetUrl)
+        urls.push(`${baseFolder}/${soundId}${ext}`)
+      }
+
+      return urls
+    })
   }
 
   /**

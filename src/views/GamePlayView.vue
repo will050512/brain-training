@@ -156,7 +156,6 @@
               {{ DIFFICULTIES[gameStore.currentDifficulty].name }}
             </span>
             <button
-              v-if="!isFromDailyTraining"
               class="btn btn-secondary btn-sm"
               @click="showDifficultyPanel = true"
             >
@@ -194,6 +193,7 @@
           :is="gameComponent"
           :key="gameComponentKey"
           :difficulty="gameStore.currentDifficulty"
+          :sub-difficulty="gameStore.currentSubDifficulty"
           :settings="difficultySettings"
           @score-change="handleScoreChange"
           @score-update="handleScoreChange"
@@ -418,14 +418,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, defineAsyncComponent, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { gameRegistry } from '@/core/gameRegistry'
 import { useGameStore, useUserStore } from '@/stores'
 import { useResponsive } from '@/composables/useResponsive'
 import { DIFFICULTIES, type GameResult, type GameState, type GameDefinition, type GameStatusUpdate, type UnifiedGameResult, type Difficulty, type SubDifficulty } from '@/types/game'
 import { calculateDifficultyAdjustment, applyDifficultyAdjustment, getFullDifficultyLabel, getSuggestedDifficulty, type DifficultyAdjustment } from '@/services/adaptiveDifficultyService'
-import { markGameCompleted } from '@/services/dailyTrainingService'
+import { markGameCompleted, updatePlannedGameDifficulties } from '@/services/dailyTrainingService'
 import TrainingCompleteModal from '@/components/ui/TrainingCompleteModal.vue'
 import DifficultyAdjustPanel from '@/components/ui/DifficultyAdjustPanel.vue'
-import { gameRegistry } from '@/core/gameRegistry'
 import type { CognitiveDimension } from '@/types/cognitive'
 import { isLegacyGameResult, normalizeToLegacyGameResult } from '@/services/gameResultAdapter'
 import { scoreNormalizer } from '@/services/scoreNormalizer'
@@ -514,8 +514,13 @@ const routeGameId = computed(() => {
 
 const resolvedGameId = computed(() => routeGameId.value || gameStore.currentGameId || '')
 
-// 當前遊戲
-const currentGame = computed(() => gameStore.currentGame)
+// 當前遊戲（優先使用路由 ID，避免 store 殘留導致顯示錯誤）
+const currentGame = computed(() => {
+  if (resolvedGameId.value) {
+    return gameRegistry.get(resolvedGameId.value) || gameStore.currentGame
+  }
+  return gameStore.currentGame
+})
 
 // 難度設定
 const difficultySettings = computed(() => 
@@ -889,6 +894,21 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
       if (adjustment.shouldAdjust) {
         await applyDifficultyAdjustment(odId, id, adjustment, result.accuracy)
       }
+
+      if (isFromDailyTraining.value && adjustment.shouldAdjust) {
+        const direction = (() => {
+          if (adjustment.reason === 'accuracy-high' || adjustment.reason === 'reaction-improved') return 1
+          if (adjustment.reason === 'accuracy-low' || adjustment.reason === 'reaction-declined' || adjustment.reason === 'inactivity') return -1
+          return null
+        })()
+
+        if (direction) {
+          const updates = gameStore.shiftRemainingTrainingDifficulties(direction)
+          if (updates.length > 0) {
+            updatePlannedGameDifficulties(odId, updates).catch(err => console.error('updatePlannedGameDifficulties failed', err))
+          }
+        }
+      }
     }
   } catch (error) {
     console.error('處理遊戲結束時發生錯誤:', error)
@@ -980,6 +1000,15 @@ function goBackToList(): void {
 function handleDifficultyConfirm(difficulty: Difficulty, subDifficulty: SubDifficulty): void {
   gameStore.selectDifficulty(difficulty)
   gameStore.selectSubDifficulty(subDifficulty)
+  if (isFromDailyTraining.value && resolvedGameId.value) {
+    gameStore.updateCurrentTrainingGameDifficulty(difficulty, subDifficulty, { manualOverride: true })
+    const odId = userStore.currentUser?.id
+    if (odId) {
+      updatePlannedGameDifficulties(odId, [
+        { gameId: resolvedGameId.value, difficulty, subDifficulty, manualOverride: true }
+      ]).catch(err => console.error('updatePlannedGameDifficulties failed', err))
+    }
+  }
   router.replace({
     path: resolvedGameId.value ? `/games/${resolvedGameId.value}` : route.path,
     query: {

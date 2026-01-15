@@ -1,7 +1,8 @@
 <template>
   <div 
     ref="containerRef"
-    class="clock-drawing-test"
+    class="clock-drawing-test game-root"
+    :class="{ 'is-landscape': isSmallLandscape() }"
   >
     <!-- 指示區域 -->
     <div class="instructions px-4" v-if="!isComplete">
@@ -12,6 +13,7 @@
         <span class="time-hint text-xs sm:text-sm">（{{ targetTimeDescription }}）</span>
       </p>
       <p class="hint text-xs sm:text-sm text-[var(--color-text-muted)]">提示：拖放數字到正確位置，然後旋轉指針設定時間</p>
+      <img class="reference-img" :src="referenceImg" alt="參考示意" />
     </div>
 
     <!-- 組裝模式區域 -->
@@ -117,9 +119,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { useResponsive } from '@/composables/useResponsive'
 import type { ClockDrawingResult } from '@/services/miniCogService'
 import { calculateClockDrawingScore } from '@/services/miniCogService'
 import { getRandomClockTime, getTimeDescription } from '@/services/clockDrawingAnalyzer'
+import clockFaceImg from '@/assets/images/clock-drawing/clock-face.svg'
+import referenceImg from '@/assets/images/clock-drawing/reference.svg'
 
 // Props
 const props = withDefaults(defineProps<{
@@ -158,6 +163,7 @@ function initializeTargetTime() {
 const containerRef = ref<HTMLElement | null>(null)
 const assembleContainerRef = ref<HTMLElement | null>(null)
 const isComplete = ref(false)
+const { isSmallLandscape } = useResponsive()
 const startTime = ref<number>(0)
 const previewImageUrl = ref<string>('')
 
@@ -712,6 +718,10 @@ onUnmounted(() => {
   border-radius: 50%;
   box-shadow: var(--shadow-md);
   touch-action: none;
+  background-image: url(v-bind(clockFaceImg));
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .snap-indicator {
@@ -919,6 +929,12 @@ onUnmounted(() => {
 
 :root.dark .clock-face {
   background: #ffffff; /* 保持白色 */
+}
+
+.reference-img {
+  margin-top: 0.5rem;
+  width: clamp(120px, 40vw, 180px);
+  opacity: 0.8;
 }
 
 :root.dark .draggable-number,

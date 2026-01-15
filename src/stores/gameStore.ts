@@ -32,6 +32,7 @@ import {
   type ScoreTrend,
   type ScoreHistory
 } from '@/services/scoreCalculator'
+import { shiftDifficultyStep } from '@/services/adaptiveDifficultyService'
 import { useUserStore } from './userStore'
 
 // 每日訓練隊列項目
@@ -43,6 +44,7 @@ export interface TrainingQueueItem {
   isCompleted: boolean
   score?: number
   duration?: number
+  manualOverride?: boolean
 }
 
 // 當日訓練摘要
@@ -273,7 +275,7 @@ export const useGameStore = defineStore('game', () => {
   /**
    * 設定每日訓練隊列
    */
-  function setDailyTrainingQueue(games: Array<{ gameId: string; difficulty: Difficulty; subDifficulty?: SubDifficulty; isCompleted?: boolean; score?: number; duration?: number }>): void {
+  function setDailyTrainingQueue(games: Array<{ gameId: string; difficulty: Difficulty; subDifficulty?: SubDifficulty; isCompleted?: boolean; score?: number; duration?: number; manualOverride?: boolean }>): void {
     dailyTrainingQueue.value = games.map(item => {
       const game = gameRegistry.get(item.gameId)
       return {
@@ -283,7 +285,8 @@ export const useGameStore = defineStore('game', () => {
         subDifficulty: item.subDifficulty,
         isCompleted: item.isCompleted ?? false,
         score: item.score,
-        duration: item.duration
+        duration: item.duration,
+        manualOverride: item.manualOverride ?? false
       }
     }).filter(item => item.game)
     currentTrainingIndex.value = 0
@@ -302,6 +305,63 @@ export const useGameStore = defineStore('game', () => {
         current.duration = duration
       }
     }
+  }
+
+  /**
+   * 更新目前訓練項目的難度
+   */
+  function updateCurrentTrainingGameDifficulty(
+    difficulty: Difficulty,
+    subDifficulty: SubDifficulty,
+    options?: { manualOverride?: boolean }
+  ): void {
+    const current = dailyTrainingQueue.value[currentTrainingIndex.value]
+    if (!current) return
+    current.difficulty = difficulty
+    current.subDifficulty = subDifficulty
+    if (options?.manualOverride !== undefined) {
+      current.manualOverride = options.manualOverride
+    }
+  }
+
+  /**
+   * 更新指定訓練項目的難度
+   */
+  function updateTrainingGameDifficulty(
+    gameId: string,
+    difficulty: Difficulty,
+    subDifficulty: SubDifficulty,
+    options?: { manualOverride?: boolean }
+  ): void {
+    const item = dailyTrainingQueue.value.find(entry => entry.gameId === gameId)
+    if (!item) return
+    item.difficulty = difficulty
+    item.subDifficulty = subDifficulty
+    if (options?.manualOverride !== undefined) {
+      item.manualOverride = options.manualOverride
+    }
+  }
+
+  /**
+   * 依方向調整後續訓練遊戲難度（跳過手動覆蓋）
+   */
+  function shiftRemainingTrainingDifficulties(direction: 1 | -1): Array<{ gameId: string; difficulty: Difficulty; subDifficulty: SubDifficulty; manualOverride?: boolean }> {
+    const updates: Array<{ gameId: string; difficulty: Difficulty; subDifficulty: SubDifficulty; manualOverride?: boolean }> = []
+    for (let i = currentTrainingIndex.value + 1; i < dailyTrainingQueue.value.length; i += 1) {
+      const item = dailyTrainingQueue.value[i]
+      if (!item || item.isCompleted) continue
+      if (item.manualOverride) continue
+
+      const currentSub = item.subDifficulty ?? 2
+      const next = shiftDifficultyStep(item.difficulty, currentSub, direction)
+      if (next.difficulty === item.difficulty && next.subDifficulty === currentSub) continue
+
+      item.difficulty = next.difficulty
+      item.subDifficulty = next.subDifficulty
+      updates.push({ gameId: item.gameId, difficulty: next.difficulty, subDifficulty: next.subDifficulty, manualOverride: item.manualOverride })
+    }
+
+    return updates
   }
 
   /**
@@ -478,6 +538,7 @@ export const useGameStore = defineStore('game', () => {
             difficulty: item.difficulty,
             subDifficulty: item.subDifficulty,
             isCompleted: session.completedGames.includes(item.gameId),
+            manualOverride: item.manualOverride ?? false,
           } as TrainingQueueItem
         })
         .filter((g): g is TrainingQueueItem => Boolean(g))
@@ -537,6 +598,9 @@ export const useGameStore = defineStore('game', () => {
     // 每日訓練
     setDailyTrainingQueue,
     completeCurrentTrainingGame,
+    updateCurrentTrainingGameDifficulty,
+    updateTrainingGameDifficulty,
+    shiftRemainingTrainingDifficulties,
     moveToNextTrainingGame,
     getNextTrainingGame,
     getCurrentTrainingGame,

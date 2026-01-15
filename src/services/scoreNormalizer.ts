@@ -138,6 +138,18 @@ export const GAME_SCORE_CONFIGS: Record<string, GameScoreConfig> = {
   }
 }
 
+const DIFFICULTY_SCORE_MULTIPLIERS: Record<Difficulty, number> = {
+  easy: 0.95,
+  medium: 1.0,
+  hard: 1.05
+}
+
+const SUB_DIFFICULTY_SCORE_MULTIPLIERS: Record<SubDifficulty, number> = {
+  1: 0.95,
+  2: 1.0,
+  3: 1.05
+}
+
 // ========== 遊戲 ID 相容別名 ==========
 
 const GAME_ID_ALIASES: Record<string, string> = {
@@ -213,6 +225,16 @@ export function calculateComboBonus(maxCombo: number, totalCount: number): numbe
  */
 export function clampScore(score: number): number {
   return Math.max(0, Math.min(100, Math.round(score)))
+}
+
+function applyDifficultyMultiplier(
+  score: number,
+  difficulty: Difficulty,
+  subDifficulty?: SubDifficulty
+): number {
+  const base = DIFFICULTY_SCORE_MULTIPLIERS[difficulty] ?? 1
+  const sub = subDifficulty ? (SUB_DIFFICULTY_SCORE_MULTIPLIERS[subDifficulty] ?? 1) : 1
+  return clampScore(score * base * sub)
 }
 
 // ========== 通用轉換函數 ==========
@@ -1381,12 +1403,38 @@ export function normalizeGameResult(
   
   if (converter) {
     const unified = converter(rawResult, difficulty, subDifficulty, duration)
+    const adjustedScore = applyDifficultyMultiplier(unified.score, difficulty, subDifficulty)
+    const adjustedStats = unified.displayStats?.map(stat => {
+      if (stat.label === '分數') {
+        return { ...stat, value: adjustedScore }
+      }
+      return stat
+    })
     // 最終輸出統一使用現行註冊的 canonical gameId
-    return { ...unified, gameId: canonicalGameId }
+    return {
+      ...unified,
+      gameId: canonicalGameId,
+      score: adjustedScore,
+      grade: getGradeFromScore(adjustedScore),
+      displayStats: adjustedStats ?? unified.displayStats
+    }
   }
   
   // 未知遊戲的通用轉換
-  return createGenericResult(canonicalGameId, rawResult as Record<string, unknown>, difficulty, subDifficulty, duration)
+  const generic = createGenericResult(canonicalGameId, rawResult as Record<string, unknown>, difficulty, subDifficulty, duration)
+  const adjustedScore = applyDifficultyMultiplier(generic.score, difficulty, subDifficulty)
+  const adjustedStats = generic.displayStats?.map(stat => {
+    if (stat.label === '分數') {
+      return { ...stat, value: adjustedScore }
+    }
+    return stat
+  })
+  return {
+    ...generic,
+    score: adjustedScore,
+    grade: getGradeFromScore(adjustedScore),
+    displayStats: adjustedStats ?? generic.displayStats
+  }
 }
 
 // ========== Converter 覆蓋檢查（供測試/品質保證） ==========

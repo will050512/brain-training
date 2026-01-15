@@ -8,7 +8,10 @@ import { useGameState } from '@/games/core/useGameState'
 import { useRoundTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
+import { useResponsive } from '@/composables/useResponsive'
+import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
 import type { GameStatusUpdate } from '@/types'
+import type { SubDifficulty } from '@/types/game'
 import {
   generateRound,
   validateAnswer,
@@ -25,12 +28,19 @@ import {
 import GameReadyScreen from './ui/GameReadyScreen.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 
+import scaleImg from '@/assets/images/balance-scale/scale.svg'
+import weight1Img from '@/assets/images/balance-scale/weight-1.svg'
+import weight2Img from '@/assets/images/balance-scale/weight-2.svg'
+import weight3Img from '@/assets/images/balance-scale/weight-3.svg'
+
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
+  subDifficulty?: SubDifficulty
   autoStart?: boolean
 }>(), {
   difficulty: 'easy',
+  subDifficulty: 2,
   autoStart: false,
 })
 
@@ -47,9 +57,26 @@ const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
   (event, data) => emit('status-update', data),
   100
 )
+const { isSmallLandscape } = useResponsive()
+
+const weightImages: Record<number, string> = {
+  1: weight1Img,
+  2: weight2Img,
+  3: weight3Img,
+}
+
+function getWeightImage(weight: number): string | null {
+  return weightImages[weight] ?? null
+}
 
 // ===== 遊戲配置 =====
-const config = computed<BalanceScaleConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const baseConfig = computed<BalanceScaleConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const config = computed<BalanceScaleConfig>(() => {
+  return adjustSettingsForSubDifficulty(
+    baseConfig.value,
+    props.subDifficulty ?? 2
+  )
+})
 
 // ===== 遊戲狀態 =====
 const {
@@ -109,11 +136,11 @@ const isAnswering = ref(false)
 
 // ===== 計算屬性 =====
 const armRotation = computed(() => {
-  if (!currentRoundData.value || !showResult.value) return 0
+  if (!currentRoundData.value) return 0
   return calculateArmRotation(
     currentRoundData.value.leftWeight,
     currentRoundData.value.rightWeight,
-    true
+    config.value.showTilt
   )
 })
 
@@ -132,7 +159,7 @@ const gameInstructions = [
   '觀察天平兩側的物品',
   '判斷哪一側比較重',
   '點擊你認為較重的那一側',
-  '注意物品的數量和大小都會影響重量',
+  '注意物品的數量與重量標示',
 ]
 
 // ===== 遊戲方法 =====
@@ -263,7 +290,7 @@ onUnmounted(() => {
 })
 
 // 監聽難度變化
-watch(() => props.difficulty, () => {
+watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     stopRound()
     resetGame()
@@ -272,7 +299,7 @@ watch(() => props.difficulty, () => {
 </script>
 
 <template>
-  <div class="balance-scale-game w-full max-w-2xl mx-auto p-4">
+  <div class="balance-scale-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -298,6 +325,7 @@ watch(() => props.difficulty, () => {
 
       <!-- 天平 -->
       <div class="scale-container relative mt-4 sm:mt-6 px-4" v-if="currentRoundData">
+        <img class="scale-bg" :src="scaleImg" alt="" aria-hidden="true" />
         <!-- 天平支架 -->
         <div class="scale-stand">
           <div class="stand-base"></div>
@@ -325,7 +353,16 @@ watch(() => props.difficulty, () => {
                 :key="i"
                 class="text-2xl sm:text-3xl md:text-4xl"
               >
-                {{ item.emoji }}
+                <span v-if="getWeightImage(item.weight)" class="weight-item">
+                  <img
+                    class="weight-img"
+                    :src="getWeightImage(item.weight)!"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                  <span class="weight-label">{{ item.weight }}</span>
+                </span>
+                <span v-else class="weight-fallback">{{ item.emoji }} {{ item.weight }}</span>
               </span>
             </div>
             <div class="pan-base"></div>
@@ -346,7 +383,16 @@ watch(() => props.difficulty, () => {
                 :key="i"
                 class="text-2xl sm:text-3xl md:text-4xl"
               >
-                {{ item.emoji }}
+                <span v-if="getWeightImage(item.weight)" class="weight-item">
+                  <img
+                    class="weight-img"
+                    :src="getWeightImage(item.weight)!"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                  <span class="weight-label">{{ item.weight }}</span>
+                </span>
+                <span v-else class="weight-fallback">{{ item.emoji }} {{ item.weight }}</span>
               </span>
             </div>
             <div class="pan-base"></div>
@@ -394,6 +440,14 @@ watch(() => props.difficulty, () => {
   align-items: center;
   justify-content: center;
   perspective: 1000px;
+}
+
+.scale-bg {
+  position: absolute;
+  bottom: 0;
+  width: min(420px, 100%);
+  opacity: 0.15;
+  pointer-events: none;
 }
 
 .scale-stand {
@@ -474,6 +528,39 @@ watch(() => props.difficulty, () => {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
+.weight-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.weight-img {
+  width: 36px;
+  height: 36px;
+}
+
+.weight-label {
+  position: absolute;
+  bottom: -4px;
+  right: -2px;
+  min-width: 18px;
+  padding: 0 4px;
+  background: #1f2937;
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+  border-radius: 999px;
+}
+
+.weight-fallback {
+  font-size: 1.1rem;
+}
+
+.is-landscape .scale-container {
+  min-height: 240px;
+}
+
 .pan-base {
   width: 4px;
   height: 40px;
@@ -507,3 +594,4 @@ watch(() => props.difficulty, () => {
   
 }
 </style>
+

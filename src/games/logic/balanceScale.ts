@@ -17,10 +17,20 @@ export interface BalanceScaleConfig {
   rounds: number
   /** 每側最大物品數 */
   maxItems: number
+  /** 最小重量差 */
+  minDiff: number
+  /** 最大重量差 */
+  maxDiff: number
   /** 每回合時間限制（秒） */
   timePerRound: number
   /** 是否顯示重量提示 */
   showWeightHint: boolean
+  /** 是否顯示天平傾斜提示 */
+  showTilt: boolean
+  /** 天平傾斜強度 */
+  tiltStrength: number
+  /** 天平最大傾斜角度 */
+  maxTilt: number
 }
 
 export interface RoundData {
@@ -68,20 +78,35 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, BalanceScaleConfig> = {
   easy: {
     rounds: 8,
     maxItems: 4,
+    minDiff: 2,
+    maxDiff: 4,
     timePerRound: 10,
     showWeightHint: true,
+    showTilt: true,
+    tiltStrength: 3.5,
+    maxTilt: 20,
   },
   medium: {
     rounds: 12,
     maxItems: 5,
+    minDiff: 2,
+    maxDiff: 3,
     timePerRound: 8,
     showWeightHint: false,
+    showTilt: true,
+    tiltStrength: 3,
+    maxTilt: 18,
   },
   hard: {
     rounds: 15,
     maxItems: 6,
+    minDiff: 1,
+    maxDiff: 2,
     timePerRound: 6,
     showWeightHint: false,
+    showTilt: true,
+    tiltStrength: 2.5,
+    maxTilt: 14,
   },
 }
 
@@ -90,18 +115,20 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, BalanceScaleConfig> = {
 /**
  * 隨機選擇物品
  */
-function getRandomItem(): WeightItem {
-  const index = Math.floor(Math.random() * WEIGHT_ITEMS.length)
-  return WEIGHT_ITEMS[index] ?? WEIGHT_ITEMS[0]!
+const WEIGHT_POOL = WEIGHT_ITEMS.filter(item => item.weight <= 3)
+
+function getRandomItem(pool: WeightItem[]): WeightItem {
+  const index = Math.floor(Math.random() * pool.length)
+  return pool[index] ?? pool[0]!
 }
 
 /**
  * 產生一側的物品
  */
-function generateSideItems(count: number): WeightItem[] {
+function generateSideItems(count: number, pool: WeightItem[]): WeightItem[] {
   const items: WeightItem[] = []
   for (let i = 0; i < count; i++) {
-    items.push(getRandomItem())
+    items.push(getRandomItem(pool))
   }
   return items
 }
@@ -117,25 +144,38 @@ export function calculateWeight(items: WeightItem[]): number {
  * 產生一回合的題目
  */
 export function generateRound(config: BalanceScaleConfig): RoundData {
-  const leftCount = Math.floor(Math.random() * config.maxItems) + 1
-  const rightCount = Math.floor(Math.random() * config.maxItems) + 1
+  const maxItems = Math.max(1, config.maxItems)
+  const minDiff = Math.max(1, config.minDiff)
+  const maxDiff = Math.max(minDiff, config.maxDiff)
+  const pool = WEIGHT_POOL.length > 0 ? WEIGHT_POOL : WEIGHT_ITEMS
 
-  let leftItems = generateSideItems(leftCount)
-  let rightItems = generateSideItems(rightCount)
+  let leftItems: WeightItem[] = []
+  let rightItems: WeightItem[] = []
+  let leftWeight = 0
+  let rightWeight = 0
+  let attempts = 0
 
-  let leftWeight = calculateWeight(leftItems)
-  let rightWeight = calculateWeight(rightItems)
+  while (attempts < 40) {
+    attempts += 1
+    const leftCount = Math.floor(Math.random() * maxItems) + 1
+    const rightCount = Math.floor(Math.random() * maxItems) + 1
 
-  // 確保有明確的重量差異
-  if (leftWeight === rightWeight) {
-    const extraItem = getRandomItem()
-    if (leftCount <= rightCount) {
-      leftItems = [...leftItems, extraItem]
-      leftWeight += extraItem.weight
-    } else {
-      rightItems = [...rightItems, extraItem]
-      rightWeight += extraItem.weight
+    leftItems = generateSideItems(leftCount, pool)
+    rightItems = generateSideItems(rightCount, pool)
+
+    leftWeight = calculateWeight(leftItems)
+    rightWeight = calculateWeight(rightItems)
+
+    const diff = Math.abs(leftWeight - rightWeight)
+    if (diff >= minDiff && diff <= maxDiff) {
+      break
     }
+  }
+
+  if (leftWeight === rightWeight) {
+    const extraItem = getRandomItem(pool)
+    leftItems = [...leftItems, extraItem]
+    leftWeight = calculateWeight(leftItems)
   }
 
   return {
@@ -163,11 +203,14 @@ export function validateAnswer(
 export function calculateArmRotation(
   leftWeight: number,
   rightWeight: number,
-  showTilt: boolean
+  showTilt: boolean,
+  tiltStrength: number = 3,
+  maxTilt: number = 18
 ): number {
   if (!showTilt) return 0
   const diff = leftWeight - rightWeight
-  return Math.max(-15, Math.min(15, diff * 3))
+  const rotation = -diff * tiltStrength
+  return Math.max(-maxTilt, Math.min(maxTilt, rotation))
 }
 
 // ==================== 評分函數 ====================

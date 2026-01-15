@@ -9,8 +9,11 @@ import { useGameState } from '@/games/core/useGameState'
 import { useGameTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
 import { useTouchGesture, type SwipeDirection } from '@/composables/useTouchGesture'
+import { useResponsive } from '@/composables/useResponsive'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
+import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
 import type { GameStatusUpdate } from '@/types'
+import type { SubDifficulty } from '@/types/game'
 import {
   generateMaze,
   move,
@@ -30,12 +33,19 @@ import {
 import GameReadyScreen from './ui/GameReadyScreen.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 
+import playerImg from '@/assets/images/maze-navigation/player.svg'
+import exitImg from '@/assets/images/maze-navigation/exit.svg'
+import wallImg from '@/assets/images/maze-navigation/wall.svg'
+import pathImg from '@/assets/images/maze-navigation/path.svg'
+
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
+  subDifficulty?: SubDifficulty
   autoStart?: boolean
 }>(), {
   difficulty: 'easy',
+  subDifficulty: 2,
   autoStart: false,
 })
 
@@ -52,9 +62,16 @@ const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
   (event, data) => emit('status-update', data),
   100
 )
+const { isSmallLandscape } = useResponsive()
 
 // ===== 遊戲配置 =====
-const config = computed<MazeConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const baseConfig = computed<MazeConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const config = computed<MazeConfig>(() => {
+  return adjustSettingsForSubDifficulty(
+    baseConfig.value,
+    props.subDifficulty ?? 2
+  )
+})
 
 // ===== 遊戲狀態 =====
 const {
@@ -232,7 +249,7 @@ onUnmounted(() => {
 })
 
 // 監聽難度變化
-watch(() => props.difficulty, () => {
+watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     stopTimer()
     resetGame()
@@ -241,7 +258,7 @@ watch(() => props.difficulty, () => {
 </script>
 
 <template>
-  <div class="maze-navigation-game w-full max-w-2xl mx-auto p-4">
+  <div class="maze-navigation-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -290,7 +307,7 @@ watch(() => props.difficulty, () => {
             }"
           >
             <span v-if="index === playerPosition" class="text-lg sm:text-xl">🏃</span>
-            <span v-else-if="getCellType(mazeState!, index) === 'end'" class="text-sm sm:text-lg">🏁</span>
+            <img v-else-if="getCellType(mazeState!, index) === 'end'" class="maze-icon" :src="exitImg" alt="" aria-hidden="true" />
           </div>
         </div>
       </div>
@@ -372,14 +389,18 @@ watch(() => props.difficulty, () => {
   justify-content: center;
   min-width: 20px;
   min-height: 20px;
+  background-size: cover;
+  background-position: center;
 }
 
 .cell-wall {
-  background: #4a5568;
+  background-image: url(v-bind(wallImg));
+  background-color: #4a5568;
 }
 
 .cell-path {
-  background: #e2e8f0;
+  background-image: url(v-bind(pathImg));
+  background-color: #e2e8f0;
 }
 
 .cell-start {
@@ -392,6 +413,11 @@ watch(() => props.difficulty, () => {
 
 .cell-player {
   background: #4299e1;
+}
+
+.maze-icon {
+  width: clamp(16px, 4vw, 28px);
+  height: clamp(16px, 4vw, 28px);
 }
 
 .dark .cell-path {
@@ -449,3 +475,5 @@ watch(() => props.difficulty, () => {
   }
 }
 </style>
+
+

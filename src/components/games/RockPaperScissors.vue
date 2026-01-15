@@ -8,7 +8,10 @@ import { useGameState } from '@/games/core/useGameState'
 import { useRoundTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
+import { useResponsive } from '@/composables/useResponsive'
+import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
 import type { GameStatusUpdate } from '@/types'
+import type { SubDifficulty } from '@/types/game'
 import {
   createRound,
   processChoice,
@@ -31,12 +34,18 @@ import {
 import GameReadyScreen from './ui/GameReadyScreen.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 
+import rockImg from '@/assets/images/rock-paper-scissors/rock.svg'
+import paperImg from '@/assets/images/rock-paper-scissors/paper.svg'
+import scissorsImg from '@/assets/images/rock-paper-scissors/scissors.svg'
+
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
+  subDifficulty?: SubDifficulty
   autoStart?: boolean
 }>(), {
   difficulty: 'easy',
+  subDifficulty: 2,
   autoStart: false,
 })
 
@@ -53,9 +62,27 @@ const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
   (event, data) => emit('status-update', data),
   100
 )
+const { isSmallLandscape } = useResponsive()
+
+const gestureImages: Record<string, string> = {
+  rock: rockImg,
+  paper: paperImg,
+  scissors: scissorsImg,
+}
+
+function getGestureImage(gestureId?: string | null): string | null {
+  if (!gestureId) return null
+  return gestureImages[gestureId] ?? null
+}
 
 // ===== 遊戲配置 =====
-const config = computed<RockPaperScissorsConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const baseConfig = computed<RockPaperScissorsConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const config = computed<RockPaperScissorsConfig>(() => {
+  return adjustSettingsForSubDifficulty(
+    baseConfig.value,
+    props.subDifficulty ?? 2
+  )
+})
 
 // ===== 遊戲狀態 =====
 const {
@@ -244,7 +271,7 @@ onUnmounted(() => {
 })
 
 // 監聽難度變化
-watch(() => props.difficulty, () => {
+watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     stopRound()
     resetGame()
@@ -253,7 +280,7 @@ watch(() => props.difficulty, () => {
 </script>
 
 <template>
-  <div class="rock-paper-scissors-game w-full max-w-2xl mx-auto p-4">
+  <div class="rock-paper-scissors-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -285,13 +312,18 @@ watch(() => props.difficulty, () => {
         >
           正常模式：選擇會贏的！
         </div>
-      </div>
-
-      <!-- 電腦出拳 -->
+      </div>      <!-- 電腦出拳 -->
       <div class="computer-gesture mt-8 text-center">
         <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">電腦出：</div>
         <div class="gesture-display text-8xl">
-          {{ computerGesture ? GESTURES[computerGesture].emoji : '❓' }}
+          <img
+            v-if="getGestureImage(computerGesture)"
+            class="gesture-img"
+            :src="getGestureImage(computerGesture)!"
+            alt=""
+            aria-hidden="true"
+          />
+          <span v-else>{{ computerGesture ? GESTURES[computerGesture].emoji : '?' }}</span>
         </div>
         <div class="gesture-name text-lg font-medium mt-2">
           {{ computerGesture ? GESTURES[computerGesture].name : '' }}
@@ -303,8 +335,16 @@ watch(() => props.difficulty, () => {
         v-if="showResult && currentRoundResult"
         class="result-display mt-6 text-center"
       >
-        <div class="player-choice text-4xl mb-2">
-          你選：{{ currentRoundResult.playerGesture ? GESTURES[currentRoundResult.playerGesture].emoji : '❌' }}
+                <div class="player-choice text-4xl mb-2">
+          你選：
+          <img
+            v-if="getGestureImage(currentRoundResult.playerGesture)"
+            class="gesture-img inline"
+            :src="getGestureImage(currentRoundResult.playerGesture)!"
+            alt=""
+            aria-hidden="true"
+          />
+          <span v-else>{{ currentRoundResult.playerGesture ? GESTURES[currentRoundResult.playerGesture].emoji : '?' }}</span>
         </div>
         <div 
           class="result-text text-xl font-bold"
@@ -325,7 +365,14 @@ watch(() => props.difficulty, () => {
           class="gesture-btn min-w-[80px] w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-blue-500 hover:text-white transition-all transform hover:scale-105 active:scale-95 flex flex-col items-center justify-center gap-1 p-2"
           @click="handleSelectGesture(gesture)"
         >
-          <div class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl">{{ GESTURES[gesture].emoji }}</div>
+                    <img
+            v-if="getGestureImage(gesture)"
+            class="gesture-btn-img"
+            :src="getGestureImage(gesture)!"
+            alt=""
+            aria-hidden="true"
+          />
+          <div v-else class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl">{{ GESTURES[gesture].emoji }}</div>
           <div class="text-xs sm:text-sm font-medium leading-tight">{{ GESTURES[gesture].name }}</div>
         </button>
       </div>
@@ -350,7 +397,27 @@ watch(() => props.difficulty, () => {
   justify-content: center;
 }
 
+.gesture-img {
+  width: clamp(80px, 24vw, 140px);
+  height: clamp(80px, 24vw, 140px);
+}
+
+.gesture-img.inline {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.gesture-btn-img {
+  width: 60%;
+  height: 60%;
+  object-fit: contain;
+}
+
 .gesture-btn:active {
   transform: scale(0.9);
 }
 </style>
+
+
+
+

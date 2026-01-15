@@ -34,6 +34,7 @@ export interface TrainingGameItem {
   targetDimensions: CognitiveDimension[]
   isCompleted: boolean
   order: number
+  manualOverride?: boolean
 }
 
 // 每日訓練計畫
@@ -326,7 +327,8 @@ export async function createDailyTrainingPlan(
         estimatedTime: game.estimatedTime[timeMode],
         targetDimensions: getGameDimensions(game),
         isCompleted: false,
-        order: index + 1
+        order: index + 1,
+        manualOverride: false
       }
     })
   )
@@ -342,7 +344,8 @@ export async function createDailyTrainingPlan(
       gameId: g.gameId,
       difficulty: g.difficulty,
       subDifficulty: g.subDifficulty,
-      estimatedTime: g.estimatedTime
+      estimatedTime: g.estimatedTime,
+      manualOverride: g.manualOverride ?? false
     })),
     completedGames: [],
     interrupted: false,
@@ -379,7 +382,8 @@ function convertSessionToPlan(session: DailyTrainingSession): DailyTrainingPlan 
       estimatedTime: pg.estimatedTime,
       targetDimensions: game ? getGameDimensions(game) : [],
       isCompleted: session.completedGames.includes(pg.gameId),
-      order: index + 1
+      order: index + 1,
+      manualOverride: pg.manualOverride ?? false
     }
   })
   
@@ -446,6 +450,41 @@ export async function markGameCompleted(
     await saveDailyTrainingSession(session)
   }
   
+  return convertSessionToPlan(session)
+}
+
+/**
+ * 更新每日訓練的難度設定
+ */
+export async function updatePlannedGameDifficulties(
+  odId: string,
+  updates: Array<{
+    gameId: string
+    difficulty: Difficulty
+    subDifficulty: SubDifficulty
+    manualOverride?: boolean
+  }>
+): Promise<DailyTrainingPlan | null> {
+  const session = await getTodayTrainingSession(odId)
+  if (!session) return null
+
+  const completed = new Set(session.completedGames)
+  const updateMap = new Map(updates.map(update => [update.gameId, update]))
+
+  session.plannedGames = session.plannedGames.map(item => {
+    const update = updateMap.get(item.gameId)
+    if (!update) return item
+    if (completed.has(item.gameId)) return item
+
+    return {
+      ...item,
+      difficulty: update.difficulty,
+      subDifficulty: update.subDifficulty,
+      manualOverride: update.manualOverride ?? item.manualOverride ?? false
+    }
+  })
+
+  await saveDailyTrainingSession(session)
   return convertSessionToPlan(session)
 }
 
@@ -529,7 +568,8 @@ export async function restartTraining(
         estimatedTime: game.estimatedTime[timeMode],
         targetDimensions: getGameDimensions(game),
         isCompleted: false,
-        order: index + 1
+        order: index + 1,
+        manualOverride: false
       }
     })
   )
@@ -542,7 +582,8 @@ export async function restartTraining(
       gameId: g.gameId,
       difficulty: g.difficulty,
       subDifficulty: g.subDifficulty,
-      estimatedTime: g.estimatedTime
+      estimatedTime: g.estimatedTime,
+      manualOverride: g.manualOverride ?? false
     })),
     completedGames: [],
     interrupted: false,
@@ -860,7 +901,8 @@ export async function createPersonalizedTrainingPlan(
         estimatedTime: game.estimatedTime[timeMode],
         targetDimensions: getGameDimensions(game),
         isCompleted: false,
-        order: index + 1
+        order: index + 1,
+        manualOverride: false
       }
     })
   )
@@ -874,7 +916,8 @@ export async function createPersonalizedTrainingPlan(
       gameId: g.gameId,
       difficulty: g.difficulty,
       subDifficulty: g.subDifficulty,
-      estimatedTime: g.estimatedTime
+      estimatedTime: g.estimatedTime,
+      manualOverride: g.manualOverride ?? false
     })),
     completedGames: [],
     interrupted: false,

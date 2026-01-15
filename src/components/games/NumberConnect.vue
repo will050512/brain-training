@@ -8,7 +8,10 @@ import { useGameState } from '@/games/core/useGameState'
 import { useGameTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
+import { useResponsive } from '@/composables/useResponsive'
+import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
 import type { GameStatusUpdate } from '@/types'
+import type { SubDifficulty } from '@/types/game'
 import {
   createGameState,
   tryConnect,
@@ -26,12 +29,16 @@ import {
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
 
+import nodeImg from '@/assets/images/number-connect/node.svg'
+
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
+  subDifficulty?: SubDifficulty
   autoStart?: boolean
 }>(), {
   difficulty: 'easy',
+  subDifficulty: 2,
   autoStart: false,
 })
 
@@ -48,9 +55,16 @@ const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
   (event, data) => emit('status-update', data),
   100
 )
+const { isSmallLandscape } = useResponsive()
 
 // ===== 遊戲配置 =====
-const config = computed<NumberConnectConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const baseConfig = computed<NumberConnectConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const config = computed<NumberConnectConfig>(() => {
+  return adjustSettingsForSubDifficulty(
+    baseConfig.value,
+    props.subDifficulty ?? 2
+  )
+})
 
 // ===== 遊戲狀態 =====
 const {
@@ -86,7 +100,7 @@ const {
   reset: resetTimer 
 } = useGameTimer({
   mode: 'countdown',
-  initialTime: 60,
+  initialTime: config.value.timeLimit,
   onTimeUp: handleTimeout,
 })
 
@@ -310,7 +324,7 @@ onUnmounted(() => {
 })
 
 // 監聽難度變化
-watch(() => props.difficulty, () => {
+watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     stopTimer()
     resetGame()
@@ -319,7 +333,7 @@ watch(() => props.difficulty, () => {
 </script>
 
 <template>
-  <div class="number-connect-game w-full max-w-2xl mx-auto p-4">
+  <div class="number-connect-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -412,4 +426,15 @@ watch(() => props.difficulty, () => {
 .node-btn:active {
   transform: translate(-50%, -50%) scale(0.95) !important;
 }
+
+.node-btn {
+  background-image: url(v-bind(nodeImg));
+  background-size: cover;
+  background-position: center;
+}
+
+.is-landscape .game-area {
+  max-width: 420px;
+}
 </style>
+

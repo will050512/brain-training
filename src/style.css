@@ -2212,6 +2212,33 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   }
 }
 
+/* Game root compact layout for small landscape devices */
+@media (orientation: landscape) and (max-height: 500px) {
+  .game-root {
+    padding: 0.5rem;
+  }
+
+  .game-root .game-info,
+  .game-root .round-info,
+  .game-root .question-info {
+    margin-top: 0.25rem;
+  }
+
+  .game-root .preview-hint,
+  .game-root .toolbar,
+  .game-root .controls {
+    margin-top: 0.5rem;
+  }
+
+  .game-root .game-area,
+  .game-root .comparison-area,
+  .game-root .sequence-area,
+  .game-root .options-area,
+  .game-root .display-area {
+    margin-top: 0.5rem;
+  }
+}
+
 /* 平板橫屏 */
 @media (orientation: landscape) and (min-height: 501px) and (max-width: 1024px) {
   .game-play-area {

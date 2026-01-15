@@ -10,6 +10,7 @@
 import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGame } from '@/games/core/useGame'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
+import { useResponsive } from '@/composables/useResponsive'
 import type { DifficultyConfig } from '@/games/core/gameTypes'
 import type { GameStatusUpdate } from '@/types'
 import {
@@ -23,19 +24,33 @@ import {
   type CardMatchConfig
 } from '@/games/logic/cardMatch'
 import type { GameDifficulty } from '@/stores/settingsStore'
+import type { SubDifficulty } from '@/types/game'
 
 // UI 元件
 import GameReadyScreen from './ui/GameReadyScreen.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 import CardMatchResult from './ui/CardMatchResult.vue'
 
+import cardBackImg from '@/assets/images/card-match/card-back.svg'
+import cardFrameImg from '@/assets/images/card-match/card-frame.svg'
+import iconApple from '@/assets/images/card-match/icons/apple.svg'
+import iconBanana from '@/assets/images/card-match/icons/banana.svg'
+import iconCat from '@/assets/images/card-match/icons/cat.svg'
+import iconDog from '@/assets/images/card-match/icons/dog.svg'
+import iconFlower from '@/assets/images/card-match/icons/flower.svg'
+import iconMoon from '@/assets/images/card-match/icons/moon.svg'
+import iconSun from '@/assets/images/card-match/icons/sun.svg'
+import iconTree from '@/assets/images/card-match/icons/tree.svg'
+
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
   difficulty?: GameDifficulty
+  subDifficulty?: SubDifficulty
   settings?: Record<string, unknown>
   autoStart?: boolean
 }>(), {
   difficulty: 'easy',
+  subDifficulty: 2,
   autoStart: false,
 })
 
@@ -54,6 +69,22 @@ const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
   (event, data) => emit('status-update', data),
   100
 )
+const { isSmallLandscape } = useResponsive()
+
+const iconImages = [
+  iconApple,
+  iconBanana,
+  iconCat,
+  iconDog,
+  iconFlower,
+  iconMoon,
+  iconSun,
+  iconTree,
+]
+
+function getCardIcon(pairId: number): string | null {
+  return iconImages[pairId] ?? null
+}
 
 // ===== 難度配置轉換 =====
 interface CardMatchDifficultyConfig extends DifficultyConfig {
@@ -167,7 +198,7 @@ function handleStart() {
   isChecking.value = false
   
   // 載入難度並設置
-  game.setDifficulty(props.difficulty)
+  game.setDifficulty(props.difficulty, props.subDifficulty ?? 2)
   
   // 生成卡片
   const currentConfig = CARD_MATCH_CONFIGS[props.difficulty]
@@ -205,7 +236,7 @@ function handleCardClick(index: number) {
   if (flippedIndices.value.length >= 2) return
   
   // 翻開卡片（UI 更新 + 音效）
-  game.audio.playFlip()
+  game.audio.playCustomSound('card-flip')
   cards.value[index] = { ...card, isFlipped: true }
   flippedIndices.value.push(index)
   
@@ -232,7 +263,7 @@ function handleCardClick(index: number) {
 function handleMatchSuccess(idx1: number, idx2: number, card1: Card, card2: Card) {
   setTimeout(() => {
     // 播放配對成功音效
-    game.audio.playMatch()
+    game.audio.playCustomSound('card-match')
     
     // 更新卡片狀態
     cards.value[idx1] = { ...card1, isMatched: true }
@@ -310,15 +341,16 @@ function handleTimeUp() {
 onMounted(() => {
   // 載入儲存的難度設定
   game.loadDifficulty()
+  game.audio.preloadSounds(['card-flip', 'card-match'])
 })
 
 // 監聽 props.difficulty 變化
-watch(() => props.difficulty, (newDifficulty) => {
+watch(() => [props.difficulty, props.subDifficulty] as const, ([newDifficulty, newSubDifficulty]) => {
   if (phase.value !== 'ready') {
     game.timer.stop()
     game.state.resetGame()
   }
-  game.setDifficulty(newDifficulty)
+  game.setDifficulty(newDifficulty, newSubDifficulty ?? 2)
 })
 
 // 監聽計時器時間到
@@ -350,7 +382,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="card-match-game w-full max-w-2xl mx-auto p-4">
+  <div class="card-match-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -402,12 +434,27 @@ onUnmounted(() => {
           :disabled="card.isFlipped || card.isMatched || isChecking || isPreviewing"
           @click="handleCardClick(index)"
         >
-          <span
-            class="text-2xl sm:text-3xl md:text-4xl transition-opacity duration-200"
-            :class="{ 'opacity-0': !card.isFlipped && !card.isMatched, 'opacity-100': card.isFlipped || card.isMatched }"
+          <img
+            v-if="!card.isFlipped && !card.isMatched"
+            class="card-back-img"
+            :src="cardBackImg"
+            alt=""
+            aria-hidden="true"
+          />
+          <div
+            v-else
+            class="card-front-content"
+            :class="{ 'opacity-100': card.isFlipped || card.isMatched }"
           >
-            {{ card.emoji }}
-          </span>
+            <img
+              v-if="getCardIcon(card.pairId)"
+              class="card-icon-img"
+              :src="getCardIcon(card.pairId)!"
+              alt=""
+              aria-hidden="true"
+            />
+            <span v-else class="text-2xl sm:text-3xl md:text-4xl">{{ card.emoji }}</span>
+          </div>
         </button>
       </div>
 
@@ -449,6 +496,9 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   min-height: 60px;
+  background-image: url(v-bind(cardFrameImg));
+  background-size: cover;
+  background-position: center;
 }
 
 .rotate-y-180 {
@@ -457,5 +507,30 @@ onUnmounted(() => {
 
 .card-cell span {
   transform: rotateY(180deg);
+}
+
+.card-back-img {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+}
+
+.card-front-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80%;
+  height: 80%;
+  transform: rotateY(180deg);
+}
+
+.card-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.is-landscape .card-grid {
+  gap: 0.35rem;
 }
 </style>

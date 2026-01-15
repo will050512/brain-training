@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { useGameState, type UseGameStateOptions } from './useGameState'
 import { useGameTimer, type UseGameTimerOptions } from './useGameTimer'
 import { useGameAudio, type UseGameAudioOptions } from './useGameAudio'
+import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
 import type { 
   GamePhase, 
   GameResult, 
@@ -121,21 +122,13 @@ export function useGame<T extends DifficultyConfig = DifficultyConfig>(
   const difficulty = ref<GameDifficulty>('easy')
   const subDifficulty = ref<GameSubDifficulty>(2)
 
-  /** 當前難度配置 */
+  /** 當前難度配置（含子難度微調） */
   const currentConfig = computed<T>(() => {
-    return difficultyConfigs[difficulty.value] as T
-  })
-
-  /** 根據子難度調整配置（可選的微調） */
-  const adjustedConfig = computed(() => {
-    const base = currentConfig.value
-    // 子難度調整：1=簡單(-10%), 2=標準, 3=困難(+10%)
-    const multiplier = 1 + (subDifficulty.value - 2) * 0.1
-    return {
-      ...base,
-      timeLimit: Math.round(base.timeLimit / multiplier), // 時間反向調整
-      totalRounds: Math.round(base.totalRounds * multiplier),
-    }
+    const base = difficultyConfigs[difficulty.value] as T
+    return adjustSettingsForSubDifficulty(
+      base,
+      subDifficulty.value
+    )
   })
 
   /** 設置難度 */
@@ -350,3 +343,4 @@ export function useGame<T extends DifficultyConfig = DifficultyConfig>(
     hideFeedback,
   }
 }
+

@@ -8,7 +8,10 @@ import { useGameState } from '@/games/core/useGameState'
 import { useRoundTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
+import { useResponsive } from '@/composables/useResponsive'
+import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
 import type { GameStatusUpdate } from '@/types'
+import type { SubDifficulty } from '@/types/game'
 import {
   generateRound,
   processClick,
@@ -27,9 +30,11 @@ import GameFeedback from './ui/GameFeedback.vue'
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
+  subDifficulty?: SubDifficulty
   autoStart?: boolean
 }>(), {
   difficulty: 'easy',
+  subDifficulty: 2,
   autoStart: false,
 })
 
@@ -46,9 +51,16 @@ const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
   (event, data) => emit('status-update', data),
   100
 )
+const { isSmallLandscape } = useResponsive()
 
 // ===== 遊戲配置 =====
-const config = computed<SpotDifferenceConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const baseConfig = computed<SpotDifferenceConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const config = computed<SpotDifferenceConfig>(() => {
+  return adjustSettingsForSubDifficulty(
+    baseConfig.value,
+    props.subDifficulty ?? 2
+  )
+})
 
 // ===== 遊戲狀態 =====
 const {
@@ -261,7 +273,7 @@ onUnmounted(() => {
 })
 
 // 監聽難度變化
-watch(() => props.difficulty, () => {
+watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     stopRound()
     resetGame()
@@ -270,7 +282,7 @@ watch(() => props.difficulty, () => {
 </script>
 
 <template>
-  <div class="spot-difference-game w-full max-w-4xl mx-auto p-4">
+  <div class="spot-difference-game game-root w-full max-w-4xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -386,3 +398,4 @@ watch(() => props.difficulty, () => {
   cursor: not-allowed;
 }
 </style>
+

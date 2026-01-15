@@ -8,7 +8,10 @@ import { useGameState } from '@/games/core/useGameState'
 import { useGameTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
+import { useResponsive } from '@/composables/useResponsive'
+import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
 import type { GameStatusUpdate } from '@/types'
+import type { SubDifficulty } from '@/types/game'
 import {
   generateAllQuestions,
   validateAnswer,
@@ -27,9 +30,11 @@ import GameOptionGrid from './ui/GameOptionGrid.vue'
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
+  subDifficulty?: SubDifficulty
   autoStart?: boolean
 }>(), {
   difficulty: 'easy',
+  subDifficulty: 2,
   autoStart: false,
 })
 
@@ -46,9 +51,16 @@ const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
   (event, data) => emit('status-update', data),
   100
 )
+const { isSmallLandscape } = useResponsive()
 
 // ===== 遊戲配置 =====
-const config = computed<MathCalcConfig>(() => MATH_CALC_CONFIGS[props.difficulty])
+const baseConfig = computed<MathCalcConfig>(() => MATH_CALC_CONFIGS[props.difficulty])
+const config = computed<MathCalcConfig>(() => {
+  return adjustSettingsForSubDifficulty(
+    baseConfig.value,
+    props.subDifficulty ?? 2
+  )
+})
 
 // ===== 遊戲狀態 =====
 const {
@@ -102,7 +114,13 @@ const {
 })
 
 // ===== 音效 =====
-const { playCorrect, playWrong, playEnd, preloadDefaultSounds } = useGameAudio()
+const { playCorrect, playWrong, playEnd, playCustomSound, preloadDefaultSounds, preloadSounds } = useGameAudio({
+  gameFolder: 'math-calc',
+  customSounds: [
+    { id: 'number-pop', name: 'Number Pop', frequency: 660, duration: 120 },
+    { id: 'calculate', name: 'Calculate', frequency: 520, duration: 180 },
+  ],
+})
 
 // ===== 遊戲資料 =====
 const questions = ref<MathQuestion[]>([])
@@ -148,12 +166,14 @@ function handleStart() {
   // 開始遊戲
   startGame()
   startTimer()
+  playCustomSound('number-pop')
 }
 
 function handleSelectAnswer(answer: number | string) {
   if (!isPlaying.value || isAnswering.value || !currentQuestion.value) return
   
   isAnswering.value = true
+  playCustomSound('calculate')
   const answerNum = typeof answer === 'string' ? parseInt(answer, 10) : answer
   const reactionTime = getCurrentReactionTime()
   const isCorrect = validateAnswer(currentQuestion.value, answerNum)
@@ -218,6 +238,7 @@ function handleGameEnd() {
 // ===== 生命週期 =====
 onMounted(() => {
   preloadDefaultSounds()
+  preloadSounds(['number-pop', 'calculate'])
 })
 
 // 監聽狀態變化，節流 emit 給父層
@@ -244,15 +265,21 @@ onUnmounted(() => {
 })
 
 // 監聽難度變化
-watch(() => props.difficulty, () => {
+watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     resetGame()
+  }
+})
+
+watch(currentQuestionIndex, () => {
+  if (isPlaying.value) {
+    playCustomSound('number-pop')
   }
 })
 </script>
 
 <template>
-  <div class="math-calc-game w-full max-w-2xl mx-auto p-4">
+  <div class="math-calc-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -316,3 +343,4 @@ watch(() => props.difficulty, () => {
   75% { transform: translateX(10px); }
 }
 </style>
+

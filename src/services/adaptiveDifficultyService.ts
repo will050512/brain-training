@@ -671,15 +671,19 @@ export async function getDifficultyHistorySummary(
 /**
  * 根據子難度調整遊戲設定
  */
-export function adjustSettingsForSubDifficulty(
-  baseSettings: Record<string, number | string | boolean>,
+type AdjustableSettings = Record<string, number | string | boolean>
+
+export function adjustSettingsForSubDifficulty<T extends object>(
+  baseSettings: T,
   subDifficulty: SubDifficulty,
   modifiers?: {
     1: Record<string, number>
     2: Record<string, number>
     3: Record<string, number>
   }
-): Record<string, number | string | boolean> {
+): T {
+  const adjusted: AdjustableSettings = { ...(baseSettings as AdjustableSettings) }
+
   if (!modifiers) {
     // 使用預設調整係數
     const defaultModifiers: Record<SubDifficulty, number> = {
@@ -689,7 +693,6 @@ export function adjustSettingsForSubDifficulty(
     }
     
     const modifier = defaultModifiers[subDifficulty]
-    const adjusted = { ...baseSettings }
     
     // 調整數值型設定
     for (const key of Object.keys(adjusted)) {
@@ -704,11 +707,10 @@ export function adjustSettingsForSubDifficulty(
       }
     }
     
-    return adjusted
+    return adjusted as T
   }
   
   // 使用自定義調整係數
-  const adjusted = { ...baseSettings }
   const mods = modifiers[subDifficulty]
   
   for (const [key, multiplier] of Object.entries(mods)) {
@@ -717,5 +719,21 @@ export function adjustSettingsForSubDifficulty(
     }
   }
   
-  return adjusted
+  return adjusted as T
+}
+
+/**
+ * 依方向調整難度（每日訓練用）
+ */
+export function shiftDifficultyStep(
+  current: Difficulty,
+  currentSub: SubDifficulty,
+  direction: 1 | -1
+): { difficulty: Difficulty; subDifficulty: SubDifficulty } {
+  if (direction === 1) {
+    const higher = getNextHigherDifficulty(current, currentSub)
+    return higher ?? { difficulty: current, subDifficulty: currentSub }
+  }
+  const lower = getNextLowerDifficulty(current, currentSub)
+  return lower ?? { difficulty: current, subDifficulty: currentSub }
 }

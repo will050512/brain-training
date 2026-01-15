@@ -17,6 +17,7 @@ export interface DailyTrainingSession {
     difficulty: 'easy' | 'medium' | 'hard'
     subDifficulty: 1 | 2 | 3
     estimatedTime: number
+    manualOverride?: boolean
   }>
   completedGames: string[] // gameId list
   interrupted: boolean

@@ -8,7 +8,10 @@ import { useGameState } from '@/games/core/useGameState'
 import { useRoundTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
+import { useResponsive } from '@/composables/useResponsive'
+import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
 import type { GameStatusUpdate } from '@/types'
+import type { SubDifficulty } from '@/types/game'
 import {
   generateQuestion,
   checkAnswer,
@@ -26,12 +29,24 @@ import GameReadyScreen from './ui/GameReadyScreen.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 import GameOptionGrid from './ui/GameOptionGrid.vue'
 
+import circleRed from '@/assets/images/pattern-reasoning/shapes/circle-red.svg'
+import circleGreen from '@/assets/images/pattern-reasoning/shapes/circle-green.svg'
+import circleBlue from '@/assets/images/pattern-reasoning/shapes/circle-blue.svg'
+import squareRed from '@/assets/images/pattern-reasoning/shapes/square-red.svg'
+import squareGreen from '@/assets/images/pattern-reasoning/shapes/square-green.svg'
+import squareBlue from '@/assets/images/pattern-reasoning/shapes/square-blue.svg'
+import triangleRed from '@/assets/images/pattern-reasoning/shapes/triangle-red.svg'
+import triangleGreen from '@/assets/images/pattern-reasoning/shapes/triangle-green.svg'
+import triangleBlue from '@/assets/images/pattern-reasoning/shapes/triangle-blue.svg'
+
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
+  subDifficulty?: SubDifficulty
   autoStart?: boolean
 }>(), {
   difficulty: 'easy',
+  subDifficulty: 2,
   autoStart: false,
 })
 
@@ -48,9 +63,46 @@ const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
   (event, data) => emit('status-update', data),
   100
 )
+const { isSmallLandscape } = useResponsive()
+
+const SHAPE_ASSETS: Record<string, Record<string, string>> = {
+  circle: { red: circleRed, green: circleGreen, blue: circleBlue },
+  square: { red: squareRed, green: squareGreen, blue: squareBlue },
+  triangle: { red: triangleRed, green: triangleGreen, blue: triangleBlue },
+}
+
+const COLOR_KEY_MAP: Record<string, 'red' | 'green' | 'blue'> = {
+  '#E53E3E': 'red',
+  '#38A169': 'green',
+  '#3182CE': 'blue',
+}
+
+function normalizeShape(shape: string): string | null {
+  if (shape === '●' || shape === '○') return 'circle'
+  if (shape === '■' || shape === '□') return 'square'
+  if (shape === '▲' || shape === '△') return 'triangle'
+  return null
+}
+
+function normalizeColorKey(color: string): 'red' | 'green' | 'blue' {
+  return COLOR_KEY_MAP[color] ?? 'blue'
+}
+
+function getShapeAsset(shape: string, color: string): string | null {
+  const key = normalizeShape(shape)
+  if (!key) return null
+  const colorKey = normalizeColorKey(color)
+  return SHAPE_ASSETS[key]?.[colorKey] ?? null
+}
 
 // ===== 遊戲配置 =====
-const config = computed<PatternReasoningConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const baseConfig = computed<PatternReasoningConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
+const config = computed<PatternReasoningConfig>(() => {
+  return adjustSettingsForSubDifficulty(
+    baseConfig.value,
+    props.subDifficulty ?? 2
+  )
+})
 
 // ===== 遊戲狀態 =====
 const {
@@ -119,6 +171,7 @@ const options = computed(() => {
     value: idx,
     disabled: isAnswerLocked.value,
     variant: getOptionVariant(idx) as 'default' | 'correct' | 'wrong' | 'selected',
+    asset: getShapeAsset(opt.shape, opt.color),
     style: {
       color: opt.color,
       fontSize: opt.size === 'large' ? '2rem' : opt.size === 'medium' ? '1.5rem' : '1rem',
@@ -299,7 +352,7 @@ onUnmounted(() => {
 })
 
 // 監聽難度變化
-watch(() => props.difficulty, () => {
+watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     stopRound()
     resetGame()
@@ -308,7 +361,7 @@ watch(() => props.difficulty, () => {
 </script>
 
 <template>
-  <div class="pattern-reasoning-game w-full max-w-2xl mx-auto p-4">
+  <div class="pattern-reasoning-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -352,7 +405,14 @@ watch(() => props.difficulty, () => {
               transform: `rotate(${item.rotation}deg)`,
             }"
           >
-            {{ item.shape }}
+            <img
+              v-if="getShapeAsset(item.shape, item.color)"
+              class="shape-img"
+              :src="getShapeAsset(item.shape, item.color)!"
+              alt=""
+              aria-hidden="true"
+            />
+            <span v-else>{{ item.shape }}</span>
           </div>
 
           <!-- 問號位置 -->
@@ -387,7 +447,15 @@ watch(() => props.difficulty, () => {
             :disabled="isAnswerLocked"
             @click="handleOptionSelect({ id: opt.id, value: opt.value })"
           >
-            <span :style="opt.style">{{ opt.label }}</span>
+            <img
+              v-if="opt.asset"
+              class="shape-img"
+              :style="opt.style"
+              :src="opt.asset"
+              alt=""
+              aria-hidden="true"
+            />
+            <span v-else :style="opt.style">{{ opt.label }}</span>
           </button>
         </div>
       </div>
@@ -413,7 +481,18 @@ watch(() => props.difficulty, () => {
   transform: scale(1.05);
 }
 
+.shape-img {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
+}
+
 .option-btn:active:not(:disabled) {
   transform: scale(0.95);
 }
+
+.is-landscape .options-grid {
+  gap: 0.35rem;
+}
 </style>
+
