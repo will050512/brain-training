@@ -2,7 +2,7 @@
   <!-- Android/Chrome 安裝提示 -->
   <Transition name="slide-up">
     <div 
-      v-if="showPrompt && !isIOS" 
+      v-if="showPrompt && !isIOS && !isAppEntry" 
       class="pwa-install-banner"
     >
       <div class="pwa-install-banner-content">
@@ -25,7 +25,7 @@
 
   <!-- iOS Safari 安裝指引 -->
   <Transition name="slide-up">
-    <div v-if="showIOSGuide" class="ios-install-guide">
+    <div v-if="showIOSGuide && !isAppEntry" class="ios-install-guide">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-bold text-[var(--color-text)]">安裝到主畫面</h3>
         <button 
@@ -78,7 +78,7 @@
   <!-- 輕量提示橫幅（底部常駐，用於未安裝的手機用戶） -->
   <Transition name="fade">
     <div 
-      v-if="showMiniBanner && !showPrompt && !showIOSGuide" 
+      v-if="showMiniBanner && !showPrompt && !showIOSGuide && !isAppEntry" 
       class="fixed bottom-0 left-0 right-0 bg-[var(--color-surface)] border-t border-[var(--color-border)] py-2 px-4 flex items-center justify-between z-40"
       style="padding-bottom: max(0.5rem, env(safe-area-inset-bottom));"
     >
@@ -132,6 +132,19 @@ const isStandalone = computed(() => {
   return window.matchMedia('(display-mode: standalone)').matches ||
          (window.navigator as unknown as { standalone?: boolean }).standalone === true
 })
+
+function checkAppEntry(): boolean {
+  try {
+    const flag = sessionStorage.getItem('brain-training-app-entry') || localStorage.getItem('brain-training-app-entry')
+    if (flag === 'true') return true
+    const source = sessionStorage.getItem('brain-training-client-source') || localStorage.getItem('brain-training-client-source')
+    return !!source && source.startsWith('app-')
+  } catch {
+    return false
+  }
+}
+
+const isAppEntry = computed(() => checkAppEntry())
 
 // 處理 Android beforeinstallprompt 事件
 function handleBeforeInstallPrompt(e: Event) {
@@ -223,6 +236,7 @@ function checkIOSPrompt() {
 }
 
 onMounted(() => {
+  if (isAppEntry.value) return
   // 如果已經是 standalone 模式，不顯示任何提示
   if (isStandalone.value) return
   
@@ -243,6 +257,15 @@ onMounted(() => {
       }, 3000)
     }
   }
+
+  const entryGuard = window.setInterval(() => {
+    if (!checkAppEntry()) return
+    showPrompt.value = false
+    showIOSGuide.value = false
+    showMiniBanner.value = false
+    window.clearInterval(entryGuard)
+  }, 500)
+  window.setTimeout(() => window.clearInterval(entryGuard), 6000)
 })
 
 onUnmounted(() => {

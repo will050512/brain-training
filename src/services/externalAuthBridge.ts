@@ -31,6 +31,19 @@ function storeIdToken(profile: ExternalUserProfile): void {
   }
 }
 
+function storeAppEntry(profile: ExternalUserProfile): void {
+  try {
+    sessionStorage.setItem('brain-training-app-entry', 'true')
+    localStorage.setItem('brain-training-app-entry', 'true')
+    if (profile.clientSource) {
+      sessionStorage.setItem('brain-training-client-source', profile.clientSource)
+      localStorage.setItem('brain-training-client-source', profile.clientSource)
+    }
+  } catch {
+    // ignore
+  }
+}
+
 function parseProfileFromQuery(): ExternalUserProfile | null {
   // Optional: ?externalProfile=base64url(json)
   try {
@@ -66,6 +79,7 @@ function normalizeBirthday(birthday: string): string {
 async function applyExternalProfile(profile: ExternalUserProfile): Promise<void> {
   const userStore = useUserStore()
   storeIdToken(profile)
+  storeAppEntry(profile)
 
   const clientSource = normalizeClientSource(profile)
   await userStore.loginWithExternalProfile({
@@ -87,9 +101,11 @@ async function applyExternalProfile(profile: ExternalUserProfile): Promise<void>
 function isTrustedMessage(event: MessageEvent): boolean {
   // In WebView, origin may be 'null'. We accept:
   // - same-origin (web)
+  // - GitHub Pages host (production)
   // - null origin (native WebView)
   // Reject others by default.
   if (event.origin === window.location.origin) return true
+  if (event.origin === 'https://will050512.github.io') return true
   if (event.origin === 'null') return true
   return false
 }

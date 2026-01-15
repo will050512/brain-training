@@ -21,6 +21,10 @@ app.use(router)
 // 應用程式初始化
 async function bootstrap() {
   try {
+    // 啟動外部登入橋接（供 App / Firebase WebView 傳遞用戶資料）
+    // 先註冊 message 監聽，避免 WebView 提早送出而遺失
+    initExternalAuthBridge()
+
     // 初始化資料庫
     await initDatabase()
     console.log('Database initialized')
@@ -32,9 +36,6 @@ async function bootstrap() {
     // 註冊所有遊戲
     registerAllGames()
     console.log('Games registered')
-
-    // 啟動外部登入橋接（供 App / Firebase WebView 傳遞用戶資料）
-    initExternalAuthBridge()
     
     // 掛載應用程式
     app.mount('#app')
