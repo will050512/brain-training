@@ -6,7 +6,10 @@
       class="pwa-install-banner"
     >
       <div class="pwa-install-banner-content">
-        <div class="pwa-install-banner-title">🧠 安裝健腦訓練</div>
+        <div class="pwa-install-banner-title flex items-center gap-2">
+          <img src="/logo-64.png" alt="愛護腦" class="w-5 h-5 rounded-md" />
+          安裝愛護腦
+        </div>
         <div class="pwa-install-banner-text">安裝到主畫面，離線也能使用！</div>
       </div>
       <div class="pwa-install-banner-actions">
@@ -24,13 +27,13 @@
   <Transition name="slide-up">
     <div v-if="showIOSGuide" class="ios-install-guide">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-bold text-[var(--color-text)]">📱 安裝到主畫面</h3>
+        <h3 class="text-lg font-bold text-[var(--color-text)]">安裝到主畫面</h3>
         <button 
           @click="dismissIOSGuide" 
           class="text-[var(--color-text-muted)] hover:text-[var(--color-text)] p-2"
           aria-label="關閉"
         >
-          ✕
+          ×
         </button>
       </div>
       
@@ -95,7 +98,7 @@
           class="text-[var(--color-text-muted)] p-1"
           aria-label="關閉"
         >
-          ✕
+          ×
         </button>
       </div>
     </div>

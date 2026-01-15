@@ -98,7 +98,7 @@ const headerClass = computed(() => {
           <div class="header-title-wrapper">
             <img 
               src="@/assets/logo.svg" 
-              alt="健腦訓練" 
+              alt="愛護腦" 
               class="header-logo"
             />
             <h1 v-if="title" class="header-title">{{ title }}</h1>

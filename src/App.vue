@@ -14,6 +14,7 @@ import DesktopLayout from '@/components/layout/DesktopLayout.vue'
 import MobileBottomNav from '@/components/ui/MobileBottomNav.vue'
 import InstallPrompt from '@/components/ui/InstallPrompt.vue'
 import ConsentModal from '@/components/ui/ConsentModal.vue'
+import EducationPromptModal from '@/components/ui/EducationPromptModal.vue'
 import ToastNotification from '@/components/ui/ToastNotification.vue'
 import PWAUpdateBanner from '@/components/ui/PWAUpdateBanner.vue'
 import { getDataConsent, checkConsentVersionNeedsUpdate } from '@/services/db'
@@ -33,6 +34,18 @@ const { initTheme } = useTheme()
 // 同意對話框狀態
 const showConsentModal = ref(false)
 const consentModalRef = ref<InstanceType<typeof ConsentModal> | null>(null)
+const showEducationModal = ref(false)
+
+const needsEducationYears = computed(() => {
+  const user = userStore.currentUser
+  if (!user) return false
+  if (user.authProvider !== 'firebase') return false
+  return !user.educationYears || user.educationYears <= 0
+})
+
+watch(needsEducationYears, (needs) => {
+  showEducationModal.value = needs
+}, { immediate: true })
 
 // ===== 佈局系統 =====
 
@@ -153,6 +166,12 @@ function handleConsentConfirmed(consent: DataConsentOptions): void {
 function handleConsentSkipped(): void {
   console.log('Consent skipped')
   showConsentModal.value = false
+}
+
+async function handleEducationSave(years: number): Promise<void> {
+  await userStore.updateEducationYears(years)
+  await syncUserProfileToSheet(userStore.currentUser)
+  showEducationModal.value = false
 }
 
 // 監聽使用者登入狀態變化
@@ -284,6 +303,13 @@ onUnmounted(() => {
     
     <!-- PWA 更新提示 -->
     <PWAUpdateBanner />
+
+    <!-- 學歷補充對話框（外部登入） -->
+    <EducationPromptModal
+      v-model="showEducationModal"
+      :initial-years="userStore.currentUser?.educationYears ?? null"
+      @save="handleEducationSave"
+    />
     
     <!-- 資料使用同意對話框 -->
     <ConsentModal

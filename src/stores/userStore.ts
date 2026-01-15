@@ -163,6 +163,19 @@ export const useUserStore = defineStore('user', () => {
   }
 
   /**
+   * 更新學歷年數（用於外部登入補齊資料）
+   */
+  async function updateEducationYears(educationYears: number): Promise<void> {
+    if (!currentUser.value) return
+    const normalized = normalizeUser(currentUser.value)
+    normalized.educationYears = educationYears
+    normalized.updatedAt = new Date()
+    normalized.profileVersion = (normalized.profileVersion ?? 1) + 1
+    await saveUser(normalized as User)
+    currentUser.value = normalized
+  }
+
+  /**
    * 更新使用者統計
    */
   async function updateStats(stats: Partial<UserStats>): Promise<void> {
@@ -405,6 +418,7 @@ export const useUserStore = defineStore('user', () => {
     quickLogin,
     restoreSession,
     updateSettings,
+    updateEducationYears,
     updateStats,
     markWelcomeSeen,
     toggleSound,
