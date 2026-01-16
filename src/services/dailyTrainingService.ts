@@ -19,7 +19,7 @@ import {
 } from '@/services/db'
 import { analyzeWeaknesses, suggestDifficulty } from '@/services/recommendationEngine'
 import { getCurrentGameDifficulty } from '@/services/db'
-import type { DailyTrainingDuration } from '@/stores/settingsStore'
+import type { DailyTrainingDuration, WeeklyTrainingGoal } from '@/stores/settingsStore'
 import { syncDailyTrainingSessionToSheet } from '@/services/userDataSheetSyncService'
 
 // 訓練狀態
@@ -102,6 +102,16 @@ async function saveDailyTrainingSessionAndSync(session: DailyTrainingSession): P
   await syncDailyTrainingSessionToSheet(session)
 }
 
+function resolveTargetGameCount(
+  config: { min: number; max: number },
+  weeklyGoal?: WeeklyTrainingGoal
+): number {
+  if (!weeklyGoal) return config.max
+  const ratio = (7 - weeklyGoal) / 6
+  const target = config.min + ratio * (config.max - config.min)
+  return Math.max(config.min, Math.min(config.max, Math.round(target)))
+}
+
 /**
  * 取得遊戲的主要認知維度
  */
@@ -147,9 +157,11 @@ export function selectGamesForTraining(
   options: {
     untestedDimensions?: CognitiveDimension[]
     prioritizeUntested?: boolean
+    weeklyGoal?: WeeklyTrainingGoal
   } = {}
 ): { games: GameDefinition[]; useMiniMode: boolean } {
   const config = DURATION_GAME_CONFIG[duration]
+  const targetCount = resolveTargetGameCount(config, options.weeklyGoal)
   const allGames = gameRegistry.getAll()
   const weaknesses = analyzeWeaknesses(cognitiveScores)
 
@@ -267,7 +279,7 @@ export function selectGamesForTraining(
   
   // 第二輪：填充到目標數量
   for (const { game } of scoredGames) {
-    if (selectedGames.length >= config.max) break
+    if (selectedGames.length >= targetCount) break
     if (selectedGames.includes(game)) continue
     
     selectedGames.push(game)
@@ -298,6 +310,7 @@ export async function createDailyTrainingPlan(
   options: {
     untestedDimensions?: CognitiveDimension[]
     prioritizeUntested?: boolean
+    weeklyGoal?: WeeklyTrainingGoal
   } = {}
 ): Promise<DailyTrainingPlan> {
   const today = getLocalDateKey()
@@ -530,6 +543,7 @@ export async function regenerateDailyPlan(
   options: {
     untestedDimensions?: CognitiveDimension[]
     prioritizeUntested?: boolean
+    weeklyGoal?: WeeklyTrainingGoal
   } = {}
 ): Promise<DailyTrainingPlan> {
   // 刪除今日現有計畫
@@ -553,6 +567,7 @@ export async function restartTraining(
   options: {
     untestedDimensions?: CognitiveDimension[]
     prioritizeUntested?: boolean
+    weeklyGoal?: WeeklyTrainingGoal
   } = {}
 ): Promise<DailyTrainingPlan> {
   const today = getLocalDateKey()
@@ -865,6 +880,7 @@ export async function createPersonalizedTrainingPlan(
   options: {
     untestedDimensions?: CognitiveDimension[]
     prioritizeUntested?: boolean
+    weeklyGoal?: WeeklyTrainingGoal
   } = {}
 ): Promise<DailyTrainingPlan> {
   const today = getLocalDateKey()

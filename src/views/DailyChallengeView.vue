@@ -147,6 +147,7 @@ async function loadTrainingPlan() {
         {
           untestedDimensions: untestedDimensions.value,
           prioritizeUntested: shouldPrioritizeUntested.value,
+          weeklyGoal: settingsStore.weeklyTrainingGoal,
         }
       )
     }
@@ -193,6 +194,7 @@ async function regeneratePlan() {
       {
         untestedDimensions: untestedDimensions.value,
         prioritizeUntested: shouldPrioritizeUntested.value,
+        weeklyGoal: settingsStore.weeklyTrainingGoal,
       }
     )
     
@@ -289,6 +291,19 @@ watch(() => route.path, (newPath) => {
     loadTrainingPlan()
   }
 })
+
+watch(
+  () => [settingsStore.dailyTrainingDuration, settingsStore.weeklyTrainingGoal],
+  () => {
+    if (isLoading.value) return
+    if (!trainingPlan.value) {
+      loadTrainingPlan()
+      return
+    }
+    if (trainingPlan.value.status !== 'not-started') return
+    regeneratePlan()
+  }
+)
 </script>
 
 <template>
