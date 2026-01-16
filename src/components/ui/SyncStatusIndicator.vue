@@ -54,7 +54,7 @@ const statusConfig = computed(() => {
       }
     default:
       return { 
-        icon: '?', 
+        icon: '❔',
         color: 'text-gray-400', 
         bg: 'bg-gray-400',
         text: '未知狀態', 

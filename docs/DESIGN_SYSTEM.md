@@ -16,9 +16,11 @@ All tokens live under `:root` and are consumed via CSS variables.
 Start with the base UI components under `src/components/ui` before creating new ones.
 
 - `BaseButton.vue` for all primary CTAs and controls.
+- The `.btn` utility classes in `src/style.css` are also used across views; keep them in sync with `BaseButton.vue` styling.
 - `BaseCard.vue` for containers and stat blocks.
 - `BaseInput.vue` for form fields with labels, hints, and errors.
 - `LoadingSpinner.vue`, `ToastNotification.vue` for feedback.
+- `SyncStatusIndicator.vue` for sync status (header/sidebar/icon).
 
 ## Layout & Spacing
 

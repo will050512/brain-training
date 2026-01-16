@@ -3,9 +3,15 @@
   目的：提供開發者可直接執行的步驟、清楚的專案結構、測試與 CI 指南，以及新增遊戲/元件的實作流程。
 -->
 
-# 🛠️ 開發者指南（Developer Guide）
+# 愛護腦 開發者指南（Developer Guide）
 
 簡短說明：本文件包含開發環境設定、常用指令、專案結構、測試、加入新遊戲與常見維護事項，方便新進與既有開發者快速上手。
+
+---
+
+## 文件索引
+
+完整文件索引請見 `docs/README.md`。
 
 ---
 
@@ -33,7 +39,10 @@
 步驟
 
 ```bash
-# 安裝依賴
+# 安裝依賴（一般開發）
+npm install
+
+# 乾淨重裝（CI 或需要重置 node_modules）
 npm ci
 
 # 開發（熱重載）
@@ -219,6 +228,29 @@ A:
 
 1. 檢查 `vite-plugin-pwa` 配置與 `registerSW.js`
 2. 在瀏覽器 DevTools → Application → Service Workers 檢查狀態
+
+Q: npm install 出現 Storybook 與 Vite 的 peer dependency 衝突？
+
+A:
+
+1. 若需要快速安裝開發依賴，可先使用 `npm install --legacy-peer-deps` 或 `npm install --force`。
+2. 若要從根本解決，請對齊 Storybook/Vite 版本相容矩陣（例如降級 Vite 至 6.x，或升級 Storybook 至支援 Vite 7 的版本）。
+
+Q: Windows 上 `npm install` 出現 EPERM/ENOENT，無法刪除 node_modules？
+
+A:
+
+1. 確認沒有執行中的 Node 進程（Vite/Storybook/VS Code terminal），必要時先停止。
+2. 刪除 `node_modules` 後再重裝（Windows 建議用 `cmd /c rmdir /s /q node_modules`）。
+3. 若仍無法刪除，請重開機後再試，或改在 NTFS 磁碟上進行安裝。
+
+Q: `npm run build` 出現 `TS1128: Declaration or statement expected`？
+
+A:
+
+1. 通常是 `.vue` 檔案有多餘的 `{` / `}` 或殘留合併衝突標記。
+2. 先定位錯誤行號（例如 `src/views/HomeView.vue:439`），檢查是否多了一個結尾大括號。
+3. 修正後重新執行 `npm run build`。
 
 ---
 

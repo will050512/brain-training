@@ -4,7 +4,8 @@
 
 ## 目前狀態
 
-專案內已加入**占位用**的 SVG 與音效（短音色），用於綁定與測試流程。正式素材交付後請直接覆蓋同名檔案即可。
+專案內已加入**占位用**的 SVG 與音效（短音色），用於綁定與測試流程。正式素材交付後請直接覆蓋同名檔案即可。  
+目前多數遊戲已接入圖片與音效，但仍有部分素材「已存在但未使用」或「需要擴充覆蓋」。
 
 ## 通用交付規格
 
@@ -105,7 +106,7 @@
 **路徑：** `src/assets/images/rock-paper-scissors/`
 
 * 可選 UI 素材：
-* `vs.svg` (若之後加入對決畫面時使用，尚未提供)
+* `vs.svg` (若之後加入對決畫面時使用；檔案已存在但尚未導入 UI)
 
 
 
@@ -128,3 +129,12 @@
 * **pattern-reasoning:** circle/square/triangle (red/green/blue)
 * **rock-paper-scissors:** `rock.svg` (石頭), `paper.svg` (布), `scissors.svg` (剪刀)
 * **clock-drawing:** `clock-face.svg` (鐘面), `reference.svg` (參考圖)
+
+## 未導入或待確認
+
+以下素材已存在但尚未完整導入 UI，或目前僅部分使用：
+
+- **Card Match:** icons 目前 UI 只使用 8 個，hard 模式需要 12 個圖示（`src/components/games/CardMatch.vue`）。
+- **Balance Scale:** 砝碼圖片 4/5 已有檔案，但邏輯仍只使用 1-3（`src/games/logic/balanceScale.ts`、`src/components/games/BalanceScale.vue`）。
+- **Number Connect:** `background.svg` 已存在但尚未應用在 UI 背景（`src/components/games/NumberConnect.vue`）。
+- **Rock Paper Scissors:** `vs.svg` 尚未使用（若新增對決畫面可導入）。

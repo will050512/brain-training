@@ -37,10 +37,13 @@
 - 遊戲統一入口：`/games/:gameId`
   - 內含：統一的遊戲說明、難度調整、開始遊戲、結算（含推薦/下一步）
   - 相容舊連結：`/games/:gameId/preview` 會 redirect 到 `/games/:gameId`
+- 登入：`/login`
+- 新手引導：`/onboarding`
 - 每日挑戰：`/daily-challenge`
 - 能力評估：`/assessment`
 - 報告：`/report`、`/weekly-report`
 - 營養建議：`/nutrition`
+- 設定：`/settings`
 
 常用 query（由程式內部使用）：
 - `fromDaily=true`：表示從每日訓練進入
@@ -68,6 +71,16 @@ Storybook：
 ```bash
 npm run storybook
 ```
+
+## 文檔
+
+文件索引與整理：`docs/README.md`
+
+## 依賴安全與安裝提醒
+
+- 已升級 `html2pdf.js` 與 `vitest` 系列相依以消除 `npm audit` 中的已知漏洞。
+- 若 `npm install` 在 Windows 出現 `EPERM`（通常是 `.vitest-*` 暫存資料夾被占用），請先關閉執行中的 Node/Vite/Vitest 程序，再刪除 `node_modules/.vitest-*` 後重試安裝。
+- `npm install` 的 deprecated 警告多為相依樹內部套件，短期不影響執行，可待上游更新。
 
 ## 資料儲存與同步
 

@@ -372,17 +372,17 @@
 <template>
   <div class="responsive-component">
     <!-- 手機版佈局 -->
-    <div class="mobile-layout xs:sm:hidden">
+    <div class="mobile-layout sm:hidden">
       <slot name="mobile" />
     </div>
 
     <!-- 平板版佈局 -->
-    <div class="tablet-layout hidden xs:sm:block md:lg:hidden">
+    <div class="tablet-layout hidden sm:block md:hidden">
       <slot name="tablet" />
     </div>
 
     <!-- 桌面版佈局 -->
-    <div class="desktop-layout hidden md:lg:block">
+    <div class="desktop-layout hidden md:block">
       <slot name="desktop" />
     </div>
   </div>
