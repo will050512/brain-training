@@ -40,6 +40,7 @@
 - 每日挑戰：`/daily-challenge`
 - 能力評估：`/assessment`
 - 報告：`/report`、`/weekly-report`
+- 營養建議：`/nutrition`
 
 常用 query（由程式內部使用）：
 - `fromDaily=true`：表示從每日訓練進入
@@ -72,6 +73,17 @@ npm run storybook
 
 - 本地端：使用 IndexedDB（見 `src/services/db.ts`）保存使用者、遊戲紀錄、每日訓練會話、評估結果等。
 - 選配：可同步到 Google Sheet（見 `src/services/googleSheetSyncService.ts`、`docs/apps-script.gs`）。
+- 同步前提：需使用者同意資料分析（`analyticsConsent=true`），未同意不會上傳。
+
+## 資料同意（Consent）
+
+- 同意項目定義與版本：`src/types/user.ts`（`CONSENT_DESCRIPTIONS`、`CURRENT_CONSENT_VERSION`）。
+- 行為追蹤與醫療報告屬可選同意，未同意不影響核心遊戲功能。
+
+## 外部登入 / App 內嵌
+
+- 支援 App/WebView 透過 `postMessage` 或 `window.BrainTrainingBridge.setExternalProfile(...)` 傳入使用者資料。
+- 詳細格式與範例：`docs/app-embedding.md`。
 
 ## 評分標準
 

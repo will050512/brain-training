@@ -7,11 +7,6 @@
 ```
 src/assets/images/
 ├── IMAGES_ASSETS.md          # 本說明文件
-├── games/                    # 遊戲通用圖片
-│   ├── backgrounds/          # 遊戲背景
-│   ├── buttons/              # 按鈕圖片
-│   └── icons/                # 通用圖示
-│
 ├── whack-a-mole/            # 打地鼠遊戲
 │   ├── mole.svg             # 地鼠圖片
 │   ├── mole-hit.svg         # 被擊中的地鼠
@@ -38,8 +33,8 @@ src/assets/images/
 │
 ├── spot-difference/         # 找不同遊戲
 │   └── scenes/              # 場景圖片（成對）
-│       ├── scene1-a.png
-│       ├── scene1-b.png
+│       ├── scene-01-a.png
+│       ├── scene-01-b.png
 │       └── ...
 │
 ├── rock-paper-scissors/     # 猜拳遊戲
@@ -65,9 +60,6 @@ src/assets/images/
 │   ├── weight-1.svg         # 重量 1
 │   ├── weight-2.svg         # 重量 2
 │   └── ...
-│
-├── stroop-test/             # Stroop 測試
-│   └── （此遊戲主要使用文字，圖片需求少）
 │
 ├── number-connect/          # 數字連連看
 │   ├── node.svg             # 數字節點
@@ -180,7 +172,7 @@ src/assets/images/
 
 | 圖片 | 數量 | 規格 | 說明 |
 |------|------|------|------|
-| 場景圖 | 成對 | 400×300 px | 每對兩張 |
+| 場景圖 | 成對 | 400×300 px | 每對兩張（scene-01-a.png / scene-01-b.png） |
 | 差異標記 | 1 | 40×40 px | 圈出差異處 |
 
 ### 猜拳遊戲 (rock-paper-scissors)

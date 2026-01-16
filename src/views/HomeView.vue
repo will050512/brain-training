@@ -432,9 +432,9 @@ const dimensionMeta: Record<CognitiveDimension, { icon: string; name: string }> 
   reaction: { icon: '⚡', name: '反應力' },
   logic: { icon: '🧩', name: '邏輯力' },
   memory: { icon: '🧠', name: '記憶力' },
-  cognition: { icon: '💡', name: '認知力' },
-  coordination: { icon: '🎯', name: '協調力' },
-  attention: { icon: '👁️', name: '注意力' }
+  cognition: { icon: '🎯', name: '認知力' },
+  coordination: { icon: '🤝', name: '協調力' },
+  attention: { icon: '🔍', name: '注意力' }
 }
 
 // 前三個維度顯示

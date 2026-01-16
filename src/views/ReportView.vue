@@ -18,7 +18,7 @@
       <main class="flex-1 p-4 space-y-6 overflow-x-hidden">
         <!-- 免責聲明 -->
         <div class="alert alert--warning">
-          <div class="alert__icon">??</div>
+          <div class="alert__icon">⚠️</div>
           <p class="alert__content text-sm leading-relaxed">
             數據僅供參考，非醫療診斷。
           </p>
@@ -260,7 +260,7 @@
       <main class="space-y-8 min-w-0 pb-12">
         
         <div class="alert alert--warning">
-          <div class="alert__icon">??</div>
+          <div class="alert__icon">⚠️</div>
           <div class="alert__content">
             <p class="alert__title">醫療免責聲明</p>
             <p class="text-sm leading-relaxed">

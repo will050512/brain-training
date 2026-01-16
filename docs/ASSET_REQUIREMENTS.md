@@ -21,9 +21,11 @@
 * **規格：** 單聲道 (Mono)、44.1 kHz、16-bit、標準化 (normalized) 至 -3 dB。
 * **大小：** 單一檔案大小請控制在 100 KB 以下。
 
-## 全域音效 (缺失)
+## 全域音效 (已提供占位)
 
 **路徑位置：** `src/assets/audio/games/`
+
+目前檔案已存在（占位短音色），正式素材交付後請直接覆蓋同名檔案。
 
 * correct.ogg/mp3 (正確)
 * wrong.ogg/mp3 (錯誤)
@@ -41,7 +43,9 @@
 * tick.ogg/mp3 (計時聲)
 * flip.ogg/mp3 (翻轉聲)
 
-## 遊戲專屬音效 (缺失)
+## 遊戲專屬音效 (已提供占位)
+
+目前檔案已存在（占位短音色），正式素材交付後請直接覆蓋同名檔案。
 
 * **whack-a-mole (打地鼠):** `mole-appear` (出現), `mole-hit` (被打中), `bomb-explode` (炸彈爆炸)
 * **math-calc (數學計算):** `number-pop` (數字彈出), `calculate` (計算聲)
@@ -50,22 +54,20 @@
 * **audio-memory (聽覺記憶):** `note-do` 至 `note-do2` (音階)
 * **rhythm-mimic (節奏模仿):** `beat` (或 `tap`) + `miss` (失誤)
 
-## 圖片 - 缺失 / 待新增
+## 圖片 - 已補齊占位
 
 ### Card Match (卡牌配對)
 
 **路徑：** `src/assets/images/card-match/icons/`
 
-* 需要額外 4 個圖示 (用於困難模式的 12 對卡牌)。
-* **建議檔名：** `car.svg`, `house.svg`, `book.svg`, `clock.svg` (或任何風格一致的 4 個圖示)。
+* 已包含 12 個圖示（含 `car.svg`, `house.svg`, `book.svg`, `clock.svg`）。
+* 若需替換風格，請覆蓋同名檔案。
 
 ### Balance Scale (天平稱重)
 
 **路徑：** `src/assets/images/balance-scale/`
 
-* 需要數值更大的額外砝碼：
-* `weight-4.svg`
-* `weight-5.svg` (若砝碼數值有擴充則選用)
+* 已包含 `weight-1.svg` 至 `weight-5.svg`。
 
 
 
@@ -73,32 +75,21 @@
 
 **路徑：** `src/assets/images/gesture-memory/`
 
-* 目前素材僅包含 上/下/左/右；遊戲共使用 12 種手勢。
-* 需補齊以下手勢 ID 的圖示：
-* `wave` (揮手), `thumbs-up` (讚), `thumbs-down` (倒讚), `peace` (比耶), `ok` (OK手勢), `fist` (拳頭), `point` (指), `clap` (拍手), `pray` (祈禱), `muscle` (肌肉/加油), `wave-bye` (再見), `call` (打電話)
-
-
-* **建議檔名：** `gesture-wave.svg`, `gesture-thumbs-up.svg` 等。
+* 已補齊 12 種手勢（`gesture-*.svg`）。
+* 若需替換風格，請覆蓋同名檔案。
 
 ### Spot Difference (大家來找碴)
 
 **路徑：** `src/assets/images/spot-difference/scenes/`
 
-* **缺少所有場景圖組。**
-* **需求格式：** 每個場景需一組成對圖片，尺寸相同。
-* **命名範例：**
-* `scene-01-a.png` / `scene-01-b.png`
-* `scene-02-a.png` / `scene-02-b.png`
-
-
-* **建議尺寸：** 400x300 或 600x450，所有場景尺寸請保持一致。
+* 已提供 3 組占位場景（`scene-01` 至 `scene-03`）。
+* 若需新增更多場景，請沿用同樣尺寸與命名規則。
 
 ### Number Connect (數字連連看)
 
 **路徑：** `src/assets/images/number-connect/`
 
-* 缺少背景圖：
-* `background.svg` (低調的網格或圓點樣式)
+* `background.svg` 已存在（可視需求替換）。
 
 
 
@@ -106,30 +97,25 @@
 
 **路徑：** `src/assets/images/pattern-reasoning/shapes/`
 
-* 目前形狀僅包含 紅/綠/藍 的 圓形/方形/三角形。
-* 遊戲使用了更多顏色與形狀。**缺失項目：**
-* `diamond-*` (菱形), `star-*` (星形) (至少需包含 紅/綠/藍)
-* 圓形/方形/三角形的額外顏色 (黃色 yellow, 紫色 purple, 橘色 orange, 藍綠色 teal, 粉色 pink)
-
-
-* **建議命名：** `circle-yellow.svg`, `square-purple.svg`, `triangle-orange.svg`, `diamond-blue.svg`, `star-red.svg`。
+* 已補齊菱形/星形與額外色系。
+* 若需替換風格，請覆蓋同名檔案。
 
 ### Rock Paper Scissors (剪刀石頭布)
 
 **路徑：** `src/assets/images/rock-paper-scissors/`
 
 * 可選 UI 素材：
-* `vs.svg` (若之後加入對決畫面時使用)
+* `vs.svg` (若之後加入對決畫面時使用，尚未提供)
 
 
 
 ### Instant Memory (瞬間記憶)
 
-* **可選：** 風格一致的 0-9 數字圖塊組 (sprite set)。
+* **可選：** 風格一致的 0-9 數字圖塊組 (sprite set)，尚未提供。
 
 ### Audio Memory (聽覺記憶)
 
-* **可選：** 用於聲音標籤的 `button` (按鈕) 圖示組 (若需要視覺強化)。
+* **可選：** 用於聲音標籤的 `button` (按鈕) 圖示組 (若需要視覺強化)，尚未提供。
 
 ## 圖片 - 現有素材 (已使用)
 

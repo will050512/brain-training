@@ -1,16 +1,16 @@
 # Scoring & Weights
 
-This project standardizes all game results into a 0–100 score and a letter grade (S–F). The normalization lives in `src/services/scoreNormalizer.ts`.
+This project standardizes all game results into a 0-100 score and a letter grade (S-F). The normalization lives in `src/services/scoreNormalizer.ts`.
 
 ## Core Principles
 
-- **Cross‑game fairness**: every game is normalized to 0–100.
+- **Cross-game fairness**: every game is normalized to 0-100.
 - **Difficulty recognition**: harder settings earn a small multiplier.
 - **Metrics first**: scores are derived from accuracy, speed, completion, and efficiency.
 
 ## Difficulty Multipliers
 
-Applied after per‑game normalization, then clamped to 0–100.
+Applied after per-game normalization, then clamped to 0-100.
 
 - Main difficulty:
   - easy: `0.95`
@@ -21,7 +21,7 @@ Applied after per‑game normalization, then clamped to 0–100.
   - 2: `1.00`
   - 3: `1.05`
 
-Final multiplier = main × sub.
+Final multiplier = main * sub.
 
 ## Weight Profiles
 

@@ -1377,10 +1377,10 @@ export function convertClockDrawingResult(
       imageData: rawResult?.imageData
     },
     displayStats: [
-      { label: '完成時間', value: (completionTimeMs / 1000).toFixed(1), unit: '秒', icon: '??', highlight: true },
-      { label: '完成度', value: Math.round(accuracy * 100), unit: '%', icon: '??' },
-      { label: '數字位置', value: selfAssessment?.hasCorrectNumbers ? '正確' : '待加強', icon: '??' },
-      { label: '指針位置', value: selfAssessment?.hasCorrectHands ? '正確' : '待加強', icon: '???' }
+      { label: '完成時間', value: (completionTimeMs / 1000).toFixed(1), unit: '秒', icon: '⏱️', highlight: true },
+      { label: '完成度', value: Math.round(accuracy * 100), unit: '%', icon: '🎯' },
+      { label: '數字位置', value: selfAssessment?.hasCorrectNumbers ? '正確' : '待加強', icon: '🔢' },
+      { label: '指針位置', value: selfAssessment?.hasCorrectHands ? '正確' : '待加強', icon: '🕒' }
     ]
   }
 }
