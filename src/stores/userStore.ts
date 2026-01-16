@@ -21,6 +21,7 @@ import {
   getUserStats,
 } from '@/services/db'
 import { dataInitService } from '@/services/dataInitService'
+import { syncUserSettingsToSheet, syncUserStatsToSheet } from '@/services/userDataSheetSyncService'
 
 function normalizeUser(user: User): User {
   const now = new Date()
@@ -159,6 +160,7 @@ export const useUserStore = defineStore('user', () => {
 
     const updated = { ...currentSettings.value, ...settings }
     await saveUserSettings(updated)
+    await syncUserSettingsToSheet(updated)
     currentSettings.value = updated
   }
 
@@ -183,6 +185,7 @@ export const useUserStore = defineStore('user', () => {
 
     const updated = { ...currentStats.value, ...stats }
     await saveUserStats(updated)
+    await syncUserStatsToSheet(updated)
     currentStats.value = updated
   }
 

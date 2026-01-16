@@ -22,6 +22,15 @@ var CONFIG = {
   SHEETS: {
     GAME_RESULTS: 'GameResults',
     USERS: 'Users',
+    USER_SETTINGS: 'UserSettings',
+    USER_STATS: 'UserStats',
+    DATA_CONSENT: 'DataConsent',
+    MINI_COG_RESULTS: 'MiniCogResults',
+    DAILY_TRAINING_SESSIONS: 'DailyTrainingSessions',
+    BASELINE_ASSESSMENTS: 'BaselineAssessments',
+    DECLINE_ALERTS: 'DeclineAlerts',
+    NUTRITION_RECOMMENDATIONS: 'NutritionRecommendations',
+    BEHAVIOR_LOGS: 'BehaviorLogs',
   },
   HEADERS: {
     GAME_RESULTS: [
@@ -49,6 +58,10 @@ var CONFIG = {
       'gameSpecific',
       'displayStats',
       'protocolVersion',
+      'schemaVersion',
+      'scoringVersion',
+      'dataQuality',
+      'dataIssues',
       'clientSource',
       'authProvider',
     ],
@@ -64,6 +77,111 @@ var CONFIG = {
       'lastActiveAt',
       'updatedAt',
       'profileVersion',
+    ],
+    USER_SETTINGS: [
+      'odId',
+      'soundEnabled',
+      'musicEnabled',
+      'soundVolume',
+      'musicVolume',
+      'hasSeenWelcome',
+      'updatedAt',
+      'schemaVersion',
+    ],
+    USER_STATS: [
+      'odId',
+      'totalGamesPlayed',
+      'totalPlayTime',
+      'averageScore',
+      'bestScores',
+      'lastPlayedAt',
+      'streak',
+      'updatedAt',
+      'schemaVersion',
+    ],
+    DATA_CONSENT: [
+      'odId',
+      'essentialConsent',
+      'analyticsConsent',
+      'behaviorTrackingConsent',
+      'detailedBehaviorConsent',
+      'medicalSharingConsent',
+      'consentTimestamp',
+      'consentVersion',
+      'schemaVersion',
+    ],
+    MINI_COG_RESULTS: [
+      'id',
+      'odId',
+      'totalScore',
+      'wordRecallScore',
+      'clockDrawingScore',
+      'clockSelfAssessmentScore',
+      'atRisk',
+      'duration',
+      'completedAt',
+      'wordSetLocale',
+      'wordsUsed',
+      'clockImageData',
+      'schemaVersion',
+    ],
+    DAILY_TRAINING_SESSIONS: [
+      'id',
+      'odId',
+      'date',
+      'plannedGames',
+      'completedGames',
+      'interrupted',
+      'startedAt',
+      'completedAt',
+      'totalDuration',
+      'schemaVersion',
+    ],
+    BASELINE_ASSESSMENTS: [
+      'id',
+      'odId',
+      'assessedAt',
+      'cognitiveScores',
+      'suggestedDifficulties',
+      'overallLevel',
+      'gamesPlayed',
+      'schemaVersion',
+    ],
+    DECLINE_ALERTS: [
+      'id',
+      'odId',
+      'dimension',
+      'alertType',
+      'previousScore',
+      'currentScore',
+      'changePercent',
+      'detectedAt',
+      'acknowledged',
+      'schemaVersion',
+    ],
+    NUTRITION_RECOMMENDATIONS: [
+      'id',
+      'odId',
+      'triggerId',
+      'supplementType',
+      'dimension',
+      'priority',
+      'reason',
+      'recommendedAt',
+      'viewed',
+      'dismissed',
+      'schemaVersion',
+    ],
+    BEHAVIOR_LOGS: [
+      'id',
+      'odId',
+      'gameId',
+      'sessionId',
+      'timestamp',
+      'eventType',
+      'data',
+      'synced',
+      'schemaVersion',
     ],
   },
   DEFAULT_LIMIT: 500,
@@ -87,6 +205,17 @@ function asNumber_(v, fallback) {
 function asString_(v, fallback) {
   if (fallback === undefined) fallback = ''
   return typeof v === 'string' ? v : (v == null ? fallback : String(v))
+}
+
+function asBoolean_(v, fallback) {
+  if (v === true || v === false) return v
+  if (typeof v === 'string') {
+    var lower = v.toLowerCase()
+    if (lower === 'true') return true
+    if (lower === 'false') return false
+  }
+  if (typeof v === 'number') return v !== 0
+  return fallback === undefined ? false : fallback
 }
 
 function asISO_(v) {
@@ -189,6 +318,7 @@ function flattenGameResultRow_(item) {
   var grade = asString_(item.grade, '').trim() || gradeFromScore_(score)
   var gameSpecific = safeJsonStringifyObject_(item.gameSpecific || {})
   var displayStats = safeJsonStringifyArray_(item.displayStats)
+  var dataIssues = safeJsonStringifyArray_(item.dataIssues)
 
   var inferredClientSource = asString_(item.clientSource, '')
   if (!inferredClientSource) {
@@ -226,6 +356,10 @@ function flattenGameResultRow_(item) {
     gameSpecific,
     displayStats,
     item.protocolVersion != null ? item.protocolVersion : '',
+    item.schemaVersion != null ? item.schemaVersion : '',
+    item.scoringVersion != null ? item.scoringVersion : '',
+    asString_(item.dataQuality, ''),
+    dataIssues,
     inferredClientSource,
     asString_(item.authProvider, ''),
   ]
@@ -299,29 +433,12 @@ function validateUser_(item) {
   return null
 }
 
-function flattenUserRow_(item) {
-  return [
-    asString_(item.userId),
-    asString_(item.name),
-    asString_(item.birthday),
-    asNumber_(item.educationYears, ''),
-    asString_(item.gender, 'unknown'),
-    asString_(item.clientSource, ''),
-    asString_(item.authProvider, ''),
-    asISO_(item.createdAt),
-    asISO_(item.lastActiveAt),
-    asISO_(item.updatedAt),
-    asNumber_(item.profileVersion, 1),
-  ]
-}
-
-function upsertUsers_(items) {
-  var headers = CONFIG.HEADERS.USERS.slice()
-  var sheet = getOrCreateSheet_(CONFIG.SHEETS.USERS, headers)
+function upsertByKey_(sheetName, headers, keyField, items, validateFn, flattenFn) {
+  var sheet = getOrCreateSheet_(sheetName, headers)
   ensureHeaders_(sheet, headers)
 
-  var userIdCol = headers.indexOf('userId') + 1
-  var rowByUserId = buildKeyRowMapFromCol_(sheet, userIdCol, false)
+  var keyCol = headers.indexOf(keyField) + 1
+  var rowByKey = buildKeyRowMapFromCol_(sheet, keyCol, false)
 
   var appends = []
   var updates = []
@@ -330,23 +447,28 @@ function upsertUsers_(items) {
   var baseAppendRow = sheet.getLastRow() + 1
   for (var i = 0; i < items.length; i++) {
     var item = items[i]
-    var err = validateUser_(item)
+    var err = validateFn ? validateFn(item) : null
     if (err) {
-      results.push({ ok: false, userId: (item && item.userId) || '', error: err })
+      results.push({ ok: false, key: (item && item[keyField]) || '', error: err })
       continue
     }
 
-    var userId = String(item.userId).trim()
-    var rowValues = flattenUserRow_(item)
-    var existingRow = rowByUserId[userId]
+    var key = String(item[keyField] || '').trim()
+    if (!key) {
+      results.push({ ok: false, key: '', error: 'missing key' })
+      continue
+    }
+
+    var rowValues = flattenFn(item)
+    var existingRow = rowByKey[key]
     if (existingRow && existingRow >= 2) {
       updates.push({ row: existingRow, values: rowValues })
-      results.push({ ok: true, userId: userId, op: 'update', row: existingRow })
+      results.push({ ok: true, key: key, op: 'update', row: existingRow })
     } else {
       var reservedRow = baseAppendRow + appends.length
-      rowByUserId[userId] = reservedRow
+      rowByKey[key] = reservedRow
       appends.push(rowValues)
-      results.push({ ok: true, userId: userId, op: 'append', row: reservedRow })
+      results.push({ ok: true, key: key, op: 'append', row: reservedRow })
     }
   }
 
@@ -369,13 +491,235 @@ function upsertUsers_(items) {
     sheet.getRange(sheet.getLastRow() + 1, 1, appends.length, headers.length).setValues(appends)
   }
 
-  return { ok: true, sheet: CONFIG.SHEETS.USERS, updated: updates.length, appended: appends.length, results: results }
+  return { ok: true, sheet: sheetName, updated: updates.length, appended: appends.length, results: results }
+}
+
+function flattenUserRow_(item) {
+  return [
+    asString_(item.userId),
+    asString_(item.name),
+    asString_(item.birthday),
+    asNumber_(item.educationYears, ''),
+    asString_(item.gender, 'unknown'),
+    asString_(item.clientSource, ''),
+    asString_(item.authProvider, ''),
+    asISO_(item.createdAt),
+    asISO_(item.lastActiveAt),
+    asISO_(item.updatedAt),
+    asNumber_(item.profileVersion, 1),
+  ]
+}
+
+function upsertUsers_(items) {
+  var headers = CONFIG.HEADERS.USERS.slice()
+  return upsertByKey_(CONFIG.SHEETS.USERS, headers, 'userId', items, validateUser_, flattenUserRow_)
+}
+
+function validateUserSettings_(item) {
+  if (!item) return 'empty item'
+  if (!item.odId) return 'missing odId'
+  return null
+}
+
+function flattenUserSettingsRow_(item) {
+  return [
+    asString_(item.odId),
+    asBoolean_(item.soundEnabled, false),
+    asBoolean_(item.musicEnabled, false),
+    asNumber_(item.soundVolume, 0),
+    asNumber_(item.musicVolume, 0),
+    asBoolean_(item.hasSeenWelcome, false),
+    asISO_(item.updatedAt),
+    asNumber_(item.schemaVersion, ''),
+  ]
+}
+
+function validateUserStats_(item) {
+  if (!item) return 'empty item'
+  if (!item.odId) return 'missing odId'
+  return null
+}
+
+function flattenUserStatsRow_(item) {
+  return [
+    asString_(item.odId),
+    asNumber_(item.totalGamesPlayed, 0),
+    asNumber_(item.totalPlayTime, 0),
+    asNumber_(item.averageScore, 0),
+    safeJsonStringifyObject_(item.bestScores),
+    item.lastPlayedAt ? asISO_(item.lastPlayedAt) : '',
+    asNumber_(item.streak, 0),
+    asISO_(item.updatedAt),
+    asNumber_(item.schemaVersion, ''),
+  ]
+}
+
+function validateDataConsent_(item) {
+  if (!item) return 'empty item'
+  if (!item.odId) return 'missing odId'
+  return null
+}
+
+function flattenDataConsentRow_(item) {
+  return [
+    asString_(item.odId),
+    asBoolean_(item.essentialConsent, false),
+    asBoolean_(item.analyticsConsent, false),
+    asBoolean_(item.behaviorTrackingConsent, false),
+    asBoolean_(item.detailedBehaviorConsent, false),
+    asBoolean_(item.medicalSharingConsent, false),
+    asISO_(item.consentTimestamp),
+    asString_(item.consentVersion, ''),
+    asNumber_(item.schemaVersion, ''),
+  ]
+}
+
+function validateMiniCogResult_(item) {
+  if (!item) return 'empty item'
+  if (!item.id) return 'missing id'
+  if (!item.odId) return 'missing odId'
+  return null
+}
+
+function flattenMiniCogResultRow_(item) {
+  return [
+    asString_(item.id),
+    asString_(item.odId),
+    asNumber_(item.totalScore, 0),
+    asNumber_(item.wordRecallScore, 0),
+    asNumber_(item.clockDrawingScore, 0),
+    asNumber_(item.clockSelfAssessmentScore, 0),
+    asBoolean_(item.atRisk, false),
+    asNumber_(item.duration, 0),
+    asISO_(item.completedAt),
+    asString_(item.wordSetLocale, ''),
+    safeJsonStringifyArray_(item.wordsUsed),
+    asString_(item.clockImageData, ''),
+    asNumber_(item.schemaVersion, ''),
+  ]
+}
+
+function validateDailyTrainingSession_(item) {
+  if (!item) return 'empty item'
+  if (!item.id) return 'missing id'
+  if (!item.odId) return 'missing odId'
+  return null
+}
+
+function flattenDailyTrainingSessionRow_(item) {
+  return [
+    asString_(item.id),
+    asString_(item.odId),
+    asString_(item.date, ''),
+    safeJsonStringifyArray_(item.plannedGames),
+    safeJsonStringifyArray_(item.completedGames),
+    asBoolean_(item.interrupted, false),
+    asISO_(item.startedAt),
+    item.completedAt ? asISO_(item.completedAt) : '',
+    asNumber_(item.totalDuration, 0),
+    asNumber_(item.schemaVersion, ''),
+  ]
+}
+
+function validateBaselineAssessment_(item) {
+  if (!item) return 'empty item'
+  if (!item.id) return 'missing id'
+  if (!item.odId) return 'missing odId'
+  return null
+}
+
+function flattenBaselineAssessmentRow_(item) {
+  return [
+    asString_(item.id),
+    asString_(item.odId),
+    asISO_(item.assessedAt),
+    safeJsonStringifyObject_(item.cognitiveScores),
+    safeJsonStringifyObject_(item.suggestedDifficulties),
+    asString_(item.overallLevel, ''),
+    safeJsonStringifyArray_(item.gamesPlayed),
+    asNumber_(item.schemaVersion, ''),
+  ]
+}
+
+function validateDeclineAlert_(item) {
+  if (!item) return 'empty item'
+  if (!item.id) return 'missing id'
+  if (!item.odId) return 'missing odId'
+  return null
+}
+
+function flattenDeclineAlertRow_(item) {
+  return [
+    asString_(item.id),
+    asString_(item.odId),
+    asString_(item.dimension, ''),
+    asString_(item.alertType, ''),
+    asNumber_(item.previousScore, 0),
+    asNumber_(item.currentScore, 0),
+    asNumber_(item.changePercent, 0),
+    asISO_(item.detectedAt),
+    asBoolean_(item.acknowledged, false),
+    asNumber_(item.schemaVersion, ''),
+  ]
+}
+
+function validateNutritionRecommendation_(item) {
+  if (!item) return 'empty item'
+  if (!item.id) return 'missing id'
+  if (!item.odId) return 'missing odId'
+  return null
+}
+
+function flattenNutritionRecommendationRow_(item) {
+  return [
+    asString_(item.id),
+    asString_(item.odId),
+    asString_(item.triggerId, ''),
+    asString_(item.supplementType, ''),
+    asString_(item.dimension, ''),
+    asString_(item.priority, ''),
+    asString_(item.reason, ''),
+    asISO_(item.recommendedAt),
+    asBoolean_(item.viewed, false),
+    asBoolean_(item.dismissed, false),
+    asNumber_(item.schemaVersion, ''),
+  ]
+}
+
+function validateBehaviorLog_(item) {
+  if (!item) return 'empty item'
+  if (!item.id) return 'missing id'
+  if (!item.odId) return 'missing odId'
+  return null
+}
+
+function flattenBehaviorLogRow_(item) {
+  return [
+    asString_(item.id),
+    asString_(item.odId),
+    asString_(item.gameId, ''),
+    asString_(item.sessionId, ''),
+    asISO_(item.timestamp),
+    asString_(item.eventType, ''),
+    safeJsonStringifyObject_(item.data),
+    asBoolean_(item.synced, false),
+    asNumber_(item.schemaVersion, ''),
+  ]
 }
 
 /**
  * POST API
  * - { action:'upsertGameResults', items:[...] } or single object
  * - { action:'upsertUsers', items:[...] } or single object
+ * - { action:'upsertUserSettings', items:[...] }
+ * - { action:'upsertUserStats', items:[...] }
+ * - { action:'upsertDataConsent', items:[...] }
+ * - { action:'upsertMiniCogResults', items:[...] }
+ * - { action:'upsertDailyTrainingSessions', items:[...] }
+ * - { action:'upsertBaselineAssessments', items:[...] }
+ * - { action:'upsertDeclineAlerts', items:[...] }
+ * - { action:'upsertNutritionRecommendations', items:[...] }
+ * - { action:'upsertBehaviorLogs', items:[...] }
  * Backward-compatible: missing action => upsertGameResults
  */
 function doPost(e) {
@@ -398,6 +742,69 @@ function doPost(e) {
     if (action === 'upsertUsers') {
       var itemsU = Array.isArray(data.items) ? data.items : [data]
       return jsonOutput_(Object.assign({ action: action }, upsertUsers_(itemsU)))
+    }
+    if (action === 'upsertUserSettings') {
+      var itemsS = Array.isArray(data.items) ? data.items : [data]
+      return jsonOutput_(Object.assign(
+        { action: action },
+        upsertByKey_(CONFIG.SHEETS.USER_SETTINGS, CONFIG.HEADERS.USER_SETTINGS.slice(), 'odId', itemsS, validateUserSettings_, flattenUserSettingsRow_)
+      ))
+    }
+    if (action === 'upsertUserStats') {
+      var itemsSt = Array.isArray(data.items) ? data.items : [data]
+      return jsonOutput_(Object.assign(
+        { action: action },
+        upsertByKey_(CONFIG.SHEETS.USER_STATS, CONFIG.HEADERS.USER_STATS.slice(), 'odId', itemsSt, validateUserStats_, flattenUserStatsRow_)
+      ))
+    }
+    if (action === 'upsertDataConsent') {
+      var itemsC = Array.isArray(data.items) ? data.items : [data]
+      return jsonOutput_(Object.assign(
+        { action: action },
+        upsertByKey_(CONFIG.SHEETS.DATA_CONSENT, CONFIG.HEADERS.DATA_CONSENT.slice(), 'odId', itemsC, validateDataConsent_, flattenDataConsentRow_)
+      ))
+    }
+    if (action === 'upsertMiniCogResults') {
+      var itemsM = Array.isArray(data.items) ? data.items : [data]
+      return jsonOutput_(Object.assign(
+        { action: action },
+        upsertByKey_(CONFIG.SHEETS.MINI_COG_RESULTS, CONFIG.HEADERS.MINI_COG_RESULTS.slice(), 'id', itemsM, validateMiniCogResult_, flattenMiniCogResultRow_)
+      ))
+    }
+    if (action === 'upsertDailyTrainingSessions') {
+      var itemsD = Array.isArray(data.items) ? data.items : [data]
+      return jsonOutput_(Object.assign(
+        { action: action },
+        upsertByKey_(CONFIG.SHEETS.DAILY_TRAINING_SESSIONS, CONFIG.HEADERS.DAILY_TRAINING_SESSIONS.slice(), 'id', itemsD, validateDailyTrainingSession_, flattenDailyTrainingSessionRow_)
+      ))
+    }
+    if (action === 'upsertBaselineAssessments') {
+      var itemsB = Array.isArray(data.items) ? data.items : [data]
+      return jsonOutput_(Object.assign(
+        { action: action },
+        upsertByKey_(CONFIG.SHEETS.BASELINE_ASSESSMENTS, CONFIG.HEADERS.BASELINE_ASSESSMENTS.slice(), 'id', itemsB, validateBaselineAssessment_, flattenBaselineAssessmentRow_)
+      ))
+    }
+    if (action === 'upsertDeclineAlerts') {
+      var itemsA = Array.isArray(data.items) ? data.items : [data]
+      return jsonOutput_(Object.assign(
+        { action: action },
+        upsertByKey_(CONFIG.SHEETS.DECLINE_ALERTS, CONFIG.HEADERS.DECLINE_ALERTS.slice(), 'id', itemsA, validateDeclineAlert_, flattenDeclineAlertRow_)
+      ))
+    }
+    if (action === 'upsertNutritionRecommendations') {
+      var itemsN = Array.isArray(data.items) ? data.items : [data]
+      return jsonOutput_(Object.assign(
+        { action: action },
+        upsertByKey_(CONFIG.SHEETS.NUTRITION_RECOMMENDATIONS, CONFIG.HEADERS.NUTRITION_RECOMMENDATIONS.slice(), 'id', itemsN, validateNutritionRecommendation_, flattenNutritionRecommendationRow_)
+      ))
+    }
+    if (action === 'upsertBehaviorLogs') {
+      var itemsL = Array.isArray(data.items) ? data.items : [data]
+      return jsonOutput_(Object.assign(
+        { action: action },
+        upsertByKey_(CONFIG.SHEETS.BEHAVIOR_LOGS, CONFIG.HEADERS.BEHAVIOR_LOGS.slice(), 'id', itemsL, validateBehaviorLog_, flattenBehaviorLogRow_)
+      ))
     }
     if (action === 'upsertGameResults') {
       var itemsG = Array.isArray(data.items) ? data.items : [data]
@@ -456,6 +863,34 @@ function doGet(e) {
       return callback ? jsonpOutput_(callback, outUser) : jsonOutput_(outUser)
     }
 
+    if (action === 'getUserSettings' || action === 'getUserStats' || action === 'getDataConsent') {
+      var odId = params.userId || params.odId || ''
+      if (!odId) {
+        var outErr0 = { ok: false, action: action, error: 'missing odId' }
+        return callback ? jsonpOutput_(callback, outErr0) : jsonOutput_(outErr0)
+      }
+      var sheetName = action === 'getUserSettings'
+        ? CONFIG.SHEETS.USER_SETTINGS
+        : (action === 'getUserStats' ? CONFIG.SHEETS.USER_STATS : CONFIG.SHEETS.DATA_CONSENT)
+      var headers0 = action === 'getUserSettings'
+        ? CONFIG.HEADERS.USER_SETTINGS.slice()
+        : (action === 'getUserStats' ? CONFIG.HEADERS.USER_STATS.slice() : CONFIG.HEADERS.DATA_CONSENT.slice())
+      var sheet0 = getOrCreateSheet_(sheetName, headers0)
+      ensureHeaders_(sheet0, headers0)
+      var keyCol = headers0.indexOf('odId') + 1
+      var rowByKey = buildKeyRowMapFromCol_(sheet0, keyCol, false)
+      var row0 = rowByKey[odId]
+      if (!row0 || row0 < 2) {
+        var outNull0 = { ok: true, action: action, item: null }
+        return callback ? jsonpOutput_(callback, outNull0) : jsonOutput_(outNull0)
+      }
+      var values0 = sheet0.getRange(row0, 1, 1, headers0.length).getValues()[0]
+      var item0 = {}
+      for (var j = 0; j < headers0.length; j++) item0[headers0[j]] = values0[j]
+      var outItem0 = { ok: true, action: action, item: item0 }
+      return callback ? jsonpOutput_(callback, outItem0) : jsonOutput_(outItem0)
+    }
+
     if (action === 'listGameResults') {
       var userId2 = params.userId || ''
       if (!userId2) {
@@ -500,6 +935,73 @@ function doGet(e) {
       return callback ? jsonpOutput_(callback, outList) : jsonOutput_(outList)
     }
 
+    if (action === 'listByUser') {
+      var type = params.type || ''
+      var userId3 = params.userId || params.odId || ''
+      if (!type) {
+        var outErr3 = { ok: false, action: action, error: 'missing type' }
+        return callback ? jsonpOutput_(callback, outErr3) : jsonOutput_(outErr3)
+      }
+      if (!userId3) {
+        var outErr4 = { ok: false, action: action, error: 'missing userId' }
+        return callback ? jsonpOutput_(callback, outErr4) : jsonOutput_(outErr4)
+      }
+
+      var listConfigMap = {
+        miniCogResults: { sheet: CONFIG.SHEETS.MINI_COG_RESULTS, headers: CONFIG.HEADERS.MINI_COG_RESULTS, key: 'odId' },
+        dailyTrainingSessions: { sheet: CONFIG.SHEETS.DAILY_TRAINING_SESSIONS, headers: CONFIG.HEADERS.DAILY_TRAINING_SESSIONS, key: 'odId' },
+        baselineAssessments: { sheet: CONFIG.SHEETS.BASELINE_ASSESSMENTS, headers: CONFIG.HEADERS.BASELINE_ASSESSMENTS, key: 'odId' },
+        declineAlerts: { sheet: CONFIG.SHEETS.DECLINE_ALERTS, headers: CONFIG.HEADERS.DECLINE_ALERTS, key: 'odId' },
+        nutritionRecommendations: { sheet: CONFIG.SHEETS.NUTRITION_RECOMMENDATIONS, headers: CONFIG.HEADERS.NUTRITION_RECOMMENDATIONS, key: 'odId' },
+        behaviorLogs: { sheet: CONFIG.SHEETS.BEHAVIOR_LOGS, headers: CONFIG.HEADERS.BEHAVIOR_LOGS, key: 'odId' },
+      }
+      var config = listConfigMap[type]
+      if (!config) {
+        var outErr5 = { ok: false, action: action, error: 'unsupported type' }
+        return callback ? jsonpOutput_(callback, outErr5) : jsonOutput_(outErr5)
+      }
+
+      var since2 = params.since || ''
+      var limit2 = Math.max(1, Math.min(CONFIG.DEFAULT_LIMIT, Number(params.limit || CONFIG.DEFAULT_LIMIT)))
+      var cursor2 = Math.max(2, Number(params.cursor || 2))
+
+      var headers2 = config.headers.slice()
+      var sheet2 = getOrCreateSheet_(config.sheet, headers2)
+      ensureHeaders_(sheet2, headers2)
+
+      var lastRow2 = sheet2.getLastRow()
+      if (lastRow2 < 2 || cursor2 > lastRow2) {
+        var outEmpty2 = { ok: true, action: action, items: [], nextCursor: null }
+        return callback ? jsonpOutput_(callback, outEmpty2) : jsonOutput_(outEmpty2)
+      }
+
+      var endRow2 = Math.min(lastRow2, cursor2 + limit2 - 1)
+      var rows2 = sheet2.getRange(cursor2, 1, endRow2 - cursor2 + 1, headers2.length).getValues()
+
+      var userIdIdx2 = headers2.indexOf(config.key)
+      var tsIdx2 = headers2.indexOf('completedAt')
+      if (tsIdx2 < 0) tsIdx2 = headers2.indexOf('timestamp')
+      if (tsIdx2 < 0) tsIdx2 = headers2.indexOf('assessedAt')
+      if (tsIdx2 < 0) tsIdx2 = headers2.indexOf('detectedAt')
+      if (tsIdx2 < 0) tsIdx2 = headers2.indexOf('recommendedAt')
+      if (tsIdx2 < 0) tsIdx2 = headers2.indexOf('startedAt')
+
+      var items2 = []
+      for (var r2 = 0; r2 < rows2.length; r2++) {
+        var rowVals2 = rows2[r2]
+        if (asString_(rowVals2[userIdIdx2]) !== userId3) continue
+        var ts2 = tsIdx2 >= 0 ? asString_(rowVals2[tsIdx2]) : ''
+        if (since2 && ts2 && ts2 < since2) continue
+        var item2 = {}
+        for (var c2 = 0; c2 < headers2.length; c2++) item2[headers2[c2]] = rowVals2[c2]
+        items2.push(item2)
+      }
+
+      var nextCursor2 = endRow2 < lastRow2 ? (endRow2 + 1) : null
+      var outList2 = { ok: true, action: action, items: items2, nextCursor: nextCursor2 }
+      return callback ? jsonpOutput_(callback, outList2) : jsonOutput_(outList2)
+    }
+
     var outUnknown = { ok: false, error: 'Unknown action: ' + action }
     return callback ? jsonpOutput_(callback, outUnknown) : jsonOutput_(outUnknown)
   } catch (error) {
@@ -510,6 +1012,14 @@ function doGet(e) {
 function setupSheets() {
   getOrCreateSheet_(CONFIG.SHEETS.GAME_RESULTS, CONFIG.HEADERS.GAME_RESULTS.slice())
   getOrCreateSheet_(CONFIG.SHEETS.USERS, CONFIG.HEADERS.USERS.slice())
+  getOrCreateSheet_(CONFIG.SHEETS.USER_SETTINGS, CONFIG.HEADERS.USER_SETTINGS.slice())
+  getOrCreateSheet_(CONFIG.SHEETS.USER_STATS, CONFIG.HEADERS.USER_STATS.slice())
+  getOrCreateSheet_(CONFIG.SHEETS.DATA_CONSENT, CONFIG.HEADERS.DATA_CONSENT.slice())
+  getOrCreateSheet_(CONFIG.SHEETS.MINI_COG_RESULTS, CONFIG.HEADERS.MINI_COG_RESULTS.slice())
+  getOrCreateSheet_(CONFIG.SHEETS.DAILY_TRAINING_SESSIONS, CONFIG.HEADERS.DAILY_TRAINING_SESSIONS.slice())
+  getOrCreateSheet_(CONFIG.SHEETS.BASELINE_ASSESSMENTS, CONFIG.HEADERS.BASELINE_ASSESSMENTS.slice())
+  getOrCreateSheet_(CONFIG.SHEETS.DECLINE_ALERTS, CONFIG.HEADERS.DECLINE_ALERTS.slice())
+  getOrCreateSheet_(CONFIG.SHEETS.NUTRITION_RECOMMENDATIONS, CONFIG.HEADERS.NUTRITION_RECOMMENDATIONS.slice())
+  getOrCreateSheet_(CONFIG.SHEETS.BEHAVIOR_LOGS, CONFIG.HEADERS.BEHAVIOR_LOGS.slice())
   Logger.log('Sheets initialized.')
 }
-

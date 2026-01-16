@@ -10,6 +10,7 @@ import {
   generateId,
   type BehaviorLog 
 } from '@/services/db'
+import { syncBehaviorLogsToSheet } from '@/services/userDataSheetSyncService'
 
 // 行為事件類型（與 db.ts 同步）
 export type BehaviorEventType = 
@@ -319,6 +320,7 @@ export class BehaviorCollector {
     
     if (logsWithSync.length > 0) {
       await saveBehaviorLogs(logsWithSync)
+      await syncBehaviorLogsToSheet(logsWithSync)
     }
   }
 

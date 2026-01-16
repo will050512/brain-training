@@ -56,7 +56,7 @@ QueryString（可選）：`?externalProfile=<base64url(json of profile)>`
 安全：bridge 接受同源與 `null` origin（WebView 常見）；可在 `externalAuthBridge.ts` 內再加白名單。
 
 ## Google Sheet / Apps Script
-- Web App URL：`https://script.google.com/macros/s/AKfycbyCLuyPiJL3Loqe6HHouu5pA3rmXns97fsIhC0SqNoFeI8mcKbfFYkn3O8m-sZa0oUO/exec`
+- Web App URL：`https://script.google.com/macros/s/AKfycbyeT9y4bYyMeCHCXVZru47BQD_Za4ANr-i6lfksErOh84kJ_soasack6rNlTuzeY2h9/exec`
 - POST 使用 `mode: "no-cors"`；回應為 opaque。
 - 支援 `action: upsertGameResults | upsertUsers`，批次用 `items`。
 

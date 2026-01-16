@@ -3,6 +3,7 @@ import { useUserStore } from '@/stores/userStore'
 import { useGameStore } from '@/stores/gameStore'
 import { getSyncService, type SyncStatus } from '@/services/offlineSyncService'
 import { getTodayTrainingSession, saveDailyTrainingSession } from '@/services/db'
+import { syncDailyTrainingSessionToSheet } from '@/services/userDataSheetSyncService'
 
 export type DataSyncStatus = SyncStatus | 'pending'
 
@@ -136,6 +137,7 @@ class DataInitService {
       }
       
       await saveDailyTrainingSession(session)
+      await syncDailyTrainingSessionToSheet(session)
     }
   })
 

@@ -259,6 +259,7 @@ import {
 } from '@/services/miniCogService'
 import { getRandomClockTime, getTimeDescription } from '@/services/clockDrawingAnalyzer'
 import { saveMiniCogResult, getDataConsent } from '@/services/db'
+import { syncMiniCogResultToSheet } from '@/services/userDataSheetSyncService'
 import { useUserStore } from '@/stores/userStore'
 
 // Props
@@ -555,6 +556,7 @@ const saveAndClose = async () => {
       
       console.log('Saving Mini-Cog result:', sanitizedResult)
       await saveMiniCogResult(sanitizedResult)
+      await syncMiniCogResultToSheet(sanitizedResult)
       saveSuccess.value = true
       
       // 短暫顯示成功訊息後觸發完成事件

@@ -4,7 +4,7 @@ import { getDataConsent, getUserGameSessions } from '@/services/db'
 import { detectClientSource, loadClientSourceForUser } from '@/services/clientSource'
 
 // 已部署的 Apps Script Web App
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyCLuyPiJL3Loqe6HHouu5pA3rmXns97fsIhC0SqNoFeI8mcKbfFYkn3O8m-sZa0oUO/exec'
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyeT9y4bYyMeCHCXVZru47BQD_Za4ANr-i6lfksErOh84kJ_soasack6rNlTuzeY2h9/exec'
 const BACKFILL_THROTTLE_MS = 24 * 60 * 60 * 1000
 const BACKFILL_KEY_PREFIX = 'sheetBackfillAt:'
 const SYNCED_IDS_KEY_PREFIX = 'sheetSyncedSessionIds:'

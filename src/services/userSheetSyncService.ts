@@ -2,7 +2,7 @@ import type { User } from '@/types'
 import { getDataConsent } from '@/services/db'
 import { detectClientSource, loadClientSourceForUser } from '@/services/clientSource'
 
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyCLuyPiJL3Loqe6HHouu5pA3rmXns97fsIhC0SqNoFeI8mcKbfFYkn3O8m-sZa0oUO/exec'
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyeT9y4bYyMeCHCXVZru47BQD_Za4ANr-i6lfksErOh84kJ_soasack6rNlTuzeY2h9/exec'
 const USER_SYNC_KEY_PREFIX = 'sheetSyncedUser:'
 const USER_SYNC_STATUS_KEY_PREFIX = 'sheetSyncStatusUser:'
 

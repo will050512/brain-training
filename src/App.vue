@@ -9,6 +9,7 @@ import { useNotification } from '@/composables/useNotification'
 import { useToast } from '@/composables/useToast'
 import { backfillUserSessionsToSheet } from '@/services/googleSheetSyncService'
 import { syncUserProfileToSheet } from '@/services/userSheetSyncService'
+import { backfillAllUserDataToSheet } from '@/services/userDataSheetSyncService'
 import AppShell from '@/components/layout/AppShell.vue'
 import DesktopLayout from '@/components/layout/DesktopLayout.vue'
 import MobileBottomNav from '@/components/ui/MobileBottomNav.vue'
@@ -166,6 +167,9 @@ async function checkConsentStatus(): Promise<void> {
 function handleConsentConfirmed(consent: DataConsentOptions): void {
   console.log('Consent confirmed:', consent)
   showConsentModal.value = false
+  if (userStore.currentUser?.id) {
+    backfillAllUserDataToSheet(userStore.currentUser.id, { force: true })
+  }
 }
 
 // 處理跳過同意
@@ -187,6 +191,7 @@ watch(() => userStore.currentUser, (newUser) => {
     setTimeout(() => {
       checkConsentStatus()
       syncUserProfileToSheet(newUser)
+      backfillAllUserDataToSheet(newUser.id)
     }, 100)
   }
 }, { immediate: false })
@@ -195,6 +200,7 @@ function handleOnline(): void {
   if (!userStore.currentUser?.id) return
   backfillUserSessionsToSheet(userStore.currentUser.id)
   syncUserProfileToSheet(userStore.currentUser)
+  backfillAllUserDataToSheet(userStore.currentUser.id)
 }
 
 onMounted(async () => {
@@ -213,6 +219,7 @@ onMounted(async () => {
     // 舊用戶資料回填至 Google Sheet（背景執行）
     backfillUserSessionsToSheet(userStore.currentUser.id)
     syncUserProfileToSheet(userStore.currentUser)
+    backfillAllUserDataToSheet(userStore.currentUser.id)
   }
 
   // 初始化數據同步服務

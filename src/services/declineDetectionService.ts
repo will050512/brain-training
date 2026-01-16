@@ -17,6 +17,7 @@ import {
 } from '@/services/db'
 import { DECLINE_DETECTION_CONFIG, type DeclineDetectionMode } from '@/stores/settingsStore'
 import { COGNITIVE_DIMENSIONS } from '@/types/cognitive'
+import { syncDeclineAlertToSheet } from '@/services/userDataSheetSyncService'
 
 // 趨勢類型
 export type TrendType = 'improving' | 'stable' | 'declining' | 'severe-decline'
@@ -334,6 +335,7 @@ export async function detectAndSaveDeclineAlerts(
       }
       
       await saveDeclineAlert(alert)
+      await syncDeclineAlertToSheet(alert)
       newAlerts.push(alert)
     }
   }

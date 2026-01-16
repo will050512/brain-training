@@ -20,6 +20,7 @@ import {
 import { analyzeWeaknesses, suggestDifficulty } from '@/services/recommendationEngine'
 import { getCurrentGameDifficulty } from '@/services/db'
 import type { DailyTrainingDuration } from '@/stores/settingsStore'
+import { syncDailyTrainingSessionToSheet } from '@/services/userDataSheetSyncService'
 
 // 訓練狀態
 export type TrainingStatus = 'not-started' | 'in-progress' | 'interrupted' | 'completed'
@@ -94,6 +95,11 @@ const MINICOG_DIFFICULTY_MAP: Record<number, {
   2: { difficulty: 'easy', subDifficulty: 2, maxDifficulty: 'easy', maxSubDifficulty: 3 },  // 限制
   1: { difficulty: 'easy', subDifficulty: 1, maxDifficulty: 'easy', maxSubDifficulty: 2 },  // 限制
   0: { difficulty: 'easy', subDifficulty: 1, maxDifficulty: 'easy', maxSubDifficulty: 1 }   // 限制
+}
+
+async function saveDailyTrainingSessionAndSync(session: DailyTrainingSession): Promise<void> {
+  await saveDailyTrainingSession(session)
+  await syncDailyTrainingSessionToSheet(session)
 }
 
 /**
@@ -353,7 +359,7 @@ export async function createDailyTrainingPlan(
     totalDuration: 0
   }
   
-  await saveDailyTrainingSession(session)
+  await saveDailyTrainingSessionAndSync(session)
   
   return {
     id: session.id,
@@ -447,7 +453,7 @@ export async function markGameCompleted(
       session.completedAt = new Date().toISOString()
     }
     
-    await saveDailyTrainingSession(session)
+    await saveDailyTrainingSessionAndSync(session)
   }
   
   return convertSessionToPlan(session)
@@ -484,7 +490,7 @@ export async function updatePlannedGameDifficulties(
     }
   })
 
-  await saveDailyTrainingSession(session)
+  await saveDailyTrainingSessionAndSync(session)
   return convertSessionToPlan(session)
 }
 
@@ -495,7 +501,7 @@ export async function markTrainingInterrupted(odId: string): Promise<void> {
   const session = await getTodayTrainingSession(odId)
   if (session && session.completedGames.length < session.plannedGames.length) {
     session.interrupted = true
-    await saveDailyTrainingSession(session)
+    await saveDailyTrainingSessionAndSync(session)
   }
 }
 
@@ -506,7 +512,7 @@ export async function resumeTraining(odId: string): Promise<DailyTrainingPlan | 
   const session = await getTodayTrainingSession(odId)
   if (session) {
     session.interrupted = false
-    await saveDailyTrainingSession(session)
+    await saveDailyTrainingSessionAndSync(session)
     return convertSessionToPlan(session)
   }
   return null
@@ -591,7 +597,7 @@ export async function restartTraining(
     totalDuration: 0
   }
   
-  await saveDailyTrainingSession(session)
+  await saveDailyTrainingSessionAndSync(session)
   
   return convertSessionToPlan(session)
 }
@@ -925,7 +931,7 @@ export async function createPersonalizedTrainingPlan(
     totalDuration: 0
   }
   
-  await saveDailyTrainingSession(session)
+  await saveDailyTrainingSessionAndSync(session)
   
   return {
     id: session.id,
