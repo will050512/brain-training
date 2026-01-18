@@ -26,7 +26,7 @@
 
         <!-- 用戶卡片 -->
         <section class="flex items-center gap-4 p-5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl text-white shadow-lg">
-          <div class="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-2xl backdrop-blur-sm shrink-0">👤</div>
+          <div class="w-14 h-14 bg-white/20 dark:bg-gray-800/50 rounded-full flex items-center justify-center text-2xl backdrop-blur-sm shrink-0">👤</div>
           <div class="flex-1 min-w-0">
             <h2 class="text-xl font-bold m-0 truncate">{{ userStore.currentUser?.name || '使用者' }}</h2>
             <p class="text-sm opacity-90">{{ userStore.userAge || '?' }} 歲 • {{ userStore.currentUser?.educationYears || 0 }}年教育</p>
@@ -364,7 +364,7 @@
                       class="h-full rounded-full transition-all duration-1000 ease-out relative overflow-hidden"
                       :style="{ width: `${gameStore.cognitiveScores[dim.id]}%`, backgroundColor: dim.color }"
                     >
-                      <div class="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]"></div>
+                      <div class="absolute inset-0 bg-white/20 dark:bg-gray-800/40 animate-[shimmer_2s_infinite]"></div>
                     </div>
                   </div>
                 </div>
@@ -890,9 +890,9 @@ function getScoreClass(score: number): string {
 }
 
 function getScoreLevelBg(score: number): string {
-  if (score >= 80) return 'bg-white/20 text-white'
-  if (score >= 60) return 'bg-white/20 text-white'
-  return 'bg-white/20 text-white'
+  if (score >= 80) return 'bg-white/20 dark:bg-gray-800/40 text-white'
+  if (score >= 60) return 'bg-white/20 dark:bg-gray-800/40 text-white'
+  return 'bg-white/20 dark:bg-gray-800/40 text-white'
 }
 
 function getTrendIcon(dimension: string): string {

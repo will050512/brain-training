@@ -125,6 +125,8 @@ import type { ClockDrawingResult } from '@/services/miniCogService'
 import { calculateClockDrawingScore } from '@/services/miniCogService'
 import { getRandomClockTime, getTimeDescription } from '@/services/clockDrawingAnalyzer'
 import clockFaceImg from '@/assets/images/clock-drawing/clock-face.svg'
+
+const clockFaceImgUrl = `url(${clockFaceImg})`
 import referenceImg from '@/assets/images/clock-drawing/reference.svg'
 
 // Props
@@ -720,7 +722,7 @@ onUnmounted(() => {
   border-radius: 50%;
   box-shadow: var(--shadow-md);
   touch-action: none;
-  background-image: url(v-bind(clockFaceImg));
+  background-image: v-bind(clockFaceImgUrl);
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;

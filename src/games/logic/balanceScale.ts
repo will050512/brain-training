@@ -214,7 +214,7 @@ export function calculateArmRotation(
 ): number {
   if (!showTilt) return 0
   const diff = leftWeight - rightWeight
-  const rotation = -diff * tiltStrength
+  const rotation = diff * tiltStrength
   return Math.max(-maxTilt, Math.min(maxTilt, rotation))
 }
 

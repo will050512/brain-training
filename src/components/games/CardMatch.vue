@@ -46,6 +46,7 @@ import iconMoon from '@/assets/images/card-match/icons/moon.svg'
 import iconSun from '@/assets/images/card-match/icons/sun.svg'
 import iconTree from '@/assets/images/card-match/icons/tree.svg'
 
+const cardFrameImgUrl = `url(${cardFrameImg})`
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
   difficulty?: GameDifficulty
@@ -507,7 +508,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   min-height: 60px;
-  background-image: url(v-bind(cardFrameImg));
+  background-image: v-bind(cardFrameImgUrl);
   background-size: cover;
   background-position: center;
 }

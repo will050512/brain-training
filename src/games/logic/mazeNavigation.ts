@@ -394,13 +394,13 @@ export function calculateScore(
   timeSpent: number,
   optimalMoves: number
 ): number {
-  // 效率分數 60%
+  // 效率分數 80%
   const efficiency = calculateEfficiency(moves, optimalMoves)
-  const efficiencyScore = efficiency * 60
+  const efficiencyScore = efficiency * 80
 
-  // 時間分數 40%
+  // 時間分數 20%
   const maxTime = Math.max(15, Math.round(optimalMoves * 3))
-  const timeScore = Math.max(0, (1 - timeSpent / maxTime) * 40)
+  const timeScore = Math.max(0, (1 - timeSpent / maxTime) * 20)
 
   return Math.round(Math.min(100, Math.max(0, efficiencyScore + timeScore)))
 }

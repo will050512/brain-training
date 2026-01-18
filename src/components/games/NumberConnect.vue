@@ -114,6 +114,8 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 const containerRef = ref<HTMLDivElement | null>(null)
 const hintUsed = ref(0)
 const startTime = ref(0)
+const nodeImgUrl = `url(${nodeImg})`
+const backgroundImgUrl = `url(${backgroundImg})`
 
 // ===== 計算屬性 =====
 const nodes = computed(() => gameState.value?.nodes || [])
@@ -429,13 +431,13 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 }
 
 .node-btn {
-  background-image: url(v-bind(nodeImg));
+  background-image: v-bind(nodeImgUrl);
   background-size: cover;
   background-position: center;
 }
 
 .game-area {
-  background-image: url(v-bind(backgroundImg));
+  background-image: v-bind(backgroundImgUrl);
   background-size: cover;
   background-position: center;
 }

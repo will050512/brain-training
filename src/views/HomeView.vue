@@ -130,7 +130,7 @@
           
           <router-link 
             to="/assessment" 
-            class="block w-full py-2.5 bg-white text-orange-600 rounded-xl font-semibold text-center
+            class="block w-full py-2.5 bg-white dark:bg-gray-800 text-orange-600 dark:text-orange-400 rounded-xl font-semibold text-center
                    hover:bg-orange-50 transition-colors shadow-md text-sm"
           >
             開始評估（約 5 分鐘）
@@ -152,7 +152,7 @@
             </div>
             <button
               @click="showGoalSettings = true"
-              class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors flex-shrink-0"
+              class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 dark:bg-gray-700/50 flex items-center justify-center hover:bg-white/30 dark:hover:bg-gray-600/60 transition-colors flex-shrink-0"
             >
               <svg width="16" height="16" class="sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="3" />
@@ -204,7 +204,7 @@
           <!-- 開始訓練按鈕 -->
           <router-link
             to="/daily-challenge"
-            class="block w-full py-2.5 sm:py-3 mt-3 sm:mt-4 bg-white text-blue-600 rounded-xl font-semibold text-center
+            class="block w-full py-2.5 sm:py-3 mt-3 sm:mt-4 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 rounded-xl font-semibold text-center
                    hover:bg-blue-50 transition-colors shadow-md text-sm sm:text-base"
           >
             {{ dailyProgress.completed ? '繼續訓練' : '開始今日訓練' }}

@@ -39,6 +39,8 @@ import exitImg from '@/assets/images/maze-navigation/exit.svg'
 import wallImg from '@/assets/images/maze-navigation/wall.svg'
 import pathImg from '@/assets/images/maze-navigation/path.svg'
 
+const wallImgUrl = `url(${wallImg})`
+const pathImgUrl = `url(${pathImg})`
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
@@ -405,12 +407,12 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 }
 
 .cell-wall {
-  background-image: url(v-bind(wallImg));
+  background-image: v-bind(wallImgUrl);
   background-color: #4a5568;
 }
 
 .cell-path {
-  background-image: url(v-bind(pathImg));
+  background-image: v-bind(pathImgUrl);
   background-color: #e2e8f0;
 }
 

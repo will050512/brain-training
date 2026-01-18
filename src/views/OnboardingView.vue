@@ -377,7 +377,7 @@ function startTraining(): void {
                 :class="enableBehaviorTracking ? 'bg-blue-500' : 'bg-gray-200 dark:bg-slate-600'"
               >
                 <div 
-                  class="w-5 h-5 bg-white rounded-full shadow transform transition-transform"
+                  class="w-5 h-5 bg-white dark:bg-gray-900 rounded-full shadow transform transition-transform"
                   :class="enableBehaviorTracking ? 'translate-x-6' : 'translate-x-1'"
                 ></div>
               </button>

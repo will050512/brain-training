@@ -36,7 +36,8 @@ const AUDIO_FORMATS = ['.ogg', '.mp3']
 /** Vite assets mapping (src/assets/audio/games) */
 const AUDIO_ASSET_GLOB = import.meta.glob('/src/assets/audio/games/**/*.{ogg,mp3}', {
   eager: true,
-  as: 'url',
+  query: '?url',
+  import: 'default',
 }) as Record<string, string>
 
 const AUDIO_ASSET_MAP = new Map<string, string>()
