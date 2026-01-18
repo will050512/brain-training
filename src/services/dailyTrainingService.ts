@@ -67,13 +67,13 @@ export interface PersonalizedDifficultyRecommendation {
 }
 
 // 時長對應遊戲數量配置
-// 10 分鐘使用迷你模式遊戲（平均每個約 40 秒），其他時長使用標準模式
+// 10 分鐘使用迷你模式估算遊戲數量，實際時間仍以各遊戲難度為準
 const DURATION_GAME_CONFIG: Record<DailyTrainingDuration, { 
   min: number
   max: number
   useMiniMode: boolean  // 是否使用迷你模式
 }> = {
-  10: { min: 6, max: 6, useMiniMode: true },   // 迷你模式：6 個遊戲 × 40 秒 ≈ 4 分鐘（含緩衝）
+  10: { min: 6, max: 6, useMiniMode: true },   // 迷你模式：6 個遊戲（實際時間依遊玩速度調整）
   15: { min: 6, max: 7, useMiniMode: false },  // 標準模式
   20: { min: 6, max: 8, useMiniMode: false },
   30: { min: 6, max: 10, useMiniMode: false }
@@ -679,17 +679,34 @@ export async function getTrainingStats(odId: string, days: number = 7): Promise<
   
   // 計算連續天數
   let streak = 0
-  const sortedSessions = [...sessions].sort((a, b) => {
-    const da = parseLocalDateKey(a.date)?.getTime() ?? 0
-    const db = parseLocalDateKey(b.date)?.getTime() ?? 0
+  const completedDateKeys = Array.from(new Set(
+    sessions
+      .filter(s => s.completedGames.length === s.plannedGames.length)
+      .map(s => s.date)
+  ))
+  const sortedKeys = completedDateKeys.sort((a, b) => {
+    const da = parseLocalDateKey(a)?.getTime() ?? 0
+    const db = parseLocalDateKey(b)?.getTime() ?? 0
     return db - da
   })
-  
-  for (const session of sortedSessions) {
-    if (session.completedGames.length === session.plannedGames.length) {
-      streak++
-    } else {
-      break
+
+  const firstKey = sortedKeys[0]
+  if (firstKey) {
+    streak = 1
+    let currentKey = firstKey
+    for (let i = 1; i < sortedKeys.length; i += 1) {
+      const nextKey = sortedKeys[i]
+      if (!nextKey) break
+      const currentDate = parseLocalDateKey(currentKey)
+      if (!currentDate) break
+      currentDate.setDate(currentDate.getDate() - 1)
+      const expectedPrevKey = getLocalDateKey(currentDate)
+      if (nextKey === expectedPrevKey) {
+        streak += 1
+        currentKey = nextKey
+      } else {
+        break
+      }
     }
   }
   
@@ -1107,9 +1124,10 @@ export async function getWeeklyCompletedDays(
     
     try {
       const records = await getGameSessionsByDate(odId, dateKey)
-      if (records && records.length > 0) {
-        daySessions = records.length
-        dayMinutes = records.reduce((sum, r) => {
+      const filtered = records.filter(r => r.result?.mode === 'daily')
+      if (filtered.length > 0) {
+        daySessions = filtered.length
+        dayMinutes = filtered.reduce((sum, r) => {
           const duration = r.result?.duration || 0
           return sum + Math.round(duration / 60)
         }, 0)

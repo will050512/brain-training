@@ -26,6 +26,9 @@ export type OrientationPreference = 'portrait' | 'landscape' | 'auto'
 // 遊戲難度
 export type GameDifficulty = 'easy' | 'medium' | 'hard'
 
+// 同步狀態（UI 用）
+export type SyncUiStatus = 'idle' | 'syncing' | 'success' | 'error'
+
 // 遊戲子難度（細分調整）
 export type GameSubDifficulty = 1 | 2 | 3
 
@@ -78,10 +81,10 @@ export const DECLINE_DETECTION_CONFIG: Record<DeclineDetectionMode, {
 
 // 每日訓練時長選項設定
 export const DAILY_TRAINING_OPTIONS: { value: DailyTrainingDuration; label: string; games: string }[] = [
-  { value: 10, label: '10 分鐘', games: '3-4 款遊戲' },
-  { value: 15, label: '15 分鐘', games: '4-5 款遊戲' },
-  { value: 20, label: '20 分鐘', games: '5-6 款遊戲' },
-  { value: 30, label: '30 分鐘', games: '6-8 款遊戲' },
+  { value: 10, label: '10 分鐘', games: '6 款迷你遊戲' },
+  { value: 15, label: '15 分鐘', games: '6-7 款遊戲' },
+  { value: 20, label: '20 分鐘', games: '6-8 款遊戲' },
+  { value: 30, label: '30 分鐘', games: '6-10 款遊戲' },
 ]
 
 // 每週訓練天數選項設定
@@ -96,6 +99,9 @@ export const WEEKLY_TRAINING_OPTIONS: { value: WeeklyTrainingGoal; label: string
 ]
 
 export const useSettingsStore = defineStore('settings', () => {
+  const hasWindow = typeof window !== 'undefined'
+  let systemThemeQuery: MediaQueryList | null = null
+  let systemThemeListener: ((event: MediaQueryListEvent) => void) | null = null
   // 狀態（全域設定，不依賴使用者）
   const soundEnabled = ref(false)      // 音效預設關閉
   const musicEnabled = ref(false)      // 音樂預設關閉
@@ -136,6 +142,9 @@ export const useSettingsStore = defineStore('settings', () => {
   const highContrast = ref(false) // 高對比模式
   const enableVoicePrompts = ref(false) // 語音提示
   const enableHapticFeedback = ref(true) // 震動反饋
+  const syncUiStatus = ref<SyncUiStatus>('idle')
+  const lastManualSyncAt = ref<string | null>(null)
+  const lastManualSyncError = ref<string | null>(null)
 
   // ===== 提醒設定 =====
   const assessmentReminderEnabled = ref(true) // 月度評估提醒（預設開啟）
@@ -197,6 +206,9 @@ export const useSettingsStore = defineStore('settings', () => {
     applyFontSize()
     // 應用無障礙設定
     applyAccessibilitySettings()
+    // 應用主題設定
+    applyTheme()
+    ensureSystemThemeListener()
   }
 
   // 儲存到 localStorage
@@ -247,6 +259,44 @@ export const useSettingsStore = defineStore('settings', () => {
     document.documentElement.classList.toggle('high-contrast', highContrast.value)
   }
 
+  function applyTheme(): void {
+    if (!hasWindow) return
+    const isDark = themeMode.value === 'dark' ||
+      (themeMode.value === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+    document.documentElement.classList.toggle('dark', isDark)
+  }
+
+  function stopSystemThemeListener(): void {
+    if (!systemThemeQuery || !systemThemeListener) return
+    const legacyQuery = systemThemeQuery as unknown as { removeListener?: (cb: (event: MediaQueryListEvent) => void) => void }
+    if (legacyQuery.removeListener) {
+      legacyQuery.removeListener(systemThemeListener)
+    } else {
+      systemThemeQuery.removeEventListener('change', systemThemeListener)
+    }
+    systemThemeQuery = null
+    systemThemeListener = null
+  }
+
+  function ensureSystemThemeListener(): void {
+    if (!hasWindow || themeMode.value !== 'system') {
+      stopSystemThemeListener()
+      return
+    }
+    if (!systemThemeQuery) {
+      systemThemeQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    }
+    if (!systemThemeListener) {
+      systemThemeListener = () => applyTheme()
+      const legacyQuery = systemThemeQuery as unknown as { addListener?: (cb: (event: MediaQueryListEvent) => void) => void }
+      if (legacyQuery.addListener) {
+        legacyQuery.addListener(systemThemeListener)
+      } else {
+        systemThemeQuery.addEventListener('change', systemThemeListener)
+      }
+    }
+  }
+
   // 監聽變化自動儲存
   watch(
     [soundEnabled, musicEnabled, soundVolume, musicVolume, hasSeenWelcome, fontSize, 
@@ -262,6 +312,12 @@ export const useSettingsStore = defineStore('settings', () => {
 
   // 監聽無障礙設定變化
   watch([reduceMotion, highContrast], () => applyAccessibilitySettings())
+
+  // 監聽主題變化
+  watch(themeMode, () => {
+    applyTheme()
+    ensureSystemThemeListener()
+  })
 
   // 動作
   function toggleSound(enabled?: boolean): void {
@@ -320,6 +376,18 @@ export const useSettingsStore = defineStore('settings', () => {
   // 新增：切換行為追蹤
   function toggleBehaviorTracking(enabled?: boolean): void {
     enableBehaviorTracking.value = enabled ?? !enableBehaviorTracking.value
+  }
+
+  function setSyncUiStatus(status: SyncUiStatus, errorMessage?: string | null): void {
+    syncUiStatus.value = status
+    if (status === 'success') {
+      lastManualSyncAt.value = new Date().toISOString()
+      lastManualSyncError.value = null
+    } else if (status === 'error') {
+      lastManualSyncError.value = errorMessage || 'sync failed'
+    } else {
+      lastManualSyncError.value = null
+    }
   }
 
   // 新增：設定主題模式
@@ -429,6 +497,8 @@ export const useSettingsStore = defineStore('settings', () => {
 
   // 初始化
   initFromStorage()
+  applyTheme()
+  ensureSystemThemeListener()
 
   return {
     // 狀態
@@ -456,6 +526,9 @@ export const useSettingsStore = defineStore('settings', () => {
     enableVoicePrompts,
     enableHapticFeedback,
     assessmentReminderEnabled,
+    syncUiStatus,
+    lastManualSyncAt,
+    lastManualSyncError,
     currentDeclineConfig,
     // 佈局狀態
     sidebarCollapsed,
@@ -484,6 +557,7 @@ export const useSettingsStore = defineStore('settings', () => {
     setWeeklyTrainingGoal,
     toggleBehaviorTracking,
     setAccessibilityOption,
+    setSyncUiStatus,
     initFromStorage,
     loadSettings,
     // 佈局動作

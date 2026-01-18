@@ -11,6 +11,7 @@ import {
   type BehaviorLog 
 } from '@/services/db'
 import { syncBehaviorLogsToSheet } from '@/services/userDataSheetSyncService'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 // 行為事件類型（與 db.ts 同步）
 export type BehaviorEventType = 
@@ -280,6 +281,8 @@ export class BehaviorCollector {
           AttentionDriftData | ThinkingTimeData | CancellationData | 
           RegretData | RapidResponseData | TimeoutData | Record<string, unknown>
   ): void {
+    const settingsStore = useSettingsStore()
+    if (!settingsStore.enableBehaviorTracking) return
     const now = Date.now()
     const timeSinceStart = now - this.startTime
     const timeSinceLastEvent = now - this.lastEventTime

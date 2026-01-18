@@ -109,6 +109,9 @@ export interface FullGameDefinition extends GameDefinition {
 // 遊戲狀態
 export type GameState = 'idle' | 'ready' | 'playing' | 'paused' | 'finished'
 
+// 遊戲模式（每日訓練/自由遊玩）
+export type GameMode = 'daily' | 'free'
+
 // 遊戲結果
 export interface GameResult {
   gameId: string
@@ -122,6 +125,8 @@ export interface GameResult {
   avgReactionTime: number // 毫秒
   duration: number        // 實際遊戲時長（秒）
   timestamp: Date
+  /** 訓練模式（未填視為 free） */
+  mode?: GameMode
   /** 可選：等級評定 */
   grade?: GameGrade
   /** 可選：四維標準化指標（跨遊戲一致） */

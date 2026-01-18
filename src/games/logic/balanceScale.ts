@@ -72,6 +72,7 @@ export const WEIGHT_ITEMS: WeightItem[] = [
   { emoji: '🏀', weight: 3 },
   { emoji: '⚽', weight: 2 },
   { emoji: '🎱', weight: 2 },
+  { emoji: '🏋️', weight: 5 },
 ]
 
 export const DIFFICULTY_CONFIGS: Record<Difficulty, BalanceScaleConfig> = {
@@ -115,7 +116,11 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, BalanceScaleConfig> = {
 /**
  * 隨機選擇物品
  */
-const WEIGHT_POOL = WEIGHT_ITEMS.filter(item => item.weight <= 3)
+function getWeightPool(config: BalanceScaleConfig): WeightItem[] {
+  const maxWeight = config.maxItems >= 6 ? 5 : config.maxItems >= 5 ? 4 : 3
+  const pool = WEIGHT_ITEMS.filter(item => item.weight <= maxWeight)
+  return pool.length > 0 ? pool : WEIGHT_ITEMS
+}
 
 function getRandomItem(pool: WeightItem[]): WeightItem {
   const index = Math.floor(Math.random() * pool.length)
@@ -147,7 +152,7 @@ export function generateRound(config: BalanceScaleConfig): RoundData {
   const maxItems = Math.max(1, config.maxItems)
   const minDiff = Math.max(1, config.minDiff)
   const maxDiff = Math.max(minDiff, config.maxDiff)
-  const pool = WEIGHT_POOL.length > 0 ? WEIGHT_POOL : WEIGHT_ITEMS
+  const pool = getWeightPool(config)
 
   let leftItems: WeightItem[] = []
   let rightItems: WeightItem[] = []

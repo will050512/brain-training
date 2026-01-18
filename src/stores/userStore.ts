@@ -20,6 +20,7 @@ import {
   saveUserStats,
   getUserStats,
 } from '@/services/db'
+import { getLocalDateKey } from '@/utils/dateKey'
 import { dataInitService } from '@/services/dataInitService'
 import { syncUserSettingsToSheet, syncUserStatsToSheet } from '@/services/userDataSheetSyncService'
 
@@ -215,7 +216,12 @@ export const useUserStore = defineStore('user', () => {
   /**
    * 記錄遊戲完成
    */
-  async function recordGamePlayed(score: number, duration: number, gameId: string): Promise<void> {
+  async function recordGamePlayed(
+    score: number,
+    duration: number,
+    gameId: string,
+    mode: 'daily' | 'free' = 'free'
+  ): Promise<void> {
     if (!currentStats.value) return
 
     const stats = currentStats.value
@@ -229,19 +235,28 @@ export const useUserStore = defineStore('user', () => {
       bestScores[gameId] = score
     }
 
-    // 計算連續天數
+    // 計算連續天數（僅每日訓練）
     let streak = stats.streak
-    const today = new Date().toDateString()
-    const lastPlayed = stats.lastPlayedAt ? new Date(stats.lastPlayedAt).toDateString() : null
-    
-    if (lastPlayed === today) {
-      // 同一天，不變
-    } else if (lastPlayed === new Date(Date.now() - 86400000).toDateString()) {
-      // 昨天玩過，連續天數 +1
-      streak += 1
-    } else {
-      // 超過一天沒玩，重置
-      streak = 1
+    const now = new Date()
+    let lastPlayedAt = stats.lastPlayedAt
+
+    if (mode === 'daily') {
+      const todayKey = getLocalDateKey(now)
+      const lastPlayedKey = stats.lastPlayedAt ? getLocalDateKey(new Date(stats.lastPlayedAt)) : null
+      const yesterday = new Date(now)
+      yesterday.setDate(yesterday.getDate() - 1)
+      const yesterdayKey = getLocalDateKey(yesterday)
+
+      if (lastPlayedKey === todayKey) {
+        // 同一天，不變
+      } else if (lastPlayedKey === yesterdayKey) {
+        // 昨天玩過，連續天數 +1
+        streak = Math.max(1, streak) + 1
+      } else {
+        // 超過一天沒玩，重置
+        streak = 1
+      }
+      lastPlayedAt = now
     }
 
     await updateStats({
@@ -249,7 +264,7 @@ export const useUserStore = defineStore('user', () => {
       totalPlayTime: newTotalTime,
       averageScore: Math.round(newAvgScore),
       bestScores,
-      lastPlayedAt: new Date(),
+      lastPlayedAt,
       streak,
     })
   }

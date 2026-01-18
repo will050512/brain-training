@@ -32,6 +32,8 @@ import scaleImg from '@/assets/images/balance-scale/scale.svg'
 import weight1Img from '@/assets/images/balance-scale/weight-1.svg'
 import weight2Img from '@/assets/images/balance-scale/weight-2.svg'
 import weight3Img from '@/assets/images/balance-scale/weight-3.svg'
+import weight4Img from '@/assets/images/balance-scale/weight-4.svg'
+import weight5Img from '@/assets/images/balance-scale/weight-5.svg'
 
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
@@ -63,6 +65,8 @@ const weightImages: Record<number, string> = {
   1: weight1Img,
   2: weight2Img,
   3: weight3Img,
+  4: weight4Img,
+  5: weight5Img,
 }
 
 function getWeightImage(weight: number): string | null {

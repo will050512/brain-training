@@ -7,6 +7,7 @@ import { ref, computed } from 'vue'
 import type { 
   GameSession, 
   GameResult, 
+  GameMode,
   Difficulty,
   SubDifficulty,
   SettingValue,
@@ -150,22 +151,26 @@ export const useGameStore = defineStore('game', () => {
   /**
    * 記錄遊戲結果
    */
-  async function recordGameResult(result: GameResult): Promise<GameSession> {
+  async function recordGameResult(result: GameResult, mode?: GameMode): Promise<GameSession> {
     const userStore = useUserStore()
     if (!userStore.currentUser) {
       throw new Error('使用者未登入')
     }
 
     const odId = userStore.currentUser.id
-    const cognitiveScores = calculateCognitiveScoresFromResult(result.gameId, result)
+    const normalizedResult: GameResult = {
+      ...result,
+      mode: mode ?? result.mode ?? 'free'
+    }
+    const cognitiveScores = calculateCognitiveScoresFromResult(normalizedResult.gameId, normalizedResult)
 
     const session: GameSession = {
       id: generateId(),
       odId,
-      gameId: result.gameId,
-      difficulty: result.difficulty,
-      subDifficulty: result.subDifficulty,
-      result,
+      gameId: normalizedResult.gameId,
+      difficulty: normalizedResult.difficulty,
+      subDifficulty: normalizedResult.subDifficulty,
+      result: normalizedResult,
       cognitiveScores,
       createdAt: new Date(),
     }
@@ -174,11 +179,16 @@ export const useGameStore = defineStore('game', () => {
     sessions.value.push(session)
 
     // 更新使用者統計
-    await userStore.recordGamePlayed(result.score, result.duration, result.gameId)
+    await userStore.recordGamePlayed(
+      normalizedResult.score,
+      normalizedResult.duration,
+      normalizedResult.gameId,
+      normalizedResult.mode ?? 'free'
+    )
 
     // 即時同步到 Google Sheet（失敗時不影響主流程）
     try {
-      const bestScore = getBestScore(result.gameId, result.difficulty)
+      const bestScore = getBestScore(normalizedResult.gameId, normalizedResult.difficulty)
       await syncSessionToSheet(session, bestScore)
     } catch (error) {
       console.error('syncSessionToSheet failed', error)

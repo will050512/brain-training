@@ -213,6 +213,25 @@
       </div>
 
       <h2 v-if="userStore.isLoggedIn" class="text-sm font-semibold text-[var(--color-text-muted)]">本週紀錄</h2>
+      <div v-if="userStore.isLoggedIn" class="flex items-center justify-between text-xs text-[var(--color-text-muted)]">
+        <span>顯示</span>
+        <div class="inline-flex items-center gap-1 rounded-full bg-[var(--color-surface)] p-1 border border-[var(--color-border)]">
+          <button
+            class="px-2 py-1 rounded-full transition-colors"
+            :class="activityFilter === 'daily' ? 'bg-[var(--color-primary)] text-white' : 'text-[var(--color-text-secondary)]'"
+            @click="activityFilter = 'daily'"
+          >
+            每日訓練
+          </button>
+          <button
+            class="px-2 py-1 rounded-full transition-colors"
+            :class="activityFilter === 'all' ? 'bg-[var(--color-primary)] text-white' : 'text-[var(--color-text-secondary)]'"
+            @click="activityFilter = 'all'"
+          >
+            全部活動
+          </button>
+        </div>
+      </div>
       <!-- 週曆 -->
       <div v-if="userStore.isLoggedIn" class="mb-6">
         <WeekCalendar
@@ -344,7 +363,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore, useSettingsStore } from '@/stores'
 import { useGameStore } from '@/stores/gameStore'
@@ -355,7 +374,7 @@ import WeekCalendar from '@/components/ui/WeekCalendar.vue'
 import TrainingGoalSettings from '@/components/ui/TrainingGoalSettings.vue'
 import TrainingHistoryModal from '@/components/ui/TrainingHistoryModal.vue'
 import { getOverallDeclineSummary } from '@/services/declineDetectionService'
-import { getTodayTrainingStatus, getTrainingStats } from '@/services/dailyTrainingService'
+import { getTodayTrainingStatus } from '@/services/dailyTrainingService'
 import { getGameSessionsByDate, getLatestMiniCogResult } from '@/services/db'
 import { useNotification } from '@/composables/useNotification'
 import type { GameSession } from '@/types/game'
@@ -395,6 +414,7 @@ const weeklyProgress = ref({ completedDays: 0, totalMinutes: 0, totalSessions: 0
 
 // 週曆訓練資料
 const weeklyTrainingData = ref<Record<string, { minutes: number; completed: boolean; sessions: number }>>({})
+const activityFilter = ref<'daily' | 'all'>('daily')
 
 // 提醒訊息
 const trainingReminder = ref<{ shouldRemind: boolean; daysMissed: number; message: string } | null>(null)
@@ -461,6 +481,13 @@ function formatPlayTime(seconds: number): string {
   if (seconds < 60) return `${seconds}秒`
   if (seconds < 3600) return `${Math.floor(seconds / 60)}分`
   return `${Math.floor(seconds / 3600)}時`
+}
+
+function filterSessionsByMode(records: GameSession[]): GameSession[] {
+  if (activityFilter.value === 'daily') {
+    return records.filter(r => r.result?.mode === 'daily')
+  }
+  return records
 }
 
 // 處理歡迎彈窗關閉
@@ -531,14 +558,8 @@ async function loadWeeklyData(): Promise<void> {
   try {
     const odId = userStore.currentUser?.id
     if (!odId) return
-    
-    // 獲取本週狀態（使用 getTrainingStats）
-    const stats = await getTrainingStats(odId, 7)
-    weeklyProgress.value = {
-      completedDays: stats.completedDays,
-      totalMinutes: 0, // 將從每日資料中計算
-      totalSessions: stats.totalGames
-    }
+
+    weeklyProgress.value = { completedDays: 0, totalMinutes: 0, totalSessions: 0 }
     
     // 建構週曆資料
     const today = new Date()
@@ -548,6 +569,8 @@ async function loadWeeklyData(): Promise<void> {
     
     const trainingData: Record<string, { minutes: number; completed: boolean; sessions: number }> = {}
     let totalMinutes = 0
+    let totalSessions = 0
+    let completedDays = 0
     
     // 獲取本週每天的訓練記錄
     for (let i = 0; i < 7; i++) {
@@ -558,20 +581,27 @@ async function loadWeeklyData(): Promise<void> {
       
       // 從資料庫查詢該日的訓練記錄
       const records: GameSession[] = await getGameSessionsByDate(odId, dateKey)
+      const filteredRecords = filterSessionsByMode(records)
       
-      if (records && records.length > 0) {
-        const dayMinutes = records.reduce((sum: number, r: GameSession) => sum + Math.round((r.result?.duration || 0) / 60), 0)
+      if (filteredRecords && filteredRecords.length > 0) {
+        const dayMinutes = filteredRecords.reduce((sum: number, r: GameSession) => sum + Math.round((r.result?.duration || 0) / 60), 0)
         totalMinutes += dayMinutes
+        totalSessions += filteredRecords.length
+        if (dayMinutes >= settingsStore.dailyTrainingDuration) {
+          completedDays += 1
+        }
         trainingData[dateKey] = {
           minutes: dayMinutes,
           completed: dayMinutes >= settingsStore.dailyTrainingDuration,
-          sessions: records.length
+          sessions: filteredRecords.length
         }
       }
     }
     
     // 更新總分鐘數
     weeklyProgress.value.totalMinutes = totalMinutes
+    weeklyProgress.value.totalSessions = totalSessions
+    weeklyProgress.value.completedDays = completedDays
     weeklyTrainingData.value = trainingData
   } catch (error) {
     console.error('載入週訓練資料失敗:', error)
@@ -587,8 +617,9 @@ async function handleDateSelect(dateKey: string): Promise<void> {
     
     // 載入該日期的訓練記錄
     const records: GameSession[] = await getGameSessionsByDate(odId, dateKey)
+    const filteredRecords = filterSessionsByMode(records)
     
-    selectedDateSessions.value = records.map((r: GameSession) => ({
+    selectedDateSessions.value = filteredRecords.map((r: GameSession) => ({
       gameId: r.gameId,
       score: r.result?.score,
       duration: r.result?.duration,
@@ -613,18 +644,19 @@ async function handleWeekChange(startDate: string, endDate: string): Promise<voi
     const start = new Date(startDate)
     const end = new Date(endDate)
     
-      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const dateKey = getLocalDateKey(d)
       if (!dateKey) continue
       
       const records: GameSession[] = await getGameSessionsByDate(odId, dateKey)
+      const filteredRecords = filterSessionsByMode(records)
       
-      if (records && records.length > 0) {
-        const totalMinutes = records.reduce((sum: number, r: GameSession) => sum + Math.round((r.result?.duration || 0) / 60), 0)
+      if (filteredRecords && filteredRecords.length > 0) {
+        const totalMinutes = filteredRecords.reduce((sum: number, r: GameSession) => sum + Math.round((r.result?.duration || 0) / 60), 0)
         trainingData[dateKey] = {
           minutes: totalMinutes,
           completed: totalMinutes >= settingsStore.dailyTrainingDuration,
-          sessions: records.length
+          sessions: filteredRecords.length
         }
       }
     }
@@ -679,6 +711,12 @@ onMounted(async () => {
     
     // 嘗試請求通知權限（僅在支援的環境）
     requestPermission()
+  }
+})
+
+watch(activityFilter, () => {
+  if (userStore.isLoggedIn) {
+    loadWeeklyData()
   }
 })
 </script>

@@ -2,6 +2,7 @@ import type { GameGrade, GameSession, GameResult, StandardizedMetrics, TrackingD
 import { getGradeFromScore } from '@/types/game'
 import { getDataConsent, getUserGameSessions } from '@/services/db'
 import { detectClientSource, loadClientSourceForUser } from '@/services/clientSource'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 // 已部署的 Apps Script Web App
 const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyeT9y4bYyMeCHCXVZru47BQD_Za4ANr-i6lfksErOh84kJ_soasack6rNlTuzeY2h9/exec'
@@ -105,8 +106,21 @@ function isBrowserOnline(): boolean {
   }
 }
 
+function isBehaviorTrackingEnabled(): boolean {
+  try {
+    const settingsStore = useSettingsStore()
+    return settingsStore.enableBehaviorTracking
+  } catch {
+    return true
+  }
+}
+
 async function isSheetSyncAllowed(odId: string): Promise<boolean> {
   // 以「分析數據收集同意」作為遠端同步的開關，避免未同意就上傳造成信任問題。
+  if (!isBehaviorTrackingEnabled()) {
+    console.info('[Sync] Skipped: behavior tracking disabled.')
+    return false
+  }
   try {
     const consent = await getDataConsent(odId)
     return !!consent?.analyticsConsent

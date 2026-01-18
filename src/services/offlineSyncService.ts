@@ -16,6 +16,7 @@ import {
   type BehaviorLog,
   type PendingSyncItem
 } from '@/services/db'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 // 同步狀態
 export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline'
@@ -150,6 +151,15 @@ class OfflineSyncService {
    * 執行同步
    */
   async sync(): Promise<SyncResult> {
+    if (!isBehaviorTrackingEnabled()) {
+      console.info('[OfflineSync] Sync skipped by user preference.')
+      return {
+        success: true,
+        syncedCount: 0,
+        failedCount: 0,
+        errors: []
+      }
+    }
     if (!this.isOnline()) {
       return {
         success: false,
@@ -411,6 +421,15 @@ class OfflineSyncService {
     }
     
     this.statusChangeCallbacks = []
+  }
+}
+
+function isBehaviorTrackingEnabled(): boolean {
+  try {
+    const settingsStore = useSettingsStore()
+    return settingsStore.enableBehaviorTracking
+  } catch {
+    return true
   }
 }
 

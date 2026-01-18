@@ -30,6 +30,7 @@ import {
 import GameReadyScreen from './ui/GameReadyScreen.vue'
 
 import nodeImg from '@/assets/images/number-connect/node.svg'
+import backgroundImg from '@/assets/images/number-connect/background.svg'
 
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
@@ -429,6 +430,12 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
 .node-btn {
   background-image: url(v-bind(nodeImg));
+  background-size: cover;
+  background-position: center;
+}
+
+.game-area {
+  background-image: url(v-bind(backgroundImg));
   background-size: cover;
   background-position: center;
 }

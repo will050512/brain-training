@@ -10,7 +10,7 @@
     <!-- 可滾動內容區 -->
     <div class="app-content-scroll">
       <div class="p-4 section-stack">
-        <!-- 外觀主題設定（已禁用，固定為明亮模式）
+        <!-- 外觀主題設定 -->
         <div class="card p-4">
           <h3 class="font-semibold text-[var(--color-text)] mb-4">🎨 外觀主題</h3>
           
@@ -49,11 +49,63 @@
             </button>
           </div>
         </div>
-        -->
 
         <!-- 訓練目標設定 -->
         <div class="card">
           <TrainingGoalSettings />
+        </div>
+
+        <!-- 外觀與無障礙 -->
+        <div class="card p-4">
+          <h3 class="font-semibold text-[var(--color-text)] mb-4">外觀與無障礙</h3>
+
+          <!-- 字體大小 -->
+          <div class="mb-4">
+            <div class="text-sm font-medium text-[var(--color-text)] mb-2">字體大小</div>
+            <div class="grid grid-cols-4 gap-2">
+              <button
+                v-for="option in fontSizeOptions"
+                :key="option.value"
+                @click="settingsStore.setFontSize(option.value)"
+                class="flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all"
+                :class="settingsStore.fontSize === option.value
+                  ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]'
+                  : 'border-[var(--color-border)]'"
+              >
+                <span class="text-sm font-semibold text-[var(--color-text)]">{{ option.label }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 高對比 -->
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="text-sm font-medium text-[var(--color-text)]">高對比模式</div>
+              <div class="text-xs text-[var(--color-text-muted)]">提升文字與背景對比</div>
+            </div>
+            <button
+              @click="settingsStore.highContrast = !settingsStore.highContrast"
+              class="toggle-switch"
+              :class="{ 'toggle-on': settingsStore.highContrast }"
+            >
+              <span class="toggle-thumb"></span>
+            </button>
+          </div>
+
+          <!-- 減少動畫 -->
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium text-[var(--color-text)]">減少動畫</div>
+              <div class="text-xs text-[var(--color-text-muted)]">降低動態效果帶來的不適</div>
+            </div>
+            <button
+              @click="settingsStore.reduceMotion = !settingsStore.reduceMotion"
+              class="toggle-switch"
+              :class="{ 'toggle-on': settingsStore.reduceMotion }"
+            >
+              <span class="toggle-thumb"></span>
+            </button>
+          </div>
         </div>
 
         <!-- 螢幕方向設定 -->
@@ -105,9 +157,9 @@
           </p>
         </div>
 
-        <!-- 音效設定 -->
+        <!-- 音效與回饋 -->
         <div class="card p-4">
-          <h3 class="font-semibold text-[var(--color-text)] mb-4">🔊 音效設定</h3>
+          <h3 class="font-semibold text-[var(--color-text)] mb-4">🔊 音效與回饋</h3>
           
           <!-- 遊戲音效 -->
           <div class="flex items-center justify-between mb-3">
@@ -124,7 +176,7 @@
           </div>
           
           <!-- 背景音樂 -->
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between mb-3">
             <div>
               <div class="text-sm font-medium text-[var(--color-text)]">背景音樂</div>
             </div>
@@ -132,6 +184,36 @@
               @click="settingsStore.toggleMusic()"
               class="toggle-switch"
               :class="{ 'toggle-on': settingsStore.musicEnabled }"
+            >
+              <span class="toggle-thumb"></span>
+            </button>
+          </div>
+
+          <!-- 語音提示 -->
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="text-sm font-medium text-[var(--color-text)]">語音提示</div>
+              <div class="text-xs text-[var(--color-text-muted)]">提供語音引導（若有支援）</div>
+            </div>
+            <button
+              @click="settingsStore.enableVoicePrompts = !settingsStore.enableVoicePrompts"
+              class="toggle-switch"
+              :class="{ 'toggle-on': settingsStore.enableVoicePrompts }"
+            >
+              <span class="toggle-thumb"></span>
+            </button>
+          </div>
+
+          <!-- 震動回饋 -->
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium text-[var(--color-text)]">震動回饋</div>
+              <div class="text-xs text-[var(--color-text-muted)]">在支援裝置提供觸覺回饋</div>
+            </div>
+            <button
+              @click="settingsStore.enableHapticFeedback = !settingsStore.enableHapticFeedback"
+              class="toggle-switch"
+              :class="{ 'toggle-on': settingsStore.enableHapticFeedback }"
             >
               <span class="toggle-thumb"></span>
             </button>
@@ -157,6 +239,43 @@
           </div>
         </div>
 
+        <!-- 隱私與同意 -->
+        <div v-if="userStore.isLoggedIn" class="card p-4">
+          <h3 class="font-semibold text-[var(--color-text)] mb-4">隱私與同意</h3>
+
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="text-sm font-medium text-[var(--color-text)]">雲端備份（Google Sheets）</div>
+              <div class="text-xs text-[var(--color-text-muted)]">允許將訓練資料備份到雲端</div>
+            </div>
+            <button
+              @click="toggleCloudBackup()"
+              class="toggle-switch"
+              :class="{ 'toggle-on': consentState?.analyticsConsent }"
+            >
+              <span class="toggle-thumb"></span>
+            </button>
+          </div>
+
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="text-sm font-medium text-[var(--color-text)]">使用分析（本機）</div>
+              <div class="text-xs text-[var(--color-text-muted)]">啟用行為記錄以產生訓練洞察</div>
+            </div>
+            <button
+              @click="toggleUsageAnalytics()"
+              class="toggle-switch"
+              :class="{ 'toggle-on': settingsStore.enableBehaviorTracking }"
+            >
+              <span class="toggle-thumb"></span>
+            </button>
+          </div>
+
+          <div class="text-xs text-[var(--color-text-muted)] mt-2">
+            資料預設只儲存在您的裝置上，雲端備份為選用功能且需要 Google 帳戶授權。
+          </div>
+        </div>
+
         <!-- 資料同步 -->
         <div v-if="userStore.isLoggedIn" class="card p-4">
           <h3 class="font-semibold text-[var(--color-text)] mb-3">資料同步</h3>
@@ -165,8 +284,16 @@
           </p>
           <div class="space-y-2 text-sm">
             <div class="flex justify-between">
-              <span class="text-[var(--color-text-muted)]">同步狀態</span>
+              <span class="text-[var(--color-text-muted)]">同步許可</span>
               <span :class="syncStatusClass">{{ syncStatusLabel }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[var(--color-text-muted)]">手動同步</span>
+              <SyncStatusIndicator />
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[var(--color-text-muted)]">上次手動同步</span>
+              <span class="text-[var(--color-text)]">{{ formatSyncTime(settingsStore.lastManualSyncAt) }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-[var(--color-text-muted)]">最近上傳（遊戲）</span>
@@ -176,12 +303,22 @@
               <span class="text-[var(--color-text-muted)]">最近上傳（個人）</span>
               <span class="text-[var(--color-text)]">{{ formatSyncTime(syncStatus.user.lastSuccessAt) }}</span>
             </div>
+            <div v-if="settingsStore.lastManualSyncError" class="text-xs text-red-600">
+              同步失敗：{{ settingsStore.lastManualSyncError }}
+            </div>
             <div v-if="syncStatus.session.lastErrorAt || syncStatus.user.lastErrorAt" class="text-xs text-red-600">
               最近同步失敗：{{ formatSyncTime(syncStatus.session.lastErrorAt || syncStatus.user.lastErrorAt) }}
             </div>
           </div>
+          <button
+            class="btn btn-secondary w-full mt-3 py-2 text-sm"
+            :disabled="!canManualSync"
+            @click="handleManualSync"
+          >
+            立即同步
+          </button>
           <div class="text-xs text-[var(--color-text-muted)] mt-3">
-            需開啟「分析數據收集同意」才會同步，離線時將在恢復連線後補傳。
+            需開啟「雲端備份」才會同步，離線時將在恢復連線後補傳。
           </div>
         </div>
 
@@ -265,7 +402,7 @@
           <div class="text-center text-sm">
             <img src="@/assets/logo.svg" alt="愛護腦" class="w-12 h-12 mx-auto mb-3" />
             <p class="font-semibold text-[var(--color-text)]">愛護腦 Al MindCare</p>
-            <p class="text-[var(--color-text-muted)]">版本 1.0.0</p>
+            <p class="text-[var(--color-text-muted)]">版本 {{ appVersion }}</p>
           </div>
         </div>
       </div>
@@ -276,19 +413,27 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useUserStore, useSettingsStore, useGameStore } from '@/stores'
-import { clearUserGameSessions } from '@/services/db'
+import { clearUserGameSessions, getDataConsent, saveDataConsent } from '@/services/db'
 import TrainingGoalSettings from '@/components/ui/TrainingGoalSettings.vue'
+import SyncStatusIndicator from '@/components/common/SyncStatusIndicator.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { getTotalGamesPlayed } from '@/utils/trainingStats'
 import { loadClientSourceForUser } from '@/services/clientSource'
-import { getDataConsent } from '@/services/db'
-import { loadSessionSyncStatus } from '@/services/googleSheetSyncService'
+import { backfillUserSessionsToSheet, loadSessionSyncStatus } from '@/services/googleSheetSyncService'
+import { backfillAllUserDataToSheet } from '@/services/userDataSheetSyncService'
 import { loadUserSyncStatus } from '@/services/userSheetSyncService'
+import { FONT_SIZE_LABELS, type FontSize } from '@/stores/settingsStore'
+import { CURRENT_CONSENT_VERSION, defaultDataConsent, type DataConsentOptions } from '@/types/user'
 
 const router = useRouter()
 const userStore = useUserStore()
 const settingsStore = useSettingsStore()
 const gameStore = useGameStore()
+const appVersion = __APP_VERSION__ || 'Unknown'
+const fontSizeOptions = (Object.entries(FONT_SIZE_LABELS) as Array<[FontSize, string]>).map(([value, label]) => ({
+  value,
+  label
+}))
 
 const syncStatus = ref({
   session: {
@@ -306,6 +451,7 @@ const syncStatus = ref({
   consent: 'unknown' as 'allowed' | 'blocked' | 'unknown',
   online: true,
 })
+const consentState = ref<DataConsentOptions | null>(null)
 
 const totalGamesPlayed = computed(() => {
   return getTotalGamesPlayed(userStore.currentStats?.totalGamesPlayed, gameStore.sessions.length)
@@ -353,6 +499,14 @@ const syncStatusClass = computed(() => {
   return 'text-green-600'
 })
 
+const canManualSync = computed(() => {
+  if (!userStore.isLoggedIn) return false
+  if (!settingsStore.enableBehaviorTracking) return false
+  if (syncStatus.value.consent !== 'allowed') return false
+  if (!syncStatus.value.online) return false
+  return settingsStore.syncUiStatus !== 'syncing'
+})
+
 // 格式化遊玩時間
 function formatPlayTime(seconds: number): string {
   if (seconds < 60) return `${seconds}秒`
@@ -387,9 +541,59 @@ async function refreshConsentStatus(): Promise<void> {
   try {
     const consent = await getDataConsent(odId)
     syncStatus.value.consent = consent?.analyticsConsent ? 'allowed' : 'blocked'
+    consentState.value = consent || {
+      ...defaultDataConsent(odId),
+      essentialConsent: true,
+      consentTimestamp: new Date().toISOString(),
+      consentVersion: CURRENT_CONSENT_VERSION
+    }
   } catch {
     syncStatus.value.consent = 'unknown'
   }
+}
+
+async function toggleCloudBackup(): Promise<void> {
+  const odId = userStore.currentUser?.id
+  if (!odId) return
+  const base = consentState.value || {
+    ...defaultDataConsent(odId),
+    essentialConsent: true,
+    consentTimestamp: new Date().toISOString(),
+    consentVersion: CURRENT_CONSENT_VERSION
+  }
+  const next = {
+    ...base,
+    analyticsConsent: !base.analyticsConsent,
+    behaviorTrackingConsent: base.analyticsConsent ? false : base.behaviorTrackingConsent,
+    detailedBehaviorConsent: base.analyticsConsent ? false : base.detailedBehaviorConsent,
+    consentTimestamp: new Date().toISOString(),
+    consentVersion: CURRENT_CONSENT_VERSION
+  }
+  consentState.value = next
+  await saveDataConsent(next)
+  syncStatus.value.consent = next.analyticsConsent ? 'allowed' : 'blocked'
+}
+
+async function toggleUsageAnalytics(): Promise<void> {
+  const enabled = !settingsStore.enableBehaviorTracking
+  settingsStore.toggleBehaviorTracking(enabled)
+  const odId = userStore.currentUser?.id
+  if (!odId) return
+  const base = consentState.value || {
+    ...defaultDataConsent(odId),
+    essentialConsent: true,
+    consentTimestamp: new Date().toISOString(),
+    consentVersion: CURRENT_CONSENT_VERSION
+  }
+  const next = {
+    ...base,
+    behaviorTrackingConsent: enabled,
+    detailedBehaviorConsent: enabled ? base.detailedBehaviorConsent : false,
+    consentTimestamp: new Date().toISOString(),
+    consentVersion: CURRENT_CONSENT_VERSION
+  }
+  consentState.value = next
+  await saveDataConsent(next)
 }
 
 // 登出
@@ -432,6 +636,33 @@ async function confirmClearData(): Promise<void> {
 function handleStatusRefresh(): void {
   refreshSyncStatus()
   refreshConsentStatus()
+}
+
+async function handleManualSync(): Promise<void> {
+  const odId = userStore.currentUser?.id
+  if (!odId) return
+  if (!settingsStore.enableBehaviorTracking) {
+    console.info('[Sync] Skipped: behavior tracking disabled.')
+    return
+  }
+  if (syncStatus.value.consent !== 'allowed') {
+    settingsStore.setSyncUiStatus('error', '需同意分析資料收集')
+    return
+  }
+  if (!syncStatus.value.online) {
+    settingsStore.setSyncUiStatus('error', '目前離線，無法同步')
+    return
+  }
+  settingsStore.setSyncUiStatus('syncing')
+  try {
+    await backfillAllUserDataToSheet(odId, { force: true })
+    await backfillUserSessionsToSheet(odId)
+    settingsStore.setSyncUiStatus('success')
+    refreshSyncStatus()
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'sync failed'
+    settingsStore.setSyncUiStatus('error', message)
+  }
 }
 
 watch(() => userStore.currentUser?.id, (id) => {

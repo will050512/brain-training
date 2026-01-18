@@ -35,9 +35,13 @@ import cardBackImg from '@/assets/images/card-match/card-back.svg'
 import cardFrameImg from '@/assets/images/card-match/card-frame.svg'
 import iconApple from '@/assets/images/card-match/icons/apple.svg'
 import iconBanana from '@/assets/images/card-match/icons/banana.svg'
+import iconBook from '@/assets/images/card-match/icons/book.svg'
+import iconCar from '@/assets/images/card-match/icons/car.svg'
 import iconCat from '@/assets/images/card-match/icons/cat.svg'
+import iconClock from '@/assets/images/card-match/icons/clock.svg'
 import iconDog from '@/assets/images/card-match/icons/dog.svg'
 import iconFlower from '@/assets/images/card-match/icons/flower.svg'
+import iconHouse from '@/assets/images/card-match/icons/house.svg'
 import iconMoon from '@/assets/images/card-match/icons/moon.svg'
 import iconSun from '@/assets/images/card-match/icons/sun.svg'
 import iconTree from '@/assets/images/card-match/icons/tree.svg'
@@ -74,9 +78,13 @@ const { isSmallLandscape } = useResponsive()
 const iconImages = [
   iconApple,
   iconBanana,
+  iconBook,
+  iconCar,
   iconCat,
+  iconClock,
   iconDog,
   iconFlower,
+  iconHouse,
   iconMoon,
   iconSun,
   iconTree,
@@ -202,6 +210,9 @@ function handleStart() {
   
   // 生成卡片
   const currentConfig = CARD_MATCH_CONFIGS[props.difficulty]
+  if (currentConfig.pairs > iconImages.length) {
+    console.warn(`[CardMatch] pairs (${currentConfig.pairs}) exceed available icons (${iconImages.length}); falling back to emoji pool.`)
+  }
   cards.value = generateCards(currentConfig)
   
   // 開始遊戲狀態

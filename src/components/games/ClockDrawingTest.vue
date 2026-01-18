@@ -120,6 +120,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useResponsive } from '@/composables/useResponsive'
+import { useSettingsStore } from '@/stores/settingsStore'
 import type { ClockDrawingResult } from '@/services/miniCogService'
 import { calculateClockDrawingScore } from '@/services/miniCogService'
 import { getRandomClockTime, getTimeDescription } from '@/services/clockDrawingAnalyzer'
@@ -164,6 +165,7 @@ const containerRef = ref<HTMLElement | null>(null)
 const assembleContainerRef = ref<HTMLElement | null>(null)
 const isComplete = ref(false)
 const { isSmallLandscape } = useResponsive()
+const settingsStore = useSettingsStore()
 const startTime = ref<number>(0)
 const previewImageUrl = ref<string>('')
 
@@ -424,7 +426,7 @@ function checkSnapPosition(num: AssembleNumber) {
       num.snappedTo = pos.number
       num.isCorrect = num.value === pos.number
       
-      if ('vibrate' in navigator) {
+      if (settingsStore.enableHapticFeedback && 'vibrate' in navigator) {
         navigator.vibrate(10)
       }
       return

@@ -1,6 +1,7 @@
 import type { User } from '@/types'
 import { getDataConsent } from '@/services/db'
 import { detectClientSource, loadClientSourceForUser } from '@/services/clientSource'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyeT9y4bYyMeCHCXVZru47BQD_Za4ANr-i6lfksErOh84kJ_soasack6rNlTuzeY2h9/exec'
 const USER_SYNC_KEY_PREFIX = 'sheetSyncedUser:'
@@ -72,7 +73,20 @@ function isBrowserOnline(): boolean {
   }
 }
 
+function isBehaviorTrackingEnabled(): boolean {
+  try {
+    const settingsStore = useSettingsStore()
+    return settingsStore.enableBehaviorTracking
+  } catch {
+    return true
+  }
+}
+
 async function isAllowed(odId: string): Promise<boolean> {
+  if (!isBehaviorTrackingEnabled()) {
+    console.info('[Sync] Skipped: behavior tracking disabled.')
+    return false
+  }
   try {
     const consent = await getDataConsent(odId)
     return !!consent?.analyticsConsent

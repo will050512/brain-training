@@ -116,7 +116,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useSettingsStore, WEEKLY_TRAINING_OPTIONS, type WeeklyTrainingGoal, type DailyTrainingDuration } from '@/stores/settingsStore'
+import { useSettingsStore, WEEKLY_TRAINING_OPTIONS, DAILY_TRAINING_OPTIONS, type WeeklyTrainingGoal, type DailyTrainingDuration } from '@/stores/settingsStore'
 
 interface Props {
   showSaveButton?: boolean
@@ -154,10 +154,8 @@ const goalDifficultyText = computed(() => {
 
 // 預估遊戲數量
 const estimatedGames = computed(() => {
-  if (dailyDuration.value <= 10) return '3-4'
-  if (dailyDuration.value <= 15) return '4-5'
-  if (dailyDuration.value <= 20) return '5-6'
-  return '6-8'
+  const option = DAILY_TRAINING_OPTIONS.find(o => o.value === dailyDuration.value)
+  return option?.games || '6-8'
 })
 
 // 週總訓練時間

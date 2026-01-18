@@ -421,7 +421,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { gameRegistry } from '@/core/gameRegistry'
 import { useGameStore, useUserStore } from '@/stores'
 import { useResponsive } from '@/composables/useResponsive'
-import { DIFFICULTIES, type GameResult, type GameState, type GameDefinition, type GameStatusUpdate, type UnifiedGameResult, type Difficulty, type SubDifficulty } from '@/types/game'
+import { DIFFICULTIES, type GameResult, type GameState, type GameDefinition, type GameStatusUpdate, type UnifiedGameResult, type Difficulty, type SubDifficulty, type GameMode } from '@/types/game'
 import { calculateDifficultyAdjustment, applyDifficultyAdjustment, getFullDifficultyLabel, getSuggestedDifficulty, type DifficultyAdjustment } from '@/services/adaptiveDifficultyService'
 import { markGameCompleted, updatePlannedGameDifficulties } from '@/services/dailyTrainingService'
 import TrainingCompleteModal from '@/components/ui/TrainingCompleteModal.vue'
@@ -796,6 +796,7 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
       throw new Error('Missing gameId for result normalization')
     }
 
+    const gameMode: GameMode = isFromDailyTraining.value ? 'daily' : 'free'
     const result: GameResult = isLegacyGameResult(rawResult)
       ? {
           ...rawResult,
@@ -803,7 +804,8 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
           difficulty: gameStore.currentDifficulty,
           subDifficulty,
           duration: durationSeconds,
-          timestamp: new Date()
+          timestamp: new Date(),
+          mode: gameMode
         }
       : normalizeToLegacyGameResult({
           gameId: id,
@@ -834,6 +836,7 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
       score: clampedScore,
       maxScore: 100,
       timestamp: new Date(),
+      mode: gameMode,
       grade: unified.grade,
       metrics: unified.metrics,
       tracking: unified.tracking,
@@ -857,7 +860,7 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
 
     // 記錄遊戲結果（失敗不阻擋結算流程）
     try {
-      await gameStore.recordGameResult(finalizedResult)
+      await gameStore.recordGameResult(finalizedResult, gameMode)
     } catch (error) {
       console.error('recordGameResult failed:', error)
     }

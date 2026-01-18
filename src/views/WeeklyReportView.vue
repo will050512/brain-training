@@ -40,6 +40,7 @@ const sessions = ref<GameSession[]>([])
 const professionalAssessment = ref<ProfessionalAssessment | null>(null)
 const selectedTab = ref<'overview' | 'professional' | 'trend' | 'nutrition'>('overview')
 const nutritionResult = ref<PersonalizedNutritionResult | null>(null)
+const activityFilter = ref<'daily' | 'all'>('daily')
 
 // 上週分數（用於計算趨勢）
 const previousWeekScores = ref<CognitiveScores | null>(null)
@@ -63,9 +64,16 @@ const weekRange = computed(() => {
   }
 })
 
+const filteredSessions = computed(() => {
+  if (activityFilter.value === 'daily') {
+    return sessions.value.filter(s => s.result?.mode === 'daily')
+  }
+  return sessions.value
+})
+
 // 本週遊戲記錄
 const weekSessions = computed(() => {
-  return sessions.value.filter(s => {
+  return filteredSessions.value.filter(s => {
     const date = new Date(s.createdAt)
     return date >= weekRange.value.start && date <= weekRange.value.end
   })
@@ -301,6 +309,23 @@ onMounted(() => {
     <!-- 週期範圍 -->
     <div class="week-range">
       {{ weekRange.formatted }}
+    </div>
+    <div class="section-label">顯示範圍</div>
+    <div class="filter-toggle">
+      <button
+        class="filter-btn"
+        :class="{ active: activityFilter === 'daily' }"
+        @click="activityFilter = 'daily'"
+      >
+        每日訓練
+      </button>
+      <button
+        class="filter-btn"
+        :class="{ active: activityFilter === 'all' }"
+        @click="activityFilter = 'all'"
+      >
+        全部活動
+      </button>
     </div>
 
     <!-- 載入中 -->
@@ -735,6 +760,32 @@ onMounted(() => {
   font-size: 1.125rem;
   color: var(--color-text-secondary);
   margin-bottom: 1.5rem;
+}
+
+.filter-toggle {
+  display: inline-flex;
+  gap: 0.5rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  margin-bottom: 1.5rem;
+}
+
+.filter-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn.active {
+  background: var(--color-primary);
+  color: white;
+  font-weight: 600;
 }
 
 /* 載入中 */
