@@ -245,7 +245,7 @@
 
           <div class="flex items-center justify-between mb-3">
             <div>
-              <div class="text-sm font-medium text-[var(--color-text)]">雲端備份（Google Sheets）</div>
+              <div class="text-sm font-medium text-[var(--color-text)]">雲端備份</div>
               <div class="text-xs text-[var(--color-text-muted)]">允許將訓練資料備份到雲端</div>
             </div>
             <button
