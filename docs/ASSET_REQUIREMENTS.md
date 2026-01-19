@@ -62,13 +62,13 @@
 **路徑：** `src/assets/images/card-match/icons/`
 
 * 已包含 12 個圖示（含 `car.svg`, `house.svg`, `book.svg`, `clock.svg`）。
-* 若需替換風格，請覆蓋同名檔案。
+* hard 模式已使用 12 個圖示（可直接覆蓋同名檔案）。
 
 ### Balance Scale (天平稱重)
 
 **路徑：** `src/assets/images/balance-scale/`
 
-* 已包含 `weight-1.svg` 至 `weight-5.svg`。
+* 已包含 `weight-1.svg` 至 `weight-5.svg`，UI 已使用全部砝碼。
 
 
 
@@ -90,7 +90,7 @@
 
 **路徑：** `src/assets/images/number-connect/`
 
-* `background.svg` 已存在（可視需求替換）。
+* `background.svg` 已接入 UI 背景（可視需求替換）。
 
 
 
@@ -121,11 +121,12 @@
 ## 圖片 - 現有素材 (已使用)
 
 * **whack-a-mole:** `mole.svg` (地鼠), `mole-hit.svg` (被擊中), `hole.svg` (洞), `bomb.svg` (炸彈)
-* **balance-scale:** `scale.svg` (天平), `weight-1.svg` 至 `weight-3.svg` (砝碼)
+* **balance-scale:** `scale.svg` (天平), `weight-1.svg` 至 `weight-5.svg` (砝碼)
 * **card-match:** `card-back.svg` (卡背), `card-frame.svg` (卡框), icons (apple/banana/cat/dog/flower/moon/sun/tree)
 * **poker-memory:** `card-back.svg` (卡背), suit icons (花色圖示)
 * **maze-navigation:** `player.svg` (玩家), `exit.svg` (出口), `wall.svg` (牆), `path.svg` (路徑)
 * **number-connect:** `node.svg` (節點), `line.svg` (連線)
+* **number-connect:** `background.svg` (背景)
 * **pattern-reasoning:** circle/square/triangle (red/green/blue)
 * **rock-paper-scissors:** `rock.svg` (石頭), `paper.svg` (布), `scissors.svg` (剪刀)
 * **clock-drawing:** `clock-face.svg` (鐘面), `reference.svg` (參考圖)
@@ -134,7 +135,4 @@
 
 以下素材已存在但尚未完整導入 UI，或目前僅部分使用：
 
-- **Card Match:** icons 目前 UI 只使用 8 個，hard 模式需要 12 個圖示（`src/components/games/CardMatch.vue`）。
-- **Balance Scale:** 砝碼圖片 4/5 已有檔案，但邏輯仍只使用 1-3（`src/games/logic/balanceScale.ts`、`src/components/games/BalanceScale.vue`）。
-- **Number Connect:** `background.svg` 已存在但尚未應用在 UI 背景（`src/components/games/NumberConnect.vue`）。
 - **Rock Paper Scissors:** `vs.svg` 尚未使用（若新增對決畫面可導入）。

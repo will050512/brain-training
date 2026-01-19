@@ -13,6 +13,7 @@
 ## 產品 / UX / 視覺
 - `DESIGN_SYSTEM.md`：設計系統與元件原則
 - `RESPONSIVE_DESIGN_SYSTEM.md`：響應式與觸控設計規範
+- `../ASSET_GUIDE.md`：素材實際使用清單（以程式為準）
 - `ASSET_REQUIREMENTS.md`：素材規格與目前使用狀態
 - `SCORING.md`：統一評分與權重
 
