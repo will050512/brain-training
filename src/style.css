@@ -7,349 +7,308 @@
 
 /* CSS 變數定義 - 淺色模式（預設） */
 :root {
-  /* 語義化顏色（主題感知） */
-  --color-bg: #f8fafc;
-  --color-bg-soft: #f1f5f9;
-  --color-bg-muted: #e2e8f0;
-  --color-surface: #ffffff;
-  --color-surface-elevated: #ffffff;
-  --color-surface-alt: #f8fafc;
-  --color-text: #1f2937;
-  --color-text-secondary: #4b5563;
-  --color-text-muted: #6b7280;
-  --color-text-inverse: #ffffff;
-  --color-border: #e2e8f0;
-  --color-border-light: #f1f5f9;
+  /* 語義化顏色（主題感知）- Blue/Green with Warm Accents */
+  --color-bg: #F8FAFC;
+  --color-bg-soft: #F1F5F9;
+  --color-bg-muted: #E2E8F0;
+  --color-surface: #FFFFFF;
+  --color-surface-elevated: #FFFFFF;
+  --color-surface-alt: #F1F5F9;
   
+  --color-text: #0F172A;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748B;
+  --color-text-inverse: #FFFFFF;
+  
+  --color-border: #E2E8F0;
+  --color-border-soft: #E5E7EB;
+  --color-border-light: #F1F5F9;
+  --color-border-inverse: rgba(255, 255, 255, 0.35);
+  --color-track-on-primary: rgba(255, 255, 255, 0.25);
+
   /* 覆蓋層與焦點 */
-  --color-overlay: rgba(0, 0, 0, 0.6);
-  --color-focus-ring: rgba(59, 130, 246, 0.5);
-  --color-skeleton: #e2e8f0;
+  --color-overlay: rgba(15, 23, 42, 0.6);
+  --color-focus-ring: rgba(59, 130, 246, 0.45);
+  --color-skeleton: #E2E8F0;
   
-  /* 顏色主題 - 新色調 */
-  --color-primary: #3eb3d6;
-  --color-primary-dark: #11031d;
-  --color-primary-light: #79bfd4;
-  --color-primary-bg: #f5e6ff;
-  --color-accent-green: #01cb5f;
-  --color-accent-purple: #3eb3d6;
-  --color-accent-blue: #1f8ea9;
-  --color-accent-dark: #11031d;
-  --color-success: #22c55e;
-  --color-success-bg: #f0fdf4;
-  --color-warning: #eab308;
-  --color-warning-bg: #fefce8;
-  --color-danger: #ef4444;
-  --color-danger-bg: #fef2f2;
-  --color-info: #06b6d4;
-  --color-info-bg: #ecfeff;
+  /* 顏色主題 */
+  --color-primary: #1E3A8A;       /* Deep Blue */
+  --color-primary-rgb: 30, 58, 138;
+  --color-primary-dark: #1E40AF;
+  --color-primary-light: #3B82F6;
+  --color-primary-bg: #DBEAFE;
+  
+  --color-accent-warm: #F59E0B;   /* Warm Amber */
+  --color-accent-green: #16A34A;
+  --color-accent-teal: #0F766E;
+  --color-accent-purple: #2563EB;
+  
+  --color-success: #16A34A;
+  --color-success-bg: #ECFDF5;
+  --color-warning: #F59E0B;
+  --color-warning-bg: #FFFBEB;
+  --color-danger: #DC2626;
+  --color-danger-bg: #FEF2F2;
+  --color-info: #0EA5E9;
+  --color-info-bg: #E0F2FE;
   
   /* 認知維度顏色 */
-  --color-reaction: #ef4444;
-  --color-logic: #8b5cf6;
-  --color-memory: #3b82f6;
-  --color-cognition: #22c55e;
-  --color-coordination: #f59e0b;
-  --color-attention: #ec4899;
+  --color-reaction: #2563EB;
+  --color-logic: #0F766E;
+  --color-memory: #1E40AF;
+  --color-cognition: #15803D;
+  --color-coordination: #F59E0B;
+  --color-attention: #DC2626;
   
   /* 遊戲專用變數 */
-  --game-area-bg: #f1f5f9;
-  --game-card-bg: #ffffff;
-  --game-card-front: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
-  --game-card-back: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --game-button-bg: #ffffff;
-  --game-button-hover: #f1f5f9;
-  --game-button-active: #e2e8f0;
-  --game-correct: #22c55e;
-  --game-wrong: #ef4444;
-  --game-highlight: #3b82f6;
-  --game-maze-wall: #374151;
-  --game-maze-path: #fef3c7;
+  --game-area-bg: #F1F5F9;
+  --game-card-bg: #FFFFFF;
+  --game-card-front: linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%);
+  --game-card-back: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+  --game-button-bg: #FFFFFF;
+  --game-button-hover: #E2E8F0;
+  --game-button-active: #CBD5E1;
+  --game-correct: #16A34A;
+  --game-wrong: #DC2626;
+  --game-highlight: #F59E0B;
+  --game-maze-wall: #334155;
+  --game-maze-path: #E2E8F0;
   
   /* 步驟進度指示器 */
-  --color-step: #e2e8f0;
-  --color-step-active: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  --color-step-complete: #22c55e;
-  --color-step-label: #64748b;
-  --color-step-label-active: #4f46e5;
+  --color-step: #CBD5E1;
+  --color-step-active: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+  --color-step-complete: #16A34A;
+  --color-step-label: #64748B;
+  --color-step-label-active: #1E3A8A;
   
   /* 資訊卡片與提示 */
-  --color-infocard: #f8fafc;
-  --color-infocard-border: #e2e8f0;
-  --color-disclaimer: #fef3c7;
-  --color-disclaimer-text: #92400e;
-  --color-disclaimer-border: #fcd34d;
+  --color-infocard: #F8FAFC;
+  --color-infocard-border: #E2E8F0;
+  --color-disclaimer: #FFFBEB;
+  --color-disclaimer-text: #92400E;
+  --color-disclaimer-border: #F59E0B;
   
   /* 分數狀態顏色 */
-  --color-score-good: #16a34a;
-  --color-score-moderate: #d97706;
-  --color-score-concern: #dc2626;
+  --color-score-good: #16A34A;
+  --color-score-moderate: #F59E0B;
+  --color-score-concern: #DC2626;
   
   /* 趨勢指示顏色 */
-  --color-trend-up: #16a34a;
-  --color-trend-down: #dc2626;
-  --color-trend-neutral: #6b7280;
+  --color-trend-up: #16A34A;
+  --color-trend-down: #DC2626;
+  --color-trend-neutral: #64748B;
+
+  /* 統計/狀態色 */
+  --color-progress: #0F766E;
+  --color-score: #1E3A8A;
+  --color-combo: #F59E0B;
+  --color-timer-warning: #DC2626;
+  --color-record: #16A34A;
   
   /* 遊戲音符顏色 */
-  --color-note-do: #ef4444;
-  --color-note-re: #f97316;
-  --color-note-mi: #eab308;
-  --color-note-fa: #22c55e;
-  --color-note-sol: #3b82f6;
-  --color-note-la: #a855f7;
-  --color-note-si: #6b7280;
-  --color-note-do2: #ec4899;
+  --color-note-do: #EF4444;
+  --color-note-re: #F97316;
+  --color-note-mi: #F59E0B;
+  --color-note-fa: #22C55E;
+  --color-note-sol: #0EA5E9;
+  --color-note-la: #6366F1;
+  --color-note-si: #64748B;
+  --color-note-do2: #DB2777;
   
   /* 圖形推理顏色 */
-  --color-shape-red: #ef4444;
-  --color-shape-blue: #3b82f6;
-  --color-shape-green: #22c55e;
-  --color-shape-yellow: #eab308;
-  --color-shape-purple: #a855f7;
-  --color-shape-orange: #f97316;
+  --color-shape-red: #EF4444;
+  --color-shape-blue: #2563EB;
+  --color-shape-green: #22C55E;
+  --color-shape-yellow: #F59E0B;
+  --color-shape-purple: #6366F1;
+  --color-shape-orange: #F97316;
   
   /* Canvas 繪圖顏色 */
-  --color-canvas-bg: #ffffff;
-  --color-canvas-stroke: #374151;
-  --color-canvas-text: #1f2937;
-  --color-canvas-grid: #e5e7eb;
-  --color-canvas-highlight: #3b82f6;
+  --color-canvas-bg: #FFFFFF;
+  --color-canvas-stroke: #1E3A8A;
+  --color-canvas-text: #0F172A;
+  --color-canvas-grid: #E2E8F0;
+  --color-canvas-highlight: #F59E0B;
   
   /* 結果區塊漸層 */
-  --gradient-result-good: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-  --gradient-result-warning: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  --gradient-result-danger: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  --gradient-result-good: linear-gradient(135deg, #ECFDF5 0%, #DCFCE7 100%);
+  --gradient-result-warning: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+  --gradient-result-danger: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
   
   /* 詞卡顏色 */
-  --color-wordcard: #f8fafc;
-  --color-wordcard-border: #e2e8f0;
-  --color-wordcard-selected: #f0f0ff;
-  --color-wordcard-selected-border: #4f46e5;
-  
-  /* ===== 流體字體系統 ===== */
-
-  /* 流體字體大小變數 - 使用 clamp() 實現響應式縮放 */
-  --text-xs: clamp(0.75rem, 2vw, 0.875rem);     /* 12px - 14px */
-  --text-sm: clamp(0.875rem, 2.5vw, 1rem);      /* 14px - 16px */
-  --text-base: clamp(1rem, 3vw, 1.125rem);      /* 16px - 18px */
-  --text-lg: clamp(1.125rem, 3.5vw, 1.25rem);   /* 18px - 20px */
-  --text-xl: clamp(1.25rem, 4vw, 1.5rem);       /* 20px - 24px */
-  --text-2xl: clamp(1.5rem, 5vw, 2rem);         /* 24px - 32px */
-  --text-3xl: clamp(2rem, 6vw, 2.5rem);         /* 32px - 40px */
-  --text-4xl: clamp(2.5rem, 8vw, 3.5rem);       /* 40px - 56px */
-
-  /* 標題字體 - 針對長者優化 */
-  --heading-1: clamp(1.75rem, 6vw, 3rem);       /* 28px - 48px */
-  --heading-2: clamp(1.5rem, 5vw, 2.25rem);     /* 24px - 36px */
-  --heading-3: clamp(1.25rem, 4vw, 1.875rem);   /* 20px - 30px */
-  --heading-4: clamp(1.125rem, 3.5vw, 1.5rem);  /* 18px - 24px */
-  --heading-5: clamp(1rem, 3vw, 1.25rem);       /* 16px - 20px */
-  --heading-6: clamp(0.875rem, 2.5vw, 1.125rem); /* 14px - 18px */
-
-  /* ===== 流體間距系統 ===== */
-
-  /* 流體容器間距 */
-  --space-xs: clamp(0.5rem, 1.5vw, 0.75rem);    /* 8px - 12px */
-  --space-sm: clamp(0.75rem, 2vw, 1rem);        /* 12px - 16px */
-  --space-md: clamp(1rem, 2.5vw, 1.5rem);       /* 16px - 24px */
-  --space-lg: clamp(1.5rem, 3vw, 2rem);         /* 24px - 32px */
-  --space-xl: clamp(2rem, 4vw, 3rem);           /* 32px - 48px */
-  --space-2xl: clamp(3rem, 6vw, 4rem);          /* 48px - 64px */
-
-  /* 佈局間距 */
-  --layout-padding: clamp(1rem, 4vw, 2rem);     /* 16px - 32px */
-  --layout-margin: clamp(1.5rem, 5vw, 3rem);    /* 24px - 48px */
-  --layout-gap: clamp(1rem, 3vw, 2rem);         /* 16px - 32px */
-
-  /* ===== 流體容器系統 ===== */
-
-  /* 內容寬度限制 */
-  --container-xs: clamp(100%, 90vw, 20rem);     /* 320px max */
-  --container-sm: clamp(100%, 85vw, 24rem);     /* 384px max */
-  --container-md: clamp(100%, 80vw, 28rem);     /* 448px max */
-  --container-lg: clamp(100%, 75vw, 32rem);     /* 512px max */
-  --container-xl: clamp(100%, 70vw, 36rem);     /* 576px max */
-  --container-2xl: clamp(100%, 65vw, 42rem);    /* 672px max */
-  --container-3xl: clamp(100%, 60vw, 48rem);    /* 768px max */
-  --container-4xl: clamp(100%, 55vw, 56rem);    /* 896px max */
-  --container-5xl: clamp(100%, 50vw, 64rem);    /* 1024px max */
-  --container-6xl: clamp(100%, 45vw, 72rem);    /* 1152px max */
-  --container-7xl: clamp(100%, 40vw, 80rem);    /* 1280px max */
-
-  /* 遊戲專用容器 */
-  --game-container-xs: clamp(100%, 95vw, 18rem); /* 288px max */
-  --game-container-sm: clamp(100%, 90vw, 22rem); /* 352px max */
-  --game-container-md: clamp(100%, 85vw, 26rem); /* 416px max */
-  --game-container-lg: clamp(100%, 80vw, 30rem); /* 480px max */
-  --game-container-xl: clamp(100%, 75vw, 34rem); /* 544px max */
-  --game-container-2xl: clamp(100%, 70vw, 38rem); /* 608px max */
-
-  /* ===== 長者友善觸控系統 ===== */
-
-  /* 觸控目標尺寸 */
-  --touch-target-min: 3.5rem;        /* 56px 最小觸控區域 */
-  --touch-target-comfort: 4rem;      /* 64px 舒適觸控區域 */
-  --touch-target-large: 4.5rem;      /* 72px 大型觸控區域 */
-
-  /* ===== 響應式斷點 ===== */
-
-  /* 斷點定義 */
-  --breakpoint-xs: 480px;    /* 超小手機 */
-  --breakpoint-sm: 640px;    /* 小手機 */
-  --breakpoint-md: 768px;    /* 大手機/小平板 */
-  --breakpoint-lg: 1024px;   /* 平板 */
-  --breakpoint-xl: 1280px;   /* 小桌面 */
-  --breakpoint-2xl: 1536px;  /* 桌面 */
-  --breakpoint-3xl: 1920px;  /* 大桌面 */
-  
-  /* 圓角 */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-2xl: 24px;
-  --radius-full: 9999px;
-  
-  /* 間距 */
-  --spacing-xs: 8px;
-  --spacing-sm: 12px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 32px;
+  --color-wordcard: #F1F5F9;
+  --color-wordcard-border: #E2E8F0;
+  --color-wordcard-selected: #DBEAFE;
+  --color-wordcard-selected-border: #1E3A8A;
   
   /* 陰影系統 */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.3);
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  --shadow-card-hover: 0 10px 25px -5px rgba(30, 58, 138, 0.15), 0 8px 10px -6px rgba(30, 58, 138, 0.1);
+  --shadow-glow: 0 0 15px rgba(245, 158, 11, 0.2);
+  --shadow-top: 0 -6px 16px rgba(15, 23, 42, 0.08);
+  --shadow-score-ring: 0 0 0 8px rgba(30, 58, 138, 0.3);
+  --shadow-score-dot: 0 0 0 0 rgba(30, 58, 138, 0.45);
   
-  /* 漸層 - 新色調 */
-  --gradient-primary: linear-gradient(135deg, #3eb3d6 0%, #1f8ea9 100%);
-  --gradient-hero: linear-gradient(to bottom, #f5e6ff, #ffffff);
-  --gradient-card: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-  --gradient-accent: linear-gradient(135deg, #01cb5f 0%, #1f8ea9 100%);
-  --gradient-dark: linear-gradient(135deg, #11031d 0%, #3eb3d6 100%);
+  /* 漸層 */
+  --gradient-primary: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+  --gradient-hero: linear-gradient(to bottom, #EFF6FF, #F8FAFC);
+  --gradient-card: linear-gradient(145deg, #FFFFFF 0%, #F1F5F9 100%);
+  --gradient-accent: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  --gradient-dark: linear-gradient(135deg, #0B1220 0%, #111827 100%);
 }
 
 /* 深色模式變數 */
 :root.dark {
   /* 語義化顏色（深色主題） */
-  --color-bg: #0b1120;
-  --color-bg-soft: #162033;
-  --color-bg-muted: #1f2b3f;
-  --color-surface: #1b2538;
-  --color-surface-elevated: #24314a;
-  --color-surface-alt: #1f2b3f;
-  --color-text: #f8fafc;
-  --color-text-secondary: #e2e8f0;
-  --color-text-muted: #cbd5e1;
-  --color-text-inverse: #0f172a;
-  --color-border: #475569;
-  --color-border-light: #64748b;
+  --color-bg: #0B1220;
+  --color-bg-soft: #111A2C;
+  --color-bg-muted: #1E293B;
+  --color-surface: #121B2E;
+  --color-surface-elevated: #1F2A44;
+  --color-surface-alt: #1E293B;
+  --color-text: #F8FAFC;
+  --color-text-secondary: #E2E8F0;
+  --color-text-muted: #94A3B8;
+  --color-text-inverse: #0B1220;
+  --color-border: #334155;
+  --color-border-light: #475569;
+  --color-border-inverse: rgba(255, 255, 255, 0.35);
+  --color-track-on-primary: rgba(255, 255, 255, 0.2);
   
   /* 覆蓋層與焦點 */
   --color-overlay: rgba(0, 0, 0, 0.8);
-  --color-focus-ring: rgba(96, 165, 250, 0.5);
-  --color-skeleton: #334155;
+  --color-focus-ring: rgba(96, 165, 250, 0.6);
+  --color-skeleton: #1E293B;
   
   /* 調整主題色以適應深色背景 */
-  --color-primary: #60a5fa;
-  --color-primary-dark: #3b82f6;
-  --color-primary-light: #93c5fd;
-  --color-primary-bg: rgba(59, 130, 246, 0.15);
-  --color-success-bg: rgba(34, 197, 94, 0.15);
-  --color-warning-bg: rgba(234, 179, 8, 0.15);
-  --color-danger-bg: rgba(239, 68, 68, 0.15);
-  --color-info-bg: rgba(6, 182, 212, 0.15);
+  --color-primary: #60A5FA;
+  --color-primary-dark: #3B82F6;
+  --color-primary-light: #93C5FD;
+  --color-primary-bg: rgba(59, 130, 246, 0.2);
+  
+  --color-accent-warm: #FBBF24;
+  --color-accent-green: #22C55E;
+  --color-accent-teal: #2DD4BF;
+  --color-accent-purple: #818CF8;
+  
+  --color-success: #22C55E;
+  --color-success-bg: rgba(34, 197, 94, 0.2);
+  --color-warning: #FBBF24;
+  --color-warning-bg: rgba(251, 191, 36, 0.2);
+  --color-danger: #F87171;
+  --color-danger-bg: rgba(248, 113, 113, 0.2);
+  --color-info: #38BDF8;
+  --color-info-bg: rgba(56, 189, 248, 0.2);
+  
+  /* 認知維度顏色（深色） */
+  --color-reaction: #60A5FA;
+  --color-logic: #2DD4BF;
+  --color-memory: #93C5FD;
+  --color-cognition: #4ADE80;
+  --color-coordination: #FBBF24;
+  --color-attention: #F87171;
   
   /* 遊戲專用變數（深色） */
-  --game-area-bg: #1b2538;
-  --game-card-bg: #24314a;
-  --game-card-front: linear-gradient(135deg, #24314a 0%, #32425c 100%);
-  --game-card-back: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --game-area-bg: #111827;
+  --game-card-bg: #1E293B;
+  --game-card-front: linear-gradient(135deg, #1E293B 0%, #273449 100%);
+  --game-card-back: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
   --game-button-bg: #334155;
   --game-button-hover: #475569;
-  --game-button-active: #1e293b;
-  --game-correct: #4ade80;
-  --game-wrong: #f87171;
-  --game-highlight: #60a5fa;
-  --game-maze-wall: #1e293b;
-  --game-maze-path: #fef3c7;
+  --game-button-active: #1E293B;
+  --game-correct: #22C55E;
+  --game-wrong: #F87171;
+  --game-highlight: #FBBF24;
+  --game-maze-wall: #64748B;
+  --game-maze-path: #1E293B;
   
   /* 步驟進度指示器（深色） */
   --color-step: #334155;
-  --color-step-active: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  --color-step-complete: #4ade80;
-  --color-step-label: #94a3b8;
-  --color-step-label-active: #818cf8;
+  --color-step-active: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+  --color-step-complete: #22C55E;
+  --color-step-label: #94A3B8;
+  --color-step-label-active: #E2E8F0;
   
   /* 資訊卡片與提示（深色） */
-  --color-infocard: #1e293b;
+  --color-infocard: #1E293B;
   --color-infocard-border: #334155;
-  --color-disclaimer: rgba(251, 191, 36, 0.15);
-  --color-disclaimer-text: #fbbf24;
-  --color-disclaimer-border: #b45309;
+  --color-disclaimer: rgba(251, 191, 36, 0.2);
+  --color-disclaimer-text: #FCD34D;
+  --color-disclaimer-border: #F59E0B;
   
   /* 分數狀態顏色（深色） */
-  --color-score-good: #4ade80;
-  --color-score-moderate: #fbbf24;
-  --color-score-concern: #f87171;
+  --color-score-good: #4ADE80;
+  --color-score-moderate: #FBBF24;
+  --color-score-concern: #F87171;
   
   /* 趨勢指示顏色（深色） */
-  --color-trend-up: #4ade80;
-  --color-trend-down: #f87171;
-  --color-trend-neutral: #94a3b8;
+  --color-trend-up: #4ADE80;
+  --color-trend-down: #F87171;
+  --color-trend-neutral: #94A3B8;
+
+  /* 統計/狀態色（深色） */
+  --color-progress: #2DD4BF;
+  --color-score: #60A5FA;
+  --color-combo: #FBBF24;
+  --color-timer-warning: #F87171;
+  --color-record: #4ADE80;
   
   /* 遊戲音符顏色（深色 - 稍亮版本） */
-  --color-note-do: #f87171;
-  --color-note-re: #fb923c;
-  --color-note-mi: #facc15;
-  --color-note-fa: #4ade80;
-  --color-note-sol: #60a5fa;
-  --color-note-la: #c084fc;
-  --color-note-si: #9ca3af;
-  --color-note-do2: #f472b6;
+  --color-note-do: #F87171;
+  --color-note-re: #FB923C;
+  --color-note-mi: #FACC15;
+  --color-note-fa: #4ADE80;
+  --color-note-sol: #38BDF8;
+  --color-note-la: #C7D2FE;
+  --color-note-si: #94A3B8;
+  --color-note-do2: #F472B6;
   
   /* 圖形推理顏色（深色 - 稍亮版本） */
-  --color-shape-red: #f87171;
-  --color-shape-blue: #60a5fa;
-  --color-shape-green: #4ade80;
-  --color-shape-yellow: #facc15;
-  --color-shape-purple: #c084fc;
-  --color-shape-orange: #fb923c;
+  --color-shape-red: #F87171;
+  --color-shape-blue: #60A5FA;
+  --color-shape-green: #4ADE80;
+  --color-shape-yellow: #FACC15;
+  --color-shape-purple: #C7D2FE;
+  --color-shape-orange: #FB923C;
   
   /* Canvas 繪圖顏色（深色） */
-  --color-canvas-bg: #1e293b;
-  --color-canvas-stroke: #cbd5e1;
-  --color-canvas-text: #f1f5f9;
-  --color-canvas-grid: #475569;
-  --color-canvas-highlight: #60a5fa;
+  --color-canvas-bg: #0B1220;
+  --color-canvas-stroke: #E2E8F0;
+  --color-canvas-text: #F8FAFC;
+  --color-canvas-grid: #334155;
+  --color-canvas-highlight: #FBBF24;
   
   /* 結果區塊漸層（深色） */
-  --gradient-result-good: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(74, 222, 128, 0.15) 100%);
-  --gradient-result-warning: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(253, 224, 71, 0.15) 100%);
-  --gradient-result-danger: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(248, 113, 113, 0.15) 100%);
+  --gradient-result-good: linear-gradient(135deg, rgba(34, 197, 94, 0.25) 0%, rgba(74, 222, 128, 0.18) 100%);
+  --gradient-result-warning: linear-gradient(135deg, rgba(251, 191, 36, 0.25) 0%, rgba(253, 224, 71, 0.18) 100%);
+  --gradient-result-danger: linear-gradient(135deg, rgba(248, 113, 113, 0.25) 0%, rgba(239, 68, 68, 0.18) 100%);
   
   /* 詞卡顏色（深色） */
-  --color-wordcard: #334155;
-  --color-wordcard-border: #475569;
-  --color-wordcard-selected: rgba(99, 102, 241, 0.2);
-  --color-wordcard-selected-border: #818cf8;
+  --color-wordcard: #1E293B;
+  --color-wordcard-border: #334155;
+  --color-wordcard-selected: rgba(59, 130, 246, 0.2);
+  --color-wordcard-selected-border: #60A5FA;
   
   /* 深色模式陰影（更柔和） */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 20px rgba(96, 165, 250, 0.4);
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.45), 0 1px 2px -1px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.45), 0 2px 4px -2px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.45), 0 4px 6px -4px rgba(0, 0, 0, 0.45);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.55), 0 8px 10px -6px rgba(0, 0, 0, 0.55);
+  --shadow-glow: 0 0 20px rgba(96, 165, 250, 0.35);
+  --shadow-top: 0 -6px 16px rgba(0, 0, 0, 0.4);
+  --shadow-score-ring: 0 0 0 8px rgba(96, 165, 250, 0.35);
+  --shadow-score-dot: 0 0 0 0 rgba(96, 165, 250, 0.45);
   
   /* 深色漸層 */
-  --gradient-primary: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  --gradient-hero: linear-gradient(to bottom, #162033, #0b1120);
-  --gradient-card: linear-gradient(145deg, #1b2538 0%, #2b3a55 100%);
+  --gradient-primary: linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%);
+  --gradient-hero: linear-gradient(to bottom, #111A2C, #0B1220);
+  --gradient-card: linear-gradient(145deg, #121B2E 0%, #1E293B 100%);
 }
 
 /* 基礎樣式 */

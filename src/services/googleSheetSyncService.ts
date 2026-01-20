@@ -3,14 +3,17 @@ import { getGradeFromScore } from '@/types/game'
 import { getDataConsent, getUserGameSessions } from '@/services/db'
 import { detectClientSource, loadClientSourceForUser } from '@/services/clientSource'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { getSheetEndpoint } from '@/services/sheetConfig'
 
 // 已部署的 Apps Script Web App
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyeT9y4bYyMeCHCXVZru47BQD_Za4ANr-i6lfksErOh84kJ_soasack6rNlTuzeY2h9/exec'
+const SHEET_ENDPOINT = getSheetEndpoint()
 const BACKFILL_THROTTLE_MS = 24 * 60 * 60 * 1000
 const BACKFILL_KEY_PREFIX = 'sheetBackfillAt:'
 const SYNCED_IDS_KEY_PREFIX = 'sheetSyncedSessionIds:'
 const MAX_SYNCED_IDS = 5000
 const SHEET_SYNC_PROTOCOL_VERSION = 2
+const SHEET_SCHEMA_VERSION = 1
+const SHEET_SCORING_VERSION = 2
 const SYNC_PROTOCOL_KEY_PREFIX = 'sheetSyncProtocol:'
 const SYNC_STATUS_KEY_PREFIX = 'sheetSyncStatusSession:'
 
@@ -36,6 +39,10 @@ type SheetTracking = TrackingData & {
 type SheetPayload = {
   action?: 'upsertGameResults'
   protocolVersion?: number
+  schemaVersion?: number
+  scoringVersion?: number
+  dataQuality?: 'ok' | 'warning'
+  dataIssues?: string[]
   userId: string
   sessionId: string
   gameId: string
@@ -198,11 +205,31 @@ function ensureGrade(result: GameResult): GameGrade {
   return result.grade ?? getGradeFromScore(clampScore0to100(result.score))
 }
 
+function collectDataIssues(session: GameSession, metrics: StandardizedMetrics): string[] {
+  const issues: string[] = []
+  if (!session.id) issues.push('missing_session_id')
+  if (!session.odId) issues.push('missing_user_id')
+  if (!session.gameId) issues.push('missing_game_id')
+  const score = Number(session.result?.score)
+  if (!Number.isFinite(score)) issues.push('invalid_score')
+  if (Number.isFinite(score) && (score < 0 || score > 100)) issues.push('score_out_of_range')
+  if (!Number.isFinite(metrics.accuracy)) issues.push('invalid_accuracy')
+  if (Number.isFinite(metrics.accuracy) && (metrics.accuracy < 0 || metrics.accuracy > 1)) issues.push('accuracy_out_of_range')
+  if (!Number.isFinite(metrics.completion)) issues.push('invalid_completion')
+  if (Number.isFinite(metrics.completion) && (metrics.completion < 0 || metrics.completion > 1)) issues.push('completion_out_of_range')
+  if (!Number.isFinite(metrics.speed)) issues.push('invalid_speed')
+  if (Number.isFinite(metrics.speed) && (metrics.speed < 0 || metrics.speed > 100)) issues.push('speed_out_of_range')
+  if (!Number.isFinite(metrics.efficiency)) issues.push('invalid_efficiency')
+  if (Number.isFinite(metrics.efficiency) && (metrics.efficiency < 0 || metrics.efficiency > 100)) issues.push('efficiency_out_of_range')
+  return issues
+}
+
 function mapSessionToPayload(session: GameSession, bestScore?: number): SheetPayload {
   const { result } = session
   const metrics = ensureMetrics(result)
   const tracking = ensureTracking(result)
   const score = clampScore0to100(result.score)
+  const dataIssues = collectDataIssues(session, metrics)
 
   const inferredClientSource =
     (result.gameSpecific as any)?.clientSource ||
@@ -213,6 +240,10 @@ function mapSessionToPayload(session: GameSession, bestScore?: number): SheetPay
   return {
     action: 'upsertGameResults',
     protocolVersion: SHEET_SYNC_PROTOCOL_VERSION,
+    schemaVersion: SHEET_SCHEMA_VERSION,
+    scoringVersion: SHEET_SCORING_VERSION,
+    dataQuality: dataIssues.length > 0 ? 'warning' : 'ok',
+    dataIssues,
     userId: session.odId,
     sessionId: session.id,
     // 舊資料有機會 result.gameId 為空；以 session.gameId 作為保底，避免 Sheet 出現空 gameId
@@ -265,6 +296,12 @@ export async function syncSessionToSheet(session: GameSession, bestScore?: numbe
   ensureSyncProtocolVersion(session.odId)
   if (!(await isSheetSyncAllowed(session.odId))) return
   if (isSessionSynced(session.odId, session.id)) return
+  try {
+    const settingsStore = useSettingsStore()
+    settingsStore.setSyncUiStatus('syncing')
+  } catch {
+    // ignore ui status update
+  }
   updateSessionSyncStatus(session.odId, { lastAttemptAt: new Date().toISOString() })
   const payload = mapSessionToPayload(session, bestScore)
   const ok = await postToSheet(payload)
@@ -275,11 +312,23 @@ export async function syncSessionToSheet(session: GameSession, bestScore?: numbe
       lastErrorAt: null,
       lastErrorMessage: null,
     })
+    try {
+      const settingsStore = useSettingsStore()
+      settingsStore.setSyncUiStatus('success')
+    } catch {
+      // ignore ui status update
+    }
   } else {
     updateSessionSyncStatus(session.odId, {
       lastErrorAt: new Date().toISOString(),
       lastErrorMessage: 'session sync failed',
     })
+    try {
+      const settingsStore = useSettingsStore()
+      settingsStore.setSyncUiStatus('error', 'session sync failed')
+    } catch {
+      // ignore ui status update
+    }
   }
 }
 
@@ -291,6 +340,12 @@ export async function backfillUserSessionsToSheet(odId: string): Promise<void> {
     if (!isBrowserOnline()) return
     ensureSyncProtocolVersion(odId)
     if (!(await isSheetSyncAllowed(odId))) return
+    try {
+      const settingsStore = useSettingsStore()
+      settingsStore.setSyncUiStatus('syncing')
+    } catch {
+      // ignore ui status update
+    }
 
     // 節流：避免每次啟動都回填（避免重複寫入/浪費流量）
     try {
@@ -320,11 +375,23 @@ export async function backfillUserSessionsToSheet(odId: string): Promise<void> {
           lastErrorAt: null,
           lastErrorMessage: null,
         })
+        try {
+          const settingsStore = useSettingsStore()
+          settingsStore.setSyncUiStatus('success')
+        } catch {
+          // ignore ui status update
+        }
       } else {
         updateSessionSyncStatus(odId, {
           lastErrorAt: new Date().toISOString(),
           lastErrorMessage: 'backfill sync failed',
         })
+        try {
+          const settingsStore = useSettingsStore()
+          settingsStore.setSyncUiStatus('error', 'backfill sync failed')
+        } catch {
+          // ignore ui status update
+        }
         break
       }
     }
@@ -334,5 +401,11 @@ export async function backfillUserSessionsToSheet(odId: string): Promise<void> {
       lastErrorAt: new Date().toISOString(),
       lastErrorMessage: 'backfill sync error',
     })
+    try {
+      const settingsStore = useSettingsStore()
+      settingsStore.setSyncUiStatus('error', 'backfill sync error')
+    } catch {
+      // ignore ui status update
+    }
   }
 }

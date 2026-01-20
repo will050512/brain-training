@@ -90,7 +90,7 @@ export const GAME_SCORE_CONFIGS: Record<string, GameScoreConfig> = {
   'rock-paper-scissors': {
     type: 'reaction',
     weights: { accuracy: 70, speed: 30 },
-    reactionBenchmark: 'instant',
+    reactionBenchmark: 'quick',
     hasCombo: false,
     trackMissed: false
   },
@@ -258,26 +258,15 @@ export function calculateFinalScore(
   config: GameScoreConfig,
   comboBonus: number = 0
 ): number {
-  const { weights } = config
-  let score = 0
-  
-  if (weights.accuracy) {
-    score += (metrics.accuracy * 100) * (weights.accuracy / 100)
-  }
-  if (weights.speed) {
-    score += metrics.speed * (weights.speed / 100)
-  }
-  if (weights.completion) {
-    score += (metrics.completion * 100) * (weights.completion / 100)
-  }
-  if (weights.efficiency) {
-    score += metrics.efficiency * (weights.efficiency / 100)
-  }
-  if (weights.combo) {
-    score += comboBonus * (weights.combo / 100)
-  }
-  
-  return clampScore(score)
+  // 新評分邏輯：正確率 * 速度權重 + 連擊加分
+  // - 速度權重採容錯設計，避免長者因反應慢被過度懲罰
+  const accuracyScore = clampScore(metrics.accuracy * 100)
+  const speedFactorRaw = Number.isFinite(metrics.speed) ? metrics.speed / 100 : 1
+  const speedFactor = Math.min(1.1, Math.max(0.65, speedFactorRaw))
+  const baseScore = accuracyScore * speedFactor
+  const streakBonus = config.hasCombo ? Math.min(15, Math.round(comboBonus * 0.2)) : 0
+
+  return clampScore(baseScore + streakBonus)
 }
 
 // ========== 遊戲專屬轉換器 ==========

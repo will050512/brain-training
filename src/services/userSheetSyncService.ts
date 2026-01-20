@@ -2,8 +2,9 @@ import type { User } from '@/types'
 import { getDataConsent } from '@/services/db'
 import { detectClientSource, loadClientSourceForUser } from '@/services/clientSource'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { getSheetEndpoint } from '@/services/sheetConfig'
 
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyeT9y4bYyMeCHCXVZru47BQD_Za4ANr-i6lfksErOh84kJ_soasack6rNlTuzeY2h9/exec'
+const SHEET_ENDPOINT = getSheetEndpoint()
 const USER_SYNC_KEY_PREFIX = 'sheetSyncedUser:'
 const USER_SYNC_STATUS_KEY_PREFIX = 'sheetSyncStatusUser:'
 
@@ -133,14 +134,32 @@ function mapUser(user: User): UserSheetPayload {
 
 async function postToSheet(payload: UserSheetPayload): Promise<boolean> {
   try {
+    try {
+      const settingsStore = useSettingsStore()
+      settingsStore.setSyncUiStatus('syncing')
+    } catch {
+      // ignore ui status update
+    }
     await fetch(SHEET_ENDPOINT, {
       method: 'POST',
       mode: 'no-cors',
       body: JSON.stringify(payload),
     })
+    try {
+      const settingsStore = useSettingsStore()
+      settingsStore.setSyncUiStatus('success')
+    } catch {
+      // ignore ui status update
+    }
     return true
   } catch (error) {
     console.error('Failed to sync user profile', error)
+    try {
+      const settingsStore = useSettingsStore()
+      settingsStore.setSyncUiStatus('error', error instanceof Error ? error.message : 'sync failed')
+    } catch {
+      // ignore ui status update
+    }
     return false
   }
 }

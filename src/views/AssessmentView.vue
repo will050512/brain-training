@@ -406,7 +406,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { useSettingsStore, useUserStore } from '@/stores'
 import { DIFFICULTIES } from '@/types/game'
 import MiniCogFlow from '@/components/assessment/MiniCogFlow.vue'
-import { getLatestMiniCogResult } from '@/services/db'
+import { getLatestMiniCogResult, saveBaselineAssessment, generateId } from '@/services/db'
+import { syncBaselineAssessmentToSheet } from '@/services/userDataSheetSyncService'
 import type { MiniCogResult } from '@/services/miniCogService'
 import {
   generateAssessmentQuestions,
@@ -636,13 +637,42 @@ function finishAssessment() {
 }
 
 // 儲存結果並繼續
-function saveAndContinue() {
+async function saveAndContinue() {
   if (result.value) {
     settingsStore.setAssessmentResult({
       suggestedDifficulty: result.value.suggestedDifficulty,
       completedAt: result.value.completedAt,
       scores: result.value.scores,
     })
+
+    const odId = userStore.currentUser?.id
+    if (odId) {
+      const overallLevel = result.value.suggestedDifficulty === 'hard'
+        ? 'advanced'
+        : result.value.suggestedDifficulty === 'medium'
+          ? 'intermediate'
+          : 'beginner'
+
+      const baseline = {
+        id: generateId(),
+        odId,
+        assessedAt: result.value.completedAt,
+        cognitiveScores: {
+          reaction: result.value.scores.reaction,
+          logic: result.value.scores.logic,
+          memory: result.value.scores.memory,
+          cognition: 0,
+          coordination: 0,
+          attention: 0,
+        },
+        suggestedDifficulties: {},
+        overallLevel,
+        gamesPlayed: [],
+      }
+
+      await saveBaselineAssessment({ ...baseline, overallLevel: overallLevel as 'beginner' | 'intermediate' | 'advanced' })
+      await syncBaselineAssessmentToSheet({ ...baseline, overallLevel: overallLevel as 'beginner' | 'intermediate' | 'advanced' })
+    }
   }
   // 引導至每日訓練，讓用戶可以直接開始個人化訓練
   router.push('/daily-challenge')

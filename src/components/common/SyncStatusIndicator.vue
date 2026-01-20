@@ -48,11 +48,11 @@ const statusIcon = computed(() => {
 const statusClass = computed(() => {
   switch (settingsStore.syncUiStatus) {
     case 'success':
-      return 'text-green-600'
+      return 'text-[var(--color-success)]'
     case 'error':
-      return 'text-red-600'
+      return 'text-[var(--color-danger)]'
     case 'syncing':
-      return 'text-blue-600'
+      return 'text-[var(--color-score)]'
     default:
       return 'text-[var(--color-text-muted)]'
   }

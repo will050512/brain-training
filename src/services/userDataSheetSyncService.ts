@@ -20,8 +20,9 @@ import {
 } from '@/services/db'
 import { detectClientSource, loadClientSourceForUser } from '@/services/clientSource'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { getSheetEndpoint } from '@/services/sheetConfig'
 
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyCLuyPiJL3Loqe6HHouu5pA3rmXns97fsIhC0SqNoFeI8mcKbfFYkn3O8m-sZa0oUO/exec'
+const SHEET_ENDPOINT = getSheetEndpoint()
 const FULL_SYNC_KEY_PREFIX = 'sheetFullSyncAt:'
 const FULL_SYNC_ITEM_KEY_PREFIX = 'sheetFullSyncItem:'
 const FULL_SYNC_THROTTLE_MS = 24 * 60 * 60 * 1000
@@ -296,14 +297,32 @@ function buildBehaviorLogPayload(log: BehaviorLog) {
 
 async function postToSheet(payload: { action: SheetAction; items: unknown[] }): Promise<boolean> {
   try {
+    try {
+      const settingsStore = useSettingsStore()
+      settingsStore.setSyncUiStatus('syncing')
+    } catch {
+      // ignore ui status update
+    }
     await fetch(SHEET_ENDPOINT, {
       method: 'POST',
       mode: 'no-cors',
       body: JSON.stringify(payload),
     })
+    try {
+      const settingsStore = useSettingsStore()
+      settingsStore.setSyncUiStatus('success')
+    } catch {
+      // ignore ui status update
+    }
     return true
   } catch (error) {
     console.error('Failed to sync to Google Sheet', error)
+    try {
+      const settingsStore = useSettingsStore()
+      settingsStore.setSyncUiStatus('error', error instanceof Error ? error.message : 'sync failed')
+    } catch {
+      // ignore ui status update
+    }
     return false
   }
 }

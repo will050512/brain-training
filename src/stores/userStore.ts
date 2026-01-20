@@ -23,6 +23,7 @@ import {
 import { getLocalDateKey } from '@/utils/dateKey'
 import { dataInitService } from '@/services/dataInitService'
 import { syncUserSettingsToSheet, syncUserStatsToSheet } from '@/services/userDataSheetSyncService'
+import { syncUserProfileToSheet } from '@/services/userSheetSyncService'
 
 function normalizeUser(user: User): User {
   const now = new Date()
@@ -130,6 +131,8 @@ export const useUserStore = defineStore('user', () => {
       currentSettings.value = await getUserSettings(odId) || defaultUserSettings(odId)
       currentStats.value = await getUserStats(odId) || defaultUserStats(odId)
 
+      await syncUserProfileToSheet(currentUser.value)
+
       // 保存到 localStorage 以便下次恢復 session
       localStorage.setItem('brain-training-last-user', odId)
 
@@ -176,6 +179,8 @@ export const useUserStore = defineStore('user', () => {
     normalized.profileVersion = (normalized.profileVersion ?? 1) + 1
     await saveUser(normalized as User)
     currentUser.value = normalized
+
+    await syncUserProfileToSheet(currentUser.value)
   }
 
   /**
@@ -306,6 +311,8 @@ export const useUserStore = defineStore('user', () => {
       // 初始化全局資料
       await dataInitService.initUserData(odId)
 
+      await syncUserProfileToSheet(currentUser.value)
+
       return true
     } catch (e) {
       error.value = e instanceof Error ? e.message : '登入失敗'
@@ -396,6 +403,7 @@ export const useUserStore = defineStore('user', () => {
       localStorage.setItem('brain-training-current-user', odId)
 
       await dataInitService.initUserData(odId)
+      await syncUserProfileToSheet(currentUser.value)
       return true
     } catch (e) {
       error.value = e instanceof Error ? e.message : '外部登入失敗'

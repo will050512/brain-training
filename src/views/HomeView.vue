@@ -34,34 +34,49 @@
     />
 
     <!-- APP 頭部 -->
-    <header class="app-header">
+    <header class="app-header shadow-sm bg-[var(--color-surface-elevated)]">
       <div class="app-header-action">
-        <router-link to="/settings" class="text-2xl">⚙️</router-link>
+        <router-link to="/settings" class="text-3xl text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">⚙️</router-link>
       </div>
-      <div class="flex items-center gap-2">
-        <img src="@/assets/logo.svg" alt="愛護腦" class="w-8 h-8" />
-        <h1 class="text-lg font-bold text-[var(--color-text)]">愛護腦</h1>
+      <div class="flex items-center gap-3">
+        <img src="@/assets/logo.svg" alt="愛護腦" class="w-10 h-10" />
+        <h1 class="text-xl font-bold text-[var(--color-text)] tracking-wide">愛護腦</h1>
       </div>
       <div class="app-header-action text-right">
-        <button v-if="userStore.isLoggedIn" @click="handleLogout" class="text-sm text-[var(--color-text-muted)]">
+        <button v-if="userStore.isLoggedIn" @click="handleLogout" class="text-base font-medium text-[var(--color-text-secondary)] px-3 py-1 rounded-full border border-[var(--color-border)] hover:bg-[var(--color-bg-soft)]">
           切換
         </button>
       </div>
     </header>
 
     <!-- 可滾動內容區 -->
-    <div class="app-content-scroll">
-      <div class="container mx-auto px-4 py-4 sm:px-6 sm:py-6 max-w-4xl">
-      <div class="space-y-6">
+    <div class="app-content-scroll bg-[var(--color-bg)]">
+      <div class="container mx-auto px-4 py-6 sm:px-6 sm:py-8 max-w-4xl">
+      <div class="space-y-8">
 
       <!-- 使用者狀態（精簡版） -->
-      <div v-if="userStore.isLoggedIn" class="flex items-center gap-3 mb-6 p-3 bg-[var(--color-surface)] rounded-xl">
-        <div class="w-12 h-12 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center text-xl">
-          👤
+      <div v-if="userStore.isLoggedIn" class="mb-8 bg-[var(--color-surface-elevated)] rounded-3xl shadow-sm border border-[var(--color-border-light)] overflow-hidden">
+        <div class="flex items-center gap-4 p-5">
+          <div class="w-16 h-16 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center text-3xl border-2 border-white shadow-inner shrink-0">
+            👤
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-xl font-bold text-[var(--color-text)] truncate">{{ userStore.currentUser?.name }}</p>
+            <p class="text-base text-[var(--color-text-secondary)] mt-1">{{ userStore.userAge }} 歲 · 保持大腦活躍中</p>
+          </div>
         </div>
-        <div class="flex-1">
-          <p class="font-semibold text-[var(--color-text)]">{{ userStore.currentUser?.name }}</p>
-          <p class="text-sm text-[var(--color-text-muted)]">{{ userStore.userAge }} 歲</p>
+        
+        <!-- 同步狀態列 -->
+        <div class="bg-[var(--color-bg-soft)] px-5 py-2 flex items-center justify-between text-sm border-t border-[var(--color-border-light)]">
+          <div class="flex items-center gap-2 text-[var(--color-text-secondary)]">
+            <span class="text-base" :class="{'animate-spin': settingsStore.syncUiStatus === 'syncing'}">
+              {{ syncStatusIcon }}
+            </span>
+            <span class="font-medium">{{ syncStatusText }}</span>
+          </div>
+          <router-link to="/settings" class="text-[var(--color-primary)] text-xs font-bold px-2 py-1 rounded hover:bg-[var(--color-surface)] transition-colors">
+            設定同步
+          </router-link>
         </div>
       </div>
       <div v-if="trainingReminder || assessmentReminder?.needsAssessment" class="space-y-3">
@@ -103,8 +118,8 @@
                 to="/assessment" 
                 class="inline-block mt-2 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
                 :class="assessmentReminder.daysSinceLastAssessment >= 60 
-                  ? 'bg-red-500 text-white hover:bg-red-600' 
-                  : 'bg-amber-500 text-white hover:bg-amber-600'"
+                  ? 'bg-[var(--color-danger)] text-[var(--color-text-inverse)] hover:opacity-90' 
+                  : 'bg-[var(--color-warning)] text-[var(--color-text-inverse)] hover:opacity-90'"
               >
                 前往評估
               </router-link>
@@ -119,42 +134,49 @@
 
       <!-- 評估引導卡片（未完成評估時顯示） -->
       <div v-if="userStore.isLoggedIn && !settingsStore.hasCompletedAssessment" class="mb-6">
-        <div class="bg-gradient-to-r from-orange-500 to-amber-500 dark:from-orange-600 dark:to-amber-600 rounded-2xl p-4 text-white shadow-lg">
+        <div class="bg-gradient-to-r from-[var(--color-accent-warm)] to-[var(--color-coordination)] rounded-2xl p-4 text-[var(--color-text-inverse)] shadow-lg">
           <div class="flex items-center gap-3 mb-3">
             <span class="text-3xl">🧪</span>
             <div>
               <h2 class="font-bold">認知評估</h2>
-              <p class="text-orange-100 text-sm">完成評估後即可開始訓練</p>
+              <p class="text-[var(--color-bg-soft)] text-sm opacity-90">完成評估後即可開始訓練</p>
             </div>
           </div>
           
           <router-link 
             to="/assessment" 
-            class="block w-full py-2.5 bg-white dark:bg-gray-800 text-orange-600 dark:text-orange-400 rounded-xl font-semibold text-center
-                   hover:bg-orange-50 transition-colors shadow-md text-sm"
+            class="block w-full py-3 bg-[var(--color-surface)] text-[var(--color-accent-warm)] rounded-xl font-bold text-center
+                   hover:bg-[var(--color-bg-soft)] transition-colors shadow-md text-base"
           >
             開始評估（約 5 分鐘）
           </router-link>
         </div>
       </div>
 
-      <h2 v-if="userStore.isLoggedIn" class="text-sm font-semibold text-[var(--color-text-muted)]">今日訓練</h2>
+      <h2 v-if="userStore.isLoggedIn" class="text-lg font-bold text-[var(--color-text)] px-1 mb-3 flex items-center gap-2">
+        <span class="w-1.5 h-6 rounded-full bg-[var(--color-primary)]"></span>
+        今日訓練
+      </h2>
       <!-- 訓練目標卡片（新增：圓形進度 + 目標設定） -->
-      <div v-if="userStore.isLoggedIn" class="mb-6">
-        <div class="bg-gradient-to-r from-[var(--color-primary)] to-purple-500 dark:from-indigo-600 dark:to-purple-600 rounded-2xl p-4 sm:p-5 text-white shadow-lg">
+      <div v-if="userStore.isLoggedIn" class="mb-8">
+        <div class="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-light)] rounded-3xl p-5 sm:p-6 text-[var(--color-text-inverse)] shadow-xl relative overflow-hidden group">
+          <!-- 背景裝飾 -->
+          <div class="absolute -right-10 -top-10 w-40 h-40 bg-[var(--color-surface)]/10 rounded-full blur-3xl pointer-events-none"></div>
+          
           <!-- 標題與設定按鈕 -->
-          <div class="flex items-start sm:items-center justify-between mb-3 sm:mb-4 gap-2">
+          <div class="flex items-start sm:items-center justify-between mb-4 sm:mb-6 gap-3 relative z-10">
             <div class="flex-1 min-w-0">
-              <h2 class="font-bold text-base sm:text-lg truncate">訓練目標</h2>
-              <p class="text-blue-100 text-xs sm:text-sm leading-tight">
+              <h2 class="text-xl sm:text-2xl font-bold truncate tracking-wide">每日目標</h2>
+              <p class="text-[var(--color-bg-soft)] text-sm sm:text-base mt-1 font-medium opacity-90">
                 每週 {{ settingsStore.weeklyTrainingGoal }} 天 · {{ settingsStore.dailyTrainingDuration }} 分鐘/天
               </p>
             </div>
             <button
               @click="showGoalSettings = true"
-              class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 dark:bg-gray-700/50 flex items-center justify-center hover:bg-white/30 dark:hover:bg-gray-600/60 transition-colors flex-shrink-0"
+              class="w-12 h-12 rounded-full bg-[var(--color-surface)]/20 hover:bg-[var(--color-surface)]/30 backdrop-blur-sm flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-inner"
+              aria-label="調整目標"
             >
-              <svg width="16" height="16" class="sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
@@ -162,40 +184,41 @@
           </div>
 
           <!-- 圓形進度與週訓練統計 -->
-          <div class="flex items-center justify-center sm:justify-around gap-4 sm:gap-0">
+          <div class="flex items-center justify-center sm:justify-around gap-6 sm:gap-8 mb-6 relative z-10">
             <!-- 圓形進度 -->
-            <div class="flex-shrink-0">
+            <div class="flex-shrink-0 transform scale-105">
               <CircularProgress
                 :value="weeklyProgress.completedDays"
                 :max="settingsStore.weeklyTrainingGoal"
-                :size="100"
-                :stroke-width="8"
-                progress-color="#ffffff"
-                track-color="rgba(255,255,255,0.3)"
+                :size="120"
+                :stroke-width="10"
+                progress-color="var(--color-surface)"
+                track-color="var(--color-track-on-primary)"
                 :show-percentage="false"
               >
-                <div class="text-center">
-                  <span class="text-2xl sm:text-3xl font-bold">{{ weeklyProgress.completedDays }}</span>
-                  <span class="text-xs sm:text-sm opacity-80">/{{ settingsStore.weeklyTrainingGoal }}</span>
-                  <span class="block text-xs opacity-70">天</span>
+                <div class="text-center text-[var(--color-text-inverse)]">
+                  <span class="text-4xl font-black tracking-tight">{{ weeklyProgress.completedDays }}</span>
+                  <span class="text-base opacity-80 font-medium mx-1">/</span>
+                  <span class="text-xl opacity-90 font-bold">{{ settingsStore.weeklyTrainingGoal }}</span>
+                  <span class="block text-sm opacity-80 mt-1 font-medium">天達標</span>
                 </div>
               </CircularProgress>
             </div>
 
             <!-- 週統計 -->
-            <div class="space-y-2 sm:space-y-3 flex-1 sm:flex-initial">
-              <div class="flex items-center gap-2 sm:gap-3">
-                <span class="text-xl sm:text-2xl">⏱️</span>
-                <div class="min-w-0 flex-1">
-                  <p class="text-lg sm:text-xl font-bold truncate">{{ weeklyProgress.totalMinutes }}</p>
-                  <p class="text-xs opacity-70">本週訓練分鐘</p>
+            <div class="space-y-4 flex-1 sm:flex-initial">
+              <div class="flex items-center gap-4 bg-[var(--color-surface)]/10 rounded-2xl p-3 backdrop-blur-sm border border-[var(--color-surface)]/10">
+                <span class="text-3xl filter drop-shadow-md">⏱️</span>
+                <div class="min-w-0 flex-1 text-[var(--color-text-inverse)]">
+                  <p class="text-2xl font-bold truncate leading-none">{{ weeklyProgress.totalMinutes }}</p>
+                  <p class="text-xs sm:text-sm opacity-80 mt-1">本週訓練分鐘</p>
                 </div>
               </div>
-              <div class="flex items-center gap-2 sm:gap-3">
-                <span class="text-xl sm:text-2xl">🎮</span>
-                <div class="min-w-0 flex-1">
-                  <p class="text-lg sm:text-xl font-bold truncate">{{ weeklyProgress.totalSessions }}</p>
-                  <p class="text-xs opacity-70">遊戲次數</p>
+              <div class="flex items-center gap-4 bg-[var(--color-surface)]/10 rounded-2xl p-3 backdrop-blur-sm border border-[var(--color-surface)]/10">
+                <span class="text-3xl filter drop-shadow-md">🎮</span>
+                <div class="min-w-0 flex-1 text-[var(--color-text-inverse)]">
+                  <p class="text-2xl font-bold truncate leading-none">{{ weeklyProgress.totalSessions }}</p>
+                  <p class="text-xs sm:text-sm opacity-80 mt-1">遊戲次數</p>
                 </div>
               </div>
             </div>
@@ -204,28 +227,35 @@
           <!-- 開始訓練按鈕 -->
           <router-link
             to="/daily-challenge"
-            class="block w-full py-2.5 sm:py-3 mt-3 sm:mt-4 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 rounded-xl font-semibold text-center
-                   hover:bg-blue-50 transition-colors shadow-md text-sm sm:text-base"
+            class="block w-full py-4 mt-2 bg-[var(--color-surface)] text-[var(--color-primary)] rounded-2xl font-bold text-center text-lg sm:text-xl
+                   hover:bg-[var(--color-bg-soft)] active:scale-[0.98] transition-all shadow-lg relative z-10 overflow-hidden"
           >
-            {{ dailyProgress.completed ? '繼續訓練' : '開始今日訓練' }}
+            <span class="relative z-10 flex items-center justify-center gap-2">
+              <span class="text-2xl">{{ dailyProgress.completed ? '🎉' : '🚀' }}</span>
+              {{ dailyProgress.completed ? '繼續訓練' : '開始今日訓練' }}
+            </span>
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--color-surface-alt)]/50 to-transparent translate-x-[-100%] hover:translate-x-[100%] transition-transform duration-1000"></div>
           </router-link>
         </div>
       </div>
 
-      <h2 v-if="userStore.isLoggedIn" class="text-sm font-semibold text-[var(--color-text-muted)]">本週紀錄</h2>
-      <div v-if="userStore.isLoggedIn" class="flex items-center justify-between text-xs text-[var(--color-text-muted)]">
+      <h2 v-if="userStore.isLoggedIn" class="text-lg font-bold text-[var(--color-text)] px-1 mb-3 flex items-center gap-2">
+        <span class="w-1.5 h-6 rounded-full bg-[var(--color-primary)]"></span>
+        本週紀錄
+      </h2>
+      <div v-if="userStore.isLoggedIn" class="flex items-center justify-between text-sm text-[var(--color-text-secondary)] mb-3 px-1">
         <span>顯示</span>
-        <div class="inline-flex items-center gap-1 rounded-full bg-[var(--color-surface)] p-1 border border-[var(--color-border)]">
+        <div class="inline-flex items-center gap-1 rounded-full bg-[var(--color-surface-elevated)] p-1 border border-[var(--color-border)] shadow-sm">
           <button
-            class="px-2 py-1 rounded-full transition-colors"
-            :class="activityFilter === 'daily' ? 'bg-[var(--color-primary)] text-white' : 'text-[var(--color-text-secondary)]'"
+            class="px-3 py-1.5 rounded-full transition-all text-sm font-medium"
+            :class="activityFilter === 'daily' ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-sm' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-soft)]'"
             @click="activityFilter = 'daily'"
           >
             每日訓練
           </button>
           <button
-            class="px-2 py-1 rounded-full transition-colors"
-            :class="activityFilter === 'all' ? 'bg-[var(--color-primary)] text-white' : 'text-[var(--color-text-secondary)]'"
+            class="px-3 py-1.5 rounded-full transition-all text-sm font-medium"
+            :class="activityFilter === 'all' ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-sm' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-soft)]'"
             @click="activityFilter = 'all'"
           >
             全部活動
@@ -233,7 +263,7 @@
         </div>
       </div>
       <!-- 週曆 -->
-      <div v-if="userStore.isLoggedIn" class="mb-6">
+      <div v-if="userStore.isLoggedIn" class="mb-8">
         <WeekCalendar
           :training-data="weeklyTrainingData"
           @date-select="handleDateSelect"
@@ -241,26 +271,31 @@
         />
       </div>
 
-      <h2 v-if="userStore.isLoggedIn && settingsStore.hasCompletedAssessment" class="text-sm font-semibold text-[var(--color-text-muted)]">趨勢摘要</h2>
+      <h2 v-if="userStore.isLoggedIn && settingsStore.hasCompletedAssessment" class="text-lg font-bold text-[var(--color-text)] px-1 mb-3 flex items-center gap-2">
+        <span class="w-1.5 h-6 rounded-full bg-[var(--color-primary)]"></span>
+        趨勢摘要
+      </h2>
       <!-- 認知趨勢概覽（精簡版） -->
-      <div v-if="userStore.isLoggedIn && settingsStore.hasCompletedAssessment" class="mb-6">
-        <div class="card p-4">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="font-semibold text-[var(--color-text)]">📊 認知趨勢</h3>
-            <router-link v-if="hasSufficientData" to="/report" class="text-sm text-[var(--color-primary)]">
-              詳情 →
+      <div v-if="userStore.isLoggedIn && settingsStore.hasCompletedAssessment" class="mb-8">
+        <div class="bg-[var(--color-surface-elevated)] rounded-3xl p-5 shadow-sm border border-[var(--color-border-light)]">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-lg text-[var(--color-text)] flex items-center gap-2">
+              <span class="text-2xl">📊</span> 認知趨勢
+            </h3>
+            <router-link v-if="hasSufficientData" to="/report" class="text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] transition-colors px-3 py-1.5 rounded-full hover:bg-[var(--color-primary)]/10">
+              查看詳情 →
             </router-link>
           </div>
           
           <!-- 未達到 5 場遊戲時的解鎖進度 -->
-          <div v-if="!hasSufficientData" class="p-3 bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/20 rounded-lg">
-            <div class="flex items-center gap-2 mb-2">
-              <span class="text-xl">🔒</span>
-              <span class="text-sm text-[var(--color-text)]">完成 {{ unlockProgress.remaining }} 場遊戲後解鎖</span>
+          <div v-if="!hasSufficientData" class="p-4 bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/20 rounded-2xl">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-2xl">🔒</span>
+              <span class="text-base font-medium text-[var(--color-text)]">完成 {{ unlockProgress.remaining }} 場遊戲後解鎖</span>
             </div>
-            <div class="h-2 bg-[var(--color-primary)]/10 rounded-full overflow-hidden">
+            <div class="h-3 bg-[var(--color-primary)]/10 rounded-full overflow-hidden">
               <div 
-                class="h-full bg-gradient-to-r from-[var(--color-primary)] to-purple-500 rounded-full transition-all duration-500"
+                class="h-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent-purple)] rounded-full transition-all duration-500 shadow-[var(--shadow-glow)]"
                 :style="{ width: unlockProgress.percentage + '%' }"
               ></div>
             </div>
@@ -269,83 +304,110 @@
           <!-- 有足夠數據時顯示趨勢 -->
           <template v-else-if="cognitiveTrend">
             <!-- 退化警告 -->
-            <div v-if="hasDeclineWarning" class="mb-3 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-              <span class="text-sm text-yellow-700 dark:text-yellow-300">⚠️ 偵測到表現變化，建議持續練習</span>
+            <div v-if="hasDeclineWarning" class="mb-4 p-3 bg-[var(--color-warning-bg)] border border-[var(--color-warning)]/30 rounded-xl flex items-start gap-3">
+              <span class="text-2xl shrink-0">⚠️</span>
+              <span class="text-sm font-medium text-[var(--color-text)] pt-1">偵測到部分能力有變化，建議保持每日訓練習慣。</span>
             </div>
             
             <!-- 維度摘要 -->
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-3 gap-3">
               <div 
                 v-for="dim in topDimensions" 
                 :key="dim.dimension"
-                class="text-center p-2 bg-[var(--color-surface-alt)] rounded-lg"
+                class="text-center p-3 bg-[var(--color-bg-soft)] rounded-2xl border border-[var(--color-border-light)]"
               >
-                <span class="text-xl">{{ dim.icon }}</span>
-                <p class="text-sm font-bold" :class="dim.trendClass">{{ dim.score }}</p>
-                <p class="text-xs text-[var(--color-text-muted)]">{{ dim.name }}</p>
+                <span class="text-2xl mb-1 block filter drop-shadow-sm">{{ dim.icon }}</span>
+                <p class="text-lg font-black" :class="dim.trendClass">{{ dim.score }}</p>
+                <p class="text-xs font-medium text-[var(--color-text-secondary)] mt-0.5">{{ dim.name }}</p>
               </div>
             </div>
           </template>
         </div>
       </div>
 
-      <h2 class="text-sm font-semibold text-[var(--color-text-muted)]">快速開始</h2>
+      <h2 class="text-lg font-bold text-[var(--color-text)] px-1 mb-3 flex items-center gap-2">
+        <span class="w-1.5 h-6 rounded-full bg-[var(--color-primary)]"></span>
+        快速開始
+      </h2>
       <!-- 主要按鈕區（更緊湊） -->
-      <div class="space-y-3 mb-6">
+      <div class="space-y-4 mb-8">
         <template v-if="userStore.isLoggedIn">
-          <router-link to="/games" class="btn btn-primary btn-lg w-full shadow-lg">
-            <span class="text-xl mr-2">🎮</span>
-            開始訓練
+          <router-link to="/games" class="btn btn-primary btn-lg w-full shadow-lg h-16 text-lg rounded-2xl border-0">
+            <span class="text-2xl mr-3">🎮</span>
+            自主訓練
           </router-link>
           
-          <div class="grid grid-cols-2 gap-3">
-            <router-link to="/report" class="btn btn-secondary w-full py-3">
-              <span class="text-lg mr-1">📊</span>
-              報告
+          <div class="grid grid-cols-2 gap-4">
+            <router-link to="/report" class="btn btn-secondary w-full py-4 h-auto rounded-2xl border-0 bg-[var(--color-surface-elevated)] text-[var(--color-text)] shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5">
+              <span class="text-2xl mb-1 block">📊</span>
+              詳細報告
             </router-link>
             
-            <router-link to="/nutrition" class="btn btn-secondary w-full py-3">
-              <span class="text-lg mr-1">🥗</span>
-              營養
+            <router-link to="/nutrition" class="btn btn-secondary w-full py-4 h-auto rounded-2xl border-0 bg-[var(--color-surface-elevated)] text-[var(--color-text)] shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5">
+              <span class="text-2xl mb-1 block">🥗</span>
+              腦力營養
             </router-link>
           </div>
         </template>
         
         <template v-else>
-          <router-link to="/login" class="btn btn-primary btn-lg w-full shadow-lg">
-            <span class="text-xl mr-2">👋</span>
+          <router-link to="/login" class="btn btn-primary btn-lg w-full shadow-lg h-16 text-lg rounded-2xl">
+            <span class="text-2xl mr-3">👋</span>
             開始使用
           </router-link>
         </template>
       </div>
 
-      <!-- 統計摘要（精簡版） -->
-      <div v-if="userStore.isLoggedIn && userStore.currentStats" class="mb-6">
-        <h2 class="text-sm font-semibold text-[var(--color-text-muted)] mb-3">訓練統計</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-          <div class="text-center p-2 sm:p-3 bg-[var(--color-surface)] rounded-xl">
-            <div class="text-lg sm:text-xl font-bold text-blue-500">
-              {{ userStore.currentStats.totalGamesPlayed }}
+      <!-- 統計摘要（區分訓練與自由） -->
+      <div v-if="userStore.isLoggedIn && userStore.currentStats" class="mb-8">
+        <h2 class="text-lg font-bold text-[var(--color-text)] px-1 mb-3 flex items-center gap-2">
+          <span class="w-1.5 h-6 rounded-full bg-[var(--color-primary)]"></span>
+          累積成果
+        </h2>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- 每日訓練統計 -->
+          <div class="bg-[var(--color-surface-elevated)] p-4 rounded-2xl shadow-sm border border-[var(--color-border-light)] relative overflow-hidden group">
+            <div class="absolute right-0 top-0 p-3 opacity-10 text-6xl pointer-events-none group-hover:scale-110 transition-transform duration-500">📅</div>
+            <h3 class="font-bold text-[var(--color-text)] mb-3 flex items-center gap-2">
+              <span class="text-xl">📅</span> 每日訓練
+            </h3>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="text-center p-2 bg-[var(--color-bg-soft)] rounded-xl">
+                <div class="text-2xl font-black text-[var(--color-primary)] mb-1">
+                  {{ userStore.currentStats.streak }}
+                </div>
+                <div class="text-xs font-medium text-[var(--color-text-secondary)]">連續天數</div>
+              </div>
+              <div class="text-center p-2 bg-[var(--color-bg-soft)] rounded-xl">
+                <div class="text-2xl font-black text-[var(--color-success)] mb-1">
+                  {{ Math.round(userStore.currentStats.averageScore) }}
+                </div>
+                <div class="text-xs font-medium text-[var(--color-text-secondary)]">平均分</div>
+              </div>
             </div>
-            <div class="text-xs text-[var(--color-text-muted)]">次數</div>
           </div>
-          <div class="text-center p-2 sm:p-3 bg-[var(--color-surface)] rounded-xl">
-            <div class="text-lg sm:text-xl font-bold text-green-500">
-              {{ userStore.currentStats.averageScore }}
+
+          <!-- 自由遊戲統計 -->
+          <div class="bg-[var(--color-surface-elevated)] p-4 rounded-2xl shadow-sm border border-[var(--color-border-light)] relative overflow-hidden group">
+            <div class="absolute right-0 top-0 p-3 opacity-10 text-6xl pointer-events-none group-hover:scale-110 transition-transform duration-500">🎮</div>
+            <h3 class="font-bold text-[var(--color-text)] mb-3 flex items-center gap-2">
+              <span class="text-xl">🎮</span> 自由遊戲
+            </h3>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="text-center p-2 bg-[var(--color-bg-soft)] rounded-xl">
+                <div class="text-2xl font-black text-[var(--color-accent-teal)] mb-1">
+                  {{ userStore.currentStats.totalGamesPlayed }}
+                </div>
+                <div class="text-xs font-medium text-[var(--color-text-secondary)]">總次數</div>
+              </div>
+              <div class="text-center p-2 bg-[var(--color-bg-soft)] rounded-xl">
+                <div class="text-2xl font-black text-[var(--color-accent-warm)] mb-1">
+                  {{ formatPlayTime(userStore.currentStats.totalPlayTime) }}
+                </div>
+                <div class="text-xs font-medium text-[var(--color-text-secondary)]">總時長</div>
+              </div>
             </div>
-            <div class="text-xs text-[var(--color-text-muted)]">平均</div>
-          </div>
-          <div class="text-center p-2 sm:p-3 bg-[var(--color-surface)] rounded-xl">
-            <div class="text-lg sm:text-xl font-bold text-purple-500">
-              {{ formatPlayTime(userStore.currentStats.totalPlayTime) }}
-            </div>
-            <div class="text-xs text-[var(--color-text-muted)]">時長</div>
-          </div>
-          <div class="text-center p-2 sm:p-3 bg-[var(--color-surface)] rounded-xl">
-            <div class="text-lg sm:text-xl font-bold text-orange-500">
-              {{ userStore.currentStats.streak }}
-            </div>
-            <div class="text-xs text-[var(--color-text-muted)]">連續</div>
           </div>
         </div>
       </div>
@@ -391,6 +453,32 @@ const userStore = useUserStore()
 const gameStore = useGameStore()
 const settingsStore = useSettingsStore()
 const { checkTrainingReminder, checkAssessmentReminder, snoozeAssessmentReminder, requestPermission } = useNotification()
+
+const syncStatusIcon = computed(() => {
+  switch (settingsStore.syncUiStatus) {
+    case 'syncing':
+      return '⏳'
+    case 'success':
+      return '✅'
+    case 'error':
+      return '⚠️'
+    default:
+      return '☁️'
+  }
+})
+
+const syncStatusText = computed(() => {
+  switch (settingsStore.syncUiStatus) {
+    case 'syncing':
+      return '同步中...'
+    case 'success':
+      return '同步完成'
+    case 'error':
+      return '同步失敗'
+    default:
+      return '等待同步'
+  }
+})
 
 // 認知維度列表
 const cognitiveDimensions = Object.values(COGNITIVE_DIMENSIONS) as CognitiveDimensionInfo[]

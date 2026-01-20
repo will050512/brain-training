@@ -98,12 +98,12 @@ const shouldHide = computed(() => {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  height: 60px;
-  background: var(--color-surface, #ffffff);
-  border-top: 1px solid var(--color-border, #e5e7eb);
+  height: 64px;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
   padding-bottom: env(safe-area-inset-bottom, 0);
   z-index: 1000;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-top);
 }
 
 .nav-item {
@@ -113,21 +113,21 @@ const shouldHide = computed(() => {
   justify-content: center;
   flex: 1;
   height: 100%;
-  padding: 6px 0;
+  padding: 8px 0;
   text-decoration: none;
-  color: var(--color-text-muted, #9ca3af);
+  color: var(--color-text-muted);
   transition: all 0.2s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
 .nav-item.active {
-  color: var(--color-primary, #6366f1);
+  color: var(--color-primary);
 }
 
 .nav-icon {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   line-height: 1;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
   transition: transform 0.2s ease;
 }
 
@@ -136,8 +136,8 @@ const shouldHide = computed(() => {
 }
 
 .nav-label {
-  font-size: 0.625rem;
-  font-weight: 500;
+  font-size: 0.7rem;
+  font-weight: 600;
   line-height: 1;
 }
 
@@ -168,7 +168,7 @@ const shouldHide = computed(() => {
 /* 橫屏優化 */
 @media (orientation: landscape) and (max-height: 500px) {
   .mobile-bottom-nav {
-    height: 50px;
+    height: 56px;
   }
 
   .nav-icon {

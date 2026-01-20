@@ -16,9 +16,14 @@
  * - Apps Script → Deploy → New deployment → Web app
  * - Execute as: Me
  * - Who has access: Anyone (or Anyone with the link)
+ *
+ * Setup:
+ * - Fill in CONFIG.SPREADSHEET_ID with your Sheet ID (required for this version)
  */
 
 var CONFIG = {
+  SPREADSHEET_ID: '16UoYf-u7Gj0waariezCJAO8Q-PZ3e2L17f-_P_3RC8Y',
+  ENABLE_CORS: true,
   SHEETS: {
     GAME_RESULTS: 'GameResults',
     USERS: 'Users',
@@ -189,12 +194,39 @@ var CONFIG = {
 }
 
 function jsonOutput_(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON)
+  var out = ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON)
+  if (CONFIG.ENABLE_CORS) {
+    return out
+      .setHeader('Access-Control-Allow-Origin', '*')
+      .setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+      .setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  }
+  return out
 }
 
 function jsonpOutput_(callback, obj) {
   var payload = callback + '(' + JSON.stringify(obj) + ')'
-  return ContentService.createTextOutput(payload).setMimeType(ContentService.MimeType.JAVASCRIPT)
+  var out = ContentService.createTextOutput(payload).setMimeType(ContentService.MimeType.JAVASCRIPT)
+  if (CONFIG.ENABLE_CORS) {
+    return out
+      .setHeader('Access-Control-Allow-Origin', '*')
+      .setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+      .setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  }
+  return out
+}
+
+function doOptions(e) {
+  var out = ContentService.createTextOutput('')
+  if (CONFIG.ENABLE_CORS) {
+    return out
+      .setMimeType(ContentService.MimeType.TEXT)
+      .setHeader('Access-Control-Allow-Origin', '*')
+      .setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+      .setHeader('Access-Control-Allow-Headers', 'Content-Type')
+      .setHeader('Access-Control-Max-Age', '3600')
+  }
+  return out.setMimeType(ContentService.MimeType.TEXT)
 }
 
 function asNumber_(v, fallback) {
@@ -261,8 +293,15 @@ function safeJsonStringifyArray_(value) {
   }
 }
 
+function getSpreadsheet_() {
+  if (!CONFIG.SPREADSHEET_ID) {
+    throw new Error('Missing CONFIG.SPREADSHEET_ID')
+  }
+  return SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID)
+}
+
 function getOrCreateSheet_(name, headers) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet()
+  var ss = getSpreadsheet_()
   var sheet = ss.getSheetByName(name)
   if (!sheet) {
     sheet = ss.insertSheet(name)

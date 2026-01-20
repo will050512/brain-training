@@ -13,8 +13,9 @@ import {
   type SupplementType,
   type ScoreHistory as NutritionScoreHistory
 } from '@/services/nutritionPlaceholder'
-import { getUserGameSessions } from '@/services/db'
+import { getUserGameSessions, saveNutritionRecommendation } from '@/services/db'
 import { generateNutritionResultForUser } from '@/services/nutritionRecommendationService'
+import { syncNutritionRecommendationToSheet } from '@/services/userDataSheetSyncService'
 import type { CognitiveDimension } from '@/types/cognitive'
 import type { GameSession } from '@/types'
 import { getTotalGamesPlayed, NUTRITION_UNLOCK_REQUIRED_TRAININGS } from '@/utils/trainingStats'
@@ -92,6 +93,10 @@ async function loadRecommendations(): Promise<void> {
       })
 
       activeRecommendations.value = personalized.recommendations
+
+      if (activeRecommendations.value.length > 0) {
+        await persistNutritionRecommendations(userId, activeRecommendations.value)
+      }
     }
     
     // 所有營養品
@@ -100,6 +105,29 @@ async function loadRecommendations(): Promise<void> {
     console.error('載入營養推薦失敗:', error)
   } finally {
     isLoading.value = false
+  }
+}
+
+async function persistNutritionRecommendations(
+  odId: string,
+  recommendations: NutritionRecommendation[]
+): Promise<void> {
+  for (const rec of recommendations) {
+    const record = {
+      id: rec.id,
+      odId,
+      triggerId: rec.triggerId,
+      supplementType: rec.supplement.type,
+      dimension: rec.dimension,
+      priority: rec.priority,
+      reason: rec.reason,
+      recommendedAt: rec.recommendedAt,
+      viewed: rec.viewed,
+      dismissed: rec.dismissed,
+    }
+
+    await saveNutritionRecommendation(record)
+    await syncNutritionRecommendationToSheet(record)
   }
 }
 
@@ -297,7 +325,6 @@ onMounted(() => {
         >
           <!-- 合作夥伴標籤 -->
           <div v-if="rec.supplement.isPartnerProduct" class="badge badge--primary partner-badge">
-            🤝 合作夥伴
           </div>
           
           <!-- 優先級標籤 -->
@@ -405,7 +432,6 @@ onMounted(() => {
         >
           <!-- 合作夥伴標籤 -->
           <div v-if="supplement.isPartnerProduct" class="badge badge--primary partner-badge">
-            🤝 合作夥伴
           </div>
           
           <div class="sup-header">

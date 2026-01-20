@@ -285,7 +285,7 @@
           <div class="space-y-2 text-sm">
             <div class="flex justify-between">
               <span class="text-[var(--color-text-muted)]">同步許可</span>
-              <span :class="syncStatusClass">{{ syncStatusLabel }}</span>
+            <span :class="syncStatusClass">{{ syncStatusLabel }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-[var(--color-text-muted)]">手動同步</span>
@@ -303,10 +303,10 @@
               <span class="text-[var(--color-text-muted)]">最近上傳（個人）</span>
               <span class="text-[var(--color-text)]">{{ formatSyncTime(syncStatus.user.lastSuccessAt) }}</span>
             </div>
-            <div v-if="settingsStore.lastManualSyncError" class="text-xs text-red-600">
+            <div v-if="settingsStore.lastManualSyncError" class="text-xs text-[var(--color-danger)]">
               同步失敗：{{ settingsStore.lastManualSyncError }}
             </div>
-            <div v-if="syncStatus.session.lastErrorAt || syncStatus.user.lastErrorAt" class="text-xs text-red-600">
+            <div v-if="syncStatus.session.lastErrorAt || syncStatus.user.lastErrorAt" class="text-xs text-[var(--color-danger)]">
               最近同步失敗：{{ formatSyncTime(syncStatus.session.lastErrorAt || syncStatus.user.lastErrorAt) }}
             </div>
           </div>
@@ -363,15 +363,15 @@
               <div class="text-xs text-[var(--color-text-muted)]">遊戲次數</div>
             </div>
             <div class="p-3 bg-[var(--color-surface-alt)] rounded-lg text-center">
-              <div class="text-lg font-bold text-green-500">{{ userStore.currentStats.averageScore }}</div>
+              <div class="text-lg font-bold text-[var(--color-score-good)]">{{ userStore.currentStats.averageScore }}</div>
               <div class="text-xs text-[var(--color-text-muted)]">平均分數</div>
             </div>
             <div class="p-3 bg-[var(--color-surface-alt)] rounded-lg text-center">
-              <div class="text-lg font-bold text-purple-500">{{ formatPlayTime(userStore.currentStats.totalPlayTime) }}</div>
+              <div class="text-lg font-bold text-[var(--color-progress)]">{{ formatPlayTime(userStore.currentStats.totalPlayTime) }}</div>
               <div class="text-xs text-[var(--color-text-muted)]">總時長</div>
             </div>
             <div class="p-3 bg-[var(--color-surface-alt)] rounded-lg text-center">
-              <div class="text-lg font-bold text-orange-500">{{ userStore.currentStats.streak }}</div>
+              <div class="text-lg font-bold text-[var(--color-combo)]">{{ userStore.currentStats.streak }}</div>
               <div class="text-xs text-[var(--color-text-muted)]">連續天數</div>
             </div>
           </div>
@@ -495,8 +495,8 @@ const syncStatusLabel = computed(() => {
 
 const syncStatusClass = computed(() => {
   if (!userStore.isLoggedIn) return 'text-[var(--color-text-muted)]'
-  if (!syncStatus.value.online || syncStatus.value.consent !== 'allowed') return 'text-amber-600'
-  return 'text-green-600'
+  if (!syncStatus.value.online || syncStatus.value.consent !== 'allowed') return 'text-[var(--color-warning)]'
+  return 'text-[var(--color-success)]'
 })
 
 const canManualSync = computed(() => {

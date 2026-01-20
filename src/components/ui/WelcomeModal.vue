@@ -5,10 +5,11 @@
       <div class="text-center mb-6">
         <img src="/logo.png" alt="愛護腦" class="w-24 h-24 mx-auto mb-4 drop-shadow-lg" />
         <h2 class="text-2xl font-bold text-[var(--color-text)]">歡迎使用愛護腦！</h2>
+        <p class="text-sm text-[var(--color-text-muted)] mt-2">一起用溫和的節奏養成每日訓練</p>
       </div>
 
       <!-- 說明文字 -->
-      <div class="text-center text-[var(--color-text-secondary)] mb-8">
+      <div class="text-center text-[var(--color-text-secondary)] mb-8 text-base leading-relaxed">
         <p class="mb-4">
           本系統專為認知訓練設計，<br>
           透過有趣的遊戲活化您的大腦。
@@ -20,7 +21,7 @@
       </div>
 
       <!-- 音效提示 -->
-      <div class="bg-[var(--color-primary)]/5 dark:bg-[var(--color-primary)]/10 p-4 rounded-lg mb-6 border border-[var(--color-primary)]/20">
+      <div class="bg-[var(--color-accent-warm)]/10 p-4 rounded-xl mb-6 border border-[var(--color-accent-warm)]/30">
         <div class="flex items-center gap-3">
           <span class="text-3xl">🔊</span>
           <div>
@@ -37,13 +38,13 @@
       <div class="flex gap-3">
         <button 
           @click="$emit('close')" 
-          class="btn btn-secondary flex-1"
+          class="btn btn-secondary flex-1 text-base"
         >
           保持靜音
         </button>
         <button 
           @click="$emit('enable-sound')" 
-          class="btn btn-primary flex-1 shadow-lg"
+          class="btn btn-primary flex-1 shadow-lg text-base"
         >
           開啟音效 🔊
         </button>
@@ -51,7 +52,7 @@
 
       <!-- 特色說明 -->
       <div class="mt-8 pt-6 border-t border-[var(--color-border)]">
-        <h3 class="font-semibold mb-4 text-center text-[var(--color-text)]">訓練六大認知能力</h3>
+        <h3 class="font-semibold mb-4 text-center text-[var(--color-text)] text-base">訓練六大認知能力</h3>
         <div class="grid grid-cols-3 gap-4 text-center text-sm">
           <div class="p-2 rounded-lg hover:bg-[var(--color-surface-alt)] transition-colors">
             <span class="text-2xl">⚡</span>

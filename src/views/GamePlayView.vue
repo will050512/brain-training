@@ -31,7 +31,7 @@
             class="status-item text-right flex flex-col items-end"
           >
             <div class="status-label text-[10px] text-[var(--color-text-secondary)] leading-none mb-0.5">進度</div>
-            <div class="status-value text-sm sm:text-lg font-bold text-purple-600 dark:text-purple-400 leading-none">
+            <div class="status-value text-sm sm:text-lg font-bold text-[var(--color-progress)] leading-none">
               {{ gameStatus.currentRound || 0 }}/{{ gameStatus.totalRounds }}
             </div>
           </div>
@@ -42,9 +42,9 @@
           >
             <div class="status-label text-[10px] text-[var(--color-text-secondary)] leading-none mb-0.5">對/錯</div>
             <div class="status-value text-sm sm:text-lg font-bold leading-none whitespace-nowrap">
-              <span class="text-green-600 dark:text-green-400">{{ gameStatus.correctCount || 0 }}</span>
+              <span class="text-[var(--color-success)]">{{ gameStatus.correctCount || 0 }}</span>
               <span class="text-[var(--color-text-muted)] mx-0.5">/</span>
-              <span class="text-red-500 dark:text-red-400">{{ gameStatus.wrongCount || 0 }}</span>
+              <span class="text-[var(--color-danger)]">{{ gameStatus.wrongCount || 0 }}</span>
             </div>
           </div>
 
@@ -53,7 +53,7 @@
             class="status-item text-right flex flex-col items-end"
           >
             <div class="status-label text-[10px] text-[var(--color-text-secondary)] leading-none mb-0.5">連擊</div>
-            <div class="status-value text-sm sm:text-lg font-bold text-orange-500 dark:text-orange-400 leading-none animate-bounce">
+            <div class="status-value text-sm sm:text-lg font-bold text-[var(--color-combo)] leading-none animate-bounce">
               {{ gameStatus.combo }}x
             </div>
           </div>
@@ -63,7 +63,7 @@
             class="status-item text-right flex flex-col items-end min-w-[2.5rem] sm:min-w-auto"
           >
             <div class="status-label text-[10px] text-[var(--color-text-secondary)] leading-none mb-0.5">分數</div>
-            <div class="status-value text-sm sm:text-lg font-bold text-blue-600 dark:text-blue-400 leading-none">
+            <div class="status-value text-sm sm:text-lg font-bold text-[var(--color-score)] leading-none">
               {{ gameStatus.score ?? currentScore }}
             </div>
           </div>
@@ -78,7 +78,7 @@
             <div
               class="status-value text-sm sm:text-lg font-bold leading-none tabular-nums"
               :class="{
-                'text-red-500 dark:text-red-400 animate-pulse': gameStatus.timeLeft !== undefined && gameStatus.timeLeft <= 10,
+                'text-[var(--color-timer-warning)] animate-pulse': gameStatus.timeLeft !== undefined && gameStatus.timeLeft <= 10,
                 'text-[var(--color-text)]': gameStatus.timeLeft === undefined || gameStatus.timeLeft > 10
               }"
             >
@@ -99,7 +99,7 @@
         <div class="flex items-center gap-3 flex-1 min-w-0">
           <div
             v-if="gameStatus.showTimer !== false"
-            class="flex items-center gap-1 text-red-500 dark:text-red-400 font-bold"
+            class="flex items-center gap-1 text-[var(--color-timer-warning)] font-bold"
             :class="{ 'animate-pulse': gameStatus.timeLeft !== undefined && gameStatus.timeLeft <= 10 }"
           >
             <span>⏱️</span>
@@ -107,7 +107,7 @@
           </div>
           <div
             v-if="gameStatus.showScore !== false"
-            class="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-bold"
+            class="flex items-center gap-1 text-[var(--color-score)] font-bold"
           >
             <span>🎯</span>
             <span>{{ gameStatus.score ?? currentScore }}</span>
@@ -118,7 +118,7 @@
         <div class="flex items-center gap-2 flex-shrink-0">
           <div
             v-if="gameStatus.showProgress !== false && gameStatus.totalRounds"
-            class="text-purple-600 dark:text-purple-400 font-bold"
+            class="text-[var(--color-progress)] font-bold"
           >
             {{ gameStatus.currentRound || 0 }}/{{ gameStatus.totalRounds }}
           </div>
@@ -126,9 +126,9 @@
             v-if="gameStatus.showCounts !== false && (gameStatus.correctCount !== undefined || gameStatus.wrongCount !== undefined)"
             class="flex items-center gap-1"
           >
-            <span class="text-green-600 dark:text-green-400 font-bold">{{ gameStatus.correctCount || 0 }}</span>
+            <span class="text-[var(--color-success)] font-bold">{{ gameStatus.correctCount || 0 }}</span>
             <span class="text-[var(--color-text-muted)]">/</span>
-            <span class="text-red-500 dark:text-red-400 font-bold">{{ gameStatus.wrongCount || 0 }}</span>
+            <span class="text-[var(--color-danger)] font-bold">{{ gameStatus.wrongCount || 0 }}</span>
           </div>
         </div>
       </div>
@@ -240,13 +240,13 @@
 
             <!-- 核心統計資訊（所有遊戲一致） -->
             <div class="mb-3 sm:mb-4 grid grid-cols-2 gap-2 sm:gap-3 text-left">
-              <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 p-2 sm:p-3 rounded-lg border border-blue-200 dark:border-blue-700 flex flex-col justify-center">
-                <div class="text-xs text-blue-700 dark:text-blue-300 font-medium mb-0.5">等級評定</div>
-                <div class="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{{ unifiedGameResult?.grade || 'N/A' }}</div>
+              <div class="bg-[var(--color-primary-bg)] p-2 sm:p-3 rounded-lg border border-[var(--color-border)] flex flex-col justify-center">
+                <div class="text-xs text-[var(--color-text-secondary)] font-medium mb-0.5">等級評定</div>
+                <div class="text-xl sm:text-2xl font-bold text-[var(--color-score)]">{{ unifiedGameResult?.grade || 'N/A' }}</div>
               </div>
-              <div class="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 p-2 sm:p-3 rounded-lg border border-purple-200 dark:border-purple-700 flex flex-col justify-center">
-                <div class="text-xs text-purple-700 dark:text-purple-300 font-medium mb-0.5">遊戲時長</div>
-                <div class="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">{{ formatTime(gameResult?.duration || 0) }}</div>
+              <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 rounded-lg border border-[var(--color-border)] flex flex-col justify-center">
+                <div class="text-xs text-[var(--color-text-secondary)] font-medium mb-0.5">遊戲時長</div>
+                <div class="text-xl sm:text-2xl font-bold text-[var(--color-progress)]">{{ formatTime(gameResult?.duration || 0) }}</div>
               </div>
             </div>
 
@@ -273,15 +273,15 @@
               </div>
             </div>
             
-            <div v-if="bestScore > 0" class="mb-6 p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700 flex justify-between items-center text-sm sm:text-base">
-              <span class="text-[var(--color-text)]">最佳成績</span>
-              <div class="text-right">
-                <span class="font-bold text-blue-600 dark:text-blue-400 block">{{ bestScore }} 分</span>
-                <div v-if="currentScore > bestScore" class="text-xs text-green-600 dark:text-green-400 font-bold">
-                  🎉 新紀錄！
+              <div v-if="bestScore > 0" class="mb-6 p-3 sm:p-4 bg-[var(--color-primary-bg)] rounded-lg border border-[var(--color-border)] flex justify-between items-center text-sm sm:text-base">
+                <span class="text-[var(--color-text)]">最佳成績</span>
+                <div class="text-right">
+                  <span class="font-bold text-[var(--color-score)] block">{{ bestScore }} 分</span>
+                  <div v-if="currentScore > bestScore" class="text-xs text-[var(--color-record)] font-bold">
+                    🎉 新紀錄！
+                  </div>
                 </div>
               </div>
-            </div>
             
             <div 
               v-if="difficultyAdjustment"
@@ -328,9 +328,9 @@
                   <span class="text-xs sm:text-sm font-bold text-[var(--color-text)] truncate w-full px-1">
                     {{ game.name }}
                   </span>
-                  <span class="text-[10px] sm:text-xs text-[var(--color-accent-purple)] font-medium">
-                    {{ getGameDimensionLabel(game.id) }}
-                  </span>
+        <span class="text-[10px] sm:text-xs text-[var(--color-accent-purple)] font-medium">
+          {{ getGameDimensionLabel(game.id) }}
+        </span>
                 </button>
               </div>
             </div>
@@ -586,7 +586,7 @@ const difficultyReasonText = computed(() => {
 const GameLoadingComponent = {
   template: `
     <div class="flex flex-col items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
+          <div class="animate-spin rounded-full h-12 w-12 border-4 border-[var(--color-primary)] border-t-transparent mb-4"></div>
       <p class="text-[var(--color-text-secondary)]">遊戲載入中...</p>
     </div>
   `
@@ -597,7 +597,7 @@ const GameErrorComponent = {
   template: `
     <div class="flex flex-col items-center justify-center py-12 text-center">
       <div class="text-6xl mb-4">😵</div>
-      <h3 class="text-xl font-bold text-red-500 mb-2">遊戲載入失敗</h3>
+        <h3 class="text-xl font-bold text-[var(--color-danger)] mb-2">遊戲載入失敗</h3>
       <p class="text-[var(--color-text-secondary)] mb-4">抱歉，遊戲元件無法載入，請稍後再試。</p>
       <button 
         class="btn btn-primary"
@@ -665,9 +665,9 @@ function formatTime(seconds: number): string {
 
 // 取得分數顏色
 function getScoreClass(score: number): string {
-  if (score >= 80) return 'text-green-500'
-  if (score >= 50) return 'text-yellow-500'
-  return 'text-red-500'
+  if (score >= 80) return 'text-[var(--color-score-good)]'
+  if (score >= 50) return 'text-[var(--color-score-moderate)]'
+  return 'text-[var(--color-score-concern)]'
 }
 
 // 取得結束表情

@@ -139,6 +139,7 @@ const headerClass = computed(() => {
   /* 確保在所有裝置上都填滿視窗 */
   min-height: 100vh;
   min-height: 100dvh;
+  transition: background-color 0.3s ease;
 }
 
 .with-safe-area {
@@ -148,12 +149,12 @@ const headerClass = computed(() => {
 
 /* 有底部導航列時，預留底部空間 */
 .has-bottom-nav {
-  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
 }
 
 .has-bottom-nav.with-safe-area {
   /* 覆蓋 with-safe-area 的 padding-bottom */
-  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
 }
 
 /* 頭部 */
@@ -162,15 +163,17 @@ const headerClass = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 56px;
-  padding: 0 var(--spacing-md);
-  gap: var(--spacing-sm);
+  min-height: 60px; /* Larger touch target */
+  padding: 0 var(--spacing-lg);
+  gap: var(--spacing-md);
   z-index: 10;
+  transition: all 0.3s ease;
 }
 
 .header-default {
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xs);
 }
 
 .header-transparent {
@@ -182,6 +185,7 @@ const headerClass = computed(() => {
   background: var(--gradient-primary);
   border-bottom: none;
   color: white;
+  box-shadow: var(--shadow-md);
 }
 
 .header-primary .header-title {
@@ -190,6 +194,7 @@ const headerClass = computed(() => {
 
 .header-primary .back-button {
   color: white;
+  border-color: var(--color-border-inverse);
 }
 
 .header-left,
@@ -214,23 +219,24 @@ const headerClass = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm);
 }
 
 .header-logo {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
 }
 
 .header-title {
-  font-size: var(--font-size-lg);
-  font-weight: 600;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
   color: var(--color-text);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: 0.025em;
 }
 
 /* 返回按鈕 */
@@ -241,20 +247,22 @@ const headerClass = computed(() => {
   width: 44px;
   height: 44px;
   background: transparent;
-  border: none;
-  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
   color: var(--color-text);
   font-size: 1.25rem;
   cursor: pointer;
-  transition: background-color var(--transition-fast);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .back-button:hover {
   background: var(--color-bg-soft);
+  transform: translateX(-2px);
 }
 
 .back-button:active {
   background: var(--color-bg-muted);
+  transform: translateX(0);
 }
 
 .sr-only {
@@ -273,6 +281,7 @@ const headerClass = computed(() => {
 .app-shell-content {
   flex: 1;
   overflow: hidden;
+  background: var(--color-bg);
 }
 
 .content-scroll {
@@ -289,20 +298,22 @@ const headerClass = computed(() => {
 /* 底部區 */
 .app-shell-footer {
   flex-shrink: 0;
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-md);
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
+  box-shadow: var(--shadow-top);
 }
 
 /* 橫向模式優化 */
 @media (orientation: landscape) and (max-height: 500px) {
   .app-shell-header {
     min-height: 48px;
-    padding: 0 var(--spacing-sm);
+    padding: 0 var(--spacing-md);
   }
   
   .app-shell-footer {
-    padding: var(--spacing-xs) var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
   }
 }
+
 </style>

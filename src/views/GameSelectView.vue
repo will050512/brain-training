@@ -2,9 +2,19 @@
   <div class="app-page">
     <!-- APP 頭部 -->
     <header class="app-header">
-      <router-link to="/" class="text-2xl">←</router-link>
-      <h1 class="text-lg font-bold text-[var(--color-text)]">選擇遊戲</h1>
-      <router-link to="/report" class="text-xl">📊</router-link>
+      <router-link
+        to="/"
+        class="text-2xl text-[var(--color-text)] hover:text-[var(--color-primary)] transition-colors"
+      >
+        ←
+      </router-link>
+      <h1 class="text-lg font-bold text-[var(--color-text)] tracking-wide">選擇遊戲</h1>
+      <router-link
+        to="/report"
+        class="text-xl text-[var(--color-text)] hover:text-[var(--color-primary)] transition-colors"
+      >
+        📊
+      </router-link>
     </header>
 
     <!-- 認知維度篩選標籤（固定在頂部） -->
@@ -14,8 +24,8 @@
           @click="selectedDimension = null"
           class="flex-shrink-0 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
           :class="selectedDimension === null
-            ? 'bg-[var(--color-primary)] text-white'
-            : 'bg-[var(--color-bg-muted)] text-[var(--color-text-secondary)]'"
+            ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)]'
+            : 'bg-[var(--color-bg-soft)] text-[var(--color-text-secondary)]'"
         >
           全部
         </button>
@@ -25,8 +35,8 @@
           @click="selectedDimension = dim.id"
           class="flex-shrink-0 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
           :class="selectedDimension === dim.id
-            ? 'bg-[var(--color-primary)] text-white'
-            : 'bg-[var(--color-bg-muted)] text-[var(--color-text-secondary)]'"
+            ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)]'
+            : 'bg-[var(--color-bg-soft)] text-[var(--color-text-secondary)]'"
         >
           <span class="mr-1">{{ dim.icon }}</span>
           <span class="hidden xs:inline">{{ dim.name }}</span>
@@ -47,7 +57,18 @@
             @click="openGameModal(game)"
           >
             <!-- 遊戲圖示 -->
-            <div class="text-3xl sm:text-4xl text-center mb-2 sm:mb-3">{{ game.icon }}</div>
+            <div class="text-3xl sm:text-4xl text-center mb-2 sm:mb-3">
+              <template v-if="resolveGameIcon(game.id)?.path">
+                <img
+                  :src="resolveGameIcon(game.id)?.path"
+                  :alt="game.name"
+                  class="mx-auto w-10 h-10 sm:w-12 sm:h-12"
+                />
+              </template>
+              <template v-else>
+                {{ resolveGameIcon(game.id)?.emoji || game.icon }}
+              </template>
+            </div>
 
             <!-- 遊戲名稱 -->
             <h3 class="text-xs sm:text-sm font-bold text-center text-[var(--color-text)] mb-2 sm:mb-3 line-clamp-2 leading-tight min-h-[2.5rem] sm:min-h-[3rem] flex items-center justify-center">{{ game.name }}</h3>
@@ -88,17 +109,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStore } from '@/stores'
 import { COGNITIVE_DIMENSIONS, type CognitiveDimension } from '@/types/cognitive'
 import type { GameDefinition } from '@/types/game'
+import { getAssetDisplay } from '@/services/assetLoader'
 
 const router = useRouter()
 const gameStore = useGameStore()
 
 // 狀態
 const selectedDimension = ref<CognitiveDimension | null>(null)
+const gameIconMap = ref<Record<string, { emoji: string; path?: string }>>({})
 
 // 認知維度列表
 const cognitiveDimensions = Object.values(COGNITIVE_DIMENSIONS)
@@ -135,6 +158,30 @@ const filteredGames = computed(() => {
   const games = gameStore.allGames
   if (!selectedDimension.value) return games
   return games.filter(game => primaryDimension(game) === selectedDimension.value)
+})
+
+function resolveGameIcon(gameId: string) {
+  return gameIconMap.value[gameId]
+}
+
+async function loadGameIcons(): Promise<void> {
+  const entries = await Promise.all(
+    gameStore.allGames.map(async game => {
+      const usage = `game.icon.${game.id}`
+      const info = await getAssetDisplay(usage)
+      return [game.id, info] as const
+    })
+  )
+
+  const map: Record<string, { emoji: string; path?: string }> = {}
+  entries.forEach(([id, info]) => {
+    map[id] = info
+  })
+  gameIconMap.value = map
+}
+
+onMounted(() => {
+  loadGameIcons()
 })
 
 // 取得分數顏色 class

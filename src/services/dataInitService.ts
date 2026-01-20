@@ -4,6 +4,8 @@ import { useGameStore } from '@/stores/gameStore'
 import { getSyncService, type SyncStatus } from '@/services/offlineSyncService'
 import { getTodayTrainingSession, saveDailyTrainingSession } from '@/services/db'
 import { syncDailyTrainingSessionToSheet } from '@/services/userDataSheetSyncService'
+import { backfillUserSessionsToSheet } from '@/services/googleSheetSyncService'
+import { backfillAllUserDataToSheet } from '@/services/userDataSheetSyncService'
 
 export type DataSyncStatus = SyncStatus | 'pending'
 
@@ -68,7 +70,9 @@ class DataInitService {
       // Parallel loading
       await Promise.all([
         gameStore.loadUserSessions(odId),
-        this.loadDailyTraining(odId)
+        this.loadDailyTraining(odId),
+        backfillUserSessionsToSheet(odId),
+        backfillAllUserDataToSheet(odId)
       ])
       this.setSyncStatus('idle')
     } catch (error) {

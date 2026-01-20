@@ -18,6 +18,7 @@ import {
 } from '@/services/dailyTrainingService'
 import type { CognitiveScores, CognitiveDimension } from '@/types/cognitive'
 import { getTotalGamesPlayed } from '@/utils/trainingStats'
+import { getAssetDisplay } from '@/services/assetLoader'
 
 const router = useRouter()
 const route = useRoute()
@@ -28,6 +29,7 @@ const settingsStore = useSettingsStore()
 const trainingPlan = ref<DailyTrainingPlan | null>(null)
 const isLoading = ref(true)
 const isStarting = ref(false)
+const gameIconMap = ref<Record<string, { emoji: string; path?: string }>>({})
 
 // 維度名稱映射
 const dimensionNames: Record<CognitiveDimension, string> = {
@@ -49,14 +51,14 @@ const dimensionIcons: Record<CognitiveDimension, string> = {
   attention: '👁️',
 }
 
-// 維度顏色映射
+// 維度顏色映射 (Warm & Distinct)
 const dimensionColors: Record<CognitiveDimension, string> = {
-  reaction: '#ef4444',
-  logic: '#8b5cf6',
-  memory: '#3b82f6',
-  cognition: '#f59e0b',
-  coordination: '#10b981',
-  attention: '#ec4899',
+  reaction: 'var(--color-reaction)',
+  logic: 'var(--color-logic)',
+  memory: 'var(--color-memory)',
+  cognition: 'var(--color-cognition)',
+  coordination: 'var(--color-coordination)',
+  attention: 'var(--color-attention)',
 }
 
 // 計算覆蓋的維度
@@ -153,11 +155,31 @@ async function loadTrainingPlan() {
     }
     
     trainingPlan.value = plan
+    await loadTrainingPlanIcons(plan)
   } catch (error) {
     console.error('載入訓練計畫失敗:', error)
   } finally {
     isLoading.value = false
   }
+}
+
+async function loadTrainingPlanIcons(plan: DailyTrainingPlan): Promise<void> {
+  const entries = await Promise.all(
+    plan.games.map(async game => {
+      const usage = `game.icon.${game.gameId}`
+      const info = await getAssetDisplay(usage)
+      return [game.gameId, info] as const
+    })
+  )
+  const map: Record<string, { emoji: string; path?: string }> = {}
+  entries.forEach(([id, info]) => {
+    map[id] = info
+  })
+  gameIconMap.value = map
+}
+
+function resolveGameIcon(gameId: string) {
+  return gameIconMap.value[gameId]
 }
 
 // 重新生成計畫
@@ -422,7 +444,18 @@ watch(
             >
               <div class="game-item-left">
                 <div class="game-order">{{ index + 1 }}</div>
-                <div class="game-icon-box">{{ game.game.icon }}</div>
+                <div class="game-icon-box">
+                  <template v-if="resolveGameIcon(game.gameId)?.path">
+                    <img
+                      :src="resolveGameIcon(game.gameId)?.path"
+                      :alt="game.game.name"
+                      class="w-10 h-10"
+                    />
+                  </template>
+                  <template v-else>
+                    {{ resolveGameIcon(game.gameId)?.emoji || game.game.icon }}
+                  </template>
+                </div>
                 <div class="game-info">
                   <div class="game-name">{{ game.game.name }}</div>
                   <div class="game-meta">
@@ -570,7 +603,7 @@ watch(
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  background: var(--gradient-accent);
   border-radius: 99px;
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -582,15 +615,15 @@ watch(
   min-height: 4rem;
   font-size: 1.25rem;
   font-weight: 700;
-  color: white;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%);
+  color: var(--color-text-inverse);
+  background: var(--gradient-primary);
   border: none;
   border-radius: 1rem;
   display:flex;
   gap:0.75rem;
   justify-content:center;
   align-items:center;
-  box-shadow: 0 8px 20px -4px rgba(79, 70, 229, 0.4);
+  box-shadow: var(--shadow-lg);
 }
 
 /* 重新生成按鈕 */

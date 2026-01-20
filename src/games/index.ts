@@ -1,8 +1,10 @@
 // 遊戲註冊 - 將所有遊戲註冊到系統中
 import { gameRegistry } from '@/core/gameRegistry'
+import { getAssetEmoji, preloadAssetManifest } from '@/services/assetLoader'
 
 // 註冊所有遊戲
 export function registerAllGames(): void {
+  void preloadAssetManifest()
   // 1. 打地鼠 - 反應力為主
   gameRegistry.register({
     id: 'whack-a-mole',
@@ -394,6 +396,34 @@ export function registerAllGames(): void {
       '時機越準確分數越高',
     ],
   })
+
+  void Promise.all([
+    updateGameIcon('whack-a-mole'),
+    updateGameIcon('balance-scale'),
+    updateGameIcon('card-match'),
+    updateGameIcon('stroop-test'),
+    updateGameIcon('maze-navigation'),
+    updateGameIcon('spot-difference'),
+    updateGameIcon('math-calc'),
+    updateGameIcon('instant-memory'),
+    updateGameIcon('poker-memory'),
+    updateGameIcon('rock-paper-scissors'),
+    updateGameIcon('gesture-memory'),
+    updateGameIcon('number-connect'),
+    updateGameIcon('pattern-reasoning'),
+    updateGameIcon('audio-memory'),
+    updateGameIcon('rhythm-mimic'),
+  ])
+}
+
+async function updateGameIcon(gameId: string): Promise<void> {
+  const game = gameRegistry.get(gameId)
+  if (!game) return
+  const usage = `game.icon.${gameId}`
+  const emoji = await getAssetEmoji(usage)
+  if (emoji) {
+    game.icon = emoji
+  }
 }
 
 // 獲取遊戲元件

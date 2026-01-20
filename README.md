@@ -87,6 +87,7 @@ npm run storybook
 - 本地端：使用 IndexedDB（見 `src/services/db.ts`）保存使用者、遊戲紀錄、每日訓練會話、評估結果等。
 - 選配：可同步到 Google Sheet（見 `src/services/googleSheetSyncService.ts`、`docs/apps-script.gs`）。
 - 同步前提：需使用者同意資料分析（`analyticsConsent=true`），未同意不會上傳。
+- 同步資料會攜帶 `schemaVersion`、`scoringVersion` 與資料品質欄位（`dataQuality`、`dataIssues`）。
 
 ## 資料同意（Consent）
 
@@ -101,6 +102,24 @@ npm run storybook
 ## 評分標準
 
 - 參考 `docs/SCORING.md`（標準化計分、權重與難度倍率）。
+
+## 主題與樣式
+
+- 全站使用 CSS 變數與語義色票（見 `src/style.css`）。
+- 主題為藍/綠搭配暖色點綴，支援深色模式。
+
+## 資產（Assets）與圖示
+
+- 靜態資產清單：`public/assets_manifest.json`（請在有 `base` 的部署路徑下存取，如 `/brain-training/assets_manifest.json`）。
+- `assetLoader` 會依 `assets_manifest.json` 取得圖示；資源缺失時使用 emoji fallback。
+- 完整資產列表：`docs/ASSET_FULL_LIST.md`。
+
+## FAQ：base URL 對資產載入的影響
+
+**Q: 為什麼 icon 變成 🎯 或沒有正確載入？**
+
+A: 若專案設定了 `base`（例如 `/brain-training/`），`assets_manifest.json` 會在 `/brain-training/assets_manifest.json`。
+請確認該路徑可正常存取；若 manifest 讀取失敗或用途未匹配，圖示會回退到 emoji。
 
 ## 專案結構（簡略）
 

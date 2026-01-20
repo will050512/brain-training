@@ -1,0 +1,98 @@
+[
+  {
+    "用途": "game.icon.whack-a-mole",
+    "資源名稱": "whack-a-mole",
+    "建議檔名": "games/icons/whack-a-mole.svg",
+    "備用Emoji": "🐹"
+  },
+  {
+    "用途": "game.icon.balance-scale",
+    "資源名稱": "balance-scale",
+    "建議檔名": "games/icons/balance-scale.svg",
+    "備用Emoji": "⚖️"
+  },
+  {
+    "用途": "game.icon.card-match",
+    "資源名稱": "card-match",
+    "建議檔名": "games/icons/card-match.svg",
+    "備用Emoji": "🃏"
+  },
+  {
+    "用途": "game.icon.stroop-test",
+    "資源名稱": "stroop-test",
+    "建議檔名": "games/icons/stroop-test.svg",
+    "備用Emoji": "🎨"
+  },
+  {
+    "用途": "game.icon.maze-navigation",
+    "資源名稱": "maze-navigation",
+    "建議檔名": "games/icons/maze-navigation.svg",
+    "備用Emoji": "🧭"
+  },
+  {
+    "用途": "game.icon.spot-difference",
+    "資源名稱": "spot-difference",
+    "建議檔名": "games/icons/spot-difference.svg",
+    "備用Emoji": "🔍"
+  },
+  {
+    "用途": "game.icon.math-calc",
+    "資源名稱": "math-calc",
+    "建議檔名": "games/icons/math-calc.svg",
+    "備用Emoji": "🧮"
+  },
+  {
+    "用途": "game.icon.instant-memory",
+    "資源名稱": "instant-memory",
+    "建議檔名": "games/icons/instant-memory.svg",
+    "備用Emoji": "🧠"
+  },
+  {
+    "用途": "game.icon.poker-memory",
+    "資源名稱": "poker-memory",
+    "建議檔名": "games/icons/poker-memory.svg",
+    "備用Emoji": "🃏"
+  },
+  {
+    "用途": "game.icon.rock-paper-scissors",
+    "資源名稱": "rock-paper-scissors",
+    "建議檔名": "games/icons/rock-paper-scissors.svg",
+    "備用Emoji": "✊"
+  },
+  {
+    "用途": "game.icon.gesture-memory",
+    "資源名稱": "gesture-memory",
+    "建議檔名": "games/icons/gesture-memory.svg",
+    "備用Emoji": "👋"
+  },
+  {
+    "用途": "game.icon.number-connect",
+    "資源名稱": "number-connect",
+    "建議檔名": "games/icons/number-connect.svg",
+    "備用Emoji": "🔢"
+  },
+  {
+    "用途": "game.icon.pattern-reasoning",
+    "資源名稱": "pattern-reasoning",
+    "建議檔名": "games/icons/pattern-reasoning.svg",
+    "備用Emoji": "🔷"
+  },
+  {
+    "用途": "game.icon.audio-memory",
+    "資源名稱": "audio-memory",
+    "建議檔名": "games/icons/audio-memory.svg",
+    "備用Emoji": "🎵"
+  },
+  {
+    "用途": "game.icon.rhythm-mimic",
+    "資源名稱": "rhythm-mimic",
+    "建議檔名": "games/icons/rhythm-mimic.svg",
+    "備用Emoji": "🥁"
+  },
+  {
+    "用途": "game.icon.clock-drawing",
+    "資源名稱": "clock-drawing",
+    "建議檔名": "games/icons/clock-drawing.svg",
+    "備用Emoji": "🕒"
+  }
+]

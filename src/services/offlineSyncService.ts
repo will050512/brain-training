@@ -17,6 +17,7 @@ import {
   type PendingSyncItem
 } from '@/services/db'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { syncBehaviorLogsToSheet } from '@/services/userDataSheetSyncService'
 
 // 同步狀態
 export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline'
@@ -161,6 +162,12 @@ class OfflineSyncService {
       }
     }
     if (!this.isOnline()) {
+      try {
+        const settingsStore = useSettingsStore()
+        settingsStore.setSyncUiStatus('error', 'offline')
+      } catch {
+        // ignore ui status update
+      }
       return {
         success: false,
         syncedCount: 0,
@@ -179,6 +186,12 @@ class OfflineSyncService {
     }
 
     this.setStatus('syncing')
+    try {
+      const settingsStore = useSettingsStore()
+      settingsStore.setSyncUiStatus('syncing')
+    } catch {
+      // ignore ui status update
+    }
 
     const result: SyncResult = {
       success: true,
@@ -205,10 +218,22 @@ class OfflineSyncService {
 
       result.success = result.failedCount === 0
       this.setStatus(result.success ? 'idle' : 'error')
+      try {
+        const settingsStore = useSettingsStore()
+        settingsStore.setSyncUiStatus(result.success ? 'success' : 'error', result.errors[0] || null)
+      } catch {
+        // ignore ui status update
+      }
     } catch (error) {
       result.success = false
       result.errors.push(error instanceof Error ? error.message : '未知錯誤')
       this.setStatus('error')
+      try {
+        const settingsStore = useSettingsStore()
+        settingsStore.setSyncUiStatus('error', error instanceof Error ? error.message : 'unknown error')
+      } catch {
+        // ignore ui status update
+      }
     }
 
     return result
@@ -306,26 +331,18 @@ class OfflineSyncService {
    * 上傳批次資料（模擬 API 調用）
    */
   private async uploadBatch(batch: BehaviorLog[]): Promise<void> {
-    // 模擬網路延遲
-    await new Promise(resolve => setTimeout(resolve, 100))
-    
-    // 實際實作時替換為真實 API 調用
-    // const response = await fetch('/api/behavior-logs', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(batch)
-    // })
-    // if (!response.ok) throw new Error('API 錯誤')
-    
-    console.log(`[OfflineSync] 已上傳 ${batch.length} 筆行為日誌`)
+    await syncBehaviorLogsToSheet(batch)
   }
 
   /**
    * 上傳單一項目
    */
   private async uploadItem(item: PendingSyncItem): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 50))
-    console.log(`[OfflineSync] 已上傳待同步項目: ${item.type}`)
+    if (item.type === 'behavior-log') {
+      await syncBehaviorLogsToSheet([item.data as unknown as BehaviorLog])
+      return
+    }
+    throw new Error(`unsupported pending sync item type: ${item.type}`)
   }
 
   /**

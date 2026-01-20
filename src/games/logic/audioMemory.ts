@@ -69,32 +69,32 @@ export interface AudioMemoryResult {
 
 export const SOUND_LIBRARY: SoundItem[] = [
   // 動物
-  { id: 'dog', name: '狗叫', category: 'animal', emoji: '🐕', audioPath: '/sounds/dog.mp3' },
-  { id: 'cat', name: '貓叫', category: 'animal', emoji: '🐱', audioPath: '/sounds/cat.mp3' },
-  { id: 'bird', name: '鳥叫', category: 'animal', emoji: '🐦', audioPath: '/sounds/bird.mp3' },
-  { id: 'cow', name: '牛叫', category: 'animal', emoji: '🐄', audioPath: '/sounds/cow.mp3' },
-  { id: 'pig', name: '豬叫', category: 'animal', emoji: '🐷', audioPath: '/sounds/pig.mp3' },
-  { id: 'rooster', name: '公雞啼', category: 'animal', emoji: '🐓', audioPath: '/sounds/rooster.mp3' },
+  { id: 'dog', name: '狗叫', category: 'animal', emoji: '🐕', audioPath: '/audio/games/audio-memory/note-do.mp3' },
+  { id: 'cat', name: '貓叫', category: 'animal', emoji: '🐱', audioPath: '/audio/games/audio-memory/note-re.mp3' },
+  { id: 'bird', name: '鳥叫', category: 'animal', emoji: '🐦', audioPath: '/audio/games/audio-memory/note-mi.mp3' },
+  { id: 'cow', name: '牛叫', category: 'animal', emoji: '🐄', audioPath: '/audio/games/audio-memory/note-fa.mp3' },
+  { id: 'pig', name: '豬叫', category: 'animal', emoji: '🐷', audioPath: '/audio/games/audio-memory/note-sol.mp3' },
+  { id: 'rooster', name: '公雞啼', category: 'animal', emoji: '🐓', audioPath: '/audio/games/audio-memory/note-la.mp3' },
 
   // 樂器
-  { id: 'piano', name: '鋼琴', category: 'instrument', emoji: '🎹', audioPath: '/sounds/piano.mp3' },
-  { id: 'guitar', name: '吉他', category: 'instrument', emoji: '🎸', audioPath: '/sounds/guitar.mp3' },
-  { id: 'drum', name: '鼓', category: 'instrument', emoji: '🥁', audioPath: '/sounds/drum.mp3' },
-  { id: 'violin', name: '小提琴', category: 'instrument', emoji: '🎻', audioPath: '/sounds/violin.mp3' },
-  { id: 'trumpet', name: '小號', category: 'instrument', emoji: '🎺', audioPath: '/sounds/trumpet.mp3' },
-  { id: 'bell', name: '鈴聲', category: 'instrument', emoji: '🔔', audioPath: '/sounds/bell.mp3' },
+  { id: 'piano', name: '鋼琴', category: 'instrument', emoji: '🎹', audioPath: '/audio/games/audio-memory/note-si.mp3' },
+  { id: 'guitar', name: '吉他', category: 'instrument', emoji: '🎸', audioPath: '/audio/games/audio-memory/note-do2.mp3' },
+  { id: 'drum', name: '鼓', category: 'instrument', emoji: '🥁', audioPath: '/audio/games/audio-memory/note-do.mp3' },
+  { id: 'violin', name: '小提琴', category: 'instrument', emoji: '🎻', audioPath: '/audio/games/audio-memory/note-re.mp3' },
+  { id: 'trumpet', name: '小號', category: 'instrument', emoji: '🎺', audioPath: '/audio/games/audio-memory/note-mi.mp3' },
+  { id: 'bell', name: '鈴聲', category: 'instrument', emoji: '🔔', audioPath: '/audio/games/audio-memory/note-fa.mp3' },
 
   // 自然
-  { id: 'rain', name: '雨聲', category: 'nature', emoji: '🌧️', audioPath: '/sounds/rain.mp3' },
-  { id: 'thunder', name: '雷聲', category: 'nature', emoji: '⛈️', audioPath: '/sounds/thunder.mp3' },
-  { id: 'wind', name: '風聲', category: 'nature', emoji: '💨', audioPath: '/sounds/wind.mp3' },
-  { id: 'wave', name: '海浪', category: 'nature', emoji: '🌊', audioPath: '/sounds/wave.mp3' },
+  { id: 'rain', name: '雨聲', category: 'nature', emoji: '🌧️', audioPath: '/audio/games/audio-memory/note-sol.mp3' },
+  { id: 'thunder', name: '雷聲', category: 'nature', emoji: '⛈️', audioPath: '/audio/games/audio-memory/note-la.mp3' },
+  { id: 'wind', name: '風聲', category: 'nature', emoji: '💨', audioPath: '/audio/games/audio-memory/note-si.mp3' },
+  { id: 'wave', name: '海浪', category: 'nature', emoji: '🌊', audioPath: '/audio/games/audio-memory/note-do2.mp3' },
 
   // 生活
-  { id: 'doorbell', name: '門鈴', category: 'household', emoji: '🚪', audioPath: '/sounds/doorbell.mp3' },
-  { id: 'phone', name: '電話', category: 'household', emoji: '📞', audioPath: '/sounds/phone.mp3' },
-  { id: 'clock', name: '時鐘', category: 'household', emoji: '⏰', audioPath: '/sounds/clock.mp3' },
-  { id: 'whistle', name: '哨子', category: 'household', emoji: '📯', audioPath: '/sounds/whistle.mp3' },
+  { id: 'doorbell', name: '門鈴', category: 'household', emoji: '🚪', audioPath: '/audio/games/audio-memory/note-do.mp3' },
+  { id: 'phone', name: '電話', category: 'household', emoji: '📞', audioPath: '/audio/games/audio-memory/note-re.mp3' },
+  { id: 'clock', name: '時鐘', category: 'household', emoji: '⏰', audioPath: '/audio/games/audio-memory/note-mi.mp3' },
+  { id: 'whistle', name: '哨子', category: 'household', emoji: '📯', audioPath: '/audio/games/audio-memory/note-fa.mp3' },
 ]
 
 export const DIFFICULTY_CONFIGS: Record<Difficulty, AudioMemoryConfig> = {
