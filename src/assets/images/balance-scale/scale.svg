@@ -1,30 +1,83 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 150" fill="none">
-  <defs>
-    <linearGradient id="scaleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#F59E0B"/>
-      <stop offset="100%" style="stop-color:#D97706"/>
-    </linearGradient>
-    <linearGradient id="plateGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#9CA3AF"/>
-      <stop offset="100%" style="stop-color:#6B7280"/>
-    </linearGradient>
-  </defs>
-  <!-- 底座 -->
-  <path d="M70 140H130L140 150H60Z" fill="#78350F"/>
-  <!-- 支柱 -->
-  <rect x="95" y="70" width="10" height="70" fill="url(#scaleGradient)"/>
-  <!-- 支點裝飾 -->
-  <circle cx="100" cy="70" r="8" fill="url(#scaleGradient)" stroke="#B45309" stroke-width="2"/>
-  <!-- 橫樑 -->
-  <rect x="20" y="65" width="160" height="10" rx="5" fill="url(#scaleGradient)" stroke="#B45309" stroke-width="2"/>
-  <!-- 左邊繩子 -->
-  <line x1="35" y1="75" x2="35" y2="100" stroke="#78350F" stroke-width="2"/>
-  <line x1="55" y1="75" x2="55" y2="100" stroke="#78350F" stroke-width="2"/>
-  <!-- 右邊繩子 -->
-  <line x1="145" y1="75" x2="145" y2="100" stroke="#78350F" stroke-width="2"/>
-  <line x1="165" y1="75" x2="165" y2="100" stroke="#78350F" stroke-width="2"/>
-  <!-- 左托盤 -->
-  <ellipse cx="45" cy="105" rx="30" ry="8" fill="url(#plateGradient)" stroke="#4B5563" stroke-width="2"/>
-  <!-- 右托盤 -->
-  <ellipse cx="155" cy="105" rx="30" ry="8" fill="url(#plateGradient)" stroke="#4B5563" stroke-width="2"/>
-</svg>
+<svg viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <!-- 木紋材質 -->
+                        <linearGradient id="woodMahogany" x1="0" y1="0" x2="100" y2="0">
+                            <stop offset="0%" stop-color="#5D4037"></stop>
+                            <stop offset="30%" stop-color="#795548"></stop>
+                            <stop offset="60%" stop-color="#4E342E"></stop>
+                            <stop offset="100%" stop-color="#3E2723"></stop>
+                        </linearGradient>
+                        <filter id="woodGrain">
+                            <feTurbulence type="fractalNoise" baseFrequency="0.5 0.05" numOctaves="3" result="noise"></feTurbulence>
+                            <feColorMatrix type="saturate" values="0" in="noise"></feColorMatrix>
+                            <feComponentTransfer><feFuncA type="linear" slope="0.1"></feFuncA></feComponentTransfer>
+                            <feComposite operator="in" in2="SourceGraphic"></feComposite>
+                        </filter>
+                        
+                        <!-- 黃銅金屬感 -->
+                        <linearGradient id="brassMetal" x1="0" y1="0" x2="100" y2="100">
+                            <stop offset="0%" stop-color="#FFF59D"></stop>
+                            <stop offset="20%" stop-color="#FBC02D"></stop>
+                            <stop offset="50%" stop-color="#F57F17"></stop>
+                            <stop offset="80%" stop-color="#FBC02D"></stop>
+                            <stop offset="100%" stop-color="#FFF176"></stop>
+                        </linearGradient>
+                        
+                        <!-- 鏈條陰影 -->
+                        <filter id="chainShadow">
+                            <feDropShadow dx="1" dy="1" stdDeviation="1" flood-color="rgba(0,0,0,0.3)"></feDropShadow>
+                        </filter>
+                    </defs>
+                    
+                    <!-- 底座陰影 -->
+                    <ellipse cx="150" cy="190" rx="80" ry="8" fill="#000" opacity="0.2" filter="blur(4px)"></ellipse>
+
+                    <!-- 1. 底座 (精緻木工) -->
+                    <g>
+                        <path d="M90 180H210C215 180 218 182 215 188L210 190H90L85 188C82 182 85 180 90 180Z" fill="#3E2723"></path> <!-- 底部邊緣 -->
+                        <path d="M100 170H200L210 185H90L100 170Z" fill="url(#woodMahogany)"></path>
+                        <path d="M100 170H200L210 185H90L100 170Z" fill="#000" opacity="0.1" filter="url(#woodGrain)"></path> <!-- 木紋 -->
+                        <path d="M100 170L200 170" stroke="#FFFFFF" stroke-width="1" opacity="0.2"></path> <!-- 稜角高光 -->
+                    </g>
+                    
+                    <!-- 2. 中央支柱 (裝飾柱) -->
+                    <rect x="144" y="80" width="12" height="95" rx="2" fill="url(#brassMetal)"></rect>
+                    <path d="M146 80V175" stroke="#FFF" stroke-width="2" opacity="0.4"></path> <!-- 金屬反光 -->
+                    <!-- 柱底裝飾 -->
+                    <path d="M140 165H160C162 165 162 170 160 170H140C138 170 138 165 140 165Z" fill="url(#brassMetal)"></path>
+                    
+                    <!-- 3. 橫樑 (平衡桿) -->
+                    <path d="M40 75H260C262 75 264 77 262 80L260 82H40L38 80C36 77 38 75 40 75Z" fill="url(#woodMahogany)"></path>
+                    <!-- 中央轉軸 -->
+                    <circle cx="150" cy="78" r="12" fill="url(#brassMetal)" stroke="#E65100" stroke-width="1"></circle>
+                    <circle cx="150" cy="78" r="5" fill="#3E2723"></circle>
+                    <path d="M150 78L150 110" stroke="#F57F17" stroke-width="2"></path> <!-- 指針 -->
+                    <path d="M150 110L145 100H155L150 110Z" fill="#F57F17"></path> <!-- 指針頭 -->
+
+                    <!-- 4. 左側托盤組 -->
+                    <g filter="url(#chainShadow)">
+                        <!-- 鏈條 (細緻) -->
+                        <path d="M50 82L35 130" stroke="#BCAAA4" stroke-width="1.5" stroke-dasharray="2 1"></path>
+                        <path d="M50 82L65 130" stroke="#BCAAA4" stroke-width="1.5" stroke-dasharray="2 1"></path>
+                        <circle cx="50" cy="82" r="3" fill="#8D6E63"></circle>
+                        <!-- 托盤 (黃銅淺盤) -->
+                        <path d="M25 130H75C75 130 70 145 50 145C30 145 25 130 25 130Z" fill="url(#brassMetal)"></path>
+                        <path d="M25 130H75C75 130 70 145 50 145C30 145 25 130 25 130Z" fill="black" opacity="0.1"></path> <!-- 內部陰影 -->
+                        <path d="M30 132C30 132 35 140 50 140C65 140 70 132 70 132" stroke="#FFF" stroke-width="1" opacity="0.4" fill="none"></path> <!-- 盤內光澤 -->
+                    </g>
+
+                    <!-- 5. 右側托盤組 -->
+                    <g filter="url(#chainShadow)">
+                        <!-- 鏈條 -->
+                        <path d="M250 82L235 130" stroke="#BCAAA4" stroke-width="1.5" stroke-dasharray="2 1"></path>
+                        <path d="M250 82L265 130" stroke="#BCAAA4" stroke-width="1.5" stroke-dasharray="2 1"></path>
+                        <circle cx="250" cy="82" r="3" fill="#8D6E63"></circle>
+                        <!-- 托盤 -->
+                        <path d="M225 130H275C275 130 270 145 250 145C230 145 225 130 225 130Z" fill="url(#brassMetal)"></path>
+                        <path d="M225 130H275C275 130 270 145 250 145C230 145 225 130 225 130Z" fill="black" opacity="0.1"></path>
+                        <path d="M230 132C230 132 235 140 250 140C265 140 270 132 270 132" stroke="#FFF" stroke-width="1" opacity="0.4" fill="none"></path>
+                    </g>
+
+                    <!-- 裝飾性光澤 (整體氛圍) -->
+                    <circle cx="150" cy="20" r="100" fill="url(#brassMetal)" opacity="0.05" style="mix-blend-mode: overlay;"></circle>
+                </svg>

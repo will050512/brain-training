@@ -1,4 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80" fill="none">
-  <rect x="4" y="4" width="112" height="72" rx="16" fill="#0F172A"/>
-  <text x="60" y="52" text-anchor="middle" font-size="36" font-weight="800" fill="#FACC15">VS</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120" fill="none">
+                    <!-- 漫畫風格對話框背景 -->
+                    <path d="M20 30 Q10 30 15 40 L30 80 Q35 90 45 85 L155 85 Q165 90 170 80 L185 40 Q190 30 180 30 Z" fill="#D32F2F" stroke="#B71C1C" stroke-width="4"></path>
+                    
+                    <!-- 內部黃色爆發 -->
+                    <path d="M30 35 L170 35 L160 80 L40 80 Z" fill="#FFEB3B"></path>
+
+                    <!-- VS 文字 (超級粗體) -->
+                    <text x="60" y="75" font-family="Arial Black, sans-serif" font-weight="900" font-size="60" fill="#D32F2F" stroke="white" stroke-width="3">V</text>
+                    <text x="110" y="75" font-family="Arial Black, sans-serif" font-weight="900" font-size="60" fill="#D32F2F" stroke="white" stroke-width="3">S</text>
+                    
+                    <!-- 閃電裝飾 -->
+                    <path d="M95 10 L85 60 L105 60 L95 110" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+                    <path d="M95 10 L85 60 L105 60 L95 110" stroke="#FFC107" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+                </svg>

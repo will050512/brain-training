@@ -1,14 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
-  <defs>
-    <linearGradient id="weight1Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#60A5FA"/>
-      <stop offset="100%" style="stop-color:#3B82F6"/>
-    </linearGradient>
-  </defs>
-  <!-- 砝碼主體 -->
-  <rect x="8" y="10" width="24" height="26" rx="4" fill="url(#weight1Gradient)" stroke="#2563EB" stroke-width="2"/>
-  <!-- 把手 -->
-  <rect x="14" y="4" width="12" height="8" rx="3" fill="url(#weight1Gradient)" stroke="#2563EB" stroke-width="2"/>
-  <!-- 重量標示 -->
-  <text x="20" y="28" text-anchor="middle" font-size="12" font-weight="bold" fill="#FFFFFF">1</text>
-</svg>
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <radialGradient id="gemBlue" cx="50" cy="30" r="60">
+                            <stop offset="0%" stop-color="#42A5F5"></stop>
+                            <stop offset="70%" stop-color="#1565C0"></stop>
+                            <stop offset="100%" stop-color="#0D47A1"></stop>
+                        </radialGradient>
+                        <linearGradient id="metalSilver" x1="0" y1="0" x2="100" y2="100">
+                            <stop offset="0%" stop-color="#E0E0E0"></stop>
+                            <stop offset="50%" stop-color="#FFFFFF"></stop>
+                            <stop offset="100%" stop-color="#BDBDBD"></stop>
+                        </linearGradient>
+                        <filter id="glowBlue">
+                            <feGaussianBlur stdDeviation="2" result="blur"></feGaussianBlur>
+                            <feComposite in="SourceGraphic" in2="blur" operator="over"></feComposite>
+                        </filter>
+                    </defs>
+                    <!-- Shadow -->
+                    <ellipse cx="50" cy="85" rx="30" ry="5" fill="#000" opacity="0.2" filter="blur(2px)"></ellipse>
+                    <!-- Metal Base -->
+                    <path d="M20 80H80L85 85H15L20 80Z" fill="#9E9E9E"></path>
+                    <!-- Gem Body (Bell Shape) -->
+                    <path d="M25 80C25 80 20 40 30 30C35 25 65 25 70 30C80 40 75 80 75 80H25Z" fill="url(#gemBlue)"></path>
+                    <!-- Specular Highlight (Glassy) -->
+                    <path d="M35 35C35 35 30 50 35 65" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.6"></path>
+                    <ellipse cx="60" cy="40" rx="8" ry="12" fill="white" opacity="0.2" transform="rotate(-30 60 40)"></ellipse>
+                    <!-- Knob (Silver) -->
+                    <circle cx="50" cy="25" r="10" fill="url(#metalSilver)" stroke="#9E9E9E" stroke-width="1"></circle>
+                    <circle cx="50" cy="25" r="3" fill="#FFF"></circle>
+                    <!-- Number (Engraved Gold) -->
+                    <text x="50" y="65" text-anchor="middle" font-family="'Noto Serif TC', serif" font-size="28" font-weight="bold" fill="#FFECB3" style="filter: drop-shadow(0px 1px 1px rgba(0,0,0,0.5));">1</text>
+                </svg>

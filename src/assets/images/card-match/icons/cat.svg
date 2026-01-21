@@ -1,35 +1,38 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
-  <defs>
-    <linearGradient id="catGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#FB923C"/>
-      <stop offset="100%" style="stop-color:#EA580C"/>
-    </linearGradient>
-  </defs>
-  <!-- 耳朵 -->
-  <path d="M20 30L15 10L30 22Z" fill="url(#catGradient)"/>
-  <path d="M60 30L65 10L50 22Z" fill="url(#catGradient)"/>
-  <!-- 內耳 -->
-  <path d="M22 26L19 14L28 22Z" fill="#FED7AA"/>
-  <path d="M58 26L61 14L52 22Z" fill="#FED7AA"/>
-  <!-- 頭部 -->
-  <ellipse cx="40" cy="42" rx="28" ry="24" fill="url(#catGradient)"/>
-  <!-- 臉部白色區域 -->
-  <ellipse cx="40" cy="50" rx="16" ry="12" fill="#FFF7ED"/>
-  <!-- 眼睛 -->
-  <ellipse cx="30" cy="38" rx="6" ry="7" fill="#FFFFFF"/>
-  <ellipse cx="50" cy="38" rx="6" ry="7" fill="#FFFFFF"/>
-  <ellipse cx="31" cy="39" rx="3" ry="4" fill="#22C55E"/>
-  <ellipse cx="51" cy="39" rx="3" ry="4" fill="#22C55E"/>
-  <circle cx="32" cy="38" r="1.5" fill="#000000"/>
-  <circle cx="52" cy="38" r="1.5" fill="#000000"/>
-  <!-- 鼻子 -->
-  <path d="M40 48L37 52L43 52Z" fill="#F472B6"/>
-  <!-- 嘴巴 -->
-  <path d="M40 52Q36 56 34 54" stroke="#EA580C" stroke-width="2" fill="none"/>
-  <path d="M40 52Q44 56 46 54" stroke="#EA580C" stroke-width="2" fill="none"/>
-  <!-- 鬍鬚 -->
-  <line x1="18" y1="48" x2="32" y2="50" stroke="#1F2937" stroke-width="1.5"/>
-  <line x1="18" y1="52" x2="32" y2="52" stroke="#1F2937" stroke-width="1.5"/>
-  <line x1="48" y1="50" x2="62" y2="48" stroke="#1F2937" stroke-width="1.5"/>
-  <line x1="48" y1="52" x2="62" y2="52" stroke="#1F2937" stroke-width="1.5"/>
-</svg>
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <radialGradient id="catWhite" cx="50" cy="50" r="50">
+                            <stop offset="60%" stop-color="#FFFFFF"></stop>
+                            <stop offset="100%" stop-color="#EEEEEE"></stop>
+                        </radialGradient>
+                    </defs>
+                    <!-- Ears -->
+                    <path d="M20 20L30 40H20Z" fill="#FAFAFA" stroke="#E0E0E0" stroke-width="2" stroke-linejoin="round"></path>
+                    <path d="M80 20L70 40H80Z" fill="#FAFAFA" stroke="#E0E0E0" stroke-width="2" stroke-linejoin="round"></path>
+                    <path d="M22 25L28 35" fill="#F48FB1"></path> <!-- Inner Ear -->
+                    <path d="M78 25L72 35" fill="#F48FB1"></path> <!-- Inner Ear -->
+                    <!-- Head (Fluffy outline simulated by curves) -->
+                    <path d="M20 40C15 50 15 70 30 80C40 88 60 88 70 80C85 70 85 50 80 40C70 30 30 30 20 40Z" fill="url(#catWhite)"></path>
+                    <path d="M20 40Q18 45 20 50Q18 55 20 60Q18 65 22 70" stroke="#E0E0E0" stroke-width="2" fill="none"></path> <!-- Fur side L -->
+                    <path d="M80 40Q82 45 80 50Q82 55 80 60Q82 65 78 70" stroke="#E0E0E0" stroke-width="2" fill="none"></path> <!-- Fur side R -->
+                    <!-- Eyes (Detailed) -->
+                    <circle cx="35" cy="55" r="6" fill="#4DB6AC"></circle>
+                    <ellipse cx="35" cy="55" rx="2" ry="5" fill="#004D40"></ellipse>
+                    <circle cx="37" cy="53" r="2" fill="white"></circle>
+                    
+                    <circle cx="65" cy="55" r="6" fill="#4DB6AC"></circle>
+                    <ellipse cx="65" cy="55" rx="2" ry="5" fill="#004D40"></ellipse>
+                    <circle cx="67" cy="53" r="2" fill="white"></circle>
+                    
+                    <!-- Nose & Mouth -->
+                    <path d="M48 65H52L50 68Z" fill="#F06292"></path>
+                    <path d="M50 68Q45 72 42 70" stroke="#757575" stroke-width="1.5" fill="none"></path>
+                    <path d="M50 68Q55 72 58 70" stroke="#757575" stroke-width="1.5" fill="none"></path>
+                    <!-- Whiskers -->
+                    <path d="M25 62L10 60" stroke="#BDBDBD" stroke-width="1"></path>
+                    <path d="M25 65L10 66" stroke="#BDBDBD" stroke-width="1"></path>
+                    <path d="M75 62L90 60" stroke="#BDBDBD" stroke-width="1"></path>
+                    <path d="M75 65L90 66" stroke="#BDBDBD" stroke-width="1"></path>
+                    <!-- Blush -->
+                    <ellipse cx="30" cy="62" rx="4" ry="2" fill="#F8BBD0" opacity="0.6"></ellipse>
+                    <ellipse cx="70" cy="62" rx="4" ry="2" fill="#F8BBD0" opacity="0.6"></ellipse>
+                </svg>

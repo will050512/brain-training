@@ -1,11 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
-  <defs>
-    <linearGradient id="bookGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#A7F3D0"/>
-      <stop offset="100%" style="stop-color:#34D399"/>
-    </linearGradient>
-  </defs>
-  <rect x="14" y="18" width="24" height="44" rx="4" fill="url(#bookGradient)" stroke="#059669" stroke-width="2"/>
-  <rect x="42" y="18" width="24" height="44" rx="4" fill="url(#bookGradient)" stroke="#059669" stroke-width="2"/>
-  <line x1="38" y1="18" x2="38" y2="62" stroke="#059669" stroke-width="2"/>
-</svg>
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="coverGrad" x1="0" y1="0" x2="100" y2="100">
+                            <stop offset="0%" stop-color="#3F51B5"></stop>
+                            <stop offset="100%" stop-color="#1A237E"></stop>
+                        </linearGradient>
+                        <linearGradient id="goldGrad" x1="0" y1="0" x2="100" y2="0">
+                            <stop offset="0%" stop-color="#FFECB3"></stop>
+                            <stop offset="50%" stop-color="#FFC107"></stop>
+                            <stop offset="100%" stop-color="#FF6F00"></stop>
+                        </linearGradient>
+                    </defs>
+                    <!-- Back Cover -->
+                    <path d="M15 25H80C83 25 85 27 85 30V80C85 83 83 85 80 85H15C12 85 10 83 10 80V30C10 27 12 25 15 25Z" fill="#1A237E"></path>
+                    <!-- Pages (Thick) -->
+                    <path d="M14 28H82V82H14C12 82 12 28 14 28Z" fill="#F5F5F5"></path>
+                    <path d="M14 32H82" stroke="#E0E0E0" stroke-width="1"></path>
+                    <path d="M14 36H82" stroke="#E0E0E0" stroke-width="1"></path>
+                    <path d="M14 74H82" stroke="#E0E0E0" stroke-width="1"></path>
+                    <path d="M14 78H82" stroke="#E0E0E0" stroke-width="1"></path>
+                    <!-- Front Cover -->
+                    <path d="M12 25H78C81 25 83 27 83 30V80C83 83 81 85 78 85H12C9 85 7 83 7 80V30C7 27 9 25 12 25Z" fill="url(#coverGrad)"></path>
+                    <path d="M12 25C9 25 7 27 7 30V80C7 83 9 85 12 85" stroke="#FFFFFF" stroke-width="1" opacity="0.2"></path>
+                    <!-- Spine Crease -->
+                    <path d="M14 25V85" stroke="#000" stroke-width="1" opacity="0.2"></path>
+                    <!-- Decoration -->
+                    <rect x="30" y="35" width="40" height="40" rx="2" stroke="url(#goldGrad)" stroke-width="2" fill="none"></rect>
+                    <circle cx="50" cy="55" r="12" fill="none" stroke="url(#goldGrad)" stroke-width="1.5"></circle>
+                    <path d="M50 48L52 53H57L53 56L54 61L50 58L46 61L47 56L43 53H48L50 48Z" fill="url(#goldGrad)"></path>
+                    <!-- Bookmark -->
+                    <path d="M70 25V55L75 50L80 55V25" fill="#F44336"></path>
+                    <path d="M70 25V55L75 50L80 55V25" fill="black" opacity="0.1"></path> <!-- Shadow on ribbon -->
+                </svg>

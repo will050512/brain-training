@@ -1,46 +1,42 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
-  <defs>
-    <linearGradient id="moleBodyGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#8B5A2B"/>
-      <stop offset="100%" style="stop-color:#5D3A1A"/>
-    </linearGradient>
-    <linearGradient id="moleBellyGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#D4A574"/>
-      <stop offset="100%" style="stop-color:#C4956A"/>
-    </linearGradient>
-  </defs>
-  <!-- 地鼠身體 -->
-  <ellipse cx="40" cy="50" rx="28" ry="24" fill="url(#moleBodyGradient2)"/>
-  <!-- 地鼠肚子 -->
-  <ellipse cx="40" cy="55" rx="18" ry="14" fill="url(#moleBellyGradient2)"/>
-  <!-- 左耳 -->
-  <circle cx="18" cy="32" r="8" fill="url(#moleBodyGradient2)"/>
-  <circle cx="18" cy="32" r="4" fill="#F5D0C5"/>
-  <!-- 右耳 -->
-  <circle cx="62" cy="32" r="8" fill="url(#moleBodyGradient2)"/>
-  <circle cx="62" cy="32" r="4" fill="#F5D0C5"/>
-  <!-- 臉部 -->
-  <ellipse cx="40" cy="38" rx="20" ry="16" fill="url(#moleBodyGradient2)"/>
-  <!-- 鼻子 -->
-  <ellipse cx="40" cy="42" rx="8" ry="6" fill="#2D1810"/>
-  <!-- X X 眼睛 (被擊中) -->
-  <g stroke="#1F2937" stroke-width="3" stroke-linecap="round">
-    <line x1="26" y1="28" x2="34" y2="36"/>
-    <line x1="34" y1="28" x2="26" y2="36"/>
-    <line x1="46" y1="28" x2="54" y2="36"/>
-    <line x1="54" y1="28" x2="46" y2="36"/>
-  </g>
-  <!-- 星星特效 -->
-  <g fill="#FFD700">
-    <path d="M10 20L12 16L14 20L10 18H14Z" transform="rotate(15, 12, 18)"/>
-    <path d="M66 16L68 12L70 16L66 14H70Z" transform="rotate(-10, 68, 14)"/>
-    <path d="M8 45L10 41L12 45L8 43H12Z"/>
-  </g>
-  <!-- 腮紅 -->
-  <ellipse cx="22" cy="40" rx="4" ry="3" fill="#FFB6C1" opacity="0.6"/>
-  <ellipse cx="58" cy="40" rx="4" ry="3" fill="#FFB6C1" opacity="0.6"/>
-  <!-- 嘴巴 (驚嚇) -->
-  <ellipse cx="40" cy="50" rx="6" ry="4" fill="#2D1810"/>
-  <!-- 門牙 -->
-  <rect x="37" y="47" width="6" height="4" rx="1" fill="#FFFFFF"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+                    <defs>
+                         <linearGradient id="moleBodyHit" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#C68E68"></stop>
+                            <stop offset="100%" style="stop-color:#A6704C"></stop>
+                        </linearGradient>
+                        <radialGradient id="moleBellyHit" cx="50%" cy="80%" r="50%">
+                            <stop offset="0%" style="stop-color:#FFF3E0"></stop>
+                            <stop offset="100%" style="stop-color:#FFE0B2"></stop>
+                        </radialGradient>
+                    </defs>
+                    <!-- 身體稍微壓扁一點 -->
+                    <path d="M50 165 C30 165, 30 110, 50 85 C65 65, 135 65, 150 85 C170 110, 170 165, 150 165 C130 170, 70 170, 50 165 Z" fill="url(#moleBodyHit)"></path>
+                    <ellipse cx="100" cy="140" rx="40" ry="28" fill="url(#moleBellyHit)"></ellipse>
+                    
+                    <!-- 耳朵 -->
+                    <circle cx="50" cy="85" r="10" fill="#A6704C"></circle>
+                    <circle cx="50" cy="85" r="5" fill="#FFCCBC"></circle>
+                    <circle cx="150" cy="85" r="10" fill="#A6704C"></circle>
+                    <circle cx="150" cy="85" r="5" fill="#FFCCBC"></circle>
+
+                    <!-- X_X 眼睛 -->
+                    <g stroke="#3E2723" stroke-width="4" stroke-linecap="round">
+                        <path d="M70 95 L86 111 M86 95 L70 111"></path>
+                        <path d="M114 95 L130 111 M130 95 L114 111"></path>
+                    </g>
+
+                    <!-- 嘴巴 (驚訝 O 型) -->
+                    <circle cx="100" cy="125" r="6" fill="#3E2723"></circle>
+
+                    <!-- 暈眩星星 -->
+                    <g fill="#FFD54F">
+                        <path d="M100 60 L103 68 L111 68 L105 74 L107 82 L100 77 L93 82 L95 74 L89 68 L97 68 Z">
+                            <animateTransform attributeName="transform" type="rotate" from="0 100 70" to="360 100 70" dur="2s" repeatCount="indefinite"></animateTransform>
+                        </path>
+                        <path d="M50 70 L52 75 L57 75 L53 79 L54 84 L50 81 L46 84 L47 79 L43 75 L48 75 Z" opacity="0.8"></path>
+                        <path d="M150 70 L152 75 L157 75 L153 79 L154 84 L150 81 L146 84 L147 79 L143 75 L148 75 Z" opacity="0.8"></path>
+                    </g>
+                    
+                    <!-- 淚滴 -->
+                    <path d="M135 110 Q135 120 138 118 Q142 115 138 105" fill="#4FC3F7" opacity="0.8"></path>
+                </svg>

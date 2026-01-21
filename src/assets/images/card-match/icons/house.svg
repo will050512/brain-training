@@ -1,11 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
-  <defs>
-    <linearGradient id="houseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#FCA5A5"/>
-      <stop offset="100%" style="stop-color:#F87171"/>
-    </linearGradient>
-  </defs>
-  <path d="M12 38L40 16L68 38" fill="url(#houseGradient)" stroke="#DC2626" stroke-width="2"/>
-  <rect x="20" y="38" width="40" height="26" rx="4" fill="url(#houseGradient)" stroke="#DC2626" stroke-width="2"/>
-  <rect x="36" y="46" width="8" height="18" rx="2" fill="#FEE2E2" stroke="#DC2626" stroke-width="2"/>
-</svg>
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <pattern id="stones" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+                            <rect x="0" y="0" width="10" height="10" fill="#FFF8E1"></rect>
+                            <path d="M0 10H10" stroke="#FFE0B2" stroke-width="1"></path>
+                            <path d="M5 0V10" stroke="#FFE0B2" stroke-width="1"></path>
+                        </pattern>
+                        <linearGradient id="roofRed" x1="50" y1="10" x2="50" y2="50">
+                            <stop offset="0%" stop-color="#FF7043"></stop>
+                            <stop offset="100%" stop-color="#D84315"></stop>
+                        </linearGradient>
+                    </defs>
+                    <!-- Chimney -->
+                    <rect x="68" y="25" width="10" height="15" fill="#8D6E63"></rect>
+                    <path d="M68 28H78" stroke="#6D4C41"></path>
+                    <path d="M68 32H78" stroke="#6D4C41"></path>
+                    <!-- Smoke -->
+                    <circle cx="73" cy="20" r="2" fill="white" opacity="0.6"></circle>
+                    <circle cx="76" cy="15" r="3" fill="white" opacity="0.4"></circle>
+                    <!-- Body -->
+                    <rect x="25" y="45" width="50" height="40" fill="url(#stones)"></rect>
+                    <rect x="25" y="45" width="50" height="40" stroke="#8D6E63" stroke-width="2"></rect>
+                    <!-- Roof -->
+                    <path d="M18 45L50 15L82 45H18Z" fill="url(#roofRed)"></path>
+                    <path d="M25 45L50 20L75 45" fill="none" stroke="#FFAB91" stroke-width="2" opacity="0.3"></path>
+                    <!-- Door -->
+                    <path d="M42 65C42 60 58 60 58 65V85H42V65Z" fill="#795548"></path>
+                    <circle cx="54" cy="75" r="1.5" fill="#FFC107"></circle>
+                    <!-- Windows -->
+                    <rect x="30" y="55" width="8" height="10" fill="#B3E5FC" stroke="#5D4037" stroke-width="1"></rect>
+                    <rect x="62" y="55" width="8" height="10" fill="#B3E5FC" stroke="#5D4037" stroke-width="1"></rect>
+                    <!-- Plants -->
+                    <path d="M22 85Q25 80 28 85Q30 80 33 85" stroke="#66BB6A" stroke-width="3" stroke-linecap="round"></path>
+                    <path d="M67 85Q70 80 73 85Q75 80 78 85" stroke="#66BB6A" stroke-width="3" stroke-linecap="round"></path>
+                </svg>

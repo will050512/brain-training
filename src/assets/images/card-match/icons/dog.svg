@@ -1,34 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
-  <defs>
-    <linearGradient id="dogGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#D4A574"/>
-      <stop offset="100%" style="stop-color:#A8815C"/>
-    </linearGradient>
-  </defs>
-  <!-- 耳朵 -->
-  <ellipse cx="18" cy="32" rx="10" ry="18" fill="url(#dogGradient)"/>
-  <ellipse cx="62" cy="32" rx="10" ry="18" fill="url(#dogGradient)"/>
-  <!-- 頭部 -->
-  <ellipse cx="40" cy="42" rx="26" ry="24" fill="url(#dogGradient)"/>
-  <!-- 臉部白色區域 -->
-  <ellipse cx="40" cy="52" rx="14" ry="12" fill="#FFF7ED"/>
-  <!-- 眼睛 -->
-  <ellipse cx="30" cy="38" rx="5" ry="6" fill="#FFFFFF"/>
-  <ellipse cx="50" cy="38" rx="5" ry="6" fill="#FFFFFF"/>
-  <circle cx="31" cy="39" r="3" fill="#1F2937"/>
-  <circle cx="51" cy="39" r="3" fill="#1F2937"/>
-  <circle cx="32" cy="38" r="1" fill="#FFFFFF"/>
-  <circle cx="52" cy="38" r="1" fill="#FFFFFF"/>
-  <!-- 眉毛 -->
-  <path d="M24 32Q30 30 34 32" stroke="#78350F" stroke-width="2" fill="none"/>
-  <path d="M46 32Q50 30 56 32" stroke="#78350F" stroke-width="2" fill="none"/>
-  <!-- 鼻子 -->
-  <ellipse cx="40" cy="50" rx="6" ry="5" fill="#1F2937"/>
-  <ellipse cx="40" cy="48" rx="2" ry="1.5" fill="#4B5563" opacity="0.5"/>
-  <!-- 嘴巴 -->
-  <path d="M40 55Q34 62 32 58" stroke="#78350F" stroke-width="2" fill="none"/>
-  <path d="M40 55Q46 62 48 58" stroke="#78350F" stroke-width="2" fill="none"/>
-  <!-- 舌頭 -->
-  <ellipse cx="40" cy="62" rx="5" ry="6" fill="#F472B6"/>
-  <path d="M40 58V65" stroke="#EC4899" stroke-width="1"/>
-</svg>
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="dogFurBase" x1="0" y1="0" x2="0" y2="100">
+                            <stop offset="0%" stop-color="#D7CCC8"></stop>
+                            <stop offset="100%" stop-color="#A1887F"></stop>
+                        </linearGradient>
+                    </defs>
+                    <!-- Ears (Dark Brown) -->
+                    <path d="M25 35C20 35 10 50 15 65C18 70 30 60 35 50" fill="#5D4037"></path>
+                    <path d="M75 35C80 35 90 50 85 65C82 70 70 60 65 50" fill="#5D4037"></path>
+                    <!-- Face -->
+                    <rect x="25" y="25" width="50" height="55" rx="20" fill="url(#dogFurBase)"></rect>
+                    <!-- Eye Patch -->
+                    <circle cx="38" cy="45" r="10" fill="#5D4037" opacity="0.2"></circle>
+                    <!-- Eyes -->
+                    <circle cx="38" cy="48" r="4" fill="#3E2723"></circle>
+                    <circle cx="62" cy="48" r="4" fill="#3E2723"></circle>
+                    <circle cx="40" cy="46" r="1.5" fill="white"></circle>
+                    <circle cx="64" cy="46" r="1.5" fill="white"></circle>
+                    <!-- Snout -->
+                    <ellipse cx="50" cy="62" rx="16" ry="12" fill="#EFEBE9"></ellipse>
+                    <path d="M44 56H56L50 62Z" fill="#3E2723" stroke="#3E2723" stroke-width="2" stroke-linejoin="round"></path>
+                    <path d="M50 62V66" stroke="#3E2723" stroke-width="2"></path>
+                    <path d="M50 66Q42 70 38 64" stroke="#3E2723" stroke-width="2" fill="none" stroke-linecap="round"></path>
+                    <path d="M50 66Q58 70 62 64" stroke="#3E2723" stroke-width="2" fill="none" stroke-linecap="round"></path>
+                    <!-- Tongue -->
+                    <path d="M47 68Q50 78 53 68" fill="#FF8A80"></path>
+                    <!-- Collar -->
+                    <path d="M30 78H70" stroke="#F44336" stroke-width="6" stroke-linecap="round"></path>
+                    <circle cx="50" cy="82" r="4" fill="#FFD700" stroke="#F57F17" stroke-width="1"></circle>
+                </svg>

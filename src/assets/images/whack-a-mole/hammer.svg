@@ -1,26 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <linearGradient id="hammerHeadGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#9CA3AF"/>
-      <stop offset="50%" style="stop-color:#6B7280"/>
-      <stop offset="100%" style="stop-color:#4B5563"/>
-    </linearGradient>
-    <linearGradient id="hammerHandleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#92400E"/>
-      <stop offset="50%" style="stop-color:#78350F"/>
-      <stop offset="100%" style="stop-color:#92400E"/>
-    </linearGradient>
-  </defs>
-  <!-- 槌頭 -->
-  <rect x="8" y="4" width="32" height="20" rx="4" fill="url(#hammerHeadGradient)"/>
-  <!-- 槌頭高光 -->
-  <rect x="10" y="6" width="28" height="6" rx="2" fill="#FFFFFF" opacity="0.3"/>
-  <!-- 槌柄 -->
-  <rect x="20" y="24" width="10" height="36" rx="3" fill="url(#hammerHandleGradient)"/>
-  <!-- 槌柄紋理 -->
-  <line x1="20" y1="32" x2="30" y2="32" stroke="#5D3A1A" stroke-width="1" opacity="0.5"/>
-  <line x1="20" y1="40" x2="30" y2="40" stroke="#5D3A1A" stroke-width="1" opacity="0.5"/>
-  <line x1="20" y1="48" x2="30" y2="48" stroke="#5D3A1A" stroke-width="1" opacity="0.5"/>
-  <!-- 握把 -->
-  <rect x="18" y="52" width="14" height="8" rx="3" fill="#D97706"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+                     <defs>
+                        <!-- 柔軟的木頭質感 -->
+                        <linearGradient id="hammerHead" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#FFCC80"></stop>
+                            <stop offset="100%" style="stop-color:#FFA726"></stop>
+                        </linearGradient>
+                        <linearGradient id="hammerHandle" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#8D6E63"></stop>
+                            <stop offset="50%" style="stop-color:#6D4C41"></stop>
+                            <stop offset="100%" style="stop-color:#8D6E63"></stop>
+                        </linearGradient>
+                    </defs>
+                    
+                    <!-- 握柄 (圓潤) -->
+                    <rect x="90" y="80" width="20" height="100" rx="10" fill="url(#hammerHandle)"></rect>
+                    <!-- 握柄防滑紋 -->
+                    <path d="M90 140 H110 M90 150 H110 M90 160 H110" stroke="rgba(0,0,0,0.1)" stroke-width="2"></path>
+
+                    <!-- 槌頭 (圓柱體，像玩具槌) -->
+                    <rect x="40" y="40" width="120" height="60" rx="20" fill="url(#hammerHead)"></rect>
+                    
+                    <!-- 槌頭兩側的高光圓 -->
+                    <ellipse cx="55" cy="70" rx="5" ry="15" fill="#FFF" opacity="0.3"></ellipse>
+                    <ellipse cx="145" cy="70" rx="5" ry="15" fill="#FFF" opacity="0.3"></ellipse>
+                    
+                    <!-- 槌頭上面的裝飾星 (或是衝擊點) -->
+                    <circle cx="100" cy="70" r="15" fill="#FF7043"></circle>
+                    <path d="M100 62 L102 68 L108 68 L104 72 L106 78 L100 74 L94 78 L96 72 L92 68 L98 68 Z" fill="#FFF"></path>
+
+                    <!-- 動態線條 (揮動感) -->
+                    <path d="M160 30 Q180 50 170 80" stroke="#FFCC80" stroke-width="3" stroke-linecap="round" stroke-dasharray="10 10"></path>
+                </svg>

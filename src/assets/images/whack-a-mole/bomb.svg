@@ -1,30 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" fill="none">
-  <defs>
-    <linearGradient id="bombGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#374151"/>
-      <stop offset="100%" style="stop-color:#1F2937"/>
-    </linearGradient>
-    <radialGradient id="bombHighlight" cx="30%" cy="30%" r="50%">
-      <stop offset="0%" style="stop-color:#6B7280"/>
-      <stop offset="100%" style="stop-color:transparent"/>
-    </radialGradient>
-  </defs>
-  <!-- 炸彈主體 -->
-  <circle cx="30" cy="34" r="22" fill="url(#bombGradient)"/>
-  <circle cx="30" cy="34" r="22" fill="url(#bombHighlight)" opacity="0.5"/>
-  <!-- 引信座 -->
-  <rect x="25" y="8" width="10" height="8" rx="2" fill="#6B7280"/>
-  <!-- 引信 -->
-  <path d="M30 8Q35 2 40 4" stroke="#D97706" stroke-width="3" fill="none" stroke-linecap="round"/>
-  <!-- 火花 -->
-  <circle cx="40" cy="4" r="4" fill="#EF4444">
-    <animate attributeName="opacity" values="1;0.5;1" dur="0.3s" repeatCount="indefinite"/>
-  </circle>
-  <circle cx="42" cy="2" r="2" fill="#F59E0B">
-    <animate attributeName="opacity" values="0.5;1;0.5" dur="0.2s" repeatCount="indefinite"/>
-  </circle>
-  <!-- 高光 -->
-  <ellipse cx="22" cy="28" rx="6" ry="8" fill="#FFFFFF" opacity="0.2"/>
-  <!-- 骷髏標記 -->
-  <circle cx="30" cy="36" r="8" fill="#FFFFFF" opacity="0.15"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+                    <defs>
+                        <radialGradient id="bombBody" cx="30%" cy="30%" r="60%">
+                            <stop offset="0%" style="stop-color:#546E7A"></stop>
+                            <stop offset="100%" style="stop-color:#263238"></stop>
+                        </radialGradient>
+                    </defs>
+                    <!-- 炸彈本體 (深藍灰色代替純黑，比較柔和) -->
+                    <circle cx="100" cy="110" r="60" fill="url(#bombBody)"></circle>
+                    
+                    <!-- 高光 (讓它看起來像球) -->
+                    <ellipse cx="75" cy="85" rx="15" ry="25" fill="white" opacity="0.15" transform="rotate(-20 75 85)"></ellipse>
+                    
+                    <!-- 骷髏頭換成驚嘆號 (比較不可怕) -->
+                    <rect x="95" y="90" width="10" height="25" rx="5" fill="#ECEFF1" opacity="0.3"></rect>
+                    <circle cx="100" cy="125" r="5" fill="#ECEFF1" opacity="0.3"></circle>
+
+                    <!-- 引信蓋 -->
+                    <rect x="85" y="45" width="30" height="15" rx="4" fill="#78909C"></rect>
+                    
+                    <!-- 引信線 -->
+                    <path d="M100 45 Q100 20 130 25" stroke="#D7CCC8" stroke-width="6" stroke-linecap="round" fill="none"></path>
+                    
+                    <!-- 火花 (可愛的圓點火花) -->
+                    <circle cx="130" cy="25" r="8" fill="#FF5252">
+                        <animate attributeName="r" values="8;12;8" dur="0.5s" repeatCount="indefinite"></animate>
+                    </circle>
+                    <circle cx="130" cy="25" r="4" fill="#FFFF00"></circle>
+                </svg>

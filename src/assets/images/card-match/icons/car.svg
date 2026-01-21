@@ -1,12 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
-  <defs>
-    <linearGradient id="carGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#38BDF8"/>
-      <stop offset="100%" style="stop-color:#0EA5E9"/>
-    </linearGradient>
-  </defs>
-  <rect x="12" y="36" width="56" height="20" rx="6" fill="url(#carGradient)" stroke="#0284C7" stroke-width="2"/>
-  <rect x="22" y="26" width="28" height="14" rx="4" fill="url(#carGradient)" stroke="#0284C7" stroke-width="2"/>
-  <circle cx="26" cy="58" r="6" fill="#0F172A"/>
-  <circle cx="54" cy="58" r="6" fill="#0F172A"/>
-</svg>
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="carBodyBlue" x1="50" y1="30" x2="50" y2="80">
+                            <stop offset="0%" stop-color="#4DD0E1"></stop>
+                            <stop offset="50%" stop-color="#00ACC1"></stop>
+                            <stop offset="100%" stop-color="#006064"></stop>
+                        </linearGradient>
+                        <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="100">
+                            <stop offset="0%" stop-color="#CFD8DC"></stop>
+                            <stop offset="50%" stop-color="#FFFFFF"></stop>
+                            <stop offset="51%" stop-color="#90A4AE"></stop>
+                            <stop offset="100%" stop-color="#CFD8DC"></stop>
+                        </linearGradient>
+                    </defs>
+                    <!-- Wheels (Back) -->
+                    <circle cx="28" cy="75" r="10" fill="#37474F"></circle>
+                    <circle cx="72" cy="75" r="10" fill="#37474F"></circle>
+                    <!-- Chassis -->
+                    <path d="M15 55H85C92 55 95 65 92 72C90 78 85 75 85 75H15C15 75 10 78 8 72C5 65 8 55 15 55Z" fill="url(#carBodyBlue)"></path>
+                    <!-- Cabin -->
+                    <path d="M22 55L30 35C32 30 35 28 45 28H60C70 28 73 30 75 35L82 55H22Z" fill="#B2EBF2"></path>
+                    <path d="M45 28V55" stroke="#006064" stroke-width="1.5" opacity="0.5"></path> <!-- Door line -->
+                    <!-- Windows -->
+                    <path d="M32 34H58V50H26L32 34Z" fill="#E0F7FA"></path> <!-- Front Win -->
+                    <path d="M62 34H72L78 50H62V34Z" fill="#E0F7FA"></path> <!-- Rear Win -->
+                    <path d="M35 38L55 48" stroke="white" stroke-width="2" opacity="0.6"></path> <!-- Glare -->
+                    <!-- Bumpers (Chrome) -->
+                    <rect x="10" y="72" width="80" height="6" rx="3" fill="url(#chrome)"></rect>
+                    <!-- Headlights -->
+                    <circle cx="18" cy="60" r="5" fill="#FFF9C4" stroke="#FBC02D" stroke-width="1"></circle>
+                    <circle cx="82" cy="60" r="5" fill="#FFF9C4" stroke="#FBC02D" stroke-width="1"></circle>
+                    <!-- Hubcaps -->
+                    <circle cx="28" cy="75" r="6" fill="url(#chrome)"></circle>
+                    <circle cx="72" cy="75" r="6" fill="url(#chrome)"></circle>
+                </svg>

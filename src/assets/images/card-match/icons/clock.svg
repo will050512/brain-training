@@ -1,12 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
-  <defs>
-    <linearGradient id="clockGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#DDD6FE"/>
-      <stop offset="100%" style="stop-color:#A78BFA"/>
-    </linearGradient>
-  </defs>
-  <circle cx="40" cy="40" r="26" fill="url(#clockGradient)" stroke="#7C3AED" stroke-width="2"/>
-  <line x1="40" y1="40" x2="40" y2="26" stroke="#4C1D95" stroke-width="3" stroke-linecap="round"/>
-  <line x1="40" y1="40" x2="52" y2="46" stroke="#4C1D95" stroke-width="3" stroke-linecap="round"/>
-  <circle cx="40" cy="40" r="3" fill="#4C1D95"/>
-</svg>
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <radialGradient id="goldMetal" cx="40" cy="40" r="50">
+                            <stop offset="0%" stop-color="#FFECB3"></stop>
+                            <stop offset="100%" stop-color="#FFB300"></stop>
+                        </radialGradient>
+                    </defs>
+                    <!-- Legs -->
+                    <path d="M25 78L18 88" stroke="#5D4037" stroke-width="6" stroke-linecap="round"></path>
+                    <path d="M75 78L82 88" stroke="#5D4037" stroke-width="6" stroke-linecap="round"></path>
+                    <!-- Bells -->
+                    <circle cx="20" cy="25" r="12" fill="url(#goldMetal)" stroke="#F57F17" stroke-width="1"></circle>
+                    <circle cx="80" cy="25" r="12" fill="url(#goldMetal)" stroke="#F57F17" stroke-width="1"></circle>
+                    <path d="M20 25C20 25 15 20 20 18" stroke="white" stroke-width="2" opacity="0.5"></path>
+                    <!-- Hammer -->
+                    <rect x="46" y="15" width="8" height="10" fill="#78909C"></rect>
+                    <path d="M50 15V10" stroke="#546E7A" stroke-width="2"></path>
+                    <!-- Body Frame -->
+                    <circle cx="50" cy="52" r="40" fill="url(#goldMetal)"></circle>
+                    <circle cx="50" cy="52" r="38" fill="#FFF"></circle>
+                    <!-- Ticks -->
+                    <path d="M50 22V26" stroke="#37474F" stroke-width="3" stroke-linecap="round"></path>
+                    <path d="M50 78V82" stroke="#37474F" stroke-width="3" stroke-linecap="round"></path>
+                    <path d="M80 52H76" stroke="#37474F" stroke-width="3" stroke-linecap="round"></path>
+                    <path d="M20 52H24" stroke="#37474F" stroke-width="3" stroke-linecap="round"></path>
+                    <!-- Hands -->
+                    <circle cx="50" cy="52" r="3" fill="#37474F"></circle>
+                    <path d="M50 52L65 52" stroke="#37474F" stroke-width="4" stroke-linecap="round"></path>
+                    <path d="M50 52L50 35" stroke="#37474F" stroke-width="4" stroke-linecap="round"></path>
+                    <path d="M50 52L40 62" stroke="#FF5252" stroke-width="2" stroke-linecap="round"></path> <!-- Second hand -->
+                    <!-- Glass Reflection -->
+                    <path d="M50 18C30 18 15 35 15 55C15 52 15 48 18 40C25 25 35 20 50 20C65 20 75 25 80 35" fill="white" opacity="0.4"></path>
+                </svg>

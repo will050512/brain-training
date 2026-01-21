@@ -1,17 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
-  <defs>
-    <linearGradient id="bananaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#FDE047"/>
-      <stop offset="100%" style="stop-color:#EAB308"/>
-    </linearGradient>
-  </defs>
-  <!-- 香蕉主體 -->
-  <path d="M20 55Q15 35 30 20Q45 10 60 15Q55 25 50 40Q45 55 25 60Q20 58 20 55Z" fill="url(#bananaGradient)" stroke="#CA8A04" stroke-width="2"/>
-  <!-- 頭部 -->
-  <ellipse cx="58" cy="17" rx="4" ry="5" fill="#78350F"/>
-  <!-- 尾部 -->
-  <path d="M22 58Q18 62 20 66" stroke="#78350F" stroke-width="3" fill="none" stroke-linecap="round"/>
-  <!-- 斑點 -->
-  <circle cx="35" cy="35" r="2" fill="#92400E" opacity="0.3"/>
-  <circle cx="45" cy="28" r="1.5" fill="#92400E" opacity="0.3"/>
-</svg>
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="bananaSkin" x1="0" y1="0" x2="100" y2="20">
+                            <stop offset="0%" stop-color="#FFF59D"></stop>
+                            <stop offset="50%" stop-color="#FBC02D"></stop>
+                            <stop offset="100%" stop-color="#F57F17"></stop>
+                        </linearGradient>
+                    </defs>
+                    <!-- Banana 3 (Back) -->
+                    <path d="M45 15C45 15 50 60 70 70C80 75 90 60 90 60" stroke="#F9A825" stroke-width="20" stroke-linecap="round"></path>
+                    <path d="M45 15C45 15 50 60 70 70C80 75 90 60 90 60" stroke="#FDD835" stroke-width="18" stroke-linecap="round"></path>
+                    <!-- Banana 2 (Middle) -->
+                    <path d="M35 18C35 18 35 65 60 80C75 90 92 70 92 70" stroke="#F9A825" stroke-width="22" stroke-linecap="round"></path>
+                    <path d="M35 18C35 18 35 65 60 80C75 90 92 70 92 70" stroke="url(#bananaSkin)" stroke-width="20" stroke-linecap="round"></path>
+                    <!-- Banana 1 (Front) -->
+                    <path d="M25 22C25 22 20 70 50 85C70 95 90 75 90 75" stroke="#E65100" stroke-width="22" stroke-linecap="round"></path>
+                    <path d="M25 22C25 22 20 70 50 85C70 95 90 75 90 75" stroke="url(#bananaSkin)" stroke-width="20" stroke-linecap="round"></path>
+                    <!-- Ridges & Details -->
+                    <path d="M22 28C22 28 18 65 45 80" stroke="white" stroke-width="1" fill="none" opacity="0.4"></path>
+                    <path d="M35 18L30 10" stroke="#5D4037" stroke-width="6" stroke-linecap="round"></path>
+                    <path d="M25 22L30 10" stroke="#5D4037" stroke-width="6" stroke-linecap="round"></path>
+                    <path d="M45 15L30 10" stroke="#5D4037" stroke-width="6" stroke-linecap="round"></path>
+                    <!-- Brown Spots -->
+                    <circle cx="40" cy="70" r="1.5" fill="#5D4037" opacity="0.6"></circle>
+                    <circle cx="55" cy="80" r="1" fill="#5D4037" opacity="0.6"></circle>
+                    <circle cx="60" cy="50" r="1" fill="#5D4037" opacity="0.4"></circle>
+                    <!-- Green tip on stem -->
+                    <path d="M30 10L32 12" stroke="#689F38" stroke-width="6" stroke-linecap="round" opacity="0.8"></path>
+                </svg>
