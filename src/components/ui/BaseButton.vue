@@ -38,12 +38,12 @@ const baseClasses = computed(() => {
     'disabled:opacity-50 disabled:cursor-not-allowed'
   ]
   
-  // Size classes
+  // Size classes (Touch target >= 44px ensured)
   const sizeClasses = {
-    sm: 'px-3 py-1.5 text-sm min-h-[32px]',
-    md: 'px-4 py-2 text-base min-h-[40px]',
-    lg: 'px-6 py-3 text-lg min-h-[48px]',
-    xl: 'px-8 py-4 text-xl min-h-[56px]'
+    sm: 'px-3 py-1.5 text-sm min-h-[44px] min-w-[44px]',
+    md: 'px-5 py-2.5 text-base min-h-[48px]',
+    lg: 'px-7 py-3.5 text-lg min-h-[56px]',
+    xl: 'px-9 py-4.5 text-xl min-h-[64px]'
   }
   classes.push(sizeClasses[props.size])
   
@@ -51,32 +51,34 @@ const baseClasses = computed(() => {
   const variantClasses = {
     primary: [
       'bg-[var(--color-primary)] text-[var(--color-text-inverse)]',
-      'hover:brightness-110 active:brightness-90',
-      'focus:ring-[var(--color-primary)]',
-      'shadow-md hover:shadow-lg'
+      'hover:bg-[var(--color-primary-dark)]',
+      'shadow-sm hover:shadow-md active:shadow-sm',
+      'active:scale-[0.98]',
+      'border border-transparent'
     ].join(' '),
     secondary: [
-      'bg-[var(--color-bg-soft)] text-[var(--color-text)]',
-      'hover:bg-[var(--color-surface)] active:bg-[var(--color-bg-soft)]',
-      'focus:ring-[var(--color-primary)]',
-      'border border-[var(--color-border)]'
+      'bg-[var(--color-surface)] text-[var(--color-text-primary)]',
+      'border border-[var(--color-border)]',
+      'hover:bg-[var(--color-bg-soft)] hover:border-[var(--color-border-dark)]',
+      'shadow-sm',
+      'active:bg-[var(--color-bg-muted)]'
     ].join(' '),
     outline: [
       'bg-transparent text-[var(--color-primary)]',
       'border-2 border-[var(--color-primary)]',
-      'hover:bg-[var(--color-primary)] hover:text-white',
-      'focus:ring-[var(--color-primary)]'
+      'hover:bg-[var(--color-primary-bg)]',
+      'active:bg-[var(--color-primary)] active:text-white'
     ].join(' '),
     ghost: [
       'bg-transparent text-[var(--color-text-secondary)]',
-      'hover:bg-[var(--color-bg-soft)] hover:text-[var(--color-text)]',
-      'focus:ring-[var(--color-border)]'
+      'hover:bg-[var(--color-bg-soft)] hover:text-[var(--color-text-primary)]',
+      'active:bg-[var(--color-bg-muted)]'
     ].join(' '),
     danger: [
       'bg-[var(--color-danger)] text-white',
-      'hover:brightness-110 active:brightness-90',
-      'focus:ring-[var(--color-danger)]',
-      'shadow-md'
+      'hover:bg-red-700',
+      'shadow-sm hover:shadow-md',
+      'border border-transparent'
     ].join(' ')
   }
   classes.push(variantClasses[props.variant])

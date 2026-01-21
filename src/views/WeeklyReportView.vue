@@ -124,15 +124,15 @@ const dimensionIcons: Record<CognitiveDimension, string> = {
 
 // 計算趨勢箭頭
 function getTrendArrow(dim: CognitiveDimension): { arrow: string; class: string; change: number } {
-  if (!previousWeekScores.value) return { arrow: '→', class: 'trend-neutral', change: 0 }
+  if (!previousWeekScores.value) return { arrow: '→', class: 'text-[var(--color-text-muted)]', change: 0 }
   
   const current = cognitiveScores.value[dim] || 0
   const previous = previousWeekScores.value[dim] || 0
   const change = current - previous
   
-  if (change >= 5) return { arrow: '↑', class: 'trend-up', change }
-  if (change <= -5) return { arrow: '↓', class: 'trend-down', change }
-  return { arrow: '→', class: 'trend-neutral', change }
+  if (change >= 5) return { arrow: '↑', class: 'text-[var(--color-success)]', change }
+  if (change <= -5) return { arrow: '↓', class: 'text-[var(--color-danger)]', change }
+  return { arrow: '→', class: 'text-[var(--color-text-muted)]', change }
 }
 
 // 營養建議是否解鎖
@@ -291,1008 +291,508 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="weekly-report section-stack">
-    <header class="page-header">
-      <button class="back-btn" @click="router.back()">
-        ← 返回
-      </button>
-      <h1>📊 週訓練報告</h1>
-      <button class="export-btn" @click="exportReport">
-        匯出
-      </button>
+  <div class="app-page">
+    <!-- APP 頭部 -->
+    <header class="app-header shadow-sm bg-[var(--color-surface-elevated)]">
+      <div class="app-header-action">
+        <button 
+          @click="router.back()" 
+          class="text-3xl text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors w-10 h-10 flex items-center justify-center rounded-full hover:bg-[var(--color-bg-soft)]"
+        >
+          ←
+        </button>
+      </div>
+      <div class="flex items-center gap-3">
+        <h1 class="text-xl font-bold text-[var(--color-text)] tracking-wide">週訓練報告</h1>
+      </div>
+      <div class="app-header-action text-right">
+        <button 
+          @click="exportReport" 
+          class="text-sm font-bold text-[var(--color-primary)] px-4 py-2 bg-[var(--color-primary)]/10 hover:bg-[var(--color-primary)]/20 rounded-full transition-colors"
+        >
+          匯出
+        </button>
+      </div>
     </header>
 
-    <!-- 免責聲明 -->
-    <DisclaimerBanner />
-
-    <div class="section-label">本週範圍</div>
-    <!-- 週期範圍 -->
-    <div class="week-range">
-      {{ weekRange.formatted }}
-    </div>
-    <div class="section-label">顯示範圍</div>
-    <div class="filter-toggle">
-      <button
-        class="filter-btn"
-        :class="{ active: activityFilter === 'daily' }"
-        @click="activityFilter = 'daily'"
-      >
-        每日訓練
-      </button>
-      <button
-        class="filter-btn"
-        :class="{ active: activityFilter === 'all' }"
-        @click="activityFilter = 'all'"
-      >
-        全部活動
-      </button>
-    </div>
-
-    <!-- 載入中 -->
-    <div v-if="isLoading" class="loading">
-      <div class="spinner"></div>
-      <p>正在生成報告...</p>
-    </div>
-
-    <template v-else>
-      <div class="section-label">報告視角</div>
-      <!-- Tab 切換 -->
-      <div class="tabs">
-        <button 
-          class="tab" 
-          :class="{ active: selectedTab === 'overview' }"
-          @click="selectedTab = 'overview'"
-        >
-          概覽
-        </button>
-        <button 
-          class="tab" 
-          :class="{ active: selectedTab === 'professional' }"
-          @click="selectedTab = 'professional'"
-        >
-          專業評估
-        </button>
-        <button 
-          class="tab" 
-          :class="{ active: selectedTab === 'trend' }"
-          @click="selectedTab = 'trend'"
-        >
-          趨勢分析
-        </button>
-        <button 
-          class="tab" 
-          :class="{ active: selectedTab === 'nutrition' }"
-          @click="selectedTab = 'nutrition'"
-        >
-          營養建議
-        </button>
-      </div>
-
-      <!-- 概覽頁 -->
-      <div v-if="selectedTab === 'overview'" class="tab-content">
-        <!-- 週統計 -->
-        <section class="stats-section">
-          <h2>本週統計</h2>
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-icon">🎮</div>
-              <div class="stat-value">{{ weekStats.totalGames }}</div>
-              <div class="stat-label">遊戲次數</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon">⏱️</div>
-              <div class="stat-value">{{ formatTime(weekStats.totalTime) }}</div>
-              <div class="stat-label">總訓練時間</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon">📈</div>
-              <div class="stat-value">{{ weekStats.avgScore }}</div>
-              <div class="stat-label">平均分數</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon">🎯</div>
-              <div class="stat-value">{{ weekStats.avgAccuracy }}%</div>
-              <div class="stat-label">平均正確率</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon">🧩</div>
-              <div class="stat-value">{{ weekStats.uniqueGames }}</div>
-              <div class="stat-label">遊戲種類</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon">📅</div>
-              <div class="stat-value">{{ weekStats.activeDays }}</div>
-              <div class="stat-label">活躍天數</div>
-            </div>
-          </div>
-        </section>
-
-        <!-- 認知雷達圖 -->
-        <section class="radar-section">
-          <h2>認知能力分布</h2>
-          <div class="radar-container">
-            <RadarChart :scores="cognitiveScores" />
-          </div>
-        </section>
-
-        <!-- 各維度分數（加入趨勢箭頭） -->
-        <section class="dimensions-section">
-          <h2>各維度表現</h2>
-          <div class="dimension-list">
-            <div 
-              v-for="(score, dim) in cognitiveScores" 
-              :key="dim"
-              class="dimension-item"
-            >
-              <div class="dimension-header">
-                <span class="dimension-icon">{{ dimensionIcons[dim as CognitiveDimension] }}</span>
-                <span class="dimension-name">{{ dimensionNames[dim as CognitiveDimension] }}</span>
-                <span 
-                  class="trend-arrow"
-                  :class="getTrendArrow(dim as CognitiveDimension).class"
-                >
-                  {{ getTrendArrow(dim as CognitiveDimension).arrow }}
-                  <small v-if="getTrendArrow(dim as CognitiveDimension).change !== 0">
-                    {{ getTrendArrow(dim as CognitiveDimension).change > 0 ? '+' : '' }}{{ getTrendArrow(dim as CognitiveDimension).change }}
-                  </small>
-                </span>
-              </div>
-              <div class="dimension-bar">
-                <div 
-                  class="dimension-fill"
-                  :class="score >= 70 ? 'fill-good' : score >= 50 ? 'fill-moderate' : 'fill-concern'"
-                  :style="{ width: `${score}%` }"
-                ></div>
-              </div>
-              <div class="dimension-score">{{ score }}</div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <!-- 專業評估頁 -->
-      <div v-if="selectedTab === 'professional'" class="tab-content">
-        <template v-if="professionalAssessment">
-          <!-- MMSE -->
-          <section class="assessment-section">
-            <h2>MMSE 估算分數</h2>
-            <p class="assessment-desc">簡易智能狀態測驗 (Mini-Mental State Examination)</p>
-            <div class="assessment-score">
-              <div class="score-circle" :style="{ borderColor: getInterpretationColor(professionalAssessment.mmse.interpretation) }">
-                <span class="score-value">{{ professionalAssessment.mmse.total }}</span>
-                <span class="score-max">/ 30</span>
-              </div>
-              <div class="score-interpretation" :style="{ color: getInterpretationColor(professionalAssessment.mmse.interpretation) }">
-                {{ getInterpretationDescription('mmse', professionalAssessment.mmse.interpretation) }}
-              </div>
-            </div>
-            <div class="score-details">
-              <div class="detail-item">
-                <span>定向力</span>
-                <span>{{ professionalAssessment.mmse.orientation }} / 10</span>
-              </div>
-              <div class="detail-item">
-                <span>登錄</span>
-                <span>{{ professionalAssessment.mmse.registration }} / 3</span>
-              </div>
-              <div class="detail-item">
-                <span>注意力與計算</span>
-                <span>{{ professionalAssessment.mmse.attention }} / 5</span>
-              </div>
-              <div class="detail-item">
-                <span>回憶</span>
-                <span>{{ professionalAssessment.mmse.recall }} / 3</span>
-              </div>
-              <div class="detail-item">
-                <span>語言</span>
-                <span>{{ professionalAssessment.mmse.language }} / 8</span>
-              </div>
-              <div class="detail-item">
-                <span>視覺空間</span>
-                <span>{{ professionalAssessment.mmse.visuospatial }} / 1</span>
-              </div>
-            </div>
-          </section>
-
-          <!-- MoCA -->
-          <section class="assessment-section">
-            <h2>MoCA 估算分數</h2>
-            <p class="assessment-desc">蒙特利爾認知評估 (Montreal Cognitive Assessment)</p>
-            <div class="assessment-score">
-              <div class="score-circle" :style="{ borderColor: getInterpretationColor(professionalAssessment.moca.interpretation) }">
-                <span class="score-value">{{ professionalAssessment.moca.total }}</span>
-                <span class="score-max">/ 30</span>
-              </div>
-              <div class="score-interpretation" :style="{ color: getInterpretationColor(professionalAssessment.moca.interpretation) }">
-                {{ getInterpretationDescription('moca', professionalAssessment.moca.interpretation) }}
-              </div>
-            </div>
-            <div class="score-details">
-              <div class="detail-item">
-                <span>視覺空間/執行功能</span>
-                <span>{{ professionalAssessment.moca.visuospatialExecutive }} / 5</span>
-              </div>
-              <div class="detail-item">
-                <span>命名</span>
-                <span>{{ professionalAssessment.moca.naming }} / 3</span>
-              </div>
-              <div class="detail-item">
-                <span>注意力</span>
-                <span>{{ professionalAssessment.moca.attention }} / 6</span>
-              </div>
-              <div class="detail-item">
-                <span>語言</span>
-                <span>{{ professionalAssessment.moca.language }} / 3</span>
-              </div>
-              <div class="detail-item">
-                <span>抽象</span>
-                <span>{{ professionalAssessment.moca.abstraction }} / 2</span>
-              </div>
-              <div class="detail-item">
-                <span>延遲回憶</span>
-                <span>{{ professionalAssessment.moca.delayedRecall }} / 5</span>
-              </div>
-              <div class="detail-item">
-                <span>定向</span>
-                <span>{{ professionalAssessment.moca.orientation }} / 6</span>
-              </div>
-            </div>
-          </section>
-
-          <!-- CASI -->
-          <section class="assessment-section">
-            <h2>CASI 估算分數</h2>
-            <p class="assessment-desc">認知能力篩檢量表 (Cognitive Abilities Screening Instrument)</p>
-            <div class="assessment-score">
-              <div class="score-circle large" :style="{ borderColor: getInterpretationColor(professionalAssessment.casi.interpretation) }">
-                <span class="score-value">{{ professionalAssessment.casi.total }}</span>
-                <span class="score-max">/ 100</span>
-              </div>
-              <div class="score-interpretation" :style="{ color: getInterpretationColor(professionalAssessment.casi.interpretation) }">
-                {{ getInterpretationDescription('casi', professionalAssessment.casi.interpretation) }}
-              </div>
-            </div>
-          </section>
-
-          <!-- 建議行動 -->
-          <section class="recommendation-section">
-            <h2>💡 建議</h2>
-            <p class="recommendation-text">
-              {{ getRecommendedAction(professionalAssessment) }}
-            </p>
-          </section>
-        </template>
-
-        <div v-else class="no-data">
-          <div class="no-data-icon">📊</div>
-          <p>需要至少完成 5 次遊戲才能生成專業評估</p>
-          <p class="sub">目前已完成 {{ sessions.length }} 次</p>
-          <router-link to="/games" class="start-link">開始訓練 →</router-link>
-        </div>
-      </div>
-
-      <!-- 趨勢分析頁 -->
-      <div v-if="selectedTab === 'trend'" class="tab-content">
-        <section class="trend-section">
-          <h2>分數趨勢</h2>
-          <TrendChart :history="scoreHistory" />
-        </section>
-
-        <section class="activity-section">
-          <h2>每日活動</h2>
-          <div class="activity-calendar">
-            <div 
-              v-for="day in 7" 
-              :key="day"
-              class="calendar-day"
-              :class="{ 
-                active: weekSessions.some(s => 
-                  new Date(s.createdAt).getDay() === (day % 7)
-                )
-              }"
-            >
-              <span class="day-name">
-                {{ ['日', '一', '二', '三', '四', '五', '六'][day % 7] }}
-              </span>
-              <span class="day-count">
-                {{ weekSessions.filter(s => new Date(s.createdAt).getDay() === (day % 7)).length }}
-              </span>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <!-- 營養建議頁 -->
-      <div v-if="selectedTab === 'nutrition'" class="tab-content">
-        <!-- 未解鎖 -->
-        <div v-if="!nutritionUnlocked" class="no-data">
-          <div class="no-data-icon">🔒</div>
-          <p>完成 {{ NUTRITION_UNLOCK_REQUIRED_TRAININGS }} 場遊戲後解鎖營養建議</p>
-          <p class="sub">目前已完成 {{ nutritionUnlockProgress }} 場</p>
-          <div class="unlock-progress">
-            <div class="progress-bar">
-              <div
-                class="progress-fill"
-                :style="{ width: `${nutritionUnlockPercent}%` }"
-              ></div>
-            </div>
-            <span class="progress-text">{{ nutritionUnlockProgress }}/{{ NUTRITION_UNLOCK_REQUIRED_TRAININGS }}</span>
-          </div>
-        </div>
-
-        <!-- 已解鎖 -->
-        <template v-else-if="nutritionResult">
+    <!-- 可滾動內容區 -->
+    <div class="app-content-scroll bg-[var(--color-bg)]">
+      <div class="container-desktop px-4 py-4 sm:py-6">
+        <div class="space-y-6">
+          
           <!-- 免責聲明 -->
-          <section class="nutrition-disclaimer">
-            <div class="disclaimer-icon">⚠️</div>
-            <p>以下營養建議僅供參考，不構成醫療診斷。開始任何補充計畫前請諮詢專業醫療人員。</p>
-          </section>
+          <DisclaimerBanner />
 
-          <!-- 高優先建議 -->
-          <section v-if="nutritionResult.recommendations.filter(r => r.priority === 'high').length > 0" class="nutrition-section">
-            <h2>🔴 重點關注</h2>
-            <div class="supplement-list">
-              <div 
-                v-for="rec in nutritionResult.recommendations.filter(r => r.priority === 'high')" 
-                :key="rec.id"
-                class="supplement-card priority-high"
-              >
-                <div class="supplement-header">
-                  <span class="supplement-name">{{ rec.supplement.name }}</span>
-                  <span v-if="rec.supplement.isPartnerProduct" class="badge badge--warning">合作</span>
-                </div>
-                <p class="supplement-reason">{{ rec.reason }}</p>
-                <div class="supplement-benefits">
-                  <span v-for="(benefit, i) in rec.supplement.benefits.slice(0, 2)" :key="i" class="badge badge--neutral">
-                    {{ benefit }}
-                  </span>
-                </div>
-                <div class="supplement-dosage">建議劑量：{{ rec.supplement.dosageRange }}</div>
-                <a 
-                  v-if="rec.supplement.isPartnerProduct && rec.supplement.partnerUrl"
-                  :href="rec.supplement.partnerUrl" 
-                  target="_blank"
-                  class="partner-link"
+          <!-- 報告頂部資訊卡 -->
+          <div class="bg-[var(--color-surface-elevated)] rounded-2xl p-4 shadow-sm border border-[var(--color-border-light)]">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div class="text-center sm:text-left">
+                <div class="text-sm text-[var(--color-text-secondary)] mb-1">本週範圍</div>
+                <div class="text-xl font-bold text-[var(--color-text)] font-mono">{{ weekRange.formatted }}</div>
+              </div>
+              
+              <div class="flex bg-[var(--color-bg-soft)] rounded-xl p-1">
+                <button
+                  class="px-4 py-2 rounded-lg text-sm font-bold transition-all"
+                  :class="activityFilter === 'daily' ? 'bg-[var(--color-surface-elevated)] text-[var(--color-primary)] shadow-sm' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)]'"
+                  @click="activityFilter = 'daily'"
                 >
-                  了解更多 →
-                </a>
+                  每日訓練
+                </button>
+                <button
+                  class="px-4 py-2 rounded-lg text-sm font-bold transition-all"
+                  :class="activityFilter === 'all' ? 'bg-[var(--color-surface-elevated)] text-[var(--color-primary)] shadow-sm' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)]'"
+                  @click="activityFilter = 'all'"
+                >
+                  全部活動
+                </button>
               </div>
             </div>
-          </section>
+          </div>
 
-          <!-- 中優先建議 -->
-          <section v-if="nutritionResult.recommendations.filter(r => r.priority === 'medium').length > 0" class="nutrition-section">
-            <h2>🟡 建議考慮</h2>
-            <div class="supplement-list">
-              <div 
-                v-for="rec in nutritionResult.recommendations.filter(r => r.priority === 'medium')" 
-                :key="rec.id"
-                class="supplement-card priority-medium"
-              >
-                <div class="supplement-header">
-                  <span class="supplement-name">{{ rec.supplement.name }}</span>
+          <!-- 載入中 -->
+          <div v-if="isLoading" class="flex flex-col items-center justify-center py-12 text-[var(--color-text-secondary)]">
+            <div class="w-10 h-10 border-4 border-[var(--color-border)] border-t-[var(--color-primary)] rounded-full animate-spin mb-4"></div>
+            <p>正在生成報告...</p>
+          </div>
+
+          <template v-else>
+            <!-- Tab 切換 (橫向滾動) -->
+            <div class="sticky top-0 z-10 bg-[var(--color-bg)]/95 backdrop-blur-sm -mx-4 px-4 py-2 sm:mx-0 sm:px-0 sm:static sm:bg-transparent sm:backdrop-blur-none border-b border-[var(--color-border-light)] sm:border-0">
+              <div class="flex overflow-x-auto gap-3 pb-2 no-scrollbar hide-scrollbar">
+                <button 
+                  v-for="tab in ['overview', 'professional', 'trend', 'nutrition'] as const" 
+                  :key="tab"
+                  class="flex-shrink-0 px-5 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap border"
+                  :class="selectedTab === tab 
+                    ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)] border-transparent shadow-md' 
+                    : 'bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)] border-[var(--color-border)] hover:bg-[var(--color-surface)]'"
+                  @click="selectedTab = tab"
+                >
+                  <span class="mr-1.5 text-base">
+                    {{ 
+                      tab === 'overview' ? '📊 概覽' : 
+                      tab === 'professional' ? '🩺 專業評估' : 
+                      tab === 'trend' ? '📈 趨勢分析' : 
+                      '🥗 營養建議' 
+                    }}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 概覽頁 -->
+            <div v-if="selectedTab === 'overview'" class="space-y-6 animate-fade-in">
+              <!-- 週統計卡片 -->
+              <section>
+                <h2 class="text-lg font-bold text-[var(--color-text)] mb-3 flex items-center gap-2">
+                  <span class="w-1.5 h-5 rounded-full bg-[var(--color-primary)]"></span>
+                  本週統計
+                </h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div class="bg-[var(--color-surface-elevated)] p-4 rounded-2xl shadow-sm border border-[var(--color-border-light)] flex flex-col items-center text-center">
+                    <span class="text-2xl mb-2">🎮</span>
+                    <span class="text-2xl font-black text-[var(--color-text)]">{{ weekStats.totalGames }}</span>
+                    <span class="text-xs font-medium text-[var(--color-text-secondary)]">遊戲次數</span>
+                  </div>
+                  <div class="bg-[var(--color-surface-elevated)] p-4 rounded-2xl shadow-sm border border-[var(--color-border-light)] flex flex-col items-center text-center">
+                    <span class="text-2xl mb-2">⏱️</span>
+                    <span class="text-xl font-black text-[var(--color-text)] truncate w-full">{{ formatTime(weekStats.totalTime) }}</span>
+                    <span class="text-xs font-medium text-[var(--color-text-secondary)]">總訓練時間</span>
+                  </div>
+                  <div class="bg-[var(--color-surface-elevated)] p-4 rounded-2xl shadow-sm border border-[var(--color-border-light)] flex flex-col items-center text-center">
+                    <span class="text-2xl mb-2">📈</span>
+                    <span class="text-2xl font-black text-[var(--color-text)]">{{ weekStats.avgScore }}</span>
+                    <span class="text-xs font-medium text-[var(--color-text-secondary)]">平均分數</span>
+                  </div>
+                  <div class="bg-[var(--color-surface-elevated)] p-4 rounded-2xl shadow-sm border border-[var(--color-border-light)] flex flex-col items-center text-center">
+                    <span class="text-2xl mb-2">🎯</span>
+                    <span class="text-2xl font-black text-[var(--color-text)]">{{ weekStats.avgAccuracy }}%</span>
+                    <span class="text-xs font-medium text-[var(--color-text-secondary)]">平均正確率</span>
+                  </div>
+                  <div class="bg-[var(--color-surface-elevated)] p-4 rounded-2xl shadow-sm border border-[var(--color-border-light)] flex flex-col items-center text-center">
+                    <span class="text-2xl mb-2">🧩</span>
+                    <span class="text-2xl font-black text-[var(--color-text)]">{{ weekStats.uniqueGames }}</span>
+                    <span class="text-xs font-medium text-[var(--color-text-secondary)]">遊戲種類</span>
+                  </div>
+                  <div class="bg-[var(--color-surface-elevated)] p-4 rounded-2xl shadow-sm border border-[var(--color-border-light)] flex flex-col items-center text-center">
+                    <span class="text-2xl mb-2">📅</span>
+                    <span class="text-2xl font-black text-[var(--color-text)]">{{ weekStats.activeDays }}</span>
+                    <span class="text-xs font-medium text-[var(--color-text-secondary)]">活躍天數</span>
+                  </div>
                 </div>
-                <p class="supplement-reason">{{ rec.reason }}</p>
-                <div class="supplement-dosage">建議劑量：{{ rec.supplement.dosageRange }}</div>
+              </section>
+
+              <!-- 認知雷達圖 -->
+              <section class="bg-[var(--color-surface-elevated)] rounded-3xl p-6 shadow-sm border border-[var(--color-border-light)]">
+                <h2 class="text-lg font-bold text-[var(--color-text)] mb-4 flex items-center gap-2">
+                  <span class="w-1.5 h-5 rounded-full bg-[var(--color-accent-purple)]"></span>
+                  認知能力分布
+                </h2>
+                <div class="max-w-md mx-auto aspect-square sm:aspect-[4/3]">
+                  <RadarChart :scores="cognitiveScores" />
+                </div>
+              </section>
+
+              <!-- 各維度表現 -->
+              <section>
+                <h2 class="text-lg font-bold text-[var(--color-text)] mb-4 flex items-center gap-2">
+                  <span class="w-1.5 h-5 rounded-full bg-[var(--color-accent-teal)]"></span>
+                  各維度表現
+                </h2>
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <div 
+                    v-for="(score, dim) in cognitiveScores" 
+                    :key="dim"
+                    class="bg-[var(--color-surface-elevated)] p-4 rounded-2xl border border-[var(--color-border-light)] flex items-center gap-4 transition-transform hover:-translate-y-0.5"
+                  >
+                    <div class="w-12 h-12 rounded-2xl bg-[var(--color-bg-soft)] flex items-center justify-center text-2xl shadow-inner shrink-0">
+                      {{ dimensionIcons[dim as CognitiveDimension] }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-[var(--color-text)]">{{ dimensionNames[dim as CognitiveDimension] }}</span>
+                        <div class="flex items-center gap-2">
+                          <span 
+                            class="text-xs font-bold px-1.5 py-0.5 rounded bg-[var(--color-bg-soft)]"
+                            :class="getTrendArrow(dim as CognitiveDimension).class"
+                          >
+                            {{ getTrendArrow(dim as CognitiveDimension).arrow }}
+                            <span v-if="getTrendArrow(dim as CognitiveDimension).change !== 0">
+                              {{ Math.abs(getTrendArrow(dim as CognitiveDimension).change) }}
+                            </span>
+                          </span>
+                          <span class="text-xl font-black text-[var(--color-primary)]">{{ score }}</span>
+                        </div>
+                      </div>
+                      <div class="h-2.5 bg-[var(--color-bg-soft)] rounded-full overflow-hidden">
+                        <div 
+                          class="h-full rounded-full transition-all duration-1000 ease-out"
+                          :style="{ 
+                            width: `${score}%`,
+                            backgroundColor: score >= 70 ? 'var(--color-success)' : score >= 50 ? 'var(--color-warning)' : 'var(--color-danger)'
+                          }"
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <!-- 專業評估頁 -->
+            <div v-if="selectedTab === 'professional'" class="space-y-6 animate-fade-in">
+              <template v-if="professionalAssessment">
+                <!-- MMSE -->
+                <section class="bg-[var(--color-surface-elevated)] rounded-3xl p-5 shadow-sm border border-[var(--color-border-light)] overflow-hidden">
+                  <div class="flex items-start justify-between mb-4">
+                    <div>
+                      <h2 class="text-lg font-bold text-[var(--color-text)]">MMSE 估算分數</h2>
+                      <p class="text-xs text-[var(--color-text-secondary)] mt-1">簡易智能狀態測驗</p>
+                    </div>
+                    <div 
+                      class="text-sm font-bold px-3 py-1 rounded-full border"
+                      :style="{ 
+                        color: getInterpretationColor(professionalAssessment.mmse.interpretation),
+                        borderColor: getInterpretationColor(professionalAssessment.mmse.interpretation),
+                        backgroundColor: 'var(--color-bg-soft)'
+                      }"
+                    >
+                      {{ getInterpretationDescription('mmse', professionalAssessment.mmse.interpretation) }}
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col sm:flex-row gap-6 items-center">
+                    <div 
+                      class="w-32 h-32 rounded-full border-8 flex flex-col items-center justify-center shrink-0"
+                      :style="{ borderColor: getInterpretationColor(professionalAssessment.mmse.interpretation) }"
+                    >
+                      <span class="text-4xl font-black text-[var(--color-text)]">{{ professionalAssessment.mmse.total }}</span>
+                      <span class="text-xs text-[var(--color-text-secondary)] font-medium">/ 30</span>
+                    </div>
+                    
+                    <div class="w-full grid grid-cols-2 gap-3">
+                      <div class="p-2 bg-[var(--color-bg-soft)] rounded-xl flex justify-between items-center" v-for="(val, key) in {
+                        '定向力': [professionalAssessment.mmse.orientation, 10],
+                        '登錄': [professionalAssessment.mmse.registration, 3],
+                        '注意力': [professionalAssessment.mmse.attention, 5],
+                        '回憶': [professionalAssessment.mmse.recall, 3],
+                        '語言': [professionalAssessment.mmse.language, 8],
+                        '視覺': [professionalAssessment.mmse.visuospatial, 1]
+                      }" :key="key">
+                        <span class="text-xs font-medium text-[var(--color-text-secondary)]">{{ key }}</span>
+                        <span class="text-sm font-bold text-[var(--color-text)]">{{ val[0] }}<span class="text-[var(--color-text-muted)] text-xs">/{{ val[1] }}</span></span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- MoCA -->
+                <section class="bg-[var(--color-surface-elevated)] rounded-3xl p-5 shadow-sm border border-[var(--color-border-light)] overflow-hidden">
+                  <div class="flex items-start justify-between mb-4">
+                    <div>
+                      <h2 class="text-lg font-bold text-[var(--color-text)]">MoCA 估算分數</h2>
+                      <p class="text-xs text-[var(--color-text-secondary)] mt-1">蒙特利爾認知評估</p>
+                    </div>
+                    <div 
+                      class="text-sm font-bold px-3 py-1 rounded-full border"
+                      :style="{ 
+                        color: getInterpretationColor(professionalAssessment.moca.interpretation),
+                        borderColor: getInterpretationColor(professionalAssessment.moca.interpretation),
+                        backgroundColor: 'var(--color-bg-soft)'
+                      }"
+                    >
+                      {{ getInterpretationDescription('moca', professionalAssessment.moca.interpretation) }}
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col sm:flex-row gap-6 items-center">
+                    <div 
+                      class="w-32 h-32 rounded-full border-8 flex flex-col items-center justify-center shrink-0"
+                      :style="{ borderColor: getInterpretationColor(professionalAssessment.moca.interpretation) }"
+                    >
+                      <span class="text-4xl font-black text-[var(--color-text)]">{{ professionalAssessment.moca.total }}</span>
+                      <span class="text-xs text-[var(--color-text-secondary)] font-medium">/ 30</span>
+                    </div>
+                    
+                    <div class="w-full grid grid-cols-2 gap-3">
+                      <div class="p-2 bg-[var(--color-bg-soft)] rounded-xl flex justify-between items-center" v-for="(val, key) in {
+                        '視/執行': [professionalAssessment.moca.visuospatialExecutive, 5],
+                        '命名': [professionalAssessment.moca.naming, 3],
+                        '注意力': [professionalAssessment.moca.attention, 6],
+                        '語言': [professionalAssessment.moca.language, 3],
+                        '抽象': [professionalAssessment.moca.abstraction, 2],
+                        '回憶': [professionalAssessment.moca.delayedRecall, 5],
+                        '定向': [professionalAssessment.moca.orientation, 6]
+                      }" :key="key">
+                        <span class="text-xs font-medium text-[var(--color-text-secondary)] truncate mr-2">{{ key }}</span>
+                        <span class="text-sm font-bold text-[var(--color-text)] shrink-0">{{ val[0] }}<span class="text-[var(--color-text-muted)] text-xs">/{{ val[1] }}</span></span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- CASI -->
+                <section class="bg-[var(--color-surface-elevated)] rounded-3xl p-5 shadow-sm border border-[var(--color-border-light)]">
+                  <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-bold text-[var(--color-text)]">CASI 估算分數</h2>
+                  </div>
+                  <div class="flex flex-col items-center justify-center py-4">
+                    <div 
+                      class="w-40 h-40 rounded-full border-[10px] flex flex-col items-center justify-center mb-3"
+                      :style="{ borderColor: getInterpretationColor(professionalAssessment.casi.interpretation) }"
+                    >
+                      <span class="text-5xl font-black text-[var(--color-text)]">{{ professionalAssessment.casi.total }}</span>
+                      <span class="text-sm text-[var(--color-text-secondary)] font-medium">/ 100</span>
+                    </div>
+                    <div 
+                      class="text-lg font-bold" 
+                      :style="{ color: getInterpretationColor(professionalAssessment.casi.interpretation) }"
+                    >
+                      {{ getInterpretationDescription('casi', professionalAssessment.casi.interpretation) }}
+                    </div>
+                  </div>
+                </section>
+
+                <!-- 建議行動 -->
+                <section class="bg-[var(--color-primary-bg)] rounded-2xl p-5 border border-[var(--color-primary)]/20">
+                  <h2 class="text-lg font-bold text-[var(--color-text)] mb-2 flex items-center gap-2">
+                    <span>💡</span> 綜合建議
+                  </h2>
+                  <p class="text-[var(--color-text)] leading-relaxed">
+                    {{ getRecommendedAction(professionalAssessment) }}
+                  </p>
+                </section>
+              </template>
+
+              <div v-else class="flex flex-col items-center justify-center py-16 text-center">
+                <div class="text-6xl mb-4 opacity-50">📊</div>
+                <h3 class="text-xl font-bold text-[var(--color-text)] mb-2">資料不足</h3>
+                <p class="text-[var(--color-text-secondary)] mb-6 max-w-xs">需要至少完成 5 次遊戲才能生成專業評估，目前已完成 {{ sessions.length }} 次</p>
+                <router-link to="/games" class="btn btn-primary px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all">
+                  開始訓練 →
+                </router-link>
               </div>
             </div>
-          </section>
 
-          <!-- 認知評估建議 -->
-          <section v-if="nutritionResult.cognitiveBasedAdvice.length > 0" class="advice-section">
-            <h2>🧠 認知評估建議</h2>
-            <ul class="advice-list">
-              <li v-for="(advice, i) in nutritionResult.cognitiveBasedAdvice" :key="i">{{ advice }}</li>
-            </ul>
-          </section>
+            <!-- 趨勢分析頁 -->
+            <div v-if="selectedTab === 'trend'" class="space-y-6 animate-fade-in">
+              <section class="bg-[var(--color-surface-elevated)] rounded-3xl p-5 shadow-sm border border-[var(--color-border-light)]">
+                <h2 class="text-lg font-bold text-[var(--color-text)] mb-4 flex items-center gap-2">
+                  <span class="w-1.5 h-5 rounded-full bg-[var(--color-primary)]"></span>
+                  分數趨勢
+                </h2>
+                <div class="h-64 w-full">
+                  <TrendChart :history="scoreHistory" />
+                </div>
+              </section>
 
-          <!-- 一般保健建議 -->
-          <section class="advice-section general">
-            <h2>💡 一般保健建議</h2>
-            <ul class="advice-list">
-              <li v-for="(advice, i) in nutritionResult.generalAdvice" :key="i">{{ advice }}</li>
-            </ul>
-          </section>
-        </template>
+              <section>
+                <h2 class="text-lg font-bold text-[var(--color-text)] mb-4 flex items-center gap-2">
+                  <span class="w-1.5 h-5 rounded-full bg-[var(--color-accent-warm)]"></span>
+                  每日活動分布
+                </h2>
+                <div class="grid grid-cols-7 gap-2">
+                  <div 
+                    v-for="day in 7" 
+                    :key="day"
+                    class="aspect-[3/4] rounded-xl flex flex-col items-center justify-center border transition-all"
+                    :class="weekSessions.some(s => new Date(s.createdAt).getDay() === (day % 7)) 
+                      ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] shadow-sm scale-105' 
+                      : 'bg-[var(--color-surface-elevated)] border-[var(--color-border-light)] opacity-60'"
+                  >
+                    <span class="text-xs font-bold mb-1" :class="weekSessions.some(s => new Date(s.createdAt).getDay() === (day % 7)) ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-secondary)]'">
+                      {{ ['日', '一', '二', '三', '四', '五', '六'][day % 7] }}
+                    </span>
+                    <span class="text-xl font-black text-[var(--color-text)]">
+                      {{ weekSessions.filter(s => new Date(s.createdAt).getDay() === (day % 7)).length }}
+                    </span>
+                  </div>
+                </div>
+              </section>
+            </div>
 
-        <!-- 載入中 -->
-        <div v-else class="loading">
-          <div class="spinner"></div>
-          <p>正在分析您的認知數據...</p>
+            <!-- 營養建議頁 -->
+            <div v-if="selectedTab === 'nutrition'" class="space-y-6 animate-fade-in">
+              <!-- 未解鎖 -->
+              <div v-if="!nutritionUnlocked" class="flex flex-col items-center justify-center py-16 text-center">
+                <div class="text-6xl mb-4">🔒</div>
+                <h3 class="text-xl font-bold text-[var(--color-text)] mb-2">尚未解鎖</h3>
+                <p class="text-[var(--color-text-secondary)] mb-6">完成 {{ NUTRITION_UNLOCK_REQUIRED_TRAININGS }} 場遊戲後解鎖營養建議</p>
+                
+                <div class="w-full max-w-xs bg-[var(--color-surface-elevated)] rounded-full h-4 overflow-hidden shadow-inner mb-2">
+                  <div 
+                    class="h-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-success)] transition-all duration-1000"
+                    :style="{ width: `${nutritionUnlockPercent}%` }"
+                  ></div>
+                </div>
+                <p class="text-sm font-bold text-[var(--color-primary)]">{{ nutritionUnlockProgress }} / {{ NUTRITION_UNLOCK_REQUIRED_TRAININGS }}</p>
+              </div>
+
+              <!-- 已解鎖 -->
+              <template v-else-if="nutritionResult">
+                <!-- 免責聲明 -->
+                <div class="bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/30 p-4 rounded-xl flex gap-3 items-start">
+                  <span class="text-xl shrink-0">⚠️</span>
+                  <p class="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+                    以下營養建議僅供參考，不構成醫療診斷。開始任何補充計畫前請諮詢專業醫療人員。
+                  </p>
+                </div>
+
+                <!-- 高優先建議 -->
+                <section v-if="nutritionResult.recommendations.filter(r => r.priority === 'high').length > 0">
+                  <h2 class="text-lg font-bold text-[var(--color-text)] mb-4 flex items-center gap-2">
+                    <span class="text-xl">🔴</span> 重點關注
+                  </h2>
+                  <div class="space-y-4">
+                    <div 
+                      v-for="rec in nutritionResult.recommendations.filter(r => r.priority === 'high')" 
+                      :key="rec.id"
+                      class="bg-[var(--color-danger)]/5 border-l-4 border-[var(--color-danger)] rounded-r-xl p-4 shadow-sm"
+                    >
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="font-bold text-lg text-[var(--color-text)]">{{ rec.supplement.name }}</span>
+                        <span v-if="rec.supplement.isPartnerProduct" class="text-xs font-bold px-2 py-0.5 bg-[var(--color-warning)] text-white rounded-full">合作</span>
+                      </div>
+                      <p class="text-sm text-[var(--color-text-secondary)] mb-3 leading-relaxed">{{ rec.reason }}</p>
+                      
+                      <div class="flex flex-wrap gap-2 mb-3">
+                        <span v-for="(benefit, i) in rec.supplement.benefits.slice(0, 2)" :key="i" class="text-xs px-2 py-1 bg-[var(--color-surface)] rounded text-[var(--color-text-secondary)] border border-[var(--color-border)]">
+                          {{ benefit }}
+                        </span>
+                      </div>
+                      
+                      <div class="flex items-center justify-between mt-2 pt-2 border-t border-[var(--color-danger)]/10">
+                        <span class="text-xs font-medium text-[var(--color-text-muted)]">建議劑量：{{ rec.supplement.dosageRange }}</span>
+                        <a 
+                          v-if="rec.supplement.isPartnerProduct && rec.supplement.partnerUrl"
+                          :href="rec.supplement.partnerUrl" 
+                          target="_blank"
+                          class="text-xs font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1"
+                        >
+                          了解更多 →
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- 中優先建議 -->
+                <section v-if="nutritionResult.recommendations.filter(r => r.priority === 'medium').length > 0">
+                  <h2 class="text-lg font-bold text-[var(--color-text)] mb-4 flex items-center gap-2">
+                    <span class="text-xl">🟡</span> 建議考慮
+                  </h2>
+                  <div class="space-y-4">
+                    <div 
+                      v-for="rec in nutritionResult.recommendations.filter(r => r.priority === 'medium')" 
+                      :key="rec.id"
+                      class="bg-[var(--color-warning)]/5 border-l-4 border-[var(--color-warning)] rounded-r-xl p-4 shadow-sm"
+                    >
+                      <h3 class="font-bold text-[var(--color-text)] mb-2">{{ rec.supplement.name }}</h3>
+                      <p class="text-sm text-[var(--color-text-secondary)] mb-2 leading-relaxed">{{ rec.reason }}</p>
+                      <div class="text-xs text-[var(--color-text-muted)]">建議劑量：{{ rec.supplement.dosageRange }}</div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- 認知評估建議 -->
+                <section v-if="nutritionResult.cognitiveBasedAdvice.length > 0" class="bg-[var(--color-surface-elevated)] p-5 rounded-2xl border border-[var(--color-border-light)]">
+                  <h2 class="text-lg font-bold text-[var(--color-text)] mb-3 flex items-center gap-2">
+                    <span>🧠</span> 認知評估建議
+                  </h2>
+                  <ul class="space-y-2 list-disc list-inside text-sm text-[var(--color-text-secondary)]">
+                    <li v-for="(advice, i) in nutritionResult.cognitiveBasedAdvice" :key="i" class="leading-relaxed pl-1">{{ advice }}</li>
+                  </ul>
+                </section>
+
+                <!-- 一般保健建議 -->
+                <section class="bg-[var(--color-success)]/5 p-5 rounded-2xl border border-[var(--color-success)]/20">
+                  <h2 class="text-lg font-bold text-[var(--color-text)] mb-3 flex items-center gap-2">
+                    <span>💡</span> 一般保健建議
+                  </h2>
+                  <ul class="space-y-2 list-disc list-inside text-sm text-[var(--color-text-secondary)]">
+                    <li v-for="(advice, i) in nutritionResult.generalAdvice" :key="i" class="leading-relaxed pl-1">{{ advice }}</li>
+                  </ul>
+                </section>
+              </template>
+
+              <!-- 載入中 -->
+              <div v-else class="flex flex-col items-center justify-center py-12 text-[var(--color-text-secondary)]">
+                <div class="w-8 h-8 border-4 border-[var(--color-border)] border-t-[var(--color-primary)] rounded-full animate-spin mb-4"></div>
+                <p>正在分析您的認知數據...</p>
+              </div>
+            </div>
+          </template>
         </div>
       </div>
-    </template>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.weekly-report {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 1rem;
-  min-height: 100vh;
-  background: var(--color-bg);
-  color: var(--color-text);
+/* 隱藏滾動條但保持功能 */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-
-.page-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.back-btn,
-.export-btn {
-  padding: 0.5rem 1rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  color: var(--color-text);
-  transition: all 0.2s;
-}
-
-.back-btn:hover {
-  background: var(--color-surface-alt);
-}
-
-.page-header h1 {
-  flex: 1;
-  font-size: 1.5rem;
-  margin: 0;
-  color: var(--color-text);
-}
-
-.export-btn {
-  background: var(--color-primary);
-  color: white;
-  border: none;
-}
-
-.export-btn:hover {
-  opacity: 0.9;
-}
-
-.week-range {
-  text-align: center;
-  font-size: 1.125rem;
-  color: var(--color-text-secondary);
-  margin-bottom: 1.5rem;
-}
-
-.filter-toggle {
-  display: inline-flex;
-  gap: 0.5rem;
-  padding: 0.25rem;
-  border-radius: 999px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  margin-bottom: 1.5rem;
-}
-
-.filter-btn {
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  border: none;
-  background: transparent;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.filter-btn.active {
-  background: var(--color-primary);
-  color: white;
-  font-weight: 600;
-}
-
-/* 載入中 */
-.loading {
-  text-align: center;
-  padding: 3rem;
-  color: var(--color-text-secondary);
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--color-border);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 1rem;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Tabs */
-.tabs {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 0.5rem;
-}
-
-.tab {
-  padding: 0.75rem 1.5rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  color: var(--color-text-secondary);
-  border-radius: 8px 8px 0 0;
-  transition: all 0.2s;
-}
-
-.tab:hover {
-  color: var(--color-text);
-  background: var(--color-surface);
-}
-
-.tab.active {
-  color: var(--color-primary);
-  font-weight: bold;
-  background: var(--color-surface);
-}
-
-/* 統計區塊 */
-.stats-section h2,
-.radar-section h2,
-.dimensions-section h2,
-.assessment-section h2,
-.trend-section h2,
-.activity-section h2,
-.recommendation-section h2 {
-  font-size: 1.25rem;
-  margin-bottom: 1rem;
-  color: var(--color-text);
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.stat-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  padding: 1rem;
-  border-radius: 12px;
-  text-align: center;
-}
-
-.stat-icon {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: var(--color-text);
-}
-
-.stat-label {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-}
-
-/* 雷達圖 */
-.radar-container {
-  max-width: 400px;
-  margin: 0 auto 2rem;
-}
-
-/* 維度列表 */
-.dimension-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.dimension-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.dimension-name {
-  width: 80px;
-  font-weight: 500;
-  color: var(--color-text);
-}
-
-.dimension-bar {
-  flex: 1;
-  height: 20px;
-  background: var(--color-surface-alt);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.dimension-fill {
-  height: 100%;
-  transition: width 0.5s ease;
-}
-
-.dimension-fill.fill-good {
-  background-color: var(--color-success);
-}
-
-.dimension-fill.fill-moderate {
-  background-color: var(--color-warning);
-}
-
-.dimension-fill.fill-concern {
-  background-color: var(--color-danger);
-}
-
-.dimension-score {
-  width: 40px;
-  text-align: right;
-  font-weight: bold;
-  color: var(--color-text);
-}
-
-/* 專業評估 */
-.assessment-section {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.assessment-desc {
-  color: var(--color-text-secondary);
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
-}
-
-.assessment-score {
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-
-.score-circle {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  border: 6px solid;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.5rem;
-  background: var(--color-surface);
-}
-
-.score-circle.large {
-  width: 140px;
-  height: 140px;
-}
-
-.score-value {
-  font-size: 2.5rem;
-  font-weight: bold;
-  line-height: 1;
-  color: var(--color-text);
-}
-
-.score-max {
-  font-size: 1rem;
-  color: var(--color-text-secondary);
-}
-
-.score-interpretation {
-  font-size: 1.125rem;
-  font-weight: bold;
-}
-
-.score-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.detail-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem 0;
-  border-bottom: 1px dashed var(--color-border);
-  color: var(--color-text);
-}
-
-.detail-item:last-child {
-  border-bottom: none;
-}
-
-/* 建議 */
-.recommendation-section {
-  background: var(--color-primary-bg);
-  border-radius: 16px;
-  padding: 1.5rem;
-}
-
-:where(.dark, .dark *) .recommendation-section {
-  background: var(--color-primary-bg);
-}
-
-.recommendation-text {
-  font-size: 1rem;
-  line-height: 1.6;
-  margin: 0;
-  color: var(--color-text);
-}
-
-/* 無資料 */
-.no-data {
-  text-align: center;
-  padding: 3rem;
-  color: var(--color-text-secondary);
-}
-
-.no-data-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-}
-
-.no-data .sub {
-  color: var(--color-text-muted);
-  margin-bottom: 1rem;
-}
-
-.start-link {
-  color: var(--color-primary);
-  text-decoration: none;
-  font-weight: bold;
-}
-
-/* 活動日曆 */
-.activity-calendar {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 0.5rem;
-}
-
-.calendar-day {
-  text-align: center;
-  padding: 1rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-}
-
-.calendar-day.active {
-  background: rgba(59, 130, 246, 0.15);
-  border: 2px solid var(--color-primary);
-}
-
-.day-name {
-  display: block;
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-  margin-bottom: 0.25rem;
-}
-
-.day-count {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: var(--color-text);
-}
-
-/* 響應式 */
-@media (max-width: 640px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .tabs {
-    overflow-x: auto;
-  }
-}
-
-/* 維度趨勢箭頭 */
-.dimension-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-width: 120px;
-}
-
-.dimension-icon {
-  font-size: 1rem;
-}
-
-.trend-arrow {
-  font-size: 0.875rem;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.trend-arrow small {
-  font-size: 0.625rem;
-}
-
-.trend-up {
-  color: var(--color-success, #22c55e);
-}
-
-.trend-down {
-  color: var(--color-danger, #ef4444);
-}
-
-.trend-neutral {
-  color: var(--color-text-muted);
-}
-
-/* 營養建議頁樣式 */
-.nutrition-disclaimer {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 1rem;
-  background: rgba(251, 191, 36, 0.1);
-  border: 1px solid rgba(251, 191, 36, 0.3);
-  border-radius: 12px;
-  margin-bottom: 1.5rem;
-}
-
-.disclaimer-icon {
-  font-size: 1.5rem;
-  flex-shrink: 0;
-}
-
-.nutrition-disclaimer p {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-  line-height: 1.5;
-}
-
-.nutrition-section {
-  margin-bottom: 1.5rem;
-}
-
-.nutrition-section h2 {
-  font-size: 1.125rem;
-  margin-bottom: 1rem;
-  color: var(--color-text);
-}
-
-.supplement-list {
-  display: grid;
-  gap: 1rem;
-}
-
-.supplement-card {
-  padding: 1rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  border-left: 4px solid;
-}
-
-.supplement-card.priority-high {
-  border-left-color: #ef4444;
-  background: rgba(239, 68, 68, 0.05);
-}
-
-.supplement-card.priority-medium {
-  border-left-color: #f59e0b;
-  background: rgba(245, 158, 11, 0.05);
-}
-
-.supplement-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.supplement-name {
-  font-weight: bold;
-  color: var(--color-text);
-}
-
-
-.supplement-reason {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-  margin: 0 0 0.5rem 0;
-}
-
-.supplement-benefits {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-  margin-bottom: 0.5rem;
-}
-
-
-.supplement-dosage {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-}
-
-.partner-link {
-  display: inline-block;
-  margin-top: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--color-primary);
-  text-decoration: none;
-}
-
-.partner-link:hover {
-  text-decoration: underline;
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-.advice-section {
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-
-.advice-section.general {
-  background: rgba(34, 197, 94, 0.05);
-  border-color: rgba(34, 197, 94, 0.2);
-}
-
-.advice-section h2 {
-  font-size: 1rem;
-  margin: 0 0 0.75rem 0;
-  color: var(--color-text);
-}
-
-.advice-list {
-  margin: 0;
-  padding-left: 1.25rem;
-}
-
-.advice-list li {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-  margin-bottom: 0.5rem;
-  line-height: 1.5;
-}
-
-.unlock-progress {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-
-.progress-bar {
-  width: 150px;
-  height: 8px;
-  background: var(--color-surface-alt);
-  border-radius: 4px;
-  overflow: hidden;
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--color-primary), #22c55e);
-  border-radius: 4px;
-  transition: width 0.3s ease;
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.progress-text {
-  font-size: 0.875rem;
-  color: var(--color-text-muted);
-  font-weight: bold;
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
 }
 </style>

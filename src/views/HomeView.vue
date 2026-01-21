@@ -51,23 +51,23 @@
 
     <!-- 可滾動內容區 -->
     <div class="app-content-scroll bg-[var(--color-bg)]">
-      <div class="container mx-auto px-4 py-6 sm:px-6 sm:py-8 max-w-4xl">
-      <div class="space-y-8">
+      <div class="container-desktop px-4 py-4 sm:py-6">
+      <div class="space-y-5">
 
       <!-- 使用者狀態（精簡版） -->
-      <div v-if="userStore.isLoggedIn" class="mb-8 bg-[var(--color-surface-elevated)] rounded-3xl shadow-sm border border-[var(--color-border-light)] overflow-hidden">
-        <div class="flex items-center gap-4 p-5">
-          <div class="w-16 h-16 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center text-3xl border-2 border-white shadow-inner shrink-0">
+      <div v-if="userStore.isLoggedIn" class="mb-5 bg-[var(--color-surface-elevated)] rounded-2xl shadow-sm border border-[var(--color-border-light)] overflow-hidden">
+        <div class="flex items-center gap-4 p-4">
+          <div class="w-14 h-14 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center text-3xl border-2 border-white shadow-inner shrink-0">
             👤
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-xl font-bold text-[var(--color-text)] truncate">{{ userStore.currentUser?.name }}</p>
-            <p class="text-base text-[var(--color-text-secondary)] mt-1">{{ userStore.userAge }} 歲 · 保持大腦活躍中</p>
+            <p class="text-lg font-bold text-[var(--color-text)] truncate">{{ userStore.currentUser?.name }}</p>
+            <p class="text-sm text-[var(--color-text-secondary)] mt-1">{{ userStore.userAge }} 歲 · 保持大腦活躍中</p>
           </div>
         </div>
         
         <!-- 同步狀態列 -->
-        <div class="bg-[var(--color-bg-soft)] px-5 py-2 flex items-center justify-between text-sm border-t border-[var(--color-border-light)]">
+        <div class="bg-[var(--color-bg-soft)] px-4 py-2 flex items-center justify-between text-sm border-t border-[var(--color-border-light)]">
           <div class="flex items-center gap-2 text-[var(--color-text-secondary)]">
             <span class="text-base" :class="{'animate-spin': settingsStore.syncUiStatus === 'syncing'}">
               {{ syncStatusIcon }}
@@ -133,8 +133,8 @@
       </div>
 
       <!-- 評估引導卡片（未完成評估時顯示） -->
-      <div v-if="userStore.isLoggedIn && !settingsStore.hasCompletedAssessment" class="mb-6">
-        <div class="bg-gradient-to-r from-[var(--color-accent-warm)] to-[var(--color-coordination)] rounded-2xl p-4 text-[var(--color-text-inverse)] shadow-lg">
+      <div v-if="userStore.isLoggedIn && !settingsStore.hasCompletedAssessment" class="mb-5">
+        <div class="bg-gradient-to-r from-[var(--color-accent-warm)] to-[var(--color-coordination)] rounded-2xl p-4 text-[var(--color-text-inverse)] shadow-md">
           <div class="flex items-center gap-3 mb-3">
             <span class="text-3xl">🧪</span>
             <div>
@@ -158,13 +158,13 @@
         今日訓練
       </h2>
       <!-- 訓練目標卡片（新增：圓形進度 + 目標設定） -->
-      <div v-if="userStore.isLoggedIn" class="mb-8">
-        <div class="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-light)] rounded-3xl p-5 sm:p-6 text-[var(--color-text-inverse)] shadow-xl relative overflow-hidden group">
+      <div v-if="userStore.isLoggedIn" class="mb-6">
+        <div class="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-light)] rounded-2xl p-4 sm:p-5 text-[var(--color-text-inverse)] shadow-lg relative overflow-hidden group">
           <!-- 背景裝飾 -->
           <div class="absolute -right-10 -top-10 w-40 h-40 bg-[var(--color-surface)]/10 rounded-full blur-3xl pointer-events-none"></div>
           
           <!-- 標題與設定按鈕 -->
-          <div class="flex items-start sm:items-center justify-between mb-4 sm:mb-6 gap-3 relative z-10">
+          <div class="flex items-start sm:items-center justify-between mb-4 gap-3 relative z-10">
             <div class="flex-1 min-w-0">
               <h2 class="text-xl sm:text-2xl font-bold truncate tracking-wide">每日目標</h2>
               <p class="text-[var(--color-bg-soft)] text-sm sm:text-base mt-1 font-medium opacity-90">
@@ -184,7 +184,7 @@
           </div>
 
           <!-- 圓形進度與週訓練統計 -->
-          <div class="flex items-center justify-center sm:justify-around gap-6 sm:gap-8 mb-6 relative z-10">
+          <div class="flex items-center justify-center sm:justify-around gap-4 sm:gap-6 mb-5 relative z-10">
             <!-- 圓形進度 -->
             <div class="flex-shrink-0 transform scale-105">
               <CircularProgress
@@ -227,8 +227,8 @@
           <!-- 開始訓練按鈕 -->
           <router-link
             to="/daily-challenge"
-            class="block w-full py-4 mt-2 bg-[var(--color-surface)] text-[var(--color-primary)] rounded-2xl font-bold text-center text-lg sm:text-xl
-                   hover:bg-[var(--color-bg-soft)] active:scale-[0.98] transition-all shadow-lg relative z-10 overflow-hidden"
+            class="block w-full py-3 mt-2 bg-[var(--color-surface)] text-[var(--color-primary)] rounded-xl font-bold text-center text-base sm:text-lg
+                   hover:bg-[var(--color-bg-soft)] active:scale-[0.98] transition-all shadow-md relative z-10 overflow-hidden"
           >
             <span class="relative z-10 flex items-center justify-center gap-2">
               <span class="text-2xl">{{ dailyProgress.completed ? '🎉' : '🚀' }}</span>
@@ -263,7 +263,7 @@
         </div>
       </div>
       <!-- 週曆 -->
-      <div v-if="userStore.isLoggedIn" class="mb-8">
+      <div v-if="userStore.isLoggedIn" class="mb-6">
         <WeekCalendar
           :training-data="weeklyTrainingData"
           @date-select="handleDateSelect"
@@ -276,8 +276,8 @@
         趨勢摘要
       </h2>
       <!-- 認知趨勢概覽（精簡版） -->
-      <div v-if="userStore.isLoggedIn && settingsStore.hasCompletedAssessment" class="mb-8">
-        <div class="bg-[var(--color-surface-elevated)] rounded-3xl p-5 shadow-sm border border-[var(--color-border-light)]">
+      <div v-if="userStore.isLoggedIn && settingsStore.hasCompletedAssessment" class="mb-6">
+        <div class="bg-[var(--color-surface-elevated)] rounded-2xl p-4 shadow-sm border border-[var(--color-border-light)]">
           <div class="flex items-center justify-between mb-4">
             <h3 class="font-bold text-lg text-[var(--color-text)] flex items-center gap-2">
               <span class="text-2xl">📊</span> 認知趨勢
@@ -330,28 +330,34 @@
         快速開始
       </h2>
       <!-- 主要按鈕區（更緊湊） -->
-      <div class="space-y-4 mb-8">
+      <div class="space-y-3 mb-6">
         <template v-if="userStore.isLoggedIn">
-          <router-link to="/games" class="btn btn-primary btn-lg w-full shadow-lg h-16 text-lg rounded-2xl border-0">
+          <router-link to="/games" class="btn btn-primary btn-lg w-full shadow-md h-14 text-base rounded-2xl border-0">
             <span class="text-2xl mr-3">🎮</span>
             自主訓練
           </router-link>
           
-          <div class="grid grid-cols-2 gap-4">
-            <router-link to="/report" class="btn btn-secondary w-full py-4 h-auto rounded-2xl border-0 bg-[var(--color-surface-elevated)] text-[var(--color-text)] shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5">
-              <span class="text-2xl mb-1 block">📊</span>
-              詳細報告
+          <div class="grid grid-cols-2 gap-3">
+            <router-link to="/report" class="bg-[var(--color-surface-elevated)] p-3 rounded-2xl shadow-sm border border-[var(--color-border-light)] hover:shadow-md transition-all hover:-translate-y-0.5 flex flex-col items-center justify-center gap-2 group">
+              <span class="text-3xl filter drop-shadow-sm group-hover:scale-110 transition-transform">📊</span>
+              <div class="text-center">
+                <div class="font-bold text-[var(--color-text)] text-base">詳細報告</div>
+                <div class="text-xs text-[var(--color-text-secondary)]">查看分析</div>
+              </div>
             </router-link>
             
-            <router-link to="/nutrition" class="btn btn-secondary w-full py-4 h-auto rounded-2xl border-0 bg-[var(--color-surface-elevated)] text-[var(--color-text)] shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5">
-              <span class="text-2xl mb-1 block">🥗</span>
-              腦力營養
+            <router-link to="/nutrition" class="bg-[var(--color-surface-elevated)] p-3 rounded-2xl shadow-sm border border-[var(--color-border-light)] hover:shadow-md transition-all hover:-translate-y-0.5 flex flex-col items-center justify-center gap-2 group">
+              <span class="text-3xl filter drop-shadow-sm group-hover:scale-110 transition-transform">🥗</span>
+              <div class="text-center">
+                <div class="font-bold text-[var(--color-text)] text-base">腦力營養</div>
+                <div class="text-xs text-[var(--color-text-secondary)]">飲食建議</div>
+              </div>
             </router-link>
           </div>
         </template>
         
         <template v-else>
-          <router-link to="/login" class="btn btn-primary btn-lg w-full shadow-lg h-16 text-lg rounded-2xl">
+          <router-link to="/login" class="btn btn-primary btn-lg w-full shadow-md h-14 text-base rounded-2xl">
             <span class="text-2xl mr-3">👋</span>
             開始使用
           </router-link>
@@ -359,28 +365,28 @@
       </div>
 
       <!-- 統計摘要（區分訓練與自由） -->
-      <div v-if="userStore.isLoggedIn && userStore.currentStats" class="mb-8">
+      <div v-if="userStore.isLoggedIn && userStore.currentStats" class="mb-6">
         <h2 class="text-lg font-bold text-[var(--color-text)] px-1 mb-3 flex items-center gap-2">
           <span class="w-1.5 h-6 rounded-full bg-[var(--color-primary)]"></span>
           累積成果
         </h2>
         
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <!-- 每日訓練統計 -->
-          <div class="bg-[var(--color-surface-elevated)] p-4 rounded-2xl shadow-sm border border-[var(--color-border-light)] relative overflow-hidden group">
+          <div class="bg-[var(--color-surface-elevated)] p-3 rounded-2xl shadow-sm border border-[var(--color-border-light)] relative overflow-hidden group">
             <div class="absolute right-0 top-0 p-3 opacity-10 text-6xl pointer-events-none group-hover:scale-110 transition-transform duration-500">📅</div>
             <h3 class="font-bold text-[var(--color-text)] mb-3 flex items-center gap-2">
               <span class="text-xl">📅</span> 每日訓練
             </h3>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-2 gap-2">
               <div class="text-center p-2 bg-[var(--color-bg-soft)] rounded-xl">
-                <div class="text-2xl font-black text-[var(--color-primary)] mb-1">
+                <div class="text-xl font-black text-[var(--color-primary)] mb-1">
                   {{ userStore.currentStats.streak }}
                 </div>
                 <div class="text-xs font-medium text-[var(--color-text-secondary)]">連續天數</div>
               </div>
               <div class="text-center p-2 bg-[var(--color-bg-soft)] rounded-xl">
-                <div class="text-2xl font-black text-[var(--color-success)] mb-1">
+                <div class="text-xl font-black text-[var(--color-success)] mb-1">
                   {{ Math.round(userStore.currentStats.averageScore) }}
                 </div>
                 <div class="text-xs font-medium text-[var(--color-text-secondary)]">平均分</div>
@@ -389,20 +395,20 @@
           </div>
 
           <!-- 自由遊戲統計 -->
-          <div class="bg-[var(--color-surface-elevated)] p-4 rounded-2xl shadow-sm border border-[var(--color-border-light)] relative overflow-hidden group">
+          <div class="bg-[var(--color-surface-elevated)] p-3 rounded-2xl shadow-sm border border-[var(--color-border-light)] relative overflow-hidden group">
             <div class="absolute right-0 top-0 p-3 opacity-10 text-6xl pointer-events-none group-hover:scale-110 transition-transform duration-500">🎮</div>
             <h3 class="font-bold text-[var(--color-text)] mb-3 flex items-center gap-2">
               <span class="text-xl">🎮</span> 自由遊戲
             </h3>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-2 gap-2">
               <div class="text-center p-2 bg-[var(--color-bg-soft)] rounded-xl">
-                <div class="text-2xl font-black text-[var(--color-accent-teal)] mb-1">
+                <div class="text-xl font-black text-[var(--color-accent-teal)] mb-1">
                   {{ userStore.currentStats.totalGamesPlayed }}
                 </div>
                 <div class="text-xs font-medium text-[var(--color-text-secondary)]">總次數</div>
               </div>
               <div class="text-center p-2 bg-[var(--color-bg-soft)] rounded-xl">
-                <div class="text-2xl font-black text-[var(--color-accent-warm)] mb-1">
+                <div class="text-xl font-black text-[var(--color-accent-warm)] mb-1">
                   {{ formatPlayTime(userStore.currentStats.totalPlayTime) }}
                 </div>
                 <div class="text-xs font-medium text-[var(--color-text-secondary)]">總時長</div>

@@ -229,13 +229,13 @@ watch(() => settingsStore.dailyTrainingDuration, (val) => {
 .settings-title {
   font-size: 20px;
   font-weight: 700;
-  color: var(--color-text-primary, #1f2937);
+  color: var(--color-text-primary);
   margin: 0 0 8px 0;
 }
 
 .settings-desc {
   font-size: 14px;
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-text-secondary);
   margin: 0;
 }
 
@@ -249,12 +249,12 @@ watch(() => settingsStore.dailyTrainingDuration, (val) => {
   gap: 8px;
   font-size: 15px;
   font-weight: 600;
-  color: var(--color-text-primary, #1f2937);
+  color: var(--color-text-primary);
   margin-bottom: 12px;
 }
 
 .setting-label svg {
-  color: var(--color-primary, #667eea);
+  color: var(--color-primary);
 }
 
 .option-chips {
@@ -268,22 +268,24 @@ watch(() => settingsStore.dailyTrainingDuration, (val) => {
   align-items: baseline;
   gap: 2px;
   padding: 10px 16px;
-  border: 2px solid var(--color-border, #e5e7eb);
+  border: 2px solid var(--color-border);
   border-radius: 12px;
-  background: var(--color-bg-secondary, #ffffff);
+  background: var(--color-surface);
+  color: var(--color-text);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .chip:hover {
-  border-color: var(--color-primary-light, #a5b4fc);
-  background: var(--color-bg-hover, #f3f4f6);
+  border-color: var(--color-primary-light);
+  background: var(--color-bg-soft);
 }
 
 .chip.active {
-  border-color: var(--color-primary, #667eea);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  border-color: transparent;
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-sm);
 }
 
 .chip-value {
@@ -293,7 +295,7 @@ watch(() => settingsStore.dailyTrainingDuration, (val) => {
 
 .chip-label {
   font-size: 12px;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 .setting-hint {
@@ -309,18 +311,18 @@ watch(() => settingsStore.dailyTrainingDuration, (val) => {
 }
 
 .hint-tag.easy {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--color-success-bg);
+  color: var(--color-success);
 }
 
 .hint-tag.medium {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
 }
 
 .hint-tag.hard {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
 }
 
 .duration-slider {
@@ -332,7 +334,7 @@ watch(() => settingsStore.dailyTrainingDuration, (val) => {
   width: 100%;
   height: 8px;
   border-radius: 4px;
-  background: var(--color-bg-tertiary, #e5e7eb);
+  background: var(--color-bg-muted);
   appearance: none;
   cursor: pointer;
 }
@@ -342,9 +344,9 @@ watch(() => settingsStore.dailyTrainingDuration, (val) => {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 2px 8px rgba(30, 58, 138, 0.4);
   transition: transform 0.2s ease;
 }
 
@@ -360,12 +362,12 @@ watch(() => settingsStore.dailyTrainingDuration, (val) => {
 
 .mark {
   font-size: 12px;
-  color: var(--color-text-muted, #9ca3af);
+  color: var(--color-text-muted);
   transition: color 0.2s ease;
 }
 
 .mark.active {
-  color: var(--color-primary, #667eea);
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -377,23 +379,24 @@ watch(() => settingsStore.dailyTrainingDuration, (val) => {
 .duration-value {
   font-size: 32px;
   font-weight: 700;
-  color: var(--color-primary, #667eea);
+  color: var(--color-primary);
 }
 
 .duration-unit {
   font-size: 14px;
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-text-secondary);
   margin-left: 4px;
 }
 
 .duration-desc {
   text-align: center;
   font-size: 13px;
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-text-secondary);
 }
 
 .summary-card {
-  background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%);
+  background: var(--color-primary-bg);
+  border: 1px solid transparent;
   border-radius: 16px;
   padding: 20px;
   margin-top: 24px;
@@ -405,12 +408,12 @@ watch(() => settingsStore.dailyTrainingDuration, (val) => {
   gap: 8px;
   font-size: 16px;
   font-weight: 600;
-  color: var(--color-text-primary, #1f2937);
+  color: var(--color-text-primary);
   margin-bottom: 16px;
 }
 
 .summary-header svg {
-  color: var(--color-primary, #667eea);
+  color: var(--color-primary);
 }
 
 .summary-stats {
@@ -428,33 +431,33 @@ watch(() => settingsStore.dailyTrainingDuration, (val) => {
 .summary-stat .stat-number {
   font-size: 24px;
   font-weight: 700;
-  color: var(--color-text-primary, #1f2937);
+  color: var(--color-text-primary);
 }
 
 .summary-stat .stat-text {
   font-size: 12px;
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-text-secondary);
   display: block;
 }
 
 .summary-stat.total .stat-number {
-  color: var(--color-primary, #667eea);
+  color: var(--color-primary);
   font-size: 28px;
 }
 
 .summary-times,
 .summary-equals {
   font-size: 20px;
-  color: var(--color-text-muted, #9ca3af);
+  color: var(--color-text-muted);
   font-weight: 300;
 }
 
 .summary-message {
   text-align: center;
   font-size: 14px;
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-text-secondary);
   padding-top: 12px;
-  border-top: 1px solid rgba(102, 126, 234, 0.2);
+  border-top: 1px solid var(--color-border);
 }
 
 .save-btn {
@@ -467,54 +470,22 @@ watch(() => settingsStore.dailyTrainingDuration, (val) => {
   margin-top: 24px;
   border: none;
   border-radius: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
 }
 
 .save-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 16px rgba(30, 58, 138, 0.4);
 }
 
 .save-btn:active {
   transform: translateY(0);
-}
-
-/* 深色模式 */
-:global(.dark) .settings-title {
-  color: #f9fafb;
-}
-
-:global(.dark) .settings-desc,
-:global(.dark) .setting-label {
-  color: #d1d5db;
-}
-
-:global(.dark) .chip {
-  background: #374151;
-  border-color: #4b5563;
-}
-
-:global(.dark) .chip:hover {
-  background: #4b5563;
-  border-color: #667eea;
-}
-
-:global(.dark) .slider {
-  background: #374151;
-}
-
-:global(.dark) .summary-card {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
-}
-
-:global(.dark) .summary-stat .stat-number {
-  color: #f9fafb;
 }
 
 /* 響應式 */

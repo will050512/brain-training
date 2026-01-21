@@ -209,7 +209,7 @@ function startTraining(): void {
         <span class="text-sm font-semibold" style="color: var(--color-text-muted)">{{ stepTitle }}</span>
         <span class="text-xs font-bold" style="color: var(--color-primary)">{{ Math.round(progress) }}%</span>
       </div>
-      <div class="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+      <div class="h-1.5 w-full bg-[var(--color-bg-muted)] rounded-full overflow-hidden">
         <div 
           class="h-full rounded-full transition-all duration-500"
           :style="{ width: progress + '%', backgroundColor: 'var(--color-primary)' }"
@@ -283,8 +283,8 @@ function startTraining(): void {
                 @click="userGender = gender.value as typeof userGender"
                 class="flex-1 py-3 rounded-lg border-2 transition-all font-medium touch-min"
                 :class="userGender === gender.value 
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' 
-                  : 'border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-400'"
+                  ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)] text-[var(--color-primary-dark)]' 
+                  : 'border-[var(--color-border)] text-[var(--color-text-secondary)]'"
               >
                 {{ gender.label }}
               </button>
@@ -304,8 +304,8 @@ function startTraining(): void {
                 @click="selectedDuration = duration as typeof selectedDuration"
                 class="py-3 rounded-lg border-2 transition-all text-center font-medium touch-min"
                 :class="selectedDuration === duration 
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' 
-                  : 'border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-400'"
+                  ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)] text-[var(--color-primary-dark)]' 
+                  : 'border-[var(--color-border)] text-[var(--color-text-secondary)]'"
               >
                 {{ duration }}<span class="text-xs ml-0.5">分</span>
               </button>
@@ -320,20 +320,20 @@ function startTraining(): void {
                 @click="selectedMode = 'general'"
                 class="p-4 rounded-lg border-2 text-left transition-all touch-min"
                 :class="selectedMode === 'general' 
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' 
-                  : 'border-gray-200 dark:border-slate-600'"
+                  ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
+                  : 'border-[var(--color-border)]'"
               >
-                <p class="font-bold mb-1" :class="selectedMode === 'general' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-slate-300'">🌱 一般模式</p>
+                <p class="font-bold mb-1" :class="selectedMode === 'general' ? 'text-[var(--color-primary-dark)]' : 'text-[var(--color-text-secondary)]'">🌱 一般模式</p>
                 <p class="text-xs opacity-80" style="color: var(--color-text-muted)">30天趨勢，15%閾值</p>
               </button>
               <button
                 @click="selectedMode = 'professional'"
                 class="p-4 rounded-lg border-2 text-left transition-all touch-min"
                 :class="selectedMode === 'professional' 
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' 
-                  : 'border-gray-200 dark:border-slate-600'"
+                  ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
+                  : 'border-[var(--color-border)]'"
               >
-                <p class="font-bold mb-1" :class="selectedMode === 'professional' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-slate-300'">⚕️ 專業模式</p>
+                <p class="font-bold mb-1" :class="selectedMode === 'professional' ? 'text-[var(--color-primary-dark)]' : 'text-[var(--color-text-secondary)]'">⚕️ 專業模式</p>
                 <p class="text-xs opacity-80" style="color: var(--color-text-muted)">7天趨勢，7%閾值</p>
               </button>
             </div>
@@ -348,11 +348,11 @@ function startTraining(): void {
             <button
               @click="enableBehaviorTracking = !enableBehaviorTracking"
               class="w-12 h-7 rounded-full transition-colors relative touch-min"
-              :class="enableBehaviorTracking ? 'bg-blue-500' : 'bg-gray-300 dark:bg-slate-600'"
+              :class="enableBehaviorTracking ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-border)]'"
               aria-label="Toggle behavior tracking"
             >
               <div 
-                class="absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow transition-transform"
+                class="absolute top-1 left-1 w-5 h-5 bg-[var(--color-surface)] rounded-full shadow transition-transform"
                 :class="enableBehaviorTracking ? 'translate-x-5' : 'translate-x-0'"
               ></div>
             </button>
@@ -370,10 +370,10 @@ function startTraining(): void {
              @click="assessmentChoice = 'mini-cog'"
              class="card p-4 text-left transition-all relative overflow-hidden group border-2 touch-min"
              :class="assessmentChoice === 'mini-cog' 
-               ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-               : 'border-transparent hover:border-gray-300'"
+               ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
+               : 'border-transparent hover:border-[var(--color-border)]'"
            >
-             <div v-if="assessmentChoice === 'mini-cog'" class="absolute top-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-bl-lg font-bold">
+             <div v-if="assessmentChoice === 'mini-cog'" class="absolute top-0 right-0 bg-[var(--color-primary)] text-[var(--color-text-inverse)] text-xs px-2 py-1 rounded-bl-lg font-bold">
                已選擇
              </div>
              <div class="flex items-start gap-4">
@@ -387,8 +387,8 @@ function startTraining(): void {
                    國際標準認知篩檢工具，包含詞語回憶與時鐘繪圖測試，約 3-5 分鐘。
                  </p>
                  <div class="flex flex-wrap gap-2">
-                   <span class="badge badge--neutral bg-white dark:bg-slate-800">✓ 精準難度匹配</span>
-                   <span class="badge badge--neutral bg-white dark:bg-slate-800">✓ 專業報告</span>
+                   <span class="badge badge--neutral bg-[var(--color-surface)]">✓ 精準難度匹配</span>
+                   <span class="badge badge--neutral bg-[var(--color-surface)]">✓ 專業報告</span>
                  </div>
                </div>
              </div>
@@ -399,8 +399,8 @@ function startTraining(): void {
              @click="assessmentChoice = 'quick'"
              class="card p-4 text-left transition-all border-2 touch-min"
              :class="assessmentChoice === 'quick' 
-               ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-               : 'border-transparent hover:border-gray-300'"
+               ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
+               : 'border-transparent hover:border-[var(--color-border)]'"
            >
              <div class="flex items-start gap-4">
                <span class="text-2xl mt-1">⚡</span>
@@ -418,8 +418,8 @@ function startTraining(): void {
              @click="assessmentChoice = 'trial'"
              class="card p-4 text-left transition-all border-2 touch-min"
              :class="assessmentChoice === 'trial' 
-               ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-               : 'border-transparent hover:border-gray-300'"
+               ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
+               : 'border-transparent hover:border-[var(--color-border)]'"
            >
              <div class="flex items-start gap-4">
                <span class="text-2xl mt-1">⏭️</span>
@@ -445,8 +445,8 @@ function startTraining(): void {
               v-for="(game, index) in assessmentGames"
               :key="game.id"
               class="w-3 h-3 rounded-full transition-all duration-300"
-              :class="index < currentAssessmentGame ? 'bg-green-500 scale-100' : 
-                      index === currentAssessmentGame ? 'bg-blue-500 scale-125' : 'bg-gray-200 dark:bg-slate-600'"
+              :class="index < currentAssessmentGame ? 'bg-[var(--color-success)] scale-100' : 
+                      index === currentAssessmentGame ? 'bg-[var(--color-primary)] scale-125' : 'bg-[var(--color-bg-muted)]'"
             ></div>
           </div>
           
@@ -489,8 +489,8 @@ function startTraining(): void {
               <span>📊</span> 您的初始評估
             </h3>
             <div class="grid grid-cols-3 gap-4">
-              <div v-for="result in assessmentResults" :key="result.dimension" class="text-center p-2 rounded-lg bg-gray-50 dark:bg-slate-700/50">
-                <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ result.score }}</p>
+              <div v-for="result in assessmentResults" :key="result.dimension" class="text-center p-2 rounded-lg bg-[var(--color-bg-soft)]">
+                <p class="text-2xl font-bold text-[var(--color-primary)]">{{ result.score }}</p>
                 <p class="text-xs font-medium mt-1 capitalize opacity-70" style="color: var(--color-text)">{{ result.dimension }}</p>
               </div>
             </div>

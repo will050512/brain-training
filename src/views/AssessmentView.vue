@@ -1,402 +1,427 @@
 <template>
   <div 
-    class="bg-gradient-to-b from-blue-50 to-white dark:from-slate-900 dark:to-slate-800"
-    :class="stage === 'mini-cog' ? 'h-screen h-[100dvh] flex flex-col overflow-hidden' : 'min-h-screen'"
+    class="min-h-screen bg-[var(--color-bg)] flex flex-col transition-colors duration-300 font-sans"
+    :class="{ 'h-screen overflow-hidden': stage === 'mini-cog' }"
   >
-    <!-- 頭部 -->
-    <div class="bg-[var(--color-surface)] shadow-sm flex-shrink-0">
-      <div class="container mx-auto px-4 py-3 sm:py-4">
-        <div class="flex items-center justify-between">
-          <router-link to="/" class="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">
-            ← 返回
+    <!-- Header: Clean & Minimal -->
+    <header class="bg-[var(--color-surface)]/80 backdrop-blur-md border-b border-[var(--color-border)] sticky top-0 z-30 safe-area-top">
+      <div class="container mx-auto px-4">
+        <div class="flex items-center justify-between h-14">
+          <router-link 
+            to="/" 
+            class="btn btn-ghost btn-sm -ml-2 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] gap-1"
+          >
+            <span class="text-xl">←</span> <span class="text-sm font-medium">返回</span>
           </router-link>
-          <h1 class="text-lg sm:text-xl font-bold text-[var(--color-text)]">能力評估測試</h1>
-          <div class="w-16"></div>
+          <h1 class="text-lg font-bold text-[var(--color-text)] tracking-wide">能力評估</h1>
+          <div class="w-12"></div> <!-- Spacer for center alignment -->
         </div>
       </div>
-    </div>
+    </header>
 
-    <div
-      class="page-shell"
-      :class="stage === 'mini-cog' ? 'flex-1 overflow-hidden py-2 sm:py-4' : 'py-4 sm:py-8'"
+    <!-- Main Content -->
+    <main 
+      class="flex-1 w-full max-w-3xl mx-auto p-4 flex flex-col safe-area-bottom"
+      :class="{ 'overflow-hidden p-0 sm:p-0': stage === 'mini-cog' }"
     >
-      <!-- Mini-Cog 測驗模式 -->
+      
+      <!-- 1. Mini-Cog Mode (Preserved Wrapper) -->
       <MiniCogFlow 
         v-if="stage === 'mini-cog'"
         :language="selectedLanguage"
         @complete="handleMiniCogComplete"
         @cancel="stage = 'select'"
+        class="h-full"
       />
 
-      <!-- 選擇評估類型 -->
-      <div v-else-if="stage === 'select'" class="max-w-3xl mx-auto">
+      <!-- 2. Select Assessment Type -->
+      <div v-else-if="stage === 'select'" class="flex-1 flex flex-col justify-center animate-fade-in py-4">
         <div class="text-center mb-8">
-          <div class="text-6xl mb-4">🧠</div>
-          <h2 class="text-2xl font-bold text-[var(--color-text)] mb-2">選擇評估類型</h2>
-          <p class="text-[var(--color-text-secondary)]">請選擇適合您的評估方式</p>
+          <div class="text-6xl mb-4 filter drop-shadow-sm">🧠</div>
+          <h2 class="text-2xl font-bold text-[var(--color-text)] mb-2">選擇評估方式</h2>
+          <p class="text-[var(--color-text-secondary)]">了解您的認知狀態，量身打造訓練計畫</p>
         </div>
 
-        <div class="grid md:grid-cols-2 gap-6">
-          <!-- Mini-Cog 快速篩檢 -->
-          <div class="assessment-card mini-cog-card" @click="startMiniCog">
-            <span class="badge badge--primary absolute top-4 right-4">推薦</span>
-            <div class="card-icon">⏱️</div>
-            <h3 class="card-title">Mini-Cog™ 快速篩檢</h3>
-            <p class="card-description">
-              國際標準的認知篩檢工具，適合快速評估認知功能狀態。
-            </p>
-            <ul class="card-features">
-              <li>⏱️ 約 3 分鐘完成</li>
-              <li>📝 3 詞語記憶 + 時鐘繪圖</li>
-              <li>📊 專業評分與 MMSE 對照</li>
-              <li>🎯 早期認知變化偵測</li>
-            </ul>
-            <div class="card-action">
-              <span>開始快速篩檢</span>
-              <span class="arrow">→</span>
+        <div class="grid md:grid-cols-2 gap-5 mb-8">
+          <!-- Mini-Cog Card -->
+          <button 
+            class="card text-left p-5 relative group transition-all duration-300 border border-[var(--color-primary)]/20 hover:border-[var(--color-primary)] hover:shadow-lg bg-[var(--color-surface)] overflow-visible"
+            @click="startMiniCog"
+          >
+            <div class="absolute -top-3 -right-3">
+              <span class="bg-[var(--color-primary)] text-[var(--color-text-inverse)] text-xs font-bold px-3 py-1 rounded-full shadow-md animate-pulse">
+                推薦
+              </span>
             </div>
-          </div>
-
-          <!-- 完整能力評估 -->
-          <div class="assessment-card full-assessment-card" @click="stage = 'intro'">
-            <div class="card-icon">📋</div>
-            <h3 class="card-title">完整能力評估</h3>
-            <p class="card-description">
-              全面評估反應力、記憶力、邏輯力，為您推薦適合的遊戲難度。
-            </p>
-            <ul class="card-features">
-              <li>⏱️ 約 5 分鐘完成</li>
-              <li>⚡ 反應力測試</li>
-              <li>🧠 記憶力測試</li>
-              <li>🧩 邏輯力測試</li>
-            </ul>
-            <div class="card-action">
-              <span>開始完整評估</span>
-              <span class="arrow">→</span>
+            <div class="flex items-start gap-4">
+              <div class="text-4xl group-hover:scale-110 transition-transform duration-300 bg-[var(--color-primary-bg)] w-14 h-14 flex items-center justify-center rounded-2xl">⏱️</div>
+              <div>
+                <h3 class="text-lg font-bold text-[var(--color-text)] mb-1 group-hover:text-[var(--color-primary)] transition-colors">Mini-Cog™ 快篩</h3>
+                <div class="flex items-center gap-2 text-xs font-medium text-[var(--color-primary)] bg-[var(--color-primary-bg)]/50 px-2 py-0.5 rounded-md w-fit mb-2">
+                  <span>⚡ 3 分鐘</span>
+                  <span>•</span>
+                  <span>國際標準</span>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-
-        <!-- 語言選擇（用於 Mini-Cog） -->
-        <div class="language-selector mt-8">
-          <label class="text-sm text-[var(--color-text-muted)] mr-3">Mini-Cog 詞語語言：</label>
-          <select v-model="selectedLanguage" class="language-select">
-            <option value="zh-TW">繁體中文</option>
-            <option value="zh-CN">简体中文</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-
-        <!-- 歷史記錄提示 -->
-        <div v-if="hasRecentMiniCog" class="recent-result-banner mt-6">
-          <div class="banner-icon">📊</div>
-          <div class="banner-content">
-            <p class="banner-title">您最近有 Mini-Cog 評估記錄</p>
-            <p class="banner-date">{{ formatRecentMiniCogDate }}</p>
-          </div>
-          <button class="banner-action" @click="viewMiniCogHistory">
-            查看記錄
+            <p class="text-sm text-[var(--color-text-secondary)] mt-3 leading-relaxed">
+              透過詞語記憶與畫鐘測驗，快速篩檢認知功能狀態。
+            </p>
           </button>
+
+          <!-- Full Assessment Card -->
+          <button 
+            class="card text-left p-5 group transition-all duration-300 border border-[var(--color-border)] hover:border-[var(--color-primary)]/50 hover:shadow-lg bg-[var(--color-surface)]"
+            @click="stage = 'intro'"
+          >
+            <div class="flex items-start gap-4">
+              <div class="text-4xl group-hover:scale-110 transition-transform duration-300 bg-[var(--color-bg-muted)] w-14 h-14 flex items-center justify-center rounded-2xl">📋</div>
+              <div>
+                <h3 class="text-lg font-bold text-[var(--color-text)] mb-1 group-hover:text-[var(--color-primary)] transition-colors">完整能力評估</h3>
+                <div class="flex items-center gap-2 text-xs font-medium text-[var(--color-text-muted)] bg-[var(--color-bg-muted)]/50 px-2 py-0.5 rounded-md w-fit mb-2">
+                  <span>🎯 5 分鐘</span>
+                  <span>•</span>
+                  <span>綜合分析</span>
+                </div>
+              </div>
+            </div>
+            <p class="text-sm text-[var(--color-text-secondary)] mt-3 leading-relaxed">
+              全面測試反應、記憶與邏輯能力，提供詳細雷達圖分析。
+            </p>
+          </button>
+        </div>
+
+        <!-- Language Selector -->
+        <div class="flex items-center justify-center gap-3 mt-auto mb-6">
+          <label class="text-sm font-medium text-[var(--color-text-muted)]">Mini-Cog 語言：</label>
+          <div class="relative">
+            <select 
+              v-model="selectedLanguage" 
+              class="appearance-none bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)] py-2 pl-4 pr-10 rounded-xl focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent text-sm font-medium shadow-sm min-h-[44px]"
+            >
+              <option value="zh-TW">繁體中文</option>
+              <option value="zh-CN">简体中文</option>
+              <option value="en">English</option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--color-text-muted)]">
+              <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- History Hint -->
+        <div v-if="hasRecentMiniCog" class="animate-slide-up">
+          <div class="bg-[var(--color-success-bg)] border border-[var(--color-success)]/20 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-3">
+              <div class="bg-white rounded-full p-2 shadow-sm text-lg">📊</div>
+              <div>
+                <p class="font-bold text-[var(--color-success)] text-sm">最近記錄</p>
+                <p class="text-xs text-[var(--color-text-secondary)] opacity-80">{{ formatRecentMiniCogDate }}</p>
+              </div>
+            </div>
+            <button 
+              class="btn btn-sm btn-outline border-[var(--color-success)] text-[var(--color-success)] hover:bg-[var(--color-success)] hover:text-white px-4"
+              @click="viewMiniCogHistory"
+            >
+              查看
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- 開始前說明（完整評估） -->
-      <div v-else-if="stage === 'intro'" class="max-w-2xl mx-auto">
-        <div class="card text-center">
-          <div class="text-6xl mb-6">🧠</div>
-          <h2 class="text-2xl font-bold mb-4">能力評估測試</h2>
-          <p class="text-[var(--color-text-secondary)] text-lg mb-6">
-            這個簡短的測試將幫助我們了解您的認知能力，
-            <br />並為您推薦最適合的遊戲難度。
+      <!-- 3. Intro Stage -->
+      <div v-else-if="stage === 'intro'" class="flex-1 flex flex-col animate-slide-up max-w-lg mx-auto w-full justify-center">
+        <div class="card p-6 sm:p-8 text-center shadow-xl border-t-4 border-t-[var(--color-primary)]">
+          <div class="w-20 h-20 bg-[var(--color-primary-bg)] rounded-full flex items-center justify-center mx-auto mb-6 text-4xl shadow-inner">
+            🧠
+          </div>
+          <h2 class="text-2xl font-bold mb-3 text-[var(--color-text)]">準備好了嗎？</h2>
+          <p class="text-[var(--color-text-secondary)] mb-8 leading-relaxed">
+            我們將進行三個簡單的測驗，<br/>幫助系統了解您目前的狀態。
           </p>
           
-          <div class="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-6 mb-6 text-left">
-            <h3 class="font-bold mb-3 text-blue-800 dark:text-blue-300">📋 測試內容</h3>
-            <ul class="space-y-2 text-blue-700 dark:text-blue-300">
-              <li class="flex items-center gap-2">
-                <span class="text-xl">⚡</span>
-                <span>反應力測試 - 快速選擇正確顏色</span>
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="text-xl">🧠</span>
-                <span>記憶力測試 - 記住並輸入數字序列</span>
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="text-xl">🧩</span>
-                <span>邏輯力測試 - 簡單數學計算</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="bg-orange-50 dark:bg-orange-900/30 rounded-xl p-4 mb-4 text-orange-800 dark:text-orange-300">
-            <p class="font-medium">⏰ 倒數計時說明</p>
-            <p class="text-sm mt-1">每道題目有固定的作答時間限制，畫面上會顯示剩餘秒數。</p>
-            <p class="text-sm mt-1">當剩餘時間少於 3 秒時，計時器會變成紅色提醒您加快作答。</p>
-            <p class="text-sm mt-1">若時間到未作答，系統將自動跳至下一題。</p>
-          </div>
-          
-          <div class="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-4 mb-8 text-amber-800 dark:text-amber-300">
-            <p>⏱️ 預計時間：約 3 分鐘</p>
-            <p class="text-sm mt-1">請在安靜的環境下進行測試</p>
+          <div class="space-y-4 mb-8">
+            <div class="flex items-center gap-4 p-3 rounded-xl bg-[var(--color-bg-soft)] border border-[var(--color-border)]">
+              <span class="text-2xl bg-white rounded-lg p-2 shadow-sm">⚡</span>
+              <div class="text-left">
+                <div class="font-bold text-[var(--color-text)]">反應力</div>
+                <div class="text-xs text-[var(--color-text-muted)]">快速選擇看到的顏色</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-4 p-3 rounded-xl bg-[var(--color-bg-soft)] border border-[var(--color-border)]">
+              <span class="text-2xl bg-white rounded-lg p-2 shadow-sm">🧠</span>
+              <div class="text-left">
+                <div class="font-bold text-[var(--color-text)]">記憶力</div>
+                <div class="text-xs text-[var(--color-text-muted)]">記住數字序列並輸入</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-4 p-3 rounded-xl bg-[var(--color-bg-soft)] border border-[var(--color-border)]">
+              <span class="text-2xl bg-white rounded-lg p-2 shadow-sm">🧩</span>
+              <div class="text-left">
+                <div class="font-bold text-[var(--color-text)]">邏輯力</div>
+                <div class="text-xs text-[var(--color-text-muted)]">簡單的數學計算</div>
+              </div>
+            </div>
           </div>
           
-          <button 
-            @click="startAssessment" 
-            class="btn btn-primary btn-lg text-xl px-12 py-4"
-          >
-            開始測試
-          </button>
-          <button 
-            @click="stage = 'select'" 
-            class="btn btn-secondary mt-4 px-8"
-          >
-            返回選擇
-          </button>
+          <div class="space-y-3">
+            <button @click="startAssessment" class="btn btn-primary btn-xl w-full text-lg shadow-lg hover:shadow-xl transform transition hover:-translate-y-1">
+              開始測試
+            </button>
+            <button @click="stage = 'select'" class="btn btn-ghost w-full">
+              稍後再說
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- 測試進行中 -->
-      <div v-else-if="stage === 'testing'" class="max-w-2xl mx-auto assessment-testing">
-        <!-- 進度條 -->
-        <div class="mb-6">
-          <div class="flex justify-between text-sm text-[var(--color-text-muted)] mb-2">
-            <span>第 {{ currentIndex + 1 }} 題，共 {{ questions.length }} 題</span>
-            <span>{{ questionTypeLabel }}</span>
+      <!-- 4. Testing Stage -->
+      <div v-else-if="stage === 'testing'" class="flex-1 flex flex-col w-full max-w-xl mx-auto py-4">
+        <!-- Progress Header -->
+        <div class="mb-6 px-2">
+          <div class="flex justify-between items-end mb-2">
+            <span class="text-sm font-bold text-[var(--color-primary)] bg-[var(--color-primary-bg)] px-3 py-1 rounded-full">
+              {{ questionTypeLabel }}
+            </span>
+            <span class="text-sm font-medium text-[var(--color-text-muted)] tracking-wider">
+              {{ currentIndex + 1 }} <span class="text-xs opacity-60">/</span> {{ questions.length }}
+            </span>
           </div>
-          <div class="progress-bar h-3">
+          <div class="h-2 bg-[var(--color-bg-muted)] rounded-full overflow-hidden shadow-inner">
             <div 
-              class="progress-bar-fill transition-all duration-300"
+              class="h-full bg-[var(--color-primary)] transition-all duration-500 ease-out rounded-full"
               :style="{ width: `${((currentIndex + 1) / questions.length) * 100}%` }"
             ></div>
           </div>
         </div>
 
-        <!-- 題目卡片 -->
-        <div class="card">
-          <!-- 反應力題目 -->
-          <template v-if="currentQuestion?.type === 'reaction'">
-            <div class="text-center">
-              <p class="text-lg text-[var(--color-text-secondary)] mb-6">{{ currentQuestion.question }}</p>
+        <!-- Question Card -->
+        <div class="card flex-1 flex flex-col relative overflow-hidden shadow-lg border border-[var(--color-border-light)]">
+          <!-- Timer Bar (Top) -->
+          <div class="absolute top-0 left-0 w-full h-1 bg-[var(--color-bg-muted)]">
+            <div 
+              class="h-full transition-all duration-1000 linear"
+              :class="timeLeft <= 3 ? 'bg-[var(--color-danger)]' : 'bg-[var(--color-primary)]'"
+              :style="{ width: `${(timeLeft / (currentQuestion?.timeLimit || 10)) * 100}%` }"
+            ></div>
+          </div>
+
+          <!-- Timer Badge -->
+          <div class="absolute top-4 right-4 z-10">
+             <div 
+               class="flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm shadow-sm transition-all duration-300 border-2"
+               :class="timeLeft <= 3 
+                 ? 'bg-[var(--color-danger-bg)] text-[var(--color-danger)] border-[var(--color-danger)] scale-110' 
+                 : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border-[var(--color-border)]'"
+             >
+               {{ timeLeft }}
+             </div>
+           </div>
+          
+          <div class="flex-1 flex flex-col items-center justify-center p-6 text-center">
+            
+            <!-- Reaction Type -->
+            <template v-if="currentQuestion?.type === 'reaction'">
+              <h3 class="text-xl text-[var(--color-text)] mb-8 font-bold">{{ currentQuestion.question }}</h3>
+              
               <div 
-                class="text-6xl font-bold mb-8 p-8 rounded-xl"
+                class="w-full aspect-video max-h-48 rounded-3xl shadow-md mb-8 flex items-center justify-center transform transition-all duration-300 hover:scale-[1.02]"
                 :style="{ 
                   backgroundColor: currentQuestion.data?.displayColor as string,
-                  color: 'white'
+                  boxShadow: `0 10px 30px -10px ${currentQuestion.data?.displayColor}`
                 }"
               >
-                {{ currentQuestion.data?.displayText }}
+                <span class="text-5xl font-black text-white drop-shadow-md tracking-widest">
+                  {{ currentQuestion.data?.displayText }}
+                </span>
               </div>
-              <div class="grid grid-cols-2 gap-4">
+
+              <div class="grid grid-cols-2 gap-4 w-full">
                 <button
                   v-for="option in currentQuestion.options"
                   :key="option"
                   @click="submitAnswer(option)"
-                  class="btn btn-secondary text-xl py-4"
+                  class="btn btn-secondary btn-xl text-lg font-bold border-2 border-transparent hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-bg)] hover:text-[var(--color-primary)] transition-all active:scale-95"
                   :disabled="isSubmitting"
                 >
                   {{ option }}
                 </button>
               </div>
-            </div>
-          </template>
+            </template>
 
-          <!-- 記憶力題目 -->
-          <template v-else-if="currentQuestion?.type === 'memory'">
-            <div class="text-center">
-              <p class="text-lg text-[var(--color-text-secondary)] mb-6">{{ currentQuestion.question }}</p>
+            <!-- Memory Type -->
+            <template v-else-if="currentQuestion?.type === 'memory'">
+              <h3 class="text-xl text-[var(--color-text)] mb-8 font-bold">{{ currentQuestion.question }}</h3>
               
-              <!-- 顯示數字階段 -->
-              <div v-if="memoryPhase === 'display'" class="mb-8">
-                <div class="text-6xl font-bold text-blue-600 tracking-widest py-8">
+              <div v-if="memoryPhase === 'display'" class="flex-1 flex flex-col items-center justify-center animate-fade-in w-full">
+                <div class="text-7xl font-black text-[var(--color-primary)] tracking-[0.2em] mb-8 scale-110 transform transition-transform">
                   {{ currentQuestion.data?.sequence }}
                 </div>
-                <p class="text-[var(--color-text-muted)]">請記住這些數字...</p>
+                <div class="w-full bg-[var(--color-bg-muted)] h-1 mt-8 rounded-full overflow-hidden max-w-xs mx-auto">
+                   <div class="h-full bg-[var(--color-primary)] animate-[shrink_3s_linear_forwards]"></div>
+                </div>
               </div>
               
-              <!-- 輸入階段 -->
-              <div v-else class="mb-6">
+              <div v-else class="flex-1 flex flex-col items-center justify-center w-full animate-fade-in">
                 <input
                   v-model="memoryInput"
                   type="text"
                   inputmode="numeric"
                   pattern="[0-9]*"
-                  class="text-4xl text-center font-bold tracking-widest w-full max-w-xs border-2 border-[var(--color-border)] rounded-xl p-4 focus:border-blue-500 focus:outline-none bg-[var(--color-surface)] text-[var(--color-text)]"
-                  placeholder="輸入數字"
+                  class="input text-center text-4xl font-bold tracking-[0.5em] h-20 w-full max-w-[300px] mb-8 rounded-2xl shadow-inner bg-[var(--color-bg-soft)] border-2 focus:border-[var(--color-primary)]"
+                  placeholder="____"
                   @keyup.enter="submitAnswer(memoryInput)"
                   ref="memoryInputRef"
+                  autocomplete="off"
                 />
                 <button
                   @click="submitAnswer(memoryInput)"
-                  class="btn btn-primary btn-lg mt-6 px-12"
+                  class="btn btn-primary btn-xl w-full max-w-xs shadow-lg"
                   :disabled="!memoryInput || isSubmitting"
                 >
-                  確定
+                  確認答案
                 </button>
               </div>
-            </div>
-          </template>
+            </template>
 
-          <!-- 邏輯力題目 -->
-          <template v-else-if="currentQuestion?.type === 'logic'">
-            <div class="text-center">
-              <p class="text-lg text-[var(--color-text-secondary)] mb-4">請計算以下算式</p>
-              <div class="text-5xl font-bold text-purple-600 mb-8 py-6">
-                {{ currentQuestion.question }}
+            <!-- Logic Type -->
+            <template v-else-if="currentQuestion?.type === 'logic'">
+              <h3 class="text-xl text-[var(--color-text)] mb-8 font-bold">請計算結果</h3>
+              
+              <div class="w-full bg-[var(--color-accent-purple)]/10 border border-[var(--color-accent-purple)]/20 rounded-3xl p-8 mb-10">
+                <div class="text-6xl font-black text-[var(--color-accent-purple)] tracking-wider">
+                  {{ currentQuestion.question }}
+                </div>
               </div>
-              <div class="grid grid-cols-2 gap-4">
+
+              <div class="grid grid-cols-2 gap-4 w-full">
                 <button
                   v-for="option in currentQuestion.options"
                   :key="option"
                   @click="submitAnswer(option)"
-                  class="btn btn-secondary text-2xl py-4"
+                  class="btn btn-secondary btn-xl text-2xl font-bold border-2 border-transparent hover:border-[var(--color-accent-purple)] hover:text-[var(--color-accent-purple)] active:scale-95"
                   :disabled="isSubmitting"
                 >
                   {{ option }}
                 </button>
               </div>
-            </div>
-          </template>
-
-          <!-- 倒數計時 -->
-          <div class="mt-6 text-center">
-            <div 
-              class="inline-flex items-center gap-2 px-4 py-2 rounded-full"
-              :class="timeLeft <= 3 ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-[var(--color-bg-soft)] text-[var(--color-text-secondary)]'"
-            >
-              <span>⏱️</span>
-              <span class="font-bold">{{ timeLeft }} 秒</span>
-            </div>
+            </template>
           </div>
         </div>
       </div>
 
-      <!-- Mini-Cog 結果頁面 -->
-      <div v-else-if="stage === 'mini-cog-result'" class="max-w-2xl mx-auto">
-        <div class="card text-center">
-          <div class="text-6xl mb-6">🎉</div>
-          <h2 class="text-2xl font-bold mb-2 text-[var(--color-text)]">Mini-Cog 篩檢完成！</h2>
-          <p class="text-[var(--color-text-secondary)] mb-8">以下是您的篩檢結果</p>
-
-          <!-- 分數卡片 -->
-          <div class="bg-[var(--color-bg-soft)] rounded-xl p-6 mb-8">
-            <div class="text-4xl font-bold text-[var(--color-primary)] mb-2">
-              {{ recentMiniCogResult?.totalScore }} / 5
+      <!-- 5. Mini-Cog Result -->
+      <div v-else-if="stage === 'mini-cog-result'" class="flex-1 flex flex-col max-w-lg mx-auto w-full animate-fade-in py-4">
+        <div class="card p-6 text-center border-t-4 border-t-[var(--color-primary)] shadow-xl">
+          <div class="mb-4 inline-block p-4 rounded-full bg-[var(--color-success-bg)] text-4xl shadow-sm">
+            🎉
+          </div>
+          <h2 class="text-2xl font-bold mb-1 text-[var(--color-text)]">篩檢完成</h2>
+          <p class="text-[var(--color-text-secondary)] mb-6 text-sm">您的認知篩檢結果如下</p>
+          
+          <div class="bg-[var(--color-bg-soft)] rounded-2xl p-6 mb-6 border border-[var(--color-border)] relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-[var(--color-primary)]/20"></div>
+            <div class="text-5xl font-black text-[var(--color-primary)] mb-2 tracking-tighter">
+              {{ recentMiniCogResult?.totalScore }}<span class="text-2xl text-[var(--color-text-muted)] font-medium">/5</span>
             </div>
-            <div class="text-[var(--color-text-secondary)]">總分</div>
+            <div class="text-sm font-bold text-[var(--color-text-secondary)] uppercase tracking-wide">總分</div>
             
-            <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-[var(--color-border)]">
-              <div>
+            <div class="grid grid-cols-2 gap-px bg-[var(--color-border)] mt-6 rounded-xl overflow-hidden border border-[var(--color-border)]">
+              <div class="bg-[var(--color-surface)] p-3">
                 <div class="text-xl font-bold text-[var(--color-text)]">
                   {{ recentMiniCogResult?.wordRecall.score }} / 3
                 </div>
-                <div class="text-sm text-[var(--color-text-muted)]">詞語回憶</div>
+                <div class="text-xs text-[var(--color-text-muted)]">詞語回憶</div>
               </div>
-              <div>
+              <div class="bg-[var(--color-surface)] p-3">
                 <div class="text-xl font-bold text-[var(--color-text)]">
                   {{ recentMiniCogResult?.clockDrawing.score }} / 2
                 </div>
-                <div class="text-sm text-[var(--color-text-muted)]">時鐘繪圖</div>
+                <div class="text-xs text-[var(--color-text-muted)]">時鐘繪圖</div>
               </div>
             </div>
           </div>
 
-          <!-- 建議 -->
-          <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 mb-8 text-left">
-            <h3 class="font-bold text-blue-800 dark:text-blue-300 mb-2">💡 評估建議</h3>
-            <p class="text-blue-700 dark:text-blue-200 text-sm leading-relaxed">
-              根據您的篩檢結果，我們已為您調整了遊戲難度。建議您每天進行 15 分鐘的認知訓練，持續保持大腦健康。
+          <div class="bg-[var(--color-info-bg)]/40 rounded-xl p-4 mb-8 text-left border border-[var(--color-info-bg)] flex gap-3">
+            <span class="text-xl shrink-0">💡</span>
+            <p class="text-[var(--color-text-primary)] text-sm leading-relaxed">
+              <span class="font-bold block mb-1">系統建議</span>
+              已根據結果調整遊戲難度。建議每天進行 15 分鐘認知訓練。
             </p>
           </div>
 
-          <div class="flex flex-col gap-3">
-            <button 
-              @click="startDailyTraining" 
-              class="btn btn-primary btn-lg w-full"
-            >
+          <div class="space-y-3">
+            <button @click="startDailyTraining" class="btn btn-primary btn-xl w-full shadow-lg hover:shadow-xl hover:-translate-y-1">
               開始今日訓練
             </button>
-            <button 
-              @click="viewReport" 
-              class="btn btn-secondary w-full"
-            >
+            <button @click="viewReport" class="btn btn-ghost w-full text-sm">
               查看詳細報告
             </button>
           </div>
         </div>
       </div>
 
-      <!-- 結果頁面 -->
-      <div v-else-if="stage === 'result'" class="max-w-2xl mx-auto">
-        <div class="card text-center">
-          <div class="text-6xl mb-6">🎉</div>
-          <h2 class="text-2xl font-bold mb-2 text-[var(--color-text)]">測試完成！</h2>
-          <p class="text-[var(--color-text-secondary)] mb-8">以下是您的評估結果</p>
+      <!-- 6. Full Assessment Result -->
+      <div v-else-if="stage === 'result'" class="flex-1 flex flex-col max-w-lg mx-auto w-full animate-fade-in py-4">
+        <div class="card p-6 text-center border-t-4 border-t-[var(--color-primary)] shadow-xl">
+          <div class="mb-4 inline-block p-4 rounded-full bg-[var(--color-primary-bg)] text-4xl shadow-sm">
+            🏆
+          </div>
+          <h2 class="text-2xl font-bold mb-1 text-[var(--color-text)]">能力評估完成！</h2>
+          <p class="text-[var(--color-text-secondary)] mb-6 text-sm">您的各項能力分析</p>
 
-          <!-- 分數卡片 -->
-          <div class="grid grid-cols-3 gap-4 mb-8">
-            <div class="bg-red-50 dark:bg-red-900/20 rounded-xl p-4">
-              <div class="text-3xl mb-2">⚡</div>
-              <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ result?.scores.reaction }}</div>
-              <div class="text-sm text-[var(--color-text-muted)]">反應力</div>
+          <div class="grid grid-cols-3 gap-3 mb-6">
+            <div class="bg-[var(--color-surface)] rounded-2xl p-3 border border-[var(--color-border)] shadow-sm flex flex-col items-center">
+              <div class="text-xl mb-1 bg-[var(--color-bg-soft)] w-8 h-8 flex items-center justify-center rounded-full">⚡</div>
+              <div class="text-xl font-black text-[var(--color-reaction)]">{{ result?.scores.reaction }}</div>
+              <div class="text-[10px] uppercase font-bold text-[var(--color-text-muted)] mt-1">反應力</div>
             </div>
-            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
-              <div class="text-3xl mb-2">🧠</div>
-              <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ result?.scores.memory }}</div>
-              <div class="text-sm text-[var(--color-text-muted)]">記憶力</div>
+            <div class="bg-[var(--color-surface)] rounded-2xl p-3 border border-[var(--color-border)] shadow-sm flex flex-col items-center">
+              <div class="text-xl mb-1 bg-[var(--color-bg-soft)] w-8 h-8 flex items-center justify-center rounded-full">🧠</div>
+              <div class="text-xl font-black text-[var(--color-memory)]">{{ result?.scores.memory }}</div>
+              <div class="text-[10px] uppercase font-bold text-[var(--color-text-muted)] mt-1">記憶力</div>
             </div>
-            <div class="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4">
-              <div class="text-3xl mb-2">🧩</div>
-              <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ result?.scores.logic }}</div>
-              <div class="text-sm text-[var(--color-text-muted)]">邏輯力</div>
+            <div class="bg-[var(--color-surface)] rounded-2xl p-3 border border-[var(--color-border)] shadow-sm flex flex-col items-center">
+              <div class="text-xl mb-1 bg-[var(--color-bg-soft)] w-8 h-8 flex items-center justify-center rounded-full">🧩</div>
+              <div class="text-xl font-black text-[var(--color-logic)]">{{ result?.scores.logic }}</div>
+              <div class="text-[10px] uppercase font-bold text-[var(--color-text-muted)] mt-1">邏輯力</div>
             </div>
           </div>
 
-          <!-- 統計資訊 -->
-          <div class="bg-[var(--color-bg-soft)] rounded-xl p-6 mb-8">
-            <div class="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <div class="text-[var(--color-text-muted)]">答對題數</div>
-                <div class="text-xl font-bold">
-                  {{ result?.correctCount }} / {{ result?.totalQuestions }}
-                </div>
-              </div>
-              <div>
-                <div class="text-[var(--color-text-muted)]">平均反應時間</div>
-                <div class="text-xl font-bold text-[var(--color-text)]">
-                  {{ ((result?.averageReactionTime ?? 0) / 1000).toFixed(1) }} 秒
-                </div>
-              </div>
-            </div>
+          <div class="bg-[var(--color-surface-alt)] rounded-xl p-4 mb-6 grid grid-cols-2 gap-4 text-sm border border-[var(--color-border)]">
+             <div class="border-r border-[var(--color-border)] pr-2">
+               <div class="text-[var(--color-text-muted)] text-xs mb-1">答對題數</div>
+               <div class="font-bold text-lg text-[var(--color-text)]">{{ result?.correctCount }} <span class="text-xs font-normal opacity-60">/ {{ result?.totalQuestions }}</span></div>
+             </div>
+             <div class="pl-2">
+               <div class="text-[var(--color-text-muted)] text-xs mb-1">平均反應</div>
+               <div class="font-bold text-lg text-[var(--color-text)]">{{ ((result?.averageReactionTime ?? 0) / 1000).toFixed(1) }}s</div>
+             </div>
           </div>
 
-          <!-- 建議難度 -->
-          <div class="bg-green-50 border-2 border-green-200 rounded-xl p-6 mb-8">
-            <h3 class="font-bold text-green-800 mb-2">🎯 建議難度</h3>
-            <div class="text-3xl font-bold text-green-600 mb-2">
+          <div class="bg-[var(--color-success-bg)] border border-[var(--color-success)]/30 rounded-2xl p-5 mb-8 text-left relative overflow-hidden">
+            <div class="absolute right-0 top-0 opacity-10 text-6xl transform translate-x-1/4 -translate-y-1/4">🎯</div>
+            <h3 class="font-bold text-[var(--color-success)] text-xs uppercase tracking-wider mb-2">建議訓練難度</h3>
+            <div class="text-3xl font-black text-[var(--color-success)] mb-2">
               {{ difficultyLabel }}
             </div>
-            <p class="text-green-700 text-sm">
+            <p class="text-[var(--color-text-primary)] text-sm opacity-90 leading-relaxed">
               {{ difficultyDescription }}
             </p>
           </div>
 
-          <div class="flex gap-4 justify-center">
-            <button 
-              @click="saveAndContinue" 
-              class="btn btn-primary btn-lg px-8"
-            >
-              儲存並開始訓練
+          <div class="flex gap-3 justify-center">
+            <button @click="saveAndContinue" class="btn btn-primary flex-1 btn-xl shadow-lg hover:shadow-xl hover:-translate-y-1">
+              儲存並開始
             </button>
-            <button 
-              @click="retakeAssessment" 
-              class="btn btn-secondary px-6"
-            >
-              重新測試
+            <button @click="retakeAssessment" class="btn btn-ghost px-6">
+              重測
             </button>
           </div>
         </div>
       </div>
-    </div>
+
+    </main>
   </div>
 </template>
 
@@ -462,9 +487,9 @@ const currentQuestion = computed(() => questions.value[currentIndex.value])
 
 const questionTypeLabel = computed(() => {
   switch (currentQuestion.value?.type) {
-    case 'reaction': return '⚡ 反應力測試'
-    case 'memory': return '🧠 記憶力測試'
-    case 'logic': return '🧩 邏輯力測試'
+    case 'reaction': return '⚡ 反應力'
+    case 'memory': return '🧠 記憶力'
+    case 'logic': return '🧩 邏輯力'
     default: return ''
   }
 })
@@ -698,479 +723,8 @@ watch(stage, (newStage: string) => {
 </script>
 
 <style scoped>
-.progress-bar {
-  background-color: var(--color-bg-soft);
-  border-radius: 9999px;
-  overflow: hidden;
-}
-
-.progress-bar-fill {
-  height: 100%;
-  background-color: var(--color-primary);
-  border-radius: 9999px;
-}
-
-/* Assessment Card Styles */
-.assessment-card {
-  position: relative;
-  background: var(--color-surface);
-  border-radius: 1.5rem;
-  padding: 2rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: 2px solid var(--color-border);
-  overflow: hidden;
-}
-
-.assessment-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
-}
-
-.mini-cog-card {
-  border-color: var(--color-primary);
-  background: var(--color-primary-bg);
-}
-
-.mini-cog-card:hover {
-  border-color: var(--color-logic);
-}
-
-.full-assessment-card:hover {
-  border-color: var(--color-primary);
-}
-
-
-.card-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
-.card-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-text);
-  margin-bottom: 0.5rem;
-}
-
-.card-description {
-  color: var(--color-text-secondary);
-  font-size: 0.9375rem;
-  margin-bottom: 1.5rem;
-  line-height: 1.6;
-}
-
-.card-features {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 1.5rem;
-}
-
-.card-features li {
-  padding: 0.5rem 0;
-  color: var(--color-text-secondary);
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.card-action {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-border);
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.card-action .arrow {
-  font-size: 1.25rem;
-  transition: transform 0.2s ease;
-}
-
-.assessment-card:hover .card-action .arrow {
-  transform: translateX(4px);
-}
-
-/* Language Selector */
-.language-selector {
-  text-align: center;
-}
-
-.language-select {
-  padding: 0.5rem 1rem;
-  border: 2px solid var(--color-border);
-  border-radius: 0.5rem;
-  font-size: 0.9375rem;
-  color: var(--color-text);
-  background: var(--color-surface);
-  cursor: pointer;
-  transition: border-color 0.2s ease;
-}
-
-.language-select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
-/* Recent Result Banner */
-.recent-result-banner {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  background: var(--gradient-result-good);
-  padding: 1rem 1.5rem;
-  border-radius: 1rem;
-  border: 1px solid var(--color-success);
-}
-
-.banner-icon {
-  font-size: 2rem;
-  flex-shrink: 0;
-}
-
-.banner-content {
-  flex: 1;
-}
-
-.banner-title {
-  font-weight: 600;
-  color: var(--color-score-good);
-  margin: 0;
-}
-
-.banner-date {
-  font-size: 0.875rem;
-  color: var(--color-score-good);
-  margin: 0.25rem 0 0;
-}
-
-.banner-action {
-  background: var(--color-success);
-  color: var(--color-text-inverse);
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.banner-action:hover {
-  background: var(--color-score-good);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .assessment-card {
-    padding: 1.5rem;
-  }
-  
-  .recent-result-banner {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .banner-action {
-    width: 100%;
-  }
-}
-
-/* 手機橫屏優化 */
-@media (orientation: landscape) and (max-height: 500px) {
-  .min-h-screen {
-    min-height: 100vh;
-    min-height: 100dvh;
-  }
-
-  /* 頭部壓縮 */
-  .container.mx-auto.px-4.py-4 {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-  }
-
-  .container.mx-auto.px-4.py-8 {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    overflow-y: auto;
-    max-height: calc(100vh - 60px);
-    max-height: calc(100dvh - 60px);
-  }
-
-  /* 選擇頁面橫屏並列 */
-  .max-w-3xl.mx-auto .text-center.mb-8 {
-    margin-bottom: 0.75rem;
-  }
-
-  .max-w-3xl.mx-auto .text-center.mb-8 .text-6xl {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .max-w-3xl.mx-auto .text-center.mb-8 .text-2xl {
-    font-size: 1.25rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .grid[class*="grid-cols-2"] {
-    display: flex !important;
-    flex-direction: row;
-    gap: 1rem;
-  }
-
-  .assessment-card {
-    padding: 1rem;
-    flex: 1;
-  }
-
-  .card-icon {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .card-title {
-    font-size: 1rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .card-description {
-    font-size: 0.8125rem;
-    margin-bottom: 0.75rem;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .card-features {
-    margin-bottom: 0.75rem;
-  }
-
-  .card-features li {
-    padding: 0.25rem 0;
-    font-size: 0.75rem;
-  }
-
-  .card-action {
-    padding-top: 0.5rem;
-    font-size: 0.875rem;
-  }
-
-  .language-selector {
-    margin-top: 0.75rem;
-  }
-
-  .language-selector label {
-    font-size: 0.75rem;
-  }
-
-  .language-select {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.8125rem;
-  }
-
-  .recent-result-banner {
-    margin-top: 0.75rem;
-    padding: 0.75rem;
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .banner-icon {
-    font-size: 1.5rem;
-  }
-
-  .banner-title {
-    font-size: 0.875rem;
-  }
-
-  .banner-date {
-    font-size: 0.75rem;
-  }
-
-  .banner-action {
-    width: auto;
-    padding: 0.375rem 0.75rem;
-    font-size: 0.75rem;
-  }
-
-  /* 說明頁橫屏 */
-  .max-w-2xl.mx-auto .card.text-center {
-    padding: 1rem;
-    max-height: calc(100vh - 80px);
-    max-height: calc(100dvh - 80px);
-    overflow-y: auto;
-  }
-
-  .max-w-2xl.mx-auto .card.text-center .text-6xl {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .max-w-2xl.mx-auto .card.text-center .text-2xl {
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .max-w-2xl.mx-auto .card.text-center .text-lg {
-    font-size: 0.9375rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .bg-blue-50,
-  .bg-orange-50,
-  .bg-amber-50,
-  [class*="bg-blue-900"],
-  [class*="bg-orange-900"],
-  [class*="bg-amber-900"] {
-    padding: 0.75rem !important;
-    margin-bottom: 0.5rem !important;
-  }
-
-  .bg-blue-50 .font-bold,
-  .bg-orange-50 .font-medium {
-    font-size: 0.9375rem;
-  }
-
-  .bg-blue-50 li,
-  .bg-orange-50 .text-sm,
-  .bg-amber-50 p {
-    font-size: 0.8125rem;
-  }
-
-  .btn.btn-primary.btn-lg {
-    padding: 0.75rem 2rem !important;
-    font-size: 1rem !important;
-  }
-
-  .btn.btn-secondary {
-    padding: 0.5rem 1.5rem !important;
-    margin-top: 0.5rem !important;
-  }
-
-  /* 測試進行中頁面 */
-  .max-w-2xl.mx-auto .mb-6 {
-    margin-bottom: 0.5rem;
-  }
-
-  .max-w-2xl.mx-auto .mb-8 {
-    margin-bottom: 0.75rem;
-  }
-
-  .progress-bar.h-3 {
-    height: 0.5rem;
-  }
-
-  .max-w-2xl.mx-auto .card {
-    padding: 1rem;
-  }
-
-  .text-6xl.font-bold {
-    font-size: 2.5rem !important;
-    padding: 1rem !important;
-    margin-bottom: 0.75rem !important;
-  }
-
-  .text-5xl.font-bold {
-    font-size: 2rem !important;
-    padding: 0.75rem !important;
-    margin-bottom: 0.75rem !important;
-  }
-
-  .text-4xl.text-center {
-    font-size: 1.75rem;
-  }
-
-  .grid.grid-cols-2.gap-4 {
-    gap: 0.5rem;
-  }
-
-  .grid.grid-cols-2.gap-4 .btn {
-    padding: 0.75rem !important;
-    font-size: 1rem !important;
-    min-height: 48px;
-  }
-
-  .mt-6.text-center .inline-flex {
-    padding: 0.375rem 0.75rem;
-  }
-
-  /* 結果頁面 */
-  .grid.grid-cols-3.gap-4 {
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .grid.grid-cols-3.gap-4 > div {
-    padding: 0.75rem;
-  }
-
-  .grid.grid-cols-3.gap-4 .text-3xl {
-    font-size: 1.5rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .grid.grid-cols-3.gap-4 .text-2xl {
-    font-size: 1.25rem;
-  }
-
-  .grid.grid-cols-3.gap-4 .text-sm {
-    font-size: 0.75rem;
-  }
-
-  .bg-green-50 {
-    padding: 0.75rem !important;
-    margin-bottom: 0.75rem !important;
-  }
-
-  .bg-green-50 .text-3xl {
-    font-size: 1.5rem;
-  }
-
-  .flex.gap-4.justify-center {
-    gap: 0.75rem;
-  }
-
-  .flex.gap-4.justify-center .btn {
-    padding: 0.625rem 1.25rem !important;
-    font-size: 0.9375rem !important;
-  }
-}
-
-/* 手機直向：避免為了「看題目/找答案」反覆上下捲動 */
-@media (max-width: 640px) {
-  .assessment-testing {
-    display: flex;
-    flex-direction: column;
-    min-height: calc(100dvh - 120px);
-  }
-
-  .assessment-testing .card {
-    flex: 1;
-    min-height: 0;
-    overflow: auto;
-  }
-
-  /* 反應題的色塊與算式區域縮小，降低裁切機率 */
-  .assessment-testing .text-6xl.font-bold {
-    font-size: 2.5rem !important;
-    padding: 1rem !important;
-    margin-bottom: 0.75rem !important;
-  }
-
-  .assessment-testing .text-5xl.font-bold {
-    font-size: 2rem !important;
-    padding: 0.75rem !important;
-    margin-bottom: 0.75rem !important;
-  }
-
-  .assessment-testing .btn.btn-secondary.text-xl.py-4,
-  .assessment-testing .btn.btn-secondary.text-2xl.py-4 {
-    font-size: 1rem !important;
-    padding-top: 0.75rem !important;
-    padding-bottom: 0.75rem !important;
-  }
+@keyframes shrink {
+  from { width: 100%; }
+  to { width: 0%; }
 }
 </style>

@@ -47,39 +47,39 @@
 
     <!-- 遊戲列表（可滾動） -->
     <div class="app-content-scroll">
-      <div class="p-3 sm:p-4 section-stack">
+      <div class="p-3 sm:p-4 section-stack container-desktop">
         <div class="section-label">遊戲清單</div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
           <div
             v-for="game in filteredGames"
             :key="game.id"
-            class="card card-clickable p-3 sm:p-4"
+            class="card-variant-action p-3 sm:p-4 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border-light)] hover-lift min-h-[170px] flex flex-col"
             @click="openGameModal(game)"
           >
             <!-- 遊戲圖示 -->
-            <div class="text-3xl sm:text-4xl text-center mb-2 sm:mb-3">
+            <div class="text-3xl sm:text-4xl text-center mb-2 flex-1 flex items-center justify-center">
               <template v-if="resolveGameIcon(game.id)?.path">
                 <img
                   :src="resolveGameIcon(game.id)?.path"
                   :alt="game.name"
-                  class="mx-auto w-10 h-10 sm:w-12 sm:h-12"
+                  class="mx-auto w-12 h-12 sm:w-16 sm:h-16 object-contain"
                 />
               </template>
               <template v-else>
-                {{ resolveGameIcon(game.id)?.emoji || game.icon }}
+                <span class="emoji-tile text-4xl sm:text-5xl">{{ resolveGameIcon(game.id)?.emoji || game.icon }}</span>
               </template>
             </div>
 
             <!-- 遊戲名稱 -->
-            <h3 class="text-xs sm:text-sm font-bold text-center text-[var(--color-text)] mb-2 sm:mb-3 line-clamp-2 leading-tight min-h-[2.5rem] sm:min-h-[3rem] flex items-center justify-center">{{ game.name }}</h3>
+            <h3 class="text-sm sm:text-base font-bold text-center text-[var(--color-text)] mb-2 line-clamp-2 leading-tight min-h-[2.25rem] flex items-center justify-center">{{ game.name }}</h3>
 
             <!-- 主要認知維度標籤 -->
-            <div class="flex justify-center mb-2 sm:mb-3">
+            <div class="flex justify-center mb-2">
               <span
                 v-if="primaryDimension(game)"
-                class="badge truncate max-w-full"
+                class="badge truncate max-w-full px-2 py-0.5 text-xs font-bold"
                 :style="{
-                  backgroundColor: getDimensionColor(primaryDimension(game)!) + '20',
+                  backgroundColor: getDimensionColor(primaryDimension(game)!) + '15',
                   color: getDimensionColor(primaryDimension(game)!)
                 }"
               >
@@ -88,9 +88,9 @@
             </div>
 
             <!-- 最佳成績 -->
-            <div class="text-center">
-              <span class="text-xs text-[var(--color-text-muted)]">最佳 </span>
-              <span class="text-sm sm:text-base font-bold" :class="getScoreClass(gameStore.getBestScore(game.id))">
+            <div class="text-center mt-auto border-t border-[var(--color-border-light)] pt-2 w-full">
+              <span class="text-xs text-[var(--color-text-muted)] block mb-0.5">最佳紀錄</span>
+              <span class="text-lg font-black tracking-tight" :class="getScoreClass(gameStore.getBestScore(game.id))">
                 {{ gameStore.getBestScore(game.id) || '-' }}
               </span>
             </div>

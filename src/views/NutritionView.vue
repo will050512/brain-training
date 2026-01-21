@@ -11,13 +11,11 @@ import {
   type NutritionRecommendation,
   type SupplementInfo,
   type SupplementType,
-  type ScoreHistory as NutritionScoreHistory
 } from '@/services/nutritionPlaceholder'
 import { getUserGameSessions, saveNutritionRecommendation } from '@/services/db'
 import { generateNutritionResultForUser } from '@/services/nutritionRecommendationService'
 import { syncNutritionRecommendationToSheet } from '@/services/userDataSheetSyncService'
 import type { CognitiveDimension } from '@/types/cognitive'
-import type { GameSession } from '@/types'
 import { getTotalGamesPlayed, NUTRITION_UNLOCK_REQUIRED_TRAININGS } from '@/utils/trainingStats'
 
 const router = useRouter()
@@ -131,13 +129,13 @@ async function persistNutritionRecommendations(
   }
 }
 
-// 取得優先級顏色
-function getPriorityColor(priority: string): string {
+// 取得優先級 Class
+function getPriorityClass(priority: string): string {
   switch (priority) {
-    case 'high': return 'var(--color-danger)'
-    case 'medium': return 'var(--color-warning)'
-    case 'low': return 'var(--color-success)'
-    default: return 'var(--color-text-muted)'
+    case 'high': return 'badge--danger'
+    case 'medium': return 'badge--warning'
+    case 'low': return 'badge--success'
+    default: return 'badge--neutral'
   }
 }
 
@@ -204,85 +202,76 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="nutrition-view section-stack">
-    <header class="page-header">
-      <button class="back-btn" @click="router.back()">
-        ← 返回
+  <div class="page-shell section-stack pb-safe-offset">
+    <header class="flex items-center gap-3 min-h-[44px]">
+      <button class="btn btn-ghost btn-circle" @click="router.back()">
+        <span class="text-xl">←</span>
       </button>
-      <h1>🥗 營養建議</h1>
+      <h1 class="text-xl font-bold m-0 text-primary">🥗 營養建議</h1>
     </header>
 
-    <div class="section-label">重要聲明</div>
     <!-- 重要免責聲明 -->
-    <div class="alert alert--warning disclaimer-box">
-      <div class="disclaimer-icon">⚠️</div>
-      <div class="alert__content disclaimer-content">
-        <h3 class="alert__title">重要聲明</h3>
-        <p>
-          本頁面提供的營養建議僅供參考，不能替代專業醫療建議。
-          在開始任何營養補充計劃之前，請務必諮詢醫師或營養師。
-        </p>
-        <p class="disclaimer-note">
-          特別是正在服藥的使用者，某些營養素可能與藥物產生交互作用。
+    <div class="card p-4 flex gap-3 bg-[var(--color-surface-soft)] border-l-4 border-[var(--color-warning)]">
+      <div class="text-2xl">⚠️</div>
+      <div class="flex-1 min-w-0">
+        <h3 class="text-sm font-bold text-[var(--color-text)]">重要聲明</h3>
+        <p class="text-xs text-[var(--color-text-secondary)] mt-1 leading-relaxed">
+          建議僅供參考，不能替代醫療建議。服用藥物者請務必諮詢醫師，避免交互作用。
         </p>
       </div>
     </div>
 
     <!-- 載入中 -->
-    <div v-if="isLoading" class="loading">
-      <div class="spinner"></div>
-      <p>正在分析您的需求...</p>
+    <div v-if="isLoading" class="py-12 text-center text-[var(--color-text-secondary)]">
+      <div class="spinner mx-auto mb-4"></div>
+      <p class="animate-pulse">正在分析您的需求...</p>
     </div>
 
     <!-- 鎖定狀態 -->
-    <div v-else-if="isLocked" class="locked-state">
-      <div class="locked-icon">🔒</div>
-      <h2>功能尚未解鎖</h2>
-      <p class="locked-desc">
+    <div v-else-if="isLocked" class="card p-8 section-stack items-center text-center">
+      <div class="text-6xl mb-2 animate-bounce">🔒</div>
+      <h2 class="text-lg font-bold">功能尚未解鎖</h2>
+      <p class="text-[var(--color-text-secondary)] text-sm max-w-xs mx-auto">
         為了提供精準的個人化營養建議，我們需要收集更多您的訓練數據。
       </p>
       
-      <div class="progress-container">
-        <div class="progress-info">
-          <span>遊戲進度</span>
-          <span class="progress-text">{{ completedSessionsCount }} / {{ REQUIRED_SESSIONS }} 場</span>
-        </div>
-        <div class="progress-bar">
-          <div 
-            class="progress-fill" 
-            :style="{ width: `${Math.min((completedSessionsCount / REQUIRED_SESSIONS) * 100, 100)}%` }"
-          ></div>
-        </div>
+      <div class="w-full max-w-xs bg-[var(--color-surface-soft)] rounded-full h-3 overflow-hidden mt-4">
+        <div 
+          class="h-full bg-primary transition-all duration-1000" 
+          :style="{ width: `${Math.min((completedSessionsCount / REQUIRED_SESSIONS) * 100, 100)}%` }"
+        ></div>
       </div>
+      <p class="text-xs font-bold text-primary mt-2">
+        訓練進度：{{ completedSessionsCount }} / {{ REQUIRED_SESSIONS }} 場
+      </p>
       
-      <div class="locked-benefits">
-        <h3>解鎖後您將獲得：</h3>
-        <ul>
+      <div class="bg-[var(--color-surface-soft)] p-4 rounded-xl text-left w-full max-w-xs mt-2">
+        <h3 class="font-bold text-sm mb-2">解鎖後您將獲得：</h3>
+        <ul class="list-disc pl-5 text-xs space-y-1 text-[var(--color-text-secondary)]">
           <li>✨ 基於認知表現的精準營養建議</li>
           <li>💊 針對弱項維度的補充方案</li>
           <li>👨‍⚕️ 專業醫師與營養師的建議</li>
         </ul>
       </div>
       
-      <button class="btn-primary" @click="router.push('/daily-challenge')">
+      <button class="btn btn-primary w-full max-w-xs mt-4 min-h-[44px]" @click="router.push('/daily-challenge')">
         前往每日訓練
       </button>
     </div>
 
     <template v-else>
-      <div class="section-label">內容模式</div>
       <!-- 切換顯示 -->
-      <div class="toggle-section">
+      <div class="grid grid-cols-2 gap-1 p-1 bg-[var(--color-surface-soft)] rounded-xl">
         <button 
-          class="toggle-btn"
-          :class="{ active: !showAllSupplements }"
+          class="btn btn-sm min-h-[40px] border-0"
+          :class="!showAllSupplements ? 'bg-surface shadow-sm text-primary' : 'text-secondary hover:bg-surface/50'"
           @click="showAllSupplements = false"
         >
           📌 個人化建議 ({{ activeRecommendations.length }})
         </button>
         <button 
-          class="toggle-btn"
-          :class="{ active: showAllSupplements }"
+          class="btn btn-sm min-h-[40px] border-0"
+          :class="showAllSupplements ? 'bg-surface shadow-sm text-primary' : 'text-secondary hover:bg-surface/50'"
           @click="showAllSupplements = true"
         >
           📚 所有營養素
@@ -290,24 +279,25 @@ onMounted(() => {
       </div>
 
       <!-- 無個人化建議時 -->
-      <div v-if="!showAllSupplements && activeRecommendations.length === 0" class="no-recommendations">
-        <div class="no-rec-icon">✨</div>
-        <h3>目前沒有特別建議</h3>
-        <p>根據您的訓練表現，目前沒有特別需要加強的營養素。</p>
-        <p class="sub">持續保持良好的訓練習慣！</p>
-        <button class="view-all-btn" @click="showAllSupplements = true">
+      <div v-if="!showAllSupplements && activeRecommendations.length === 0" class="card text-center py-12 px-4">
+        <div class="text-6xl mb-4">✨</div>
+        <h3 class="font-bold text-lg mb-2">目前沒有特別建議</h3>
+        <p class="text-[var(--color-text-secondary)] text-sm mb-6">根據您的訓練表現，目前沒有特別需要加強的營養素。<br>持續保持良好的訓練習慣！</p>
+        <button class="btn btn-outline min-h-[44px]" @click="showAllSupplements = true">
           瀏覽所有營養素 →
         </button>
       </div>
 
-      <div v-if="(showAllSupplements ? filteredSupplements.length : filteredRecommendations.length) > 0" class="section-label">篩選條件</div>
       <!-- 類型篩選 -->
-      <div v-if="(showAllSupplements ? filteredSupplements.length : filteredRecommendations.length) > 0" class="type-filter">
+      <div 
+        v-if="(showAllSupplements ? filteredSupplements.length : filteredRecommendations.length) > 0" 
+        class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 mask-fade-sides"
+      >
         <button
           v-for="t in supplementTypes"
           :key="t"
-          class="type-btn"
-          :class="{ active: selectedType === t }"
+          class="btn btn-sm whitespace-nowrap rounded-full min-h-[36px] px-4"
+          :class="selectedType === t ? 'btn-primary' : 'btn-secondary bg-surface border-transparent'"
           @click="selectedType = t"
         >
           {{ t !== 'all' ? getTypeIcon(t) : '📋' }}
@@ -316,829 +306,249 @@ onMounted(() => {
       </div>
 
       <!-- 個人化推薦列表 -->
-      <div v-if="!showAllSupplements && filteredRecommendations.length > 0" class="recommendations-list">
+      <div v-if="!showAllSupplements && filteredRecommendations.length > 0" class="section-stack">
         <div 
           v-for="rec in filteredRecommendations"
           :key="rec.id"
-          class="recommendation-card"
-          :class="{ 'partner-card': rec.supplement.isPartnerProduct }"
+          class="card p-4 relative overflow-hidden transition-all active:scale-[0.99]"
+          :class="{ 'ring-2 ring-primary ring-offset-2': rec.supplement.isPartnerProduct }"
         >
-          <!-- 合作夥伴標籤 -->
-          <div v-if="rec.supplement.isPartnerProduct" class="badge badge--primary partner-badge">
-          </div>
-          
           <!-- 優先級標籤 -->
           <div 
-            class="badge priority-tag"
-            :style="{ backgroundColor: getPriorityColor(rec.priority) }"
+            class="absolute top-0 right-0 rounded-bl-xl px-3 py-1 text-xs font-bold"
+            :class="getPriorityClass(rec.priority)"
           >
             {{ getPriorityText(rec.priority) }}
           </div>
 
-          <div class="rec-header">
-            <span class="rec-icon">{{ getTypeIcon(rec.supplement.type) }}</span>
-            <div class="rec-title-section">
-              <h3 class="rec-name">{{ rec.supplement.name }}</h3>
-              <span class="rec-type">{{ rec.supplement.nameEn }}</span>
-              <span v-if="rec.supplement.partnerName" class="partner-name">
-                by {{ rec.supplement.partnerName }}
-              </span>
-            </div>
-          </div>
-
-          <p class="rec-description">{{ rec.supplement.description }}</p>
-          
-          <!-- 建議原因 -->
-          <div class="rec-reason">
-            <span class="reason-label">📋 建議原因：</span>
-            <span class="reason-value">{{ rec.reason }}</span>
-          </div>
-
-          <!-- 針對的維度 -->
-          <div class="rec-dimensions">
-            <span class="dim-label">針對：</span>
-            <span 
-              v-for="dim in rec.supplement.relatedDimensions" 
-              :key="dim"
-              class="badge badge--neutral"
-            >
-              {{ dimensionNames[dim] }}
+          <div class="flex gap-3 items-start mt-2">
+            <span class="emoji-tile text-3xl bg-[var(--color-surface-soft)] shrink-0 rounded-xl w-14 h-14 flex items-center justify-center">
+              {{ getTypeIcon(rec.supplement.type) }}
             </span>
-          </div>
+            <div class="flex-1 min-w-0 space-y-2">
+              <div class="pr-16">
+                <h3 class="text-lg font-bold truncate leading-tight">{{ rec.supplement.name }}</h3>
+                <div class="text-xs text-[var(--color-text-secondary)] flex flex-wrap items-center gap-1 mt-1">
+                  {{ rec.supplement.nameEn }}
+                  <span v-if="rec.supplement.partnerName" class="text-primary font-medium px-1.5 py-0.5 bg-[var(--color-surface-soft)] rounded">
+                    by {{ rec.supplement.partnerName }}
+                  </span>
+                </div>
+              </div>
+              
+              <div class="p-3 bg-[var(--color-surface-soft)] rounded-lg border-l-2 border-primary/30">
+                <span class="text-xs font-bold text-primary block mb-1">📋 建議原因</span>
+                <p class="text-sm text-[var(--color-text)] leading-relaxed m-0">
+                  {{ rec.reason }}
+                </p>
+              </div>
 
-          <!-- 建議劑量 -->
-          <div class="rec-dosage">
-            <span class="dosage-label">💊 建議劑量：</span>
-            <span class="dosage-value">{{ rec.supplement.dosageRange }}</span>
-          </div>
+              <p class="text-sm text-[var(--color-text-secondary)] leading-relaxed line-clamp-3">
+                {{ rec.supplement.description }}
+              </p>
 
-          <!-- 主要功效 -->
-          <div class="rec-benefits">
-            <span class="benefits-label">✨ 主要功效：</span>
-            <span class="benefits-value">{{ rec.supplement.benefits.join('、') }}</span>
-          </div>
+              <!-- 屬性網格 -->
+              <div class="grid grid-cols-2 gap-x-2 gap-y-3 mt-2 text-sm bg-[var(--color-surface-soft)] p-3 rounded-lg">
+                <div class="flex flex-col gap-1">
+                  <span class="text-xs text-[var(--color-text-secondary)]">針對維度</span>
+                  <div class="flex flex-wrap gap-1">
+                    <span 
+                      v-for="dim in rec.supplement.relatedDimensions" 
+                      :key="dim"
+                      class="px-1.5 py-0.5 rounded text-[10px] bg-surface border border-[var(--color-border)]"
+                    >
+                      {{ dimensionNames[dim] }}
+                    </span>
+                  </div>
+                </div>
+                
+                <div class="flex flex-col gap-1">
+                  <span class="text-xs text-[var(--color-text-secondary)]">建議劑量</span>
+                  <span class="font-medium text-xs">{{ rec.supplement.dosageRange }}</span>
+                </div>
+              </div>
 
-          <!-- 注意事項 -->
-          <div v-if="rec.supplement.precautions.length > 0" class="rec-warnings">
-            <details>
-              <summary>⚠️ 注意事項</summary>
-              <ul>
-                <li v-for="(warning, idx) in rec.supplement.precautions" :key="idx">
-                  {{ warning }}
-                </li>
-              </ul>
-            </details>
-          </div>
+              <!-- 摺疊資訊 -->
+              <div class="space-y-2 pt-1">
+                <details v-if="rec.supplement.precautions.length > 0" class="group">
+                  <summary class="text-xs font-bold text-[var(--color-warning)] cursor-pointer list-none flex items-center gap-2 p-2 rounded-lg hover:bg-[var(--color-surface-soft)] transition-colors select-none">
+                    <span class="transition-transform group-open:rotate-90 text-[10px]">▶</span>
+                    <span>⚠️ 注意事項</span>
+                  </summary>
+                  <ul class="mt-1 pl-8 pr-2 text-xs text-[var(--color-text-secondary)] list-disc space-y-1 pb-2">
+                    <li v-for="(warning, idx) in rec.supplement.precautions" :key="idx">
+                      {{ warning }}
+                    </li>
+                  </ul>
+                </details>
 
-          <!-- 交互作用 -->
-          <div v-if="rec.supplement.interactions.length > 0" class="rec-interactions">
-            <details>
-              <summary>💊 可能的交互作用</summary>
-              <ul>
-                <li v-for="(interaction, idx) in rec.supplement.interactions" :key="idx">
-                  {{ interaction }}
-                </li>
-              </ul>
-            </details>
-          </div>
-          
-          <!-- 合作廠商操作按鈕 -->
-          <div v-if="rec.supplement.isPartnerProduct" class="partner-actions">
-            <button 
-              v-if="rec.supplement.partnerUrl"
-              class="action-btn learn-more-btn"
-              @click="openPartnerUrl(rec.supplement.partnerUrl)"
-            >
-              🔗 了解更多
-            </button>
-            <button 
-              class="action-btn buy-btn"
-              :class="{ disabled: !rec.supplement.shopUrl }"
-              @click="openShopUrl(rec.supplement.shopUrl || '')"
-            >
-              🛒 {{ rec.supplement.shopUrl ? '立即購買' : '即將上線' }}
-            </button>
+                <details v-if="rec.supplement.interactions.length > 0" class="group">
+                  <summary class="text-xs font-bold text-[var(--color-info)] cursor-pointer list-none flex items-center gap-2 p-2 rounded-lg hover:bg-[var(--color-surface-soft)] transition-colors select-none">
+                    <span class="transition-transform group-open:rotate-90 text-[10px]">▶</span>
+                    <span>💊 可能交互作用</span>
+                  </summary>
+                  <ul class="mt-1 pl-8 pr-2 text-xs text-[var(--color-text-secondary)] list-disc space-y-1 pb-2">
+                    <li v-for="(interaction, idx) in rec.supplement.interactions" :key="idx">
+                      {{ interaction }}
+                    </li>
+                  </ul>
+                </details>
+              </div>
+
+              <!-- 合作廠商操作 -->
+              <div v-if="rec.supplement.isPartnerProduct" class="grid grid-cols-2 gap-3 mt-2 pt-3 border-t border-[var(--color-border)]">
+                <button 
+                  v-if="rec.supplement.partnerUrl"
+                  class="btn btn-sm btn-secondary min-h-[44px]"
+                  @click="openPartnerUrl(rec.supplement.partnerUrl)"
+                >
+                  🔗 了解更多
+                </button>
+                <button 
+                  class="btn btn-sm btn-primary min-h-[44px]"
+                  :class="{ 'col-span-2': !rec.supplement.partnerUrl }"
+                  :disabled="!rec.supplement.shopUrl"
+                  @click="openShopUrl(rec.supplement.shopUrl || '')"
+                >
+                  🛒 {{ rec.supplement.shopUrl ? '立即購買' : '即將上線' }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- 所有營養品列表 -->
-      <div v-if="showAllSupplements" class="supplements-list">
+      <div v-if="showAllSupplements" class="section-stack">
         <div 
           v-for="supplement in filteredSupplements"
           :key="supplement.type"
-          class="supplement-card"
-          :class="{ 'partner-card': supplement.isPartnerProduct }"
+          class="card p-4 relative"
+          :class="{ 'ring-2 ring-primary ring-offset-2': supplement.isPartnerProduct }"
         >
-          <!-- 合作夥伴標籤 -->
-          <div v-if="supplement.isPartnerProduct" class="badge badge--primary partner-badge">
+          <div v-if="supplement.isPartnerProduct" class="absolute top-0 right-0 bg-primary text-white text-[10px] px-2 py-1 rounded-bl-lg font-bold">
+            合作推薦
           </div>
           
-          <div class="sup-header">
-            <span class="sup-icon">{{ getTypeIcon(supplement.type) }}</span>
-            <div class="sup-title-section">
-              <h3 class="sup-name">{{ supplement.name }}</h3>
-              <span class="sup-name-en">{{ supplement.nameEn }}</span>
-              <span v-if="supplement.partnerName" class="partner-name">
-                by {{ supplement.partnerName }}
-              </span>
-            </div>
-          </div>
-
-          <p class="sup-description">{{ supplement.description }}</p>
-
-          <!-- 針對的維度 -->
-          <div class="sup-dimensions">
-            <span class="dim-label">相關維度：</span>
-            <span 
-              v-for="dim in supplement.relatedDimensions"
-              :key="dim"
-              class="badge badge--neutral"
-            >
-              {{ dimensionNames[dim] }}
+          <div class="flex gap-3 items-start">
+            <span class="emoji-tile text-3xl bg-[var(--color-surface-soft)] shrink-0 rounded-xl w-14 h-14 flex items-center justify-center">
+              {{ getTypeIcon(supplement.type) }}
             </span>
-          </div>
+            <div class="flex-1 min-w-0 space-y-2">
+              <div class="pr-12">
+                <h3 class="text-lg font-bold truncate leading-tight">{{ supplement.name }}</h3>
+                <div class="text-xs text-[var(--color-text-secondary)] flex items-center gap-1 mt-0.5">
+                  {{ supplement.nameEn }}
+                  <span v-if="supplement.partnerName" class="text-primary font-bold">
+                    by {{ supplement.partnerName }}
+                  </span>
+                </div>
+              </div>
 
-          <!-- 建議劑量 -->
-          <div class="sup-dosage">
-            <span class="dosage-label">💊 建議劑量：</span>
-            <span class="dosage-value">{{ supplement.dosageRange }}</span>
-          </div>
+              <p class="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+                {{ supplement.description }}
+              </p>
 
-          <!-- 主要功效 -->
-          <div class="sup-benefits">
-            <span class="benefits-label">✨ 主要功效：</span>
-            <span class="benefits-value">{{ supplement.benefits.join('、') }}</span>
-          </div>
+              <!-- 簡化屬性顯示 -->
+              <div class="flex flex-wrap gap-1.5">
+                 <span 
+                  v-for="dim in supplement.relatedDimensions"
+                  :key="dim"
+                  class="px-1.5 py-0.5 rounded text-[10px] bg-[var(--color-surface-soft)] text-[var(--color-text-secondary)] border border-[var(--color-border)]"
+                >
+                  {{ dimensionNames[dim] }}
+                </span>
+              </div>
 
-          <!-- 注意事項 -->
-          <div v-if="supplement.precautions.length > 0" class="sup-warnings">
-            <details>
-              <summary>⚠️ 注意事項</summary>
-              <ul>
-                <li v-for="(warning, idx) in supplement.precautions" :key="idx">
-                  {{ warning }}
-                </li>
-              </ul>
-            </details>
-          </div>
+              <div class="text-xs bg-[var(--color-surface-soft)] p-2 rounded">
+                <span class="text-[var(--color-text-secondary)] font-bold mr-1">主要功效:</span>
+                <span class="text-[var(--color-text)]">{{ supplement.benefits.join('、') }}</span>
+              </div>
 
-          <!-- 交互作用 -->
-          <div v-if="supplement.interactions.length > 0" class="sup-interactions">
-            <details>
-              <summary>💊 可能的交互作用</summary>
-              <ul>
-                <li v-for="(interaction, idx) in supplement.interactions" :key="idx">
-                  {{ interaction }}
-                </li>
-              </ul>
-            </details>
-          </div>
-          
-          <!-- 合作廠商操作按鈕 -->
-          <div v-if="supplement.isPartnerProduct" class="partner-actions">
-            <button 
-              v-if="supplement.partnerUrl"
-              class="action-btn learn-more-btn"
-              @click="openPartnerUrl(supplement.partnerUrl)"
-            >
-              🔗 了解更多
-            </button>
-            <button 
-              class="action-btn buy-btn"
-              :class="{ disabled: !supplement.shopUrl }"
-              @click="openShopUrl(supplement.shopUrl || '')"
-            >
-              🛒 {{ supplement.shopUrl ? '立即購買' : '即將上線' }}
-            </button>
+              <!-- 摺疊資訊 -->
+              <div class="space-y-1">
+                <details v-if="supplement.precautions.length > 0 || supplement.interactions.length > 0" class="group">
+                  <summary class="text-xs font-bold text-[var(--color-text-secondary)] cursor-pointer list-none flex items-center gap-2 p-2 rounded hover:bg-[var(--color-surface-soft)] transition-colors select-none">
+                    <span class="transition-transform group-open:rotate-90 text-[10px]">▶</span>
+                    <span>注意事項與交互作用</span>
+                  </summary>
+                  <div class="mt-2 pl-3 border-l-2 border-[var(--color-warning)] text-xs space-y-3 pb-2">
+                     <div v-if="supplement.precautions.length">
+                       <div class="font-bold text-[var(--color-warning)] mb-1">注意事項</div>
+                       <ul class="list-disc pl-4 text-[var(--color-text-secondary)] space-y-1">
+                         <li v-for="(w, i) in supplement.precautions" :key="i">{{ w }}</li>
+                       </ul>
+                     </div>
+                     <div v-if="supplement.interactions.length">
+                       <div class="font-bold text-[var(--color-text)] mb-1">交互作用</div>
+                       <ul class="list-disc pl-4 text-[var(--color-text-secondary)] space-y-1">
+                         <li v-for="(w, i) in supplement.interactions" :key="i">{{ w }}</li>
+                       </ul>
+                     </div>
+                  </div>
+                </details>
+              </div>
+
+              <!-- 購買按鈕 -->
+              <div v-if="supplement.isPartnerProduct" class="grid grid-cols-2 gap-3 mt-2 pt-3 border-t border-[var(--color-border)]">
+                <button 
+                  v-if="supplement.partnerUrl"
+                  class="btn btn-sm btn-secondary min-h-[44px]"
+                  @click="openPartnerUrl(supplement.partnerUrl)"
+                >
+                  詳情
+                </button>
+                <button 
+                  class="btn btn-sm btn-primary min-h-[44px]"
+                  :class="{ 'col-span-2': !supplement.partnerUrl }"
+                  :disabled="!supplement.shopUrl"
+                  @click="openShopUrl(supplement.shopUrl || '')"
+                >
+                  購買
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="section-label">提醒</div>
       <!-- 底部提醒 -->
-      <div class="bottom-reminder">
+      <div class="text-center text-xs text-[var(--color-text-secondary)] mt-8 pb-8 px-8 opacity-75">
         <p>💡 營養補充應配合均衡飲食，不應取代正常飲食。</p>
-        <p>🏥 如有任何健康疑慮，請諮詢專業醫療人員。</p>
+        <p class="mt-1">🏥 如有任何健康疑慮，請諮詢專業醫療人員。</p>
       </div>
     </template>
   </div>
 </template>
 
 <style scoped>
-.nutrition-view {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 1rem;
-  padding-bottom: 3rem;
-  min-height: 100vh;
-  background: var(--color-bg);
-  color: var(--color-text);
-}
-
-.page-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.back-btn {
-  padding: 0.5rem 1rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  color: var(--color-text);
-  transition: all 0.2s;
-}
-
-.back-btn:hover {
-  background: var(--color-surface-alt);
-}
-
-.page-header h1 {
-  font-size: 1.5rem;
-  margin: 0;
-  color: var(--color-text);
-}
-
-/* 免責聲明 */
-.disclaimer-box {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-:where(.dark, .dark *) .disclaimer-box {
-  background: var(--color-disclaimer);
-  border-color: var(--color-disclaimer-border);
-}
-
-.disclaimer-icon {
-  font-size: 2rem;
-  flex-shrink: 0;
-}
-
-.disclaimer-content h3 {
-  margin: 0 0 0.5rem 0;
-  color: var(--color-disclaimer-text);
-  font-size: 1.125rem;
-}
-
-:where(.dark, .dark *) .disclaimer-content h3 {
-  color: var(--color-disclaimer-text);
-}
-
-.disclaimer-content p {
-  margin: 0;
-  color: var(--color-disclaimer-text);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-:where(.dark, .dark *) .disclaimer-content p {
-  color: var(--color-disclaimer-text);
-}
-
-.disclaimer-note {
-  margin-top: 0.5rem !important;
-  font-weight: 500;
-}
-
-/* 載入中 */
-.loading {
-  text-align: center;
-  padding: 3rem;
-  color: var(--color-text-secondary);
-}
-
 .spinner {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border: 3px solid var(--color-border);
   border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin: 0 auto 1rem;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-/* 鎖定狀態 */
-.locked-state {
-  text-align: center;
-  padding: 3rem 1.5rem;
-  background: var(--color-surface);
-  border-radius: 1.5rem;
-  box-shadow: var(--shadow-md);
-  margin-top: 1rem;
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
-
-.locked-icon {
-  font-size: 4rem;
-  margin-bottom: 1.5rem;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
-
-.locked-state h2 {
-  font-size: 1.75rem;
-  color: var(--color-text);
-  margin-bottom: 1rem;
-}
-
-.locked-desc {
-  color: var(--color-text-secondary);
-  margin-bottom: 2rem;
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.progress-container {
-  max-width: 400px;
-  margin: 0 auto 2.5rem;
-}
-
-.progress-info {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.progress-bar {
-  height: 12px;
-  background: var(--color-bg-soft);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--gradient-primary);
-  border-radius: 6px;
-  transition: width 1s ease-out;
-}
-
-.locked-benefits {
-  text-align: left;
-  max-width: 400px;
-  margin: 0 auto 2.5rem;
-  background: var(--color-bg-soft);
-  padding: 1.5rem;
-  border-radius: 1rem;
-}
-
-.locked-benefits h3 {
-  font-size: 1.125rem;
-  color: var(--color-text);
-  margin-bottom: 1rem;
-}
-
-.locked-benefits ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.locked-benefits li {
-  margin-bottom: 0.75rem;
-  color: var(--color-text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn-primary {
-  padding: 1rem 2.5rem;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: white;
-  background: var(--gradient-primary);
-  border: none;
-  border-radius: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: var(--shadow-md);
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-/* 切換按鈕 */
-.toggle-section {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.toggle-btn {
-  flex: 1;
-  padding: 0.875rem;
-  background: var(--color-surface);
-  border: 2px solid transparent;
-  border-radius: 12px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  color: var(--color-text);
-  transition: all 0.2s;
-}
-
-.toggle-btn:hover {
-  background: var(--color-surface-alt);
-}
-
-.toggle-btn.active {
-  background: rgba(59, 130, 246, 0.15);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-/* 無建議 */
-.no-recommendations {
-  text-align: center;
-  padding: 3rem 1rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-}
-
-.no-rec-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-}
-
-.no-recommendations h3 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.25rem;
-  color: var(--color-text);
-}
-
-.no-recommendations p {
-  margin: 0;
-  color: var(--color-text-secondary);
-}
-
-.no-recommendations .sub {
-  margin-top: 0.25rem;
-  font-size: 0.875rem;
-}
-
-.view-all-btn {
-  margin-top: 1.5rem;
-  padding: 0.75rem 1.5rem;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-/* 類型篩選 */
-.type-filter {
-  display: flex;
-  gap: 0.5rem;
-  overflow-x: auto;
-  padding-bottom: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.type-btn {
-  padding: 0.5rem 1rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  white-space: nowrap;
-  transition: all 0.2s;
-  color: var(--color-text);
-}
-
-.type-btn:hover {
-  background: var(--color-surface-alt);
-}
-
-.type-btn.active {
-  background: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
-}
-
-/* 推薦列表 & 營養品列表 */
-.recommendations-list,
-.supplements-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.recommendation-card,
-.supplement-card {
-  position: relative;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  padding: 1.5rem;
-}
-
-.priority-tag {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  color: #ffffff;
-  z-index: 1;
-}
-
-.rec-header,
-.sup-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
-}
-
-.rec-icon,
-.sup-icon {
-  font-size: 2rem;
-}
-
-.rec-title-section,
-.sup-title-section {
-  flex: 1;
-}
-
-.rec-name,
-.sup-name {
-  margin: 0;
-  font-size: 1.25rem;
-  color: var(--color-text);
-}
-
-.rec-type,
-.sup-name-en {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-}
-
-.rec-description,
-.sup-description {
-  color: var(--color-text-secondary);
-  margin: 0 0 1rem 0;
-  line-height: 1.6;
-}
-
-.rec-reason {
-  margin-bottom: 0.75rem;
-  padding: 0.75rem;
-  background: rgba(34, 197, 94, 0.1);
-  border-radius: 8px;
-}
-
-:where(.dark, .dark *) .rec-reason {
-  background: rgba(34, 197, 94, 0.15);
-}
-
-.reason-label {
-  color: var(--color-score-good);
-  font-weight: 500;
-}
-
-:where(.dark, .dark *) .reason-label {
-  color: var(--color-score-good);
-}
-
-.reason-value {
-  color: var(--color-score-good);
-}
-
-:where(.dark, .dark *) .reason-value {
-  color: var(--color-score-good);
-}
-
-.rec-dimensions,
-.sup-dimensions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.75rem;
-}
-
-.dim-label {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-}
-
-
-.rec-dosage,
-.sup-dosage,
-.rec-benefits,
-.sup-benefits {
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-  color: var(--color-text);
-}
-
-.dosage-label,
-.benefits-label {
-  color: var(--color-text-secondary);
-}
-
-.dosage-value,
-.benefits-value {
-  font-weight: 500;
-}
-
-.rec-warnings,
-.sup-warnings,
-.rec-interactions,
-.sup-interactions {
-  margin-top: 1rem;
-  font-size: 0.875rem;
-}
-
-.rec-warnings details,
-.sup-warnings details {
-  background: rgba(245, 158, 11, 0.15);
-  border-radius: 8px;
-  padding: 0.75rem;
-}
-
-.rec-interactions details,
-.sup-interactions details {
-  background: var(--color-surface-alt);
-  border-radius: 8px;
-  padding: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-.rec-warnings summary,
-.sup-warnings summary {
-  cursor: pointer;
-  font-weight: 500;
-  color: var(--color-disclaimer-text);
-}
-
-:where(.dark, .dark *) .rec-warnings summary,
-:where(.dark, .dark *) .sup-warnings summary {
-  color: var(--color-disclaimer-text);
-}
-
-.rec-interactions summary,
-.sup-interactions summary {
-  cursor: pointer;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-}
-
-.rec-warnings ul,
-.sup-warnings ul,
-.rec-interactions ul,
-.sup-interactions ul {
-  margin: 0.5rem 0 0 0;
-  padding-left: 1.25rem;
-}
-
-.rec-warnings li,
-.sup-warnings li {
-  margin-bottom: 0.25rem;
-  color: var(--color-disclaimer-text);
-}
-
-:where(.dark, .dark *) .rec-warnings li,
-:where(.dark, .dark *) .sup-warnings li {
-  color: var(--color-disclaimer-text);
-}
-
-.rec-interactions li,
-.sup-interactions li {
-  margin-bottom: 0.25rem;
-  color: var(--color-text-secondary);
-}
-
-/* 合作廠商卡片樣式 */
-.partner-card {
-  border: 2px solid var(--color-primary) !important;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
-}
-
-.partner-badge {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  z-index: 1;
-}
-
-.recommendation-card,
-.supplement-card {
-  position: relative;
-}
-
-.partner-name {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--color-primary);
-  margin-top: 0.25rem;
-}
-
-.partner-actions {
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-border);
-}
-
-.action-btn {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.learn-more-btn {
-  background: var(--color-surface-alt);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-}
-
-.learn-more-btn:hover {
-  background: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
-}
-
-.buy-btn {
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
-  color: white;
-}
-
-.buy-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.buy-btn.disabled {
-  background: var(--color-text-muted);
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.buy-btn.disabled:hover {
-  transform: none;
-  box-shadow: none;
-}
-
-/* 底部提醒 */
-.bottom-reminder {
-  margin-top: 2rem;
-  padding: 1rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  text-align: center;
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
-.bottom-reminder p {
-  margin: 0.25rem 0;
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
+.pb-safe-offset {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 5rem);
 }
 
-/* 響應式 */
-@media (max-width: 640px) {
-  .disclaimer-box {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .toggle-section {
-    flex-direction: column;
-  }
-  
-  .partner-actions {
-    flex-direction: column;
-  }
+.mask-fade-sides {
+  mask-image: linear-gradient(to right, transparent, black 10px, black calc(100% - 10px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10px, black calc(100% - 10px), transparent);
 }
 </style>

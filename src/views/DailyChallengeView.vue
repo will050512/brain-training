@@ -293,13 +293,13 @@ function getDifficultyText(difficulty: string): string {
   }
 }
 
-// 難度顏色
-function getDifficultyColor(difficulty: string): string {
+// 難度樣式類別
+function getDifficultyClass(difficulty: string): string {
   switch (difficulty) {
-    case 'easy': return '#10b981'
-    case 'medium': return '#f59e0b'
-    case 'hard': return '#ef4444'
-    default: return '#6b7280'
+    case 'easy': return 'bg-[var(--color-success-bg)] text-[var(--color-success)] border-transparent'
+    case 'medium': return 'bg-[var(--color-warning-bg)] text-[var(--color-warning)] border-transparent'
+    case 'hard': return 'bg-[var(--color-danger-bg)] text-[var(--color-danger)] border-transparent'
+    default: return 'bg-[var(--color-bg-soft)] text-[var(--color-text-muted)]'
   }
 }
 
@@ -329,360 +329,216 @@ watch(
 </script>
 
 <template>
-  <div class="daily-challenge">
-    <div class="content-wrapper">
-      <header class="page-header">
-        <button class="back-btn" @click="router.push('/')">
-          <span class="icon">←</span> 返回
-        </button>
-        <h1>📅 每日訓練</h1>
-        <div class="w-12"></div>
-      </header>
+  <div class="app-page">
+    <header class="app-header">
+      <button class="btn btn-ghost btn-icon" @click="router.push('/')">
+        <span class="text-xl">←</span>
+      </button>
+      <h1 class="app-header-title">📅 每日訓練</h1>
+      <div class="w-10"></div>
+    </header>
 
-      <!-- 載入中 -->
-      <div v-if="isLoading" class="loading-container">
-        <div class="spinner"></div>
-        <p>正在為您準備專屬訓練...</p>
-      </div>
+    <main class="app-content-scroll bg-[var(--color-bg-soft)]">
+      <div class="container-desktop p-4 pb-24 max-w-2xl mx-auto">
+        <!-- 載入中 -->
+        <div v-if="isLoading" class="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
+          <div class="animate-spin rounded-full h-12 w-12 border-4 border-[var(--color-primary)] border-t-transparent"></div>
+          <p class="text-[var(--color-text-secondary)] font-medium">正在為您準備專屬訓練...</p>
+        </div>
 
-      <template v-else-if="trainingPlan">
-        <div class="section-label px-4 pt-4">今日摘要</div>
-        <!-- 訓練摘要 (卡片) -->
-        <section class="training-summary card">
-          <h2 class="sr-only">訓練摘要</h2>
+        <template v-else-if="trainingPlan">
+          <div class="section-label px-1 py-2 text-sm font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">今日摘要</div>
+          
+          <div class="space-y-4">
+            <!-- 訓練摘要 (卡片) -->
+            <section class="card p-4 bg-gradient-to-b from-[var(--color-surface)] to-[var(--color-bg-soft)] border border-[var(--color-border-light)] shadow-sm">
+              <h2 class="sr-only">訓練摘要</h2>
 
-          <div class="summary-stats">
-            <div class="stat-item">
-              <span class="stat-value">{{ trainingPlan.totalGames }}</span>
-              <span class="stat-label">個遊戲</span>
-            </div>
-            <div class="stat-divider"></div>
-            <div class="stat-item">
-              <span class="stat-value">{{ estimatedMinutes }}</span>
-              <span class="stat-label">分鐘</span>
-            </div>
-            <div class="stat-divider"></div>
-            <div class="stat-item">
-              <span class="stat-value">{{ coveredDimensions.size }}</span>
-              <span class="stat-label">項能力</span>
-            </div>
-          </div>
-
-          <div v-if="trainingPlan.completedGames > 0" class="progress-section">
-            <div class="progress-header">
-              <span class="progress-label">今日進度</span>
-              <span class="progress-percent">{{ Math.round(todayProgress) }}%</span>
-            </div>
-            <div class="progress-bar">
-              <div
-                class="progress-fill"
-                :style="{ width: `${todayProgress}%` }"
-              ></div>
-            </div>
-            <div class="progress-text">
-              已完成 {{ trainingPlan.completedGames }} / {{ trainingPlan.totalGames }}
-            </div>
-          </div>
-
-          <button
-            class="start-training-btn"
-            :class="{ completed: isCompleted }"
-            :disabled="isStarting"
-            @click="startTraining"
-          >
-            <span v-if="isStarting" class="btn-spinner"></span>
-            <template v-else-if="isCompleted">
-              <span class="btn-icon">🎉</span> 今日已完成！<br><span class="text-sm font-normal opacity-90">點擊再次挑戰</span>
-            </template>
-            <template v-else-if="canContinue">
-              <span class="btn-icon">▶️</span> 繼續訓練
-            </template>
-            <template v-else>
-              <span class="btn-icon">🚀</span> 開始今日訓練
-            </template>
-          </button>
-
-          <div v-if="trainingPlan.status === 'not-started'" class="regenerate-section">
-            <button class="text-btn" @click="regeneratePlan" :disabled="isLoading">
-              🔄 重新生成訓練內容
-            </button>
-          </div>
-        </section>
-
-        <!-- 今日訓練重點 / 維度 -->
-        <section class="dimension-section">
-          <h2 class="section-title">今日訓練重點</h2>
-          <div class="dimension-grid">
-            <div
-              v-for="dim in allDimensions"
-              :key="dim"
-              class="dimension-item"
-              :class="{ covered: coveredDimensions.has(dim) }"
-              :style="{ '--dim-color': dimensionColors[dim] }"
-            >
-              <span class="dim-icon">{{ dimensionIcons[dim] }}</span>
-              <span class="dim-name">{{ dimensionNames[dim] }}</span>
-              <div v-if="coveredDimensions.has(dim)" class="dim-badge">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="4">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- 訓練清單 -->
-        <section class="games-list-section">
-          <h2 class="section-title">訓練清單</h2>
-          <div class="games-list">
-            <div
-              v-for="(game, index) in trainingPlan.games"
-              :key="game.gameId"
-              class="game-item card"
-              :class="{ completed: game.isCompleted, active: !game.isCompleted && !isCompleted && index === trainingPlan.completedGames }"
-              @click="startGame(game)"
-            >
-              <div class="game-item-left">
-                <div class="game-order">{{ index + 1 }}</div>
-                <div class="game-icon-box">
-                  <template v-if="resolveGameIcon(game.gameId)?.path">
-                    <img
-                      :src="resolveGameIcon(game.gameId)?.path"
-                      :alt="game.game.name"
-                      class="w-10 h-10"
-                    />
-                  </template>
-                  <template v-else>
-                    {{ resolveGameIcon(game.gameId)?.emoji || game.game.icon }}
-                  </template>
+              <div class="flex justify-around items-center mb-4">
+                <div class="flex flex-col items-center">
+                  <span class="text-2xl font-extrabold text-[var(--color-primary)] leading-tight">{{ trainingPlan.totalGames }}</span>
+                  <span class="text-xs font-medium text-[var(--color-text-secondary)] mt-0.5">個遊戲</span>
                 </div>
-                <div class="game-info">
-                  <div class="game-name">{{ game.game.name }}</div>
-                  <div class="game-meta">
-                    <span
-                      class="badge"
-                      :style="{ backgroundColor: getDifficultyColor(game.difficulty) + '20', color: getDifficultyColor(game.difficulty) }"
+                <div class="w-px h-8 bg-[var(--color-border)]/60"></div>
+                <div class="flex flex-col items-center">
+                  <span class="text-2xl font-extrabold text-[var(--color-primary)] leading-tight">{{ estimatedMinutes }}</span>
+                  <span class="text-xs font-medium text-[var(--color-text-secondary)] mt-0.5">分鐘</span>
+                </div>
+                <div class="w-px h-8 bg-[var(--color-border)]/60"></div>
+                <div class="flex flex-col items-center">
+                  <span class="text-2xl font-extrabold text-[var(--color-primary)] leading-tight">{{ coveredDimensions.size }}</span>
+                  <span class="text-xs font-medium text-[var(--color-text-secondary)] mt-0.5">項能力</span>
+                </div>
+              </div>
+
+              <div v-if="trainingPlan.completedGames > 0" class="bg-[var(--color-surface)]/60 rounded-xl p-3 mb-4 backdrop-blur-sm border border-[var(--color-border)]/40 shadow-inner">
+                <div class="flex justify-between mb-1.5 font-semibold text-xs">
+                  <span class="text-[var(--color-text-secondary)]">今日進度</span>
+                  <span class="text-[var(--color-primary)]">{{ Math.round(todayProgress) }}%</span>
+                </div>
+                <div class="h-2.5 bg-[var(--color-border)]/40 rounded-full overflow-hidden">
+                  <div
+                    class="h-full bg-gradient-to-r from-[var(--color-accent-warm)] to-[var(--color-warning)] rounded-full transition-all duration-700 ease-out"
+                    :style="{ width: `${todayProgress}%` }"
+                  ></div>
+                </div>
+                <div class="text-center text-[10px] text-[var(--color-text-muted)] mt-1.5">
+                  已完成 {{ trainingPlan.completedGames }} / {{ trainingPlan.totalGames }}
+                </div>
+              </div>
+
+              <button
+                class="btn btn-primary btn-lg w-full justify-center shadow-md hover:shadow-lg transform transition-all active:scale-95 touch-manipulation"
+                :class="{ 'opacity-90 saturate-50': isCompleted }"
+                :disabled="isStarting"
+                @click="startTraining"
+              >
+                <span v-if="isStarting" class="animate-spin rounded-full h-5 w-5 border-2 border-[var(--color-text-inverse)] border-t-transparent mr-2"></span>
+                <template v-else-if="isCompleted">
+                  <span class="text-xl mr-2 filter drop-shadow-sm">🎉</span> 
+                  <div class="flex flex-col items-start leading-tight">
+                    <span class="font-bold text-sm">今日已完成！</span>
+                    <span class="text-[10px] font-normal opacity-90">點擊再次挑戰</span>
+                  </div>
+                </template>
+                <template v-else-if="canContinue">
+                  <span class="text-lg mr-2">▶️</span> 繼續訓練
+                </template>
+                <template v-else>
+                  <span class="text-lg mr-2">🚀</span> 開始今日訓練
+                </template>
+              </button>
+
+              <div v-if="trainingPlan.status === 'not-started'" class="mt-3 text-center">
+                <button class="btn btn-ghost btn-sm py-1 h-auto text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors text-xs" @click="regeneratePlan" :disabled="isLoading">
+                  🔄 重新生成訓練內容
+                </button>
+              </div>
+            </section>
+
+            <!-- 今日訓練重點 / 維度 -->
+            <section class="space-y-2">
+              <h2 class="text-base font-bold text-[var(--color-text)] pl-3 border-l-4 border-[var(--color-primary)] flex items-center">今日訓練重點</h2>
+              <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                <div
+                  v-for="dim in allDimensions"
+                  :key="dim"
+                  class="flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-300 relative border border-transparent aspect-square sm:aspect-auto h-20 sm:h-auto"
+                  :class="coveredDimensions.has(dim) ? 'bg-[var(--color-surface)] shadow-sm border-[var(--color-border-light)] opacity-100 transform hover:-translate-y-1' : 'opacity-40 grayscale bg-[var(--color-bg-muted)]'"
+                  :style="{ color: coveredDimensions.has(dim) ? dimensionColors[dim] : undefined }"
+                >
+                  <span class="text-2xl mb-1 filter drop-shadow-sm">{{ dimensionIcons[dim] }}</span>
+                  <span class="text-[10px] font-bold text-[var(--color-text-secondary)] mt-0.5">{{ dimensionNames[dim] }}</span>
+                  <div v-if="coveredDimensions.has(dim)" class="absolute -top-1 -right-1 w-4 h-4 bg-[var(--color-success)] text-[var(--color-text-inverse)] rounded-full flex items-center justify-center shadow-sm border-2 border-[var(--color-surface)] animate-fade-in">
+                    <svg viewBox="0 0 24 24" width="8" height="8" fill="none" stroke="currentColor" stroke-width="4">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 訓練清單 -->
+            <section class="space-y-2">
+              <h2 class="text-base font-bold text-[var(--color-text)] pl-3 border-l-4 border-[var(--color-primary)] flex items-center">訓練清單</h2>
+              <div class="space-y-2">
+                <div
+                  v-for="(game, index) in trainingPlan.games"
+                  :key="game.gameId"
+                  class="card card-clickable flex items-center justify-between p-3 transition-all duration-200 group border-[var(--color-border-light)]"
+                  :class="[
+                    game.isCompleted ? 'opacity-70 bg-[var(--color-bg-soft)] grayscale-[0.3]' : 'bg-[var(--color-surface)]',
+                    !game.isCompleted && !isCompleted && index === trainingPlan.completedGames ? 'ring-2 ring-[var(--color-primary)] ring-offset-1 ring-offset-[var(--color-bg)] shadow-md transform -translate-y-0.5 z-10' : 'hover:border-[var(--color-primary)]/30'
+                  ]"
+                  @click="startGame(game)"
+                >
+                  <div class="flex items-center flex-1 gap-3">
+                    <div 
+                      class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 transition-colors"
+                      :class="!game.isCompleted && !isCompleted && index === trainingPlan.completedGames ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)]' : 'bg-[var(--color-bg-muted)] text-[var(--color-text-muted)]'"
                     >
-                      {{ getDifficultyText(game.difficulty) }}
-                    </span>
-                    <div class="dim-dots">
-                      <span
-                        v-for="dim in game.targetDimensions"
-                        :key="dim"
-                        class="dim-dot"
-                        :style="{ backgroundColor: dimensionColors[dim] }"
-                        :title="dimensionNames[dim]"
-                      ></span>
+                      {{ index + 1 }}
+                    </div>
+                    
+                    <div class="shrink-0">
+                      <template v-if="resolveGameIcon(game.gameId)?.path">
+                        <div class="w-10 h-10">
+                          <img
+                            :src="resolveGameIcon(game.gameId)?.path"
+                            :alt="game.game.name"
+                            class="w-full h-full object-contain drop-shadow-sm transition-transform group-hover:scale-110"
+                          />
+                        </div>
+                      </template>
+                      <template v-else>
+                        <div class="emoji-tile w-10 h-10 text-2xl bg-[var(--color-bg-muted)]/50 group-hover:bg-[var(--color-bg-muted)] transition-colors">
+                          <span class="transition-transform group-hover:scale-110 inline-block">
+                            {{ resolveGameIcon(game.gameId)?.emoji || game.game.icon }}
+                          </span>
+                        </div>
+                      </template>
+                    </div>
+
+                    <div class="flex flex-col min-w-0">
+                      <div class="font-bold text-base text-[var(--color-text)] truncate mb-0.5 group-hover:text-[var(--color-primary)] transition-colors">{{ game.game.name }}</div>
+                      <div class="flex flex-wrap items-center gap-1.5">
+                        <span
+                          class="px-1.5 py-0.5 rounded text-[10px] font-medium border"
+                          :class="getDifficultyClass(game.difficulty)"
+                        >
+                          {{ getDifficultyText(game.difficulty) }}
+                        </span>
+                        <div class="flex gap-0.5 ml-0.5">
+                          <span
+                            v-for="dim in game.targetDimensions"
+                            :key="dim"
+                            class="w-1.5 h-1.5 rounded-full"
+                            :style="{ backgroundColor: dimensionColors[dim] }"
+                            :title="dimensionNames[dim]"
+                          ></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex-shrink-0 ml-2">
+                    <div v-if="game.isCompleted" class="w-6 h-6 rounded-full bg-[var(--color-success)]/10 flex items-center justify-center text-[var(--color-success)] border border-[var(--color-success)]/20">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3">
+                        <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                    <div v-else class="w-6 h-6 rounded-full bg-[var(--color-bg-muted)] flex items-center justify-center text-[var(--color-text-muted)] group-hover:bg-[var(--color-primary)]/10 group-hover:text-[var(--color-primary)] transition-colors">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
                     </div>
                   </div>
                 </div>
               </div>
+            </section>
 
-              <div class="game-status">
-                <span v-if="game.isCompleted" class="status-done">
-                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3">
-                    <circle cx="12" cy="12" r="10" class="opacity-20" />
-                    <path d="M17 9L10 16L7 13" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </span>
-                <span v-else class="status-arrow">
-                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10" class="opacity-20" />
-                    <path d="M10 8l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </span>
-              </div>
+            <div class="bg-[var(--color-disclaimer)] border border-[var(--color-disclaimer-border)]/50 rounded-lg p-3 text-center mt-6 shadow-sm">
+              <p class="text-xs text-[var(--color-disclaimer-text)] font-medium m-0 flex items-center justify-center gap-1.5">
+                <span class="text-base">💡</span>
+                <span>每天只需 15 分鐘，持續訓練大腦更健康！</span>
+              </p>
             </div>
           </div>
-        </section>
+        </template>
 
-        <div class="bottom-tip">
-          <p>💡 提示：每天只需 15 分鐘，持續訓練大腦更健康！</p>
+        <!-- 無計畫 -->
+        <div v-else class="flex flex-col items-center justify-center min-h-[50vh] space-y-6 text-center px-6">
+          <div class="text-6xl mb-4 animate-bounce">📋</div>
+          <div>
+            <h3 class="text-xl font-bold text-[var(--color-text)] mb-2">暫無訓練計畫</h3>
+            <p class="text-[var(--color-text-secondary)]">無法生成訓練計畫，請檢查網路連線</p>
+          </div>
+          <button class="btn btn-primary shadow-lg" @click="loadTrainingPlan">
+            重新載入
+          </button>
         </div>
-      </template>
-
-      <!-- 無計畫 -->
-      <div v-else class="empty-state">
-        <div class="empty-icon">📋</div>
-        <h3>暫無訓練計畫</h3>
-        <p>無法生成訓練計畫，請檢查網路連線</p>
-        <button class="retry-btn" @click="loadTrainingPlan">
-          重新載入
-        </button>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
-<style scoped>
-/* 根容器：支援動態高度與安全區域 */
-.daily-challenge {
-  min-height: 100dvh; /* 動態視窗高度，解決手機工具列遮擋問題 */
-  background: var(--color-bg);
-  color: var(--color-text);
-  padding-bottom: calc(2rem + env(safe-area-inset-bottom));
-}
-
-/* 中央內容 wrapper：桌面版置中與卡片化視覺 */
-.content-wrapper {
-  max-width: 600px;
-  margin: 0 auto;
-  min-height: 100dvh;
-  background: var(--color-bg);
-  box-shadow: 0 0 40px rgba(0,0,0,0.05);
-}
-
-/* 頁首 */
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem;
-  padding-top: max(1rem, env(safe-area-inset-top)); /* 避開瀏海 */
-  background: rgba(var(--color-surface-rgb), 0.95);
-  border-bottom: 1px solid var(--color-border);
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  backdrop-filter: blur(10px);
-}
-
-/* 返回按鈕加大可點擊面積 */
-.back-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem 1rem;
-  border-radius: 99px;
-  cursor: pointer;
-  font-size: 1rem;
-  background: transparent;
-  border: 1px solid var(--color-border);
-}
-
-/* 訓練摘要 */
-.training-summary {
-  margin: 1.5rem 1rem;
-  padding: 1.5rem;
-  background: linear-gradient(to bottom, var(--color-surface), var(--color-bg-soft));
-}
-
-.summary-stats { display:flex; justify-content:space-around; align-items:center; margin-bottom:1.5rem; }
-
-/* 數值加大 */
-.stat-value {
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--color-primary);
-  line-height: 1.2;
-}
-
-.stat-label {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-}
-
-/* 進度條 */
-.progress-section {
-  margin-bottom: 1.5rem;
-  background: rgba(255,255,255,0.5);
-  padding: 1rem;
-  border-radius: 1rem;
-}
-
-.progress-header { display:flex; justify-content:space-between; margin-bottom:0.5rem; font-weight:600; }
-
-.progress-bar {
-  height: 14px;
-  background: var(--color-border);
-  border-radius: 99px;
-  overflow: hidden;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--gradient-accent);
-  border-radius: 99px;
-  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 開始按鈕：尺寸加大、陰影更強烈 */
-.start-training-btn {
-  width: 100%;
-  padding: 1rem;
-  min-height: 4rem;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-text-inverse);
-  background: var(--gradient-primary);
-  border: none;
-  border-radius: 1rem;
-  display:flex;
-  gap:0.75rem;
-  justify-content:center;
-  align-items:center;
-  box-shadow: var(--shadow-lg);
-}
-
-/* 重新生成按鈕 */
-.text-btn {
-  background: none;
-  border: none;
-  color: var(--color-text-secondary);
-  font-size: 0.95rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: 99px;
-}
-
-/* 維度區域：圖示、字級放大 */
-.dimension-section { padding: 0 1rem 1.5rem; }
-.section-title { font-size: 1.1rem; font-weight:700; color: var(--color-text); padding-left:0.5rem; border-left:4px solid var(--color-primary); }
-
-.dimension-grid {
-  display:grid;
-  grid-template-columns: repeat(3,1fr);
-  gap:0.75rem;
-}
-
-.dimension-item { padding:1rem 0.5rem; border-radius:1rem; opacity:0.6; transition:all .3s; }
-.dimension-item.covered { opacity:1; transform:translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
-
-.dim-icon { font-size: 1.75rem; margin-bottom:0.25rem; }
-.dim-name { font-size:0.85rem; font-weight:600; color:var(--color-text); }
-
-/* 維度徽章*/
-.dim-badge { position:absolute; top:-6px; right:-6px; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; border:2px solid var(--color-surface); }
-
-/* 遊戲清單：點擊區域提升、字體加大 */
-.games-list-section { padding: 0 1rem 1.5rem; }
-.games-list { display:flex; flex-direction:column; gap:1rem; }
-
-.game-item { display:flex; align-items:center; justify-content:space-between; min-height:5rem; padding:1rem; border-radius: 12px; cursor:pointer; transition:all .2s; }
-.game-item.active { border-color: var(--color-primary); background: linear-gradient(to right,var(--color-surface), rgba(var(--color-primary-rgb), 0.05)); }
-
-.game-item-left { display:flex; gap:1rem; align-items:center; flex:1; }
-.game-order { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; color:var(--color-text-secondary); }
-.game-icon-box { font-size:2.5rem; }
-.game-name { font-weight:700; font-size:1.1rem; margin-bottom:0.4rem; }
-.game-meta { display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; }
-
-.dim-dots { display:flex; gap:0.3rem; }
-.dim-dot { width:8px; height:8px; border-radius:50%; }
-
-/* 底部提示加強可讀度 */
-.bottom-tip { padding:1rem 2rem; text-align:center; background:#fffbeb; border:1px solid #fef3c7; border-radius:1rem; margin:0 1rem 1rem; }
-.bottom-tip p { font-size:0.9rem; color:#92400e; font-weight:500; margin:0; }
-
-/* 載入/空狀態 */
-.loading-container, .empty-state { padding:4rem 2rem; min-height:50vh; }
-.spinner { width:50px; height:50px; border:5px solid var(--color-bg-soft); border-top-color: var(--color-primary); border-radius:50%; animation:spin 1s linear infinite; margin-bottom:1.5rem; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* 響應式：桌面版置中寬度與 grid 切換 */
-@media (min-width: 640px) {
-  .dimension-grid { grid-template-columns: repeat(6, 1fr); }
-  .content-wrapper { margin: 0 auto; }
-}
-</style>

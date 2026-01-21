@@ -4,7 +4,7 @@
       class="game-header bg-[var(--color-surface)] shadow-sm border-b border-[var(--color-border)] z-10 sticky top-0"
       :class="{ 'game-header-compact': isMobile, 'game-header-landscape': isLandscape }"
     >
-      <div class="container mx-auto flex items-center justify-between px-2 sm:px-4 py-2 h-14 sm:h-16 gap-2">
+      <div class="container mx-auto flex items-center justify-between px-2 sm:px-4 py-1.5 h-12 sm:h-14 gap-2">
         <button @click="handleBack" class="btn btn-secondary btn-sm flex-shrink-0 !px-2 sm:!px-4 h-9 sm:h-10 flex items-center justify-center">
           <span class="text-lg leading-none">←</span>
           <span class="hidden sm:inline ml-1">返回</span>
@@ -16,7 +16,7 @@
             {{ currentGame?.name || '遊戲' }}
           </h1>
           <span
-            v-if="!isMobile || gameState !== 'playing'"
+            v-if="!isMobile"
             class="badge text-[10px] sm:text-xs mt-0.5"
             :class="`difficulty-${gameStore.currentDifficulty}`"
           >
@@ -25,7 +25,7 @@
         </div>
 
         <!-- 桌面版狀態顯示 -->
-        <div class="hidden sm:flex items-center gap-1.5 sm:gap-4 flex-shrink-0 ml-auto bg-[var(--color-surface)]">
+        <div class="hidden sm:flex items-center gap-3 flex-shrink-0 ml-auto bg-[var(--color-surface)]">
           <div
             v-if="gameStatus.showProgress !== false && gameStatus.totalRounds"
             class="status-item text-right flex flex-col items-end"
@@ -92,7 +92,7 @@
     <!-- 手機版浮動狀態欄 - 始終顯示關鍵狀態 -->
     <div
       v-if="isMobile && gameState === 'playing'"
-      class="fixed top-14 left-0 right-0 z-20 bg-[var(--color-surface)]/95 backdrop-blur-sm border-b border-[var(--color-border)] px-2 py-1"
+      class="fixed top-12 left-0 right-0 z-20 bg-[var(--color-surface)]/95 backdrop-blur-sm border-b border-[var(--color-border)] px-2 py-1"
     >
       <div class="flex items-center justify-between gap-2 text-xs">
         <!-- 左側：時間和分數 -->
@@ -136,11 +136,11 @@
 
     <div
       class="game-play-area flex-1 min-h-0 container mx-auto w-full"
-      :class="{ 'pt-10': isMobile && gameState === 'playing' }"
+      :class="{ 'pt-9': isMobile && gameState === 'playing' }"
     >
             <!-- 準備畫面 - 適應螢幕高度 -->
-      <div v-if="gameState === 'ready'" class="game-content-fit max-w-lg mx-auto text-center">
-        <div class="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 sm:p-6 shadow-lg">
+        <div v-if="gameState === 'ready'" class="game-content-fit max-w-lg mx-auto text-center">
+        <div class="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 sm:p-5 shadow-md">
           <div class="text-4xl sm:text-5xl lg:text-6xl mb-4 transform hover:scale-110 transition-transform">{{ currentGame?.icon }}</div>
           <h2 class="text-lg sm:text-xl lg:text-2xl font-bold mb-4 text-[var(--color-text)]">{{ currentGame?.name }}</h2>
 
@@ -148,7 +148,7 @@
             準備好了嗎？先快速看過玩法，再點擊下方按鈕開始。
           </p>
 
-          <div class="flex items-center justify-center gap-2 mb-4 sm:mb-6">
+          <div class="flex items-center justify-center gap-2 mb-4">
             <span
               class="badge text-[10px] sm:text-xs"
               :class="`difficulty-${gameStore.currentDifficulty}`"
@@ -163,7 +163,7 @@
             </button>
           </div>
 
-          <div class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 max-h-52 overflow-auto">
+          <div class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-3 mb-4 max-h-52 overflow-auto">
             <div class="section-label text-[var(--color-text-secondary)] mb-2">遊戲說明</div>
             <ul class="space-y-1 text-left text-sm sm:text-base text-[var(--color-text)] leading-snug">
               <li v-if="!currentGame?.instructions || currentGame.instructions.length === 0" class="text-[var(--color-text-secondary)]">此遊戲未提供額外說明，請依畫面提示操作。</li>
@@ -174,11 +174,11 @@
             </ul>
           </div>
 
-          <div class="space-y-3">
-            <div v-if="startError" class="p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm text-left">
+          <div class="space-y-2">
+            <div v-if="startError" class="p-3 rounded-lg border border-[var(--color-danger)]/30 bg-[var(--color-danger-bg)] text-[var(--color-danger)] text-sm text-left">
               {{ startError }}
             </div>
-            <button @click="startGame" class="btn btn-primary btn-xl w-full text-base sm:text-lg shadow-md active:scale-95 transition-transform">
+            <button @click="startGame" class="btn btn-primary btn-lg w-full text-base shadow-md active:scale-95 transition-transform">
               開始遊戲
             </button>
             <button @click="goBackToList" class="btn btn-secondary w-full">
@@ -231,11 +231,12 @@
             </div>
             <h2 class="text-lg sm:text-xl font-bold mb-2 text-[var(--color-text)]">遊戲結束！</h2>
 
-            <div class="my-4 sm:my-6 lg:my-8 bg-[var(--color-bg)] rounded-xl p-3 sm:p-4 inline-block min-w-[100px] sm:min-w-[120px]">
-              <div class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-none" :class="getScoreClass(currentScore)">
+            <div class="my-4 sm:my-6 lg:my-8 bg-[var(--color-bg)] rounded-xl p-4 sm:p-6 inline-block min-w-[140px] sm:min-w-[180px] shadow-inner relative overflow-hidden">
+              <div class="absolute inset-0 bg-[var(--color-primary)]/5"></div>
+              <div class="relative z-10 text-6xl sm:text-7xl lg:text-8xl font-black leading-none filter drop-shadow-md" :class="getScoreClass(currentScore)">
                 {{ currentScore }}
               </div>
-              <div class="text-xs sm:text-sm lg:text-xl text-[var(--color-text-secondary)] mt-1">分</div>
+              <div class="relative z-10 text-sm sm:text-base lg:text-xl text-[var(--color-text-secondary)] mt-2 font-bold tracking-widest uppercase">SCORE</div>
             </div>
 
             <!-- 核心統計資訊（所有遊戲一致） -->
@@ -259,7 +260,7 @@
                   :key="index"
                   class="bg-[var(--color-surface-alt)] p-2 sm:p-3 lg:p-4 rounded-lg flex items-center gap-2 border transition-all"
                   :class="[
-                    stat.highlight ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/20' : 'border-[var(--color-border)]'
+                    stat.highlight ? 'border-[var(--color-success)]/40 bg-[var(--color-success-bg)]' : 'border-[var(--color-border)]'
                   ]"
                 >
                   <div v-if="stat.icon" class="text-xl sm:text-2xl flex-shrink-0">{{ stat.icon }}</div>
@@ -538,29 +539,29 @@ const difficultyFeedbackStyle = computed(() => {
   
   if (difficultyAdjustment.value.reason === 'accuracy-high') {
     return {
-      bgClass: 'bg-gradient-to-r from-green-50 to-emerald-50',
-      borderClass: 'border-green-300',
-      iconBgClass: 'bg-green-100',
-      textClass: 'text-green-800',
-      subTextClass: 'text-green-600',
+      bgClass: 'bg-gradient-to-r from-[var(--color-success-bg)] to-[var(--color-surface-alt)]',
+      borderClass: 'border-[var(--color-success)]/50',
+      iconBgClass: 'bg-[var(--color-success)]/10',
+      textClass: 'text-[var(--color-success)]',
+      subTextClass: 'text-[var(--color-success)]',
       icon: '⬆️'
     }
   } else if (difficultyAdjustment.value.reason === 'accuracy-low') {
     return {
-      bgClass: 'bg-gradient-to-r from-orange-50 to-amber-50',
-      borderClass: 'border-orange-300',
-      iconBgClass: 'bg-orange-100',
-      textClass: 'text-orange-800',
-      subTextClass: 'text-orange-600',
+      bgClass: 'bg-gradient-to-r from-[var(--color-warning-bg)] to-[var(--color-surface-alt)]',
+      borderClass: 'border-[var(--color-warning)]/50',
+      iconBgClass: 'bg-[var(--color-warning)]/10',
+      textClass: 'text-[var(--color-warning)]',
+      subTextClass: 'text-[var(--color-warning)]',
       icon: '⬇️'
     }
   } else {
     return {
-      bgClass: 'bg-gradient-to-r from-blue-50 to-indigo-50',
-      borderClass: 'border-blue-300',
-      iconBgClass: 'bg-blue-100',
-      textClass: 'text-blue-800',
-      subTextClass: 'text-blue-600',
+      bgClass: 'bg-gradient-to-r from-[var(--color-info-bg)] to-[var(--color-surface-alt)]',
+      borderClass: 'border-[var(--color-info)]/50',
+      iconBgClass: 'bg-[var(--color-info)]/10',
+      textClass: 'text-[var(--color-info)]',
+      subTextClass: 'text-[var(--color-info)]',
       icon: '➡️'
     }
   }

@@ -16,8 +16,8 @@ async function loadLogo(): Promise<void> {
   try {
     const logoModule = await import('@/assets/logo-base64')
     LOGO_BASE64 = logoModule.LOGO_BASE64
-    LOGO_WIDTH = logoModule.LOGO_WIDTH / 5  // 縮放至適合 PDF 的大小
-    LOGO_HEIGHT = logoModule.LOGO_HEIGHT / 5
+    LOGO_WIDTH = logoModule.LOGO_WIDTH / 3  // 提高清晰度與可讀性
+    LOGO_HEIGHT = logoModule.LOGO_HEIGHT / 3
   } catch {
     console.warn('無法載入 LOGO，將使用文字標題')
   }
@@ -663,13 +663,15 @@ function drawNutritionSection(
 
     doc.setFontSize(FONT_SIZES.body)
     doc.setTextColor(COLORS.primary)
-    doc.text('?? 認知評估建議 Cognitive Assessment Advice', margin, y)
+    doc.text('🧠 認知評估建議 Cognitive Assessment Advice', margin, y)
     y += 6
 
     doc.setFontSize(FONT_SIZES.small)
     doc.setTextColor(COLORS.text)
-    for (const advice of nutrition.cognitiveAdvice.slice(0, 4)) {
-      y = ensurePageSpace(doc, y, 20, margin, pageHeight)
+    for (const advice of nutrition.cognitiveAdvice) {
+      const adviceLines = splitTextLines(doc, `‧ ${advice}`, pageWidth - margin * 2 - 3)
+      const adviceHeight = adviceLines.length * LINE_HEIGHTS.small + 1
+      y = ensurePageSpace(doc, y, adviceHeight, margin, pageHeight)
       y = drawWrappedText(doc, `‧ ${advice}`, margin + 3, y, pageWidth - margin * 2 - 3, LINE_HEIGHTS.small)
       y += 1
     }
@@ -682,13 +684,15 @@ function drawNutritionSection(
 
     doc.setFontSize(FONT_SIZES.body)
     doc.setTextColor(COLORS.success)
-    doc.text('?? 一般保健建議 General Health Advice', margin, y)
+    doc.text('💡 一般保健建議 General Health Advice', margin, y)
     y += 6
 
     doc.setFontSize(FONT_SIZES.small)
     doc.setTextColor(COLORS.text)
-    for (const advice of nutrition.generalAdvice.slice(0, 4)) {
-      y = ensurePageSpace(doc, y, 20, margin, pageHeight)
+    for (const advice of nutrition.generalAdvice) {
+      const adviceLines = splitTextLines(doc, `‧ ${advice}`, pageWidth - margin * 2 - 3)
+      const adviceHeight = adviceLines.length * LINE_HEIGHTS.small + 1
+      y = ensurePageSpace(doc, y, adviceHeight, margin, pageHeight)
       y = drawWrappedText(doc, `‧ ${advice}`, margin + 3, y, pageWidth - margin * 2 - 3, LINE_HEIGHTS.small)
       y += 1
     }
@@ -718,55 +722,63 @@ function drawNutritionPriorityGroup(
   doc.text(title, margin, y)
   y += 6
 
-  for (const rec of recommendations.slice(0, 3)) { // 每組最多顯示3個
-    y = ensurePageSpace(doc, y, 35, margin, pageHeight)
+  const cardWidth = pageWidth - margin * 2
+  const paddingX = 5
+  const paddingY = 4
+  const contentWidth = cardWidth - paddingX * 2
+  const gap = 1.5
 
-    // 繪製卡片背景
-    const cardHeight = rec.isPartnerProduct ? 30 : 26
-    doc.setFillColor('#f8fafc')
+  for (const rec of recommendations) {
+    doc.setFontSize(FONT_SIZES.body)
+    const nameLines = splitTextLines(doc, rec.name, contentWidth)
+
+    doc.setFontSize(FONT_SIZES.small)
+    const reasonLines = splitTextLines(doc, rec.reason, contentWidth)
+
+    const dosageLine = `建議劑量：${rec.dosage}`
+    const partnerLine = rec.isPartnerProduct && rec.partnerName ? `合作資訊：${rec.partnerName}` : null
+
+    const nameHeight = nameLines.length * LINE_HEIGHTS.body
+    const reasonHeight = Math.max(1, reasonLines.length) * LINE_HEIGHTS.small
+    const dosageHeight = LINE_HEIGHTS.tiny
+    const partnerHeight = partnerLine ? LINE_HEIGHTS.tiny : 0
+
+    const cardHeight = paddingY * 2 + nameHeight + gap + reasonHeight + gap + dosageHeight + (partnerLine ? gap + partnerHeight : 0)
+
+    y = ensurePageSpace(doc, y, cardHeight + 4, margin, pageHeight)
+
+    doc.setFillColor(COLORS.background)
     doc.setDrawColor(accentColor)
     doc.setLineWidth(0.3)
-    doc.rect(margin, y, pageWidth - margin * 2, cardHeight, 'FD')
-    
-    // 左側色條
+    doc.rect(margin, y, cardWidth, cardHeight, 'FD')
+
     doc.setFillColor(accentColor)
     doc.rect(margin, y, 2, cardHeight, 'F')
-    
-    y += 5
-    
-    // 補充品名稱
+
+    let textY = y + paddingY + LINE_HEIGHTS.body
+
     doc.setFontSize(FONT_SIZES.body)
     doc.setTextColor(COLORS.text)
-    let nameX = margin + 5
-    doc.text(rec.name, nameX, y)
-    
-    // 合作夥伴標籤
-    if (rec.isPartnerProduct) {
-      const nameWidth = doc.getTextWidth(rec.name)
-      doc.setFontSize(FONT_SIZES.tiny)
-      doc.setTextColor(COLORS.warning)
-      doc.text('[合作]', nameX + nameWidth + 3, y)
-    }
-    y += 5
-    
-    // 建議原因
+    doc.text(nameLines, margin + paddingX, textY)
+    textY += nameHeight + gap
+
     doc.setFontSize(FONT_SIZES.small)
     doc.setTextColor(COLORS.lightText)
-    const reasonLines = splitTextLines(doc, rec.reason, pageWidth - margin * 2 - 10)
-    doc.text(reasonLines.slice(0, 2), margin + 5, y)
-    y += LINE_HEIGHTS.small * Math.max(1, Math.min(2, reasonLines.length))
-    
-    // 建議劑量
+    doc.text(reasonLines, margin + paddingX, textY)
+    textY += reasonHeight + gap
+
     doc.setFontSize(FONT_SIZES.tiny)
-    doc.text(`建議劑量：${rec.dosage}`, margin + 5, y)
-    
-    // 合作夥伴資訊
-    if (rec.isPartnerProduct && rec.partnerName) {
+    doc.setTextColor(COLORS.lightText)
+    doc.text(dosageLine, margin + paddingX, textY)
+    textY += dosageHeight
+
+    if (partnerLine) {
+      textY += gap
       doc.setTextColor(COLORS.primary)
-      doc.text(`| 合作資訊：${rec.partnerName}`, margin + 60, y)
+      doc.text(partnerLine, margin + paddingX, textY)
     }
-    
-    y += cardHeight - 14 + 3 // 移至下一個卡片
+
+    y += cardHeight + 3
   }
 
   return y + 3

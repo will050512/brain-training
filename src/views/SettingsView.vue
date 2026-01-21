@@ -9,229 +9,246 @@
 
     <!-- 可滾動內容區 -->
     <div class="app-content-scroll">
-      <div class="p-4 section-stack">
+      <div class="p-3 sm:p-4 max-w-3xl mx-auto flex flex-col gap-3">
         <!-- 外觀主題設定 -->
-        <div class="card p-4">
-          <h3 class="font-semibold text-[var(--color-text)] mb-4">🎨 外觀主題</h3>
+        <div class="card p-3 sm:p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">🎨</span>
+            <h3 class="font-semibold text-[var(--color-text)]">外觀主題</h3>
+          </div>
           
           <div class="grid grid-cols-3 gap-2">
             <button
               @click="settingsStore.setThemeMode('light')"
-              class="flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all"
+              class="btn-option flex flex-col items-center gap-1 py-3 px-2 rounded-xl border-2 transition-all"
               :class="settingsStore.themeMode === 'light' 
-                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
-                : 'border-[var(--color-border)]'"
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)] text-[var(--color-primary-dark)]' 
+                : 'border-[var(--color-border)] hover:bg-[var(--color-bg-soft)]'"
             >
-              <span class="text-xl">☀️</span>
-              <span class="text-sm text-[var(--color-text)]">淺色</span>
+              <span class="text-2xl">☀️</span>
+              <span class="text-sm font-medium">淺色</span>
             </button>
             
             <button
               @click="settingsStore.setThemeMode('dark')"
-              class="flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all"
+              class="btn-option flex flex-col items-center gap-1 py-3 px-2 rounded-xl border-2 transition-all"
               :class="settingsStore.themeMode === 'dark' 
-                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
-                : 'border-[var(--color-border)]'"
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)] text-[var(--color-primary-dark)]' 
+                : 'border-[var(--color-border)] hover:bg-[var(--color-bg-soft)]'"
             >
-              <span class="text-xl">🌙</span>
-              <span class="text-sm text-[var(--color-text)]">深色</span>
+              <span class="text-2xl">🌙</span>
+              <span class="text-sm font-medium">深色</span>
             </button>
             
             <button
               @click="settingsStore.setThemeMode('system')"
-              class="flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all"
+              class="btn-option flex flex-col items-center gap-1 py-3 px-2 rounded-xl border-2 transition-all"
               :class="settingsStore.themeMode === 'system' 
-                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
-                : 'border-[var(--color-border)]'"
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)] text-[var(--color-primary-dark)]' 
+                : 'border-[var(--color-border)] hover:bg-[var(--color-bg-soft)]'"
             >
-              <span class="text-xl">🖥️</span>
-              <span class="text-sm text-[var(--color-text)]">自動</span>
+              <span class="text-2xl">🖥️</span>
+              <span class="text-sm font-medium">自動</span>
             </button>
           </div>
         </div>
 
         <!-- 訓練目標設定 -->
-        <div class="card">
+        <div class="card overflow-hidden">
           <TrainingGoalSettings />
         </div>
 
         <!-- 外觀與無障礙 -->
-        <div class="card p-4">
-          <h3 class="font-semibold text-[var(--color-text)] mb-4">外觀與無障礙</h3>
+        <div class="card p-3 sm:p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">👁️</span>
+            <h3 class="font-semibold text-[var(--color-text)]">外觀與無障礙</h3>
+          </div>
 
           <!-- 字體大小 -->
           <div class="mb-4">
-            <div class="text-sm font-medium text-[var(--color-text)] mb-2">字體大小</div>
+            <div class="text-sm font-medium text-[var(--color-text-secondary)] mb-2 px-1">字體大小</div>
             <div class="grid grid-cols-4 gap-2">
               <button
                 v-for="option in fontSizeOptions"
                 :key="option.value"
                 @click="settingsStore.setFontSize(option.value)"
-                class="flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all"
+                class="btn-option flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all min-h-[44px]"
                 :class="settingsStore.fontSize === option.value
-                  ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]'
-                  : 'border-[var(--color-border)]'"
+                  ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)] text-[var(--color-primary-dark)]'
+                  : 'border-[var(--color-border)] hover:bg-[var(--color-bg-soft)]'"
               >
-                <span class="text-sm font-semibold text-[var(--color-text)]">{{ option.label }}</span>
+                <span class="font-bold" :style="{ fontSize: option.value === 'small' ? '0.75rem' : option.value === 'large' ? '1.125rem' : option.value === 'xlarge' ? '1.25rem' : '0.875rem' }">A</span>
+                <span class="text-[10px] sm:text-xs mt-1 opacity-80">{{ option.label }}</span>
               </button>
             </div>
           </div>
 
-          <!-- 高對比 -->
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <div class="text-sm font-medium text-[var(--color-text)]">高對比模式</div>
-              <div class="text-xs text-[var(--color-text-muted)]">提升文字與背景對比</div>
+          <div class="space-y-4">
+            <!-- 高對比 -->
+            <div class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="settingsStore.highContrast = !settingsStore.highContrast">
+              <div class="flex-1 pr-4">
+                <div class="text-base font-medium text-[var(--color-text)]">高對比模式</div>
+                <div class="text-xs text-[var(--color-text-muted)] mt-0.5">提升文字與背景對比度</div>
+              </div>
+              <button
+                class="toggle-switch flex-shrink-0"
+                :class="{ 'toggle-on': settingsStore.highContrast }"
+                aria-label="切換高對比模式"
+              >
+                <span class="toggle-thumb"></span>
+              </button>
             </div>
-            <button
-              @click="settingsStore.highContrast = !settingsStore.highContrast"
-              class="toggle-switch"
-              :class="{ 'toggle-on': settingsStore.highContrast }"
-            >
-              <span class="toggle-thumb"></span>
-            </button>
-          </div>
 
-          <!-- 減少動畫 -->
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="text-sm font-medium text-[var(--color-text)]">減少動畫</div>
-              <div class="text-xs text-[var(--color-text-muted)]">降低動態效果帶來的不適</div>
+            <!-- 減少動畫 -->
+            <div class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="settingsStore.reduceMotion = !settingsStore.reduceMotion">
+              <div class="flex-1 pr-4">
+                <div class="text-base font-medium text-[var(--color-text)]">減少動畫</div>
+                <div class="text-xs text-[var(--color-text-muted)] mt-0.5">降低動態效果，減少視覺干擾</div>
+              </div>
+              <button
+                class="toggle-switch flex-shrink-0"
+                :class="{ 'toggle-on': settingsStore.reduceMotion }"
+                aria-label="切換減少動畫"
+              >
+                <span class="toggle-thumb"></span>
+              </button>
             </div>
-            <button
-              @click="settingsStore.reduceMotion = !settingsStore.reduceMotion"
-              class="toggle-switch"
-              :class="{ 'toggle-on': settingsStore.reduceMotion }"
-            >
-              <span class="toggle-thumb"></span>
-            </button>
           </div>
         </div>
 
         <!-- 螢幕方向設定 -->
-        <div class="card p-4">
-          <h3 class="font-semibold text-[var(--color-text)] mb-4">📱 螢幕方向</h3>
+        <div class="card p-3 sm:p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">📱</span>
+            <h3 class="font-semibold text-[var(--color-text)]">螢幕方向</h3>
+          </div>
           
           <div class="grid grid-cols-3 gap-2">
             <button
               @click="settingsStore.setOrientationPreference('portrait')"
-              class="flex flex-col items-center gap-1 p-3 sm:p-4 rounded-xl border-2 transition-all min-h-[60px] sm:min-h-[80px]"
+              class="btn-option flex flex-col items-center gap-1 py-3 px-2 rounded-xl border-2 transition-all"
               :class="settingsStore.orientationPreference === 'portrait'
-                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]'
-                : 'border-[var(--color-border)]'"
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)] text-[var(--color-primary-dark)]'
+                : 'border-[var(--color-border)] hover:bg-[var(--color-bg-soft)]'"
             >
-              <span class="text-xl sm:text-2xl">📱</span>
-              <span class="text-xs sm:text-sm text-[var(--color-text)]">直向</span>
+              <span class="text-2xl">📱</span>
+              <span class="text-sm font-medium">直向</span>
             </button>
 
             <button
               @click="settingsStore.setOrientationPreference('landscape')"
-              class="flex flex-col items-center gap-1 p-3 sm:p-4 rounded-xl border-2 transition-all min-h-[60px] sm:min-h-[80px]"
+              class="btn-option flex flex-col items-center gap-1 py-3 px-2 rounded-xl border-2 transition-all"
               :class="settingsStore.orientationPreference === 'landscape'
-                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]'
-                : 'border-[var(--color-border)]'"
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)] text-[var(--color-primary-dark)]'
+                : 'border-[var(--color-border)] hover:bg-[var(--color-bg-soft)]'"
             >
-              <span class="text-xl sm:text-2xl">📺</span>
-              <span class="text-xs sm:text-sm text-[var(--color-text)]">橫向</span>
+              <span class="text-2xl">📺</span>
+              <span class="text-sm font-medium">橫向</span>
             </button>
 
             <button
               @click="settingsStore.setOrientationPreference('auto')"
-              class="flex flex-col items-center gap-1 p-3 sm:p-4 rounded-xl border-2 transition-all min-h-[60px] sm:min-h-[80px]"
+              class="btn-option flex flex-col items-center gap-1 py-3 px-2 rounded-xl border-2 transition-all"
               :class="settingsStore.orientationPreference === 'auto'
-                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]'
-                : 'border-[var(--color-border)]'"
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)] text-[var(--color-primary-dark)]'
+                : 'border-[var(--color-border)] hover:bg-[var(--color-bg-soft)]'"
             >
-              <span class="text-xl sm:text-2xl">🔄</span>
-              <span class="text-xs sm:text-sm text-[var(--color-text)]">自動</span>
+              <span class="text-2xl">🔄</span>
+              <span class="text-sm font-medium">自動</span>
             </button>
           </div>
           
           <!-- 不支援提示 -->
           <p 
             v-if="!settingsStore.orientationSupported" 
-            class="text-xs text-[var(--color-text-muted)] mt-3 flex items-center gap-1"
+            class="text-xs text-[var(--color-warning)] bg-[var(--color-warning-bg)] p-2 rounded-lg mt-3 flex items-start gap-2"
           >
-            <span>⚠️</span>
-            <span>您的裝置/瀏覽器不支援自動方向鎖定，請手動旋轉螢幕</span>
+            <span class="mt-0.5">⚠️</span>
+            <span>您的裝置不支援自動旋轉鎖定，請使用系統設定調整。</span>
           </p>
         </div>
 
         <!-- 音效與回饋 -->
-        <div class="card p-4">
-          <h3 class="font-semibold text-[var(--color-text)] mb-4">🔊 音效與回饋</h3>
-          
-          <!-- 遊戲音效 -->
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <div class="text-sm font-medium text-[var(--color-text)]">遊戲音效</div>
-            </div>
-            <button
-              @click="settingsStore.toggleSound()"
-              class="toggle-switch"
-              :class="{ 'toggle-on': settingsStore.soundEnabled }"
-            >
-              <span class="toggle-thumb"></span>
-            </button>
+        <div class="card p-3 sm:p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">🔊</span>
+            <h3 class="font-semibold text-[var(--color-text)]">音效與回饋</h3>
           </div>
           
-          <!-- 背景音樂 -->
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <div class="text-sm font-medium text-[var(--color-text)]">背景音樂</div>
+          <div class="space-y-4">
+            <!-- 遊戲音效 -->
+            <div class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="settingsStore.toggleSound()">
+              <div class="flex-1 pr-4">
+                <div class="text-base font-medium text-[var(--color-text)]">遊戲音效</div>
+                <div class="text-xs text-[var(--color-text-muted)] mt-0.5">答對、答錯等互動音效</div>
+              </div>
+              <button
+                class="toggle-switch flex-shrink-0"
+                :class="{ 'toggle-on': settingsStore.soundEnabled }"
+              >
+                <span class="toggle-thumb"></span>
+              </button>
             </div>
-            <button
-              @click="settingsStore.toggleMusic()"
-              class="toggle-switch"
-              :class="{ 'toggle-on': settingsStore.musicEnabled }"
-            >
-              <span class="toggle-thumb"></span>
-            </button>
-          </div>
+            
+            <!-- 背景音樂 -->
+            <div class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="settingsStore.toggleMusic()">
+              <div class="flex-1 pr-4">
+                <div class="text-base font-medium text-[var(--color-text)]">背景音樂</div>
+                <div class="text-xs text-[var(--color-text-muted)] mt-0.5">遊戲過程中的背景音樂</div>
+              </div>
+              <button
+                class="toggle-switch flex-shrink-0"
+                :class="{ 'toggle-on': settingsStore.musicEnabled }"
+              >
+                <span class="toggle-thumb"></span>
+              </button>
+            </div>
 
-          <!-- 語音提示 -->
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <div class="text-sm font-medium text-[var(--color-text)]">語音提示</div>
-              <div class="text-xs text-[var(--color-text-muted)]">提供語音引導（若有支援）</div>
+            <!-- 語音提示 -->
+            <div class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="settingsStore.enableVoicePrompts = !settingsStore.enableVoicePrompts">
+              <div class="flex-1 pr-4">
+                <div class="text-base font-medium text-[var(--color-text)]">語音提示</div>
+                <div class="text-xs text-[var(--color-text-muted)] mt-0.5">提供語音引導（若支援）</div>
+              </div>
+              <button
+                class="toggle-switch flex-shrink-0"
+                :class="{ 'toggle-on': settingsStore.enableVoicePrompts }"
+              >
+                <span class="toggle-thumb"></span>
+              </button>
             </div>
-            <button
-              @click="settingsStore.enableVoicePrompts = !settingsStore.enableVoicePrompts"
-              class="toggle-switch"
-              :class="{ 'toggle-on': settingsStore.enableVoicePrompts }"
-            >
-              <span class="toggle-thumb"></span>
-            </button>
-          </div>
 
-          <!-- 震動回饋 -->
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="text-sm font-medium text-[var(--color-text)]">震動回饋</div>
-              <div class="text-xs text-[var(--color-text-muted)]">在支援裝置提供觸覺回饋</div>
+            <!-- 震動回饋 -->
+            <div class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="settingsStore.enableHapticFeedback = !settingsStore.enableHapticFeedback">
+              <div class="flex-1 pr-4">
+                <div class="text-base font-medium text-[var(--color-text)]">震動回饋</div>
+                <div class="text-xs text-[var(--color-text-muted)] mt-0.5">觸控時的輕微震動</div>
+              </div>
+              <button
+                class="toggle-switch flex-shrink-0"
+                :class="{ 'toggle-on': settingsStore.enableHapticFeedback }"
+              >
+                <span class="toggle-thumb"></span>
+              </button>
             </div>
-            <button
-              @click="settingsStore.enableHapticFeedback = !settingsStore.enableHapticFeedback"
-              class="toggle-switch"
-              :class="{ 'toggle-on': settingsStore.enableHapticFeedback }"
-            >
-              <span class="toggle-thumb"></span>
-            </button>
           </div>
         </div>
 
         <!-- 提醒設定 -->
-        <div class="card p-4">
-          <h3 class="font-semibold text-[var(--color-text)] mb-4">🔔 提醒設定</h3>
+        <div class="card p-3 sm:p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">🔔</span>
+            <h3 class="font-semibold text-[var(--color-text)]">提醒設定</h3>
+          </div>
 
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="text-sm font-medium text-[var(--color-text)]">每月評估提醒</div>
-              <div class="text-xs text-[var(--color-text-muted)]">距離上次 Mini-Cog/評估超過 30 天會提醒</div>
+          <div class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="settingsStore.assessmentReminderEnabled = !settingsStore.assessmentReminderEnabled">
+            <div class="flex-1 pr-4">
+              <div class="text-base font-medium text-[var(--color-text)]">每月評估提醒</div>
+              <div class="text-xs text-[var(--color-text-muted)] mt-0.5">距離上次評估超過 30 天提醒</div>
             </div>
             <button
-              @click="settingsStore.assessmentReminderEnabled = !settingsStore.assessmentReminderEnabled"
-              class="toggle-switch"
+              class="toggle-switch flex-shrink-0"
               :class="{ 'toggle-on': settingsStore.assessmentReminderEnabled }"
             >
               <span class="toggle-thumb"></span>
@@ -240,170 +257,185 @@
         </div>
 
         <!-- 隱私與同意 -->
-        <div v-if="userStore.isLoggedIn" class="card p-4">
-          <h3 class="font-semibold text-[var(--color-text)] mb-4">隱私與同意</h3>
-
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <div class="text-sm font-medium text-[var(--color-text)]">雲端備份</div>
-              <div class="text-xs text-[var(--color-text-muted)]">允許將訓練資料備份到雲端</div>
-            </div>
-            <button
-              @click="toggleCloudBackup()"
-              class="toggle-switch"
-              :class="{ 'toggle-on': consentState?.analyticsConsent }"
-            >
-              <span class="toggle-thumb"></span>
-            </button>
+        <div v-if="userStore.isLoggedIn" class="card p-3 sm:p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">🔒</span>
+            <h3 class="font-semibold text-[var(--color-text)]">隱私與同意</h3>
           </div>
 
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <div class="text-sm font-medium text-[var(--color-text)]">使用分析（本機）</div>
-              <div class="text-xs text-[var(--color-text-muted)]">啟用行為記錄以產生訓練洞察</div>
+          <div class="space-y-4">
+            <div class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="toggleCloudBackup()">
+              <div class="flex-1 pr-4">
+                <div class="text-base font-medium text-[var(--color-text)]">雲端備份</div>
+                <div class="text-xs text-[var(--color-text-muted)] mt-0.5">允許將資料備份到雲端</div>
+              </div>
+              <button
+                class="toggle-switch flex-shrink-0"
+                :class="{ 'toggle-on': consentState?.analyticsConsent }"
+              >
+                <span class="toggle-thumb"></span>
+              </button>
             </div>
-            <button
-              @click="toggleUsageAnalytics()"
-              class="toggle-switch"
-              :class="{ 'toggle-on': settingsStore.enableBehaviorTracking }"
-            >
-              <span class="toggle-thumb"></span>
-            </button>
-          </div>
 
-          <div class="text-xs text-[var(--color-text-muted)] mt-2">
-            資料預設只儲存在您的裝置上，雲端備份為選用功能且需要 Google 帳戶授權。
+            <div class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="toggleUsageAnalytics()">
+              <div class="flex-1 pr-4">
+                <div class="text-base font-medium text-[var(--color-text)]">使用分析（本機）</div>
+                <div class="text-xs text-[var(--color-text-muted)] mt-0.5">啟用行為記錄以產生洞察</div>
+              </div>
+              <button
+                class="toggle-switch flex-shrink-0"
+                :class="{ 'toggle-on': settingsStore.enableBehaviorTracking }"
+              >
+                <span class="toggle-thumb"></span>
+              </button>
+            </div>
+
+            <div class="text-xs text-[var(--color-text-muted)] bg-[var(--color-bg-muted)] p-3 rounded-lg leading-relaxed">
+              資料預設儲存在您的裝置上。雲端備份為選用功能，需要 Google 帳戶授權。我們重視您的隱私，不會在未經許可的情況下分享您的資料。
+            </div>
           </div>
         </div>
 
         <!-- 資料同步 -->
-        <div v-if="userStore.isLoggedIn" class="card p-4">
-          <h3 class="font-semibold text-[var(--color-text)] mb-3">資料同步</h3>
-          <p class="text-xs text-[var(--color-text-muted)] mb-3">
-            會將遊戲與個人資料同步到 Google Sheet，方便後續分析。
-          </p>
-          <div class="space-y-2 text-sm">
-            <div class="flex justify-between">
-              <span class="text-[var(--color-text-muted)]">同步許可</span>
-            <span :class="syncStatusClass">{{ syncStatusLabel }}</span>
+        <div v-if="userStore.isLoggedIn" class="card p-3 sm:p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">☁️</span>
+            <h3 class="font-semibold text-[var(--color-text)]">資料同步</h3>
+          </div>
+          
+          <div class="bg-[var(--color-bg-soft)] rounded-lg p-3 mb-3">
+            <div class="flex items-center justify-between mb-2 pb-2 border-b border-[var(--color-border-light)]">
+              <span class="text-sm font-medium text-[var(--color-text-secondary)]">同步狀態</span>
+              <span class="text-sm font-bold" :class="syncStatusClass">{{ syncStatusLabel }}</span>
             </div>
-            <div class="flex justify-between">
-              <span class="text-[var(--color-text-muted)]">手動同步</span>
-              <SyncStatusIndicator />
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[var(--color-text-muted)]">上次手動同步</span>
-              <span class="text-[var(--color-text)]">{{ formatSyncTime(settingsStore.lastManualSyncAt) }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[var(--color-text-muted)]">最近上傳（遊戲）</span>
-              <span class="text-[var(--color-text)]">{{ formatSyncTime(syncStatus.session.lastSuccessAt) }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[var(--color-text-muted)]">最近上傳（個人）</span>
-              <span class="text-[var(--color-text)]">{{ formatSyncTime(syncStatus.user.lastSuccessAt) }}</span>
-            </div>
-            <div v-if="settingsStore.lastManualSyncError" class="text-xs text-[var(--color-danger)]">
-              同步失敗：{{ settingsStore.lastManualSyncError }}
-            </div>
-            <div v-if="syncStatus.session.lastErrorAt || syncStatus.user.lastErrorAt" class="text-xs text-[var(--color-danger)]">
-              最近同步失敗：{{ formatSyncTime(syncStatus.session.lastErrorAt || syncStatus.user.lastErrorAt) }}
+            
+            <div class="space-y-2 text-xs text-[var(--color-text-muted)]">
+               <div class="flex justify-between">
+                <span>手動同步</span>
+                <SyncStatusIndicator />
+              </div>
+              <div class="flex justify-between">
+                <span>上次同步</span>
+                <span class="font-mono text-[var(--color-text)]">{{ formatSyncTime(settingsStore.lastManualSyncAt) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>遊戲記錄上傳</span>
+                <span class="font-mono text-[var(--color-text)]">{{ formatSyncTime(syncStatus.session.lastSuccessAt) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>個人資料上傳</span>
+                <span class="font-mono text-[var(--color-text)]">{{ formatSyncTime(syncStatus.user.lastSuccessAt) }}</span>
+              </div>
             </div>
           </div>
+
+          <div v-if="settingsStore.lastManualSyncError" class="text-xs text-[var(--color-danger)] mb-2 bg-[var(--color-danger-bg)] p-2 rounded">
+            ⚠️ 同步失敗：{{ settingsStore.lastManualSyncError }}
+          </div>
+          <div v-if="syncStatus.session.lastErrorAt || syncStatus.user.lastErrorAt" class="text-xs text-[var(--color-danger)] mb-2 bg-[var(--color-danger-bg)] p-2 rounded">
+            ⚠️ 最近同步失敗：{{ formatSyncTime(syncStatus.session.lastErrorAt || syncStatus.user.lastErrorAt) }}
+          </div>
+
           <button
-            class="btn btn-secondary w-full mt-3 py-2 text-sm"
+            class="btn btn-secondary w-full py-3 text-sm font-medium flex items-center justify-center gap-2"
             :disabled="!canManualSync"
             @click="handleManualSync"
           >
-            立即同步
+            <span>🔄</span> 立即同步
           </button>
-          <div class="text-xs text-[var(--color-text-muted)] mt-3">
-            需開啟「雲端備份」才會同步，離線時將在恢復連線後補傳。
-          </div>
+          
+          <p class="text-xs text-[var(--color-text-muted)] mt-2 text-center">
+            需開啟「雲端備份」且在連線狀態下才能同步
+          </p>
         </div>
 
         <!-- 帳號資訊 -->
-        <div v-if="userStore.isLoggedIn" class="card p-4">
-          <h3 class="font-semibold text-[var(--color-text)] mb-3">👤 帳號資訊</h3>
+        <div v-if="userStore.isLoggedIn" class="card p-3 sm:p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">👤</span>
+            <h3 class="font-semibold text-[var(--color-text)]">帳號資訊</h3>
+          </div>
           
-          <div class="space-y-2 text-sm">
-            <div class="flex justify-between">
-              <span class="text-[var(--color-text-muted)]">姓名</span>
-              <span class="text-[var(--color-text)]">{{ userStore.currentUser?.name }}</span>
+          <div class="bg-[var(--color-bg-soft)] rounded-xl p-4 mb-4 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-[var(--color-primary)] text-[var(--color-text-inverse)] flex items-center justify-center text-xl font-bold">
+              {{ userStore.currentUser?.name?.charAt(0) || 'U' }}
             </div>
-            <div class="flex justify-between">
-              <span class="text-[var(--color-text-muted)]">年齡</span>
-              <span class="text-[var(--color-text)]">{{ userStore.userAge }} 歲</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[var(--color-text-muted)]">登入來源</span>
-              <span class="text-[var(--color-text)]">{{ authProviderLabel }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[var(--color-text-muted)]">使用裝置</span>
-              <span class="text-[var(--color-text)]">{{ clientSourceLabel }}</span>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-lg text-[var(--color-text)] truncate">{{ userStore.currentUser?.name }}</div>
+              <div class="text-xs text-[var(--color-text-muted)] flex items-center gap-2">
+                <span class="bg-[var(--color-surface)] px-1.5 py-0.5 rounded border border-[var(--color-border)]">{{ userStore.userAge }} 歲</span>
+                <span class="bg-[var(--color-surface)] px-1.5 py-0.5 rounded border border-[var(--color-border)]">{{ authProviderLabel }}</span>
+              </div>
             </div>
           </div>
           
           <button 
             @click="handleLogout" 
-            class="btn btn-secondary w-full mt-4 py-2 text-sm"
+            class="btn btn-outline w-full py-2.5 text-sm font-medium border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-bg-muted)]"
           >
-            切換帳號
+            登出 / 切換帳號
           </button>
         </div>
 
-        <!-- 訓練統計 -->
-        <div v-if="userStore.isLoggedIn && userStore.currentStats" class="card p-4">
-          <h3 class="font-semibold text-[var(--color-text)] mb-3">📊 訓練統計</h3>
+        <!-- 訓練統計 (精簡版) -->
+        <div v-if="userStore.isLoggedIn && userStore.currentStats" class="card p-3 sm:p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">📊</span>
+            <h3 class="font-semibold text-[var(--color-text)]">訓練概況</h3>
+          </div>
           
-          <div class="grid grid-cols-2 gap-3 text-sm">
-            <div class="p-3 bg-[var(--color-surface-alt)] rounded-lg text-center">
-              <div class="text-lg font-bold text-[var(--color-primary)]">{{ totalGamesPlayed }}</div>
-              <div class="text-xs text-[var(--color-text-muted)]">遊戲次數</div>
+          <div class="grid grid-cols-4 gap-2">
+            <div class="flex flex-col items-center p-2 bg-[var(--color-bg-soft)] rounded-lg">
+              <span class="text-lg font-bold text-[var(--color-primary)]">{{ totalGamesPlayed }}</span>
+              <span class="text-[10px] text-[var(--color-text-muted)]">次數</span>
             </div>
-            <div class="p-3 bg-[var(--color-surface-alt)] rounded-lg text-center">
-              <div class="text-lg font-bold text-[var(--color-score-good)]">{{ userStore.currentStats.averageScore }}</div>
-              <div class="text-xs text-[var(--color-text-muted)]">平均分數</div>
+            <div class="flex flex-col items-center p-2 bg-[var(--color-bg-soft)] rounded-lg">
+              <span class="text-lg font-bold text-[var(--color-score-good)]">{{ Math.round(userStore.currentStats.averageScore) }}</span>
+              <span class="text-[10px] text-[var(--color-text-muted)]">均分</span>
             </div>
-            <div class="p-3 bg-[var(--color-surface-alt)] rounded-lg text-center">
-              <div class="text-lg font-bold text-[var(--color-progress)]">{{ formatPlayTime(userStore.currentStats.totalPlayTime) }}</div>
-              <div class="text-xs text-[var(--color-text-muted)]">總時長</div>
+            <div class="flex flex-col items-center p-2 bg-[var(--color-bg-soft)] rounded-lg">
+              <span class="text-lg font-bold text-[var(--color-combo)]">{{ userStore.currentStats.streak }}</span>
+              <span class="text-[10px] text-[var(--color-text-muted)]">連勝</span>
             </div>
-            <div class="p-3 bg-[var(--color-surface-alt)] rounded-lg text-center">
-              <div class="text-lg font-bold text-[var(--color-combo)]">{{ userStore.currentStats.streak }}</div>
-              <div class="text-xs text-[var(--color-text-muted)]">連續天數</div>
+            <div class="flex flex-col items-center p-2 bg-[var(--color-bg-soft)] rounded-lg">
+              <span class="text-sm font-bold text-[var(--color-progress)] mt-1">{{ formatPlayTime(userStore.currentStats.totalPlayTime).replace('小時','h').replace('分','m').replace('秒','s') }}</span>
+              <span class="text-[10px] text-[var(--color-text-muted)]">時長</span>
             </div>
           </div>
         </div>
 
         <!-- 其他設定 -->
-        <div class="card p-4">
-          <h3 class="font-semibold text-[var(--color-text)] mb-3">⚙️ 其他</h3>
+        <div class="card p-3 sm:p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">⚙️</span>
+            <h3 class="font-semibold text-[var(--color-text)]">進階操作</h3>
+          </div>
           
-          <button 
-            @click="resetWelcome" 
-            class="btn btn-secondary w-full mb-2 py-2 text-sm"
-          >
-            重新顯示歡迎畫面
-          </button>
-          
-          <button 
-            v-if="userStore.isLoggedIn"
-            @click="confirmClearData" 
-            class="btn btn-danger w-full py-2 text-sm"
-          >
-            清除所有遊戲記錄
-          </button>
+          <div class="flex flex-col gap-2">
+            <button 
+              @click="resetWelcome" 
+              class="btn bg-[var(--color-bg-soft)] text-[var(--color-text)] hover:bg-[var(--color-border-light)] w-full py-3 text-sm font-medium rounded-xl transition-colors text-left px-4 flex justify-between items-center"
+            >
+              <span>重新顯示歡迎畫面</span>
+              <span class="text-[var(--color-text-muted)]">→</span>
+            </button>
+            
+            <button 
+              v-if="userStore.isLoggedIn"
+              @click="confirmClearData" 
+              class="btn bg-[var(--color-danger-bg)] text-[var(--color-danger)] hover:bg-[var(--color-danger-bg)] hover:opacity-80 dark:hover:bg-[var(--color-danger-bg)] dark:hover:opacity-80 w-full py-3 text-sm font-medium rounded-xl transition-colors text-left px-4 flex justify-between items-center"
+            >
+              <span>清除所有遊戲記錄</span>
+              <span>🗑️</span>
+            </button>
+          </div>
         </div>
 
         <!-- 關於 -->
-        <div class="card p-4">
-          <div class="text-center text-sm">
-            <img src="@/assets/logo.svg" alt="愛護腦" class="w-12 h-12 mx-auto mb-3" />
-            <p class="font-semibold text-[var(--color-text)]">愛護腦 Al MindCare</p>
-            <p class="text-[var(--color-text-muted)]">版本 {{ appVersion }}</p>
-          </div>
+        <div class="text-center py-6 pb-10">
+          <img src="@/assets/logo.svg" alt="愛護腦" class="w-12 h-12 mx-auto mb-3 opacity-80 filter grayscale hover:grayscale-0 transition-all duration-500" />
+          <p class="font-bold text-[var(--color-text)] text-sm mb-1">愛護腦 AI MindCare</p>
+          <p class="text-[var(--color-text-muted)] text-xs">v{{ appVersion }}</p>
         </div>
       </div>
     </div>
