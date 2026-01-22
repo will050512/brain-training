@@ -348,7 +348,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
       <!-- 卡片網格 -->
         <div
-          class="card-grid mt-4 sm:mt-6 grid gap-2 sm:gap-3 md:gap-4 mx-auto w-full px-2 sm:px-4"
+          class="card-grid game-grid game-board-wide mt-4 sm:mt-6 mx-auto w-full px-2 sm:px-4"
           :style="{
             gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`
           }"
@@ -356,7 +356,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         <div
           v-for="card in cards"
           :key="card.id"
-          class="poker-card aspect-[2/3] rounded-lg cursor-pointer transition-all duration-300 transform perspective-1000 min-h-[clamp(64px,14vw,100px)]"
+          class="poker-card game-tile aspect-[2/3] rounded-lg cursor-pointer transition-all duration-300 transform perspective-1000"
           :class="{
             'is-flipped': card.isFlipped,
             'is-matched': card.isMatched,
@@ -422,7 +422,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
 <style scoped>
 .poker-card {
-  min-height: 90px;
+  min-height: var(--game-tile);
 }
 
 .perspective-1000 {
@@ -459,12 +459,20 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 }
 
 .suit-img {
-  width: 36px;
-  height: 36px;
+  width: clamp(26px, 5.5vmin, 40px);
+  height: clamp(26px, 5.5vmin, 40px);
 }
 
 .is-landscape .card-grid {
   gap: 0.35rem;
+}
+
+.poker-memory-game {
+  --game-tile: clamp(56px, 14vmin, 92px);
+}
+
+.poker-memory-game.is-landscape {
+  --game-tile: clamp(48px, 12vmin, 80px);
 }
 </style>
 

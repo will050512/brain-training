@@ -441,7 +441,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
             <div
               v-for="(beat, index) in currentBeats"
               :key="index"
-              class="beat-dot w-10 h-10 sm:w-12 sm:h-12 rounded-full transition-all duration-100 flex items-center justify-center text-lg sm:text-xl min-h-[40px] min-w-[40px] sm:min-h-[48px] sm:min-w-[48px]"
+              class="beat-dot game-tile-sm rounded-full transition-all duration-100 flex items-center justify-center text-lg sm:text-xl"
               :class="{
                 'bg-blue-500 scale-125 shadow-lg shadow-blue-500/50': currentBeatIndex === index,
                 'bg-gray-300 dark:bg-gray-600': currentBeatIndex !== index && index > currentBeatIndex,
@@ -472,18 +472,18 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
             <div
               v-for="(tap, index) in userTaps"
               :key="index"
-              class="tap-dot w-6 h-6 sm:w-8 sm:h-8 bg-green-500 rounded-full min-h-[24px] min-w-[24px] sm:min-h-[32px] sm:min-w-[32px]"
+              class="tap-dot bg-green-500 rounded-full"
             />
             <div
               v-for="i in (currentBeats.length - userTaps.length)"
               :key="'placeholder-' + i"
-              class="tap-placeholder w-6 h-6 sm:w-8 sm:h-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-full min-h-[24px] min-w-[24px] sm:min-h-[32px] sm:min-w-[32px]"
+              class="tap-placeholder border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-full"
             />
           </div>
 
           <!-- 敲擊按鈕 -->
           <button
-            class="tap-btn w-[clamp(7rem,28vw,10rem)] h-[clamp(7rem,28vw,10rem)] rounded-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-[clamp(2.5rem,8vw,3.75rem)] shadow-xl transition-all transform"
+            class="tap-btn w-[clamp(6rem,22vmin,9.5rem)] h-[clamp(6rem,22vmin,9.5rem)] rounded-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-[clamp(2.2rem,7vmin,3.5rem)] shadow-xl transition-all transform"
             :class="{ 'scale-90 bg-blue-700': isTapping, 'opacity-50 pointer-events-none': !inputReady }"
             @click="handleTap"
             @touchstart.prevent="handleTap"
@@ -500,13 +500,13 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           <div class="mt-3 sm:mt-4 flex justify-center gap-2 flex-wrap">
             <button
               v-if="replayRemaining > 0"
-              class="skip-btn px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-sm sm:text-base font-medium min-h-[44px]"
+              class="skip-btn game-touch px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-sm sm:text-base font-medium"
               @click="replayPattern"
             >
               再聽一次（剩 {{ replayRemaining }} 次）
             </button>
             <button
-              class="skip-btn px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-sm sm:text-base font-medium min-h-[44px]"
+              class="skip-btn game-touch px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-sm sm:text-base font-medium"
               @click="skipInput"
             >
               直接結算
@@ -563,6 +563,12 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 <style scoped>
 .tap-btn:active {
   transform: scale(0.9);
+}
+
+.tap-dot,
+.tap-placeholder {
+  width: clamp(22px, 5vmin, 34px);
+  height: clamp(22px, 5vmin, 34px);
 }
 
 .beat-dot {

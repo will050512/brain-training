@@ -216,17 +216,18 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  padding: 1rem 2.5rem;
+  padding: 1rem 2.25rem;
   margin-top: 1rem;
   background: var(--color-primary);
   color: white;
   border: none;
   border-radius: var(--radius-xl);
-  font-size: 1.25rem;
+  font-size: clamp(1.125rem, 3vw, 1.35rem);
   font-weight: 700;
   cursor: pointer;
   transition: all var(--transition-normal);
   box-shadow: var(--shadow-md);
+  min-height: var(--game-touch-comfort);
 }
 
 .start-button:hover {

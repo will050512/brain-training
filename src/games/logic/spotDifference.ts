@@ -10,6 +10,10 @@ import type { Difficulty } from '@/types/game'
 export interface SpotDifferenceConfig {
   /** 網格大小 */
   gridSize: number
+  /** 網格列數（可選，若提供則優先使用） */
+  gridRows?: number
+  /** 網格欄數（可選，若提供則優先使用） */
+  gridCols?: number
   /** 不同之處數量 */
   diffCount: number
   /** 總回合數 */
@@ -36,6 +40,14 @@ export interface SpotDifferenceResult {
   totalFound: number
   /** 總共需要找的不同數 */
   totalDifferences: number
+  /** 網格列數 */
+  gridRows?: number
+  /** 網格欄數 */
+  gridCols?: number
+  /** 每回合不同點數 */
+  diffCount?: number
+  /** 總回合數 */
+  totalRounds?: number
   /** 準確率 */
   accuracy: number
   /** 平均找到時間（毫秒） */
@@ -79,6 +91,15 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, SpotDifferenceConfig> = {
   },
 }
 
+function resolveGridShape(config: SpotDifferenceConfig): { rows: number; cols: number } {
+  const rows = config.gridRows ?? config.gridSize
+  const cols = config.gridCols ?? config.gridSize
+  return {
+    rows: Math.max(1, Math.round(rows)),
+    cols: Math.max(1, Math.round(cols)),
+  }
+}
+
 // ==================== 工具函數 ====================
 
 /**
@@ -101,8 +122,9 @@ function randomFrom<T>(arr: T[]): T {
  * 產生一回合的題目
  */
 export function generateRound(config: SpotDifferenceConfig): RoundData {
-  const { gridSize, diffCount } = config
-  const totalCells = gridSize * gridSize
+  const { diffCount } = config
+  const { rows, cols } = resolveGridShape(config)
+  const totalCells = rows * cols
   const emojiSet = getRandomEmojiSet()
 
   // 產生原圖
@@ -229,11 +251,16 @@ export function summarizeResult(
     : 0
 
   const score = calculateScore(totalFound, totalDifferences, wrongClicks, avgFoundTime)
+  const { rows, cols } = resolveGridShape(config)
 
   return {
     score,
     totalFound,
     totalDifferences,
+    gridRows: rows,
+    gridCols: cols,
+    diffCount,
+    totalRounds,
     accuracy,
     avgFoundTime,
     wrongClicks,

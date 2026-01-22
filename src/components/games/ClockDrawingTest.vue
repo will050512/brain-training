@@ -3,6 +3,10 @@
     ref="containerRef"
     class="clock-drawing-test game-root"
     :class="{ 'is-landscape': isSmallLandscape() }"
+    :style="{
+      '--clock-number-size': numberSizeCss,
+      '--clock-pool-size': poolNumberSizeCss,
+    }"
   >
     <!-- 指示區域 -->
     <div class="instructions px-4" v-if="!isComplete">
@@ -191,10 +195,12 @@ const draggingNumber = ref<AssembleNumber | null>(null)
 const rotatingHand = ref<'hour' | 'minute' | null>(null)
 const clockFaceRef = ref<HTMLElement | null>(null)
 
-const NUMBER_SIZE = 36
-const NUMBER_HALF = NUMBER_SIZE / 2
-const dragOffsetX = ref(NUMBER_HALF)
-const dragOffsetY = ref(NUMBER_HALF)
+const numberSize = computed(() => Math.round(Math.max(36, Math.min(52, clockFaceSize.value * 0.16))))
+const numberHalf = computed(() => numberSize.value / 2)
+const numberSizeCss = computed(() => `${numberSize.value}px`)
+const poolNumberSizeCss = computed(() => `${Math.round(numberSize.value * 1.1)}px`)
+const dragOffsetX = ref(0)
+const dragOffsetY = ref(0)
 
 function getElementContentWidth(el: HTMLElement | null): number | null {
   if (!el) return null
@@ -232,15 +238,15 @@ const snapPositions = computed(() => {
   const centerX = size / 2
   const centerY = size / 2
   // 讓數字保持在面盤內側、且對齊實際數字尺寸
-  const radius = size / 2 - NUMBER_SIZE
+  const radius = size / 2 - numberSize.value
   
   return Array.from({ length: 12 }, (_, i) => {
     const number = i === 0 ? 12 : i
     const angle = ((i * 30) - 90) * (Math.PI / 180)
     return {
       number,
-      x: centerX + radius * Math.cos(angle) - NUMBER_HALF,
-      y: centerY + radius * Math.sin(angle) - NUMBER_HALF,
+      x: centerX + radius * Math.cos(angle) - numberHalf.value,
+      y: centerY + radius * Math.sin(angle) - numberHalf.value,
       angle: i * 30
     }
   })
@@ -313,8 +319,8 @@ function startDragNumber(event: MouseEvent, num: AssembleNumber) {
     dragOffsetX.value = event.clientX - r.left
     dragOffsetY.value = event.clientY - r.top
   } else {
-    dragOffsetX.value = NUMBER_HALF
-    dragOffsetY.value = NUMBER_HALF
+    dragOffsetX.value = numberHalf.value
+    dragOffsetY.value = numberHalf.value
   }
 
   draggingNumber.value = num
@@ -347,8 +353,8 @@ function startDragNumberTouch(event: TouchEvent, num: AssembleNumber) {
     dragOffsetX.value = touch.clientX - r.left
     dragOffsetY.value = touch.clientY - r.top
   } else {
-    dragOffsetX.value = NUMBER_HALF
-    dragOffsetY.value = NUMBER_HALF
+    dragOffsetX.value = numberHalf.value
+    dragOffsetY.value = numberHalf.value
   }
   
   draggingNumber.value = num
@@ -414,14 +420,14 @@ function handleDragEndTouch() {
 }
 
 function checkSnapPosition(num: AssembleNumber) {
-  const SNAP_RADIUS = 45
+  const snapRadius = Math.max(32, Math.round(numberSize.value * 1.2))
   
   for (const pos of snapPositions.value) {
     if (isPositionOccupied(pos.number)) continue
     
     const distance = Math.hypot(num.x - pos.x, num.y - pos.y)
     
-    if (distance <= SNAP_RADIUS) {
+    if (distance <= snapRadius) {
       num.x = pos.x
       num.y = pos.y
       num.snapped = true
@@ -590,8 +596,8 @@ function generateAssemblePreview() {
       if (pos) {
         ctx.fillText(
           num.value.toString(), 
-          pos.x + NUMBER_HALF + (size - clockFaceSize.value) / 2, 
-          pos.y + NUMBER_HALF + (size - clockFaceSize.value) / 2
+          pos.x + numberHalf.value + (size - clockFaceSize.value) / 2, 
+          pos.y + numberHalf.value + (size - clockFaceSize.value) / 2
         )
       }
     }
@@ -730,8 +736,8 @@ onUnmounted(() => {
 
 .snap-indicator {
   position: absolute;
-  width: 36px;
-  height: 36px;
+  width: var(--clock-number-size, 36px);
+  height: var(--clock-number-size, 36px);
   border: 2px dashed var(--color-border);
   border-radius: 50%;
   pointer-events: none;
@@ -743,12 +749,12 @@ onUnmounted(() => {
 
 .draggable-number {
   position: absolute;
-  width: 36px;
-  height: 36px;
+  width: var(--clock-number-size, 36px);
+  height: var(--clock-number-size, 36px);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 4vw, 1.35rem);
   font-weight: bold;
   color: var(--color-text);
   background: var(--color-surface);
@@ -828,7 +834,7 @@ onUnmounted(() => {
 
 .number-pool {
   width: 100%;
-  max-width: 350px;
+  max-width: min(360px, 100%);
   padding: var(--space-sm);
   background: var(--color-bg-soft);
   border-radius: 12px;
@@ -849,12 +855,12 @@ onUnmounted(() => {
 }
 
 .pool-number {
-  width: 40px;
-  height: 40px;
+  width: var(--clock-pool-size, 40px);
+  height: var(--clock-pool-size, 40px);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 4vw, 1.2rem);
   font-weight: bold;
   color: #1f2937;
   background: #ffffff;

@@ -1,9 +1,12 @@
 import type { GameResult, SubDifficulty, Difficulty, UnifiedGameResult } from '@/types/game'
 import { scoreNormalizer } from '@/services/scoreNormalizer'
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
+import {
+  isRecord,
+  normalizeAccuracy,
+  normalizeReactionTimeMs,
+  normalizeScoreWithMax,
+  toFiniteNumber,
+} from '@/services/scoreNormalizer/normalizationUtils'
 
 export function isLegacyGameResult(value: unknown): value is GameResult {
   if (!isRecord(value)) return false
@@ -21,32 +24,6 @@ export function isLegacyGameResult(value: unknown): value is GameResult {
   )
 }
 
-function toFiniteNumber(value: unknown): number | null {
-  if (typeof value !== 'number') return null
-  if (!isFinite(value)) return null
-  return value
-}
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value))
-}
-
-function clampScore0to100(value: number): number {
-  return Math.max(0, Math.min(100, Math.round(value)))
-}
-
-function normalizeReactionTimeMs(value: number | null): number {
-  if (value === null) return 0
-  const rt = Number(value)
-  if (!Number.isFinite(rt) || rt < 0) return 0
-
-  // 若看起來是「秒」(例如 1.2, 5, 12)，轉為毫秒。
-  // 人類反應時間幾乎不會 < 50ms。
-  if (rt > 0 && rt < 50) return Math.round(rt * 1000)
-
-  return Math.round(rt)
-}
-
 function coerceRawSummaryToLegacyGameResult(params: {
   gameId: string
   rawResult: unknown
@@ -57,25 +34,8 @@ function coerceRawSummaryToLegacyGameResult(params: {
   if (!isRecord(params.rawResult)) return null
   const raw = params.rawResult
 
-  const rawScore = toFiniteNumber(raw.score)
-  if (rawScore === null) return null
-
-  const rawMaxScore =
-    toFiniteNumber(raw.maxScore) ??
-    toFiniteNumber(raw.maxPossibleScore) ??
-    toFiniteNumber(raw.maxPossible) ??
-    null
-
-  const score = (() => {
-    if (rawMaxScore && rawMaxScore > 0) {
-      return clampScore0to100((rawScore / rawMaxScore) * 100)
-    }
-    if (rawScore >= 0 && rawScore <= 100) {
-      return clampScore0to100(rawScore)
-    }
-    // 無上限時，保守夾住，避免爆表
-    return clampScore0to100(rawScore)
-  })()
+  const score = normalizeScoreWithMax(raw.score, raw.maxScore ?? raw.maxPossibleScore ?? raw.maxPossible)
+  if (score === 0 && toFiniteNumber(raw.score) === null) return null
 
   // ===== 計數欄位相容 =====
   // 有些遊戲（例如 pattern-reasoning）使用 correct/total；
@@ -129,14 +89,7 @@ function coerceRawSummaryToLegacyGameResult(params: {
     (totalCountHint !== null ? totalCountHint : null) ??
     Math.max(0, correctCount + wrongCount)
 
-  const accuracy = (() => {
-    const a = toFiniteNumber(raw.accuracy)
-    if (a !== null) {
-      if (a <= 1) return clamp01(a)
-      if (a <= 100) return clamp01(a / 100)
-    }
-    return totalCount > 0 ? clamp01(correctCount / totalCount) : 0
-  })()
+  const accuracy = normalizeAccuracy(raw.accuracy, totalCount > 0 ? correctCount / totalCount : 0)
 
   // 反應時間欄位相容：
   // - avgReactionTime / avgResponseTime: 多數遊戲
@@ -178,11 +131,7 @@ export function unifiedToLegacyGameResult(unified: UnifiedGameResult): GameResul
     correctCount,
     totalCount,
     accuracy: unified.metrics.accuracy,
-    avgReactionTime: normalizeReactionTimeMs(
-      Number.isFinite(Number(unified.tracking.avgReactionTime))
-        ? Number(unified.tracking.avgReactionTime)
-        : 0
-    ),
+    avgReactionTime: normalizeReactionTimeMs(unified.tracking.avgReactionTime ?? 0),
     duration: unified.duration,
     timestamp: unified.timestamp
   }

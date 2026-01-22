@@ -60,15 +60,20 @@ const { throttledEmit, immediateEmit, cleanup: cleanupThrottle } = useThrottledE
   (event, data) => emit('status-update', data),
   100
 )
-const { isSmallLandscape } = useResponsive()
+const { isSmallLandscape, isMobile } = useResponsive()
 
 // ===== 遊戲配置 =====
 const baseConfig = computed<WhackAMoleConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
 const config = computed<WhackAMoleConfig>(() => {
-  return adjustSettingsForSubDifficulty(
+  const adjusted = adjustSettingsForSubDifficulty(
     baseConfig.value,
     props.subDifficulty ?? 2
   )
+
+  return {
+    ...adjusted,
+    holes: baseConfig.value.holes
+  }
 })
 
 // ===== 遊戲狀態 =====
@@ -138,8 +143,49 @@ let spawnTimer: ReturnType<typeof setInterval> | null = null
 // ===== 計算屬性 =====
 const gridClass = computed(() => {
   const holeCount = config.value.holes
+  if (holeCount <= 3) return 'grid-cols-3'
   if (holeCount <= 6) return 'grid-cols-3'
   return 'grid-cols-3'
+})
+
+const boardClass = computed(() => {
+  const holeCount = config.value.holes
+  if (holeCount <= 3) return 'board-3'
+  if (holeCount <= 6) return 'board-6'
+  return 'board-9'
+})
+
+const boardStyle = computed(() => {
+  const holeCount = config.value.holes
+  const compact = isSmallLandscape()
+  if (holeCount <= 3) {
+    return {
+      '--whack-hole-size': isMobile.value
+        ? (compact ? 'clamp(80px, 20vmin, 120px)' : 'clamp(96px, 28vw, 150px)')
+        : (compact ? 'clamp(76px, 19vmin, 116px)' : 'clamp(88px, 26vw, 140px)'),
+      '--whack-actor-size': isMobile.value
+        ? (compact ? 'clamp(48px, 12vmin, 84px)' : 'clamp(56px, 16vw, 98px)')
+        : (compact ? 'clamp(44px, 11vmin, 80px)' : 'clamp(48px, 14vw, 90px)')
+    } as Record<string, string>
+  }
+  if (holeCount <= 6) {
+    return {
+      '--whack-hole-size': isMobile.value
+        ? (compact ? 'clamp(70px, 18vmin, 108px)' : 'clamp(82px, 23vw, 128px)')
+        : (compact ? 'clamp(66px, 17vmin, 102px)' : 'clamp(76px, 22vw, 120px)'),
+      '--whack-actor-size': isMobile.value
+        ? (compact ? 'clamp(42px, 11vmin, 76px)' : 'clamp(48px, 13vw, 88px)')
+        : (compact ? 'clamp(40px, 10vmin, 72px)' : 'clamp(44px, 12vw, 84px)')
+    } as Record<string, string>
+  }
+  return {
+    '--whack-hole-size': isMobile.value
+      ? (compact ? 'clamp(60px, 16vmin, 98px)' : 'clamp(70px, 19vw, 112px)')
+      : (compact ? 'clamp(58px, 15vmin, 94px)' : 'clamp(68px, 18vw, 108px)'),
+    '--whack-actor-size': isMobile.value
+      ? (compact ? 'clamp(36px, 9vmin, 68px)' : 'clamp(42px, 11vw, 80px)')
+      : (compact ? 'clamp(34px, 8.5vmin, 64px)' : 'clamp(40px, 10vw, 76px)')
+  } as Record<string, string>
 })
 
 const displayScore = computed(() => score.value)
@@ -298,7 +344,8 @@ function handleGameEnd() {
     hitBombs.value,
     reactionTimes.value,
     currentMaxCombo.value,
-    config.value.gameTime
+    config.value.gameTime,
+    config.value.holes
   )
   
   finishGame()
@@ -347,13 +394,14 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲場地 -->
       <div
-        class="game-field grid gap-3 sm:gap-4 p-4 sm:p-6 bg-gradient-to-b from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 rounded-2xl mt-4"
-        :class="gridClass"
+        class="game-field game-grid game-board grid p-4 sm:p-6 bg-gradient-to-b from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 rounded-2xl mt-4"
+        :class="[gridClass, boardClass]"
+        :style="boardStyle"
       >
         <div
           v-for="(hole, index) in holes"
           :key="index"
-          class="hole relative aspect-square flex items-center justify-center cursor-pointer select-none min-h-[80px] sm:min-h-[100px] md:min-h-[120px]"
+          class="hole game-tile-lg game-touch relative aspect-square flex items-center justify-center cursor-pointer select-none"
           @click="handleHoleClick(index)"
         >
           <img class="hole-img" :src="holeImg" alt="" aria-hidden="true" />
@@ -407,7 +455,10 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
 <style scoped>
 .hole {
-  min-height: 100px;
+  min-width: var(--whack-hole-size, var(--game-tile-lg));
+  min-height: var(--whack-hole-size, var(--game-tile-lg));
+  width: var(--whack-hole-size, var(--game-tile-lg));
+  height: var(--whack-hole-size, var(--game-tile-lg));
 }
 
 .hole-img {
@@ -421,10 +472,34 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
 .actor-img {
   position: absolute;
-  width: clamp(48px, 12vw, 96px);
-  height: clamp(48px, 12vw, 96px);
+  width: var(--whack-actor-size, clamp(48px, 12vw, 96px));
+  height: var(--whack-actor-size, clamp(48px, 12vw, 96px));
   transition: transform 0.15s ease, opacity 0.15s ease;
   pointer-events: none;
+}
+
+.board-3 {
+  max-width: min(92vw, 360px);
+}
+
+.board-6 {
+  max-width: min(92vw, 460px);
+}
+
+.board-9 {
+  max-width: min(92vw, 520px);
+}
+
+.is-landscape .board-3 {
+  max-width: min(88vw, 300px);
+}
+
+.is-landscape .board-6 {
+  max-width: min(88vw, 380px);
+}
+
+.is-landscape .board-9 {
+  max-width: min(88vw, 440px);
 }
 
 .actor-img.hit {

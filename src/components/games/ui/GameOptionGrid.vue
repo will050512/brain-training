@@ -127,7 +127,7 @@ const handleSelect = (option: NormalizedOption) => {
 <style scoped>
 .option-grid {
   display: grid;
-  gap: 0.75rem;
+  gap: var(--game-gap);
   width: 100%;
 }
 
@@ -152,7 +152,8 @@ const handleSelect = (option: NormalizedOption) => {
   padding: 1rem;
   border-radius: var(--radius-lg);
   font-weight: 600;
-  font-size: 1.25rem;
+  font-size: clamp(1.125rem, 3vw, 1.5rem);
+  min-height: var(--game-touch-min);
   cursor: pointer;
   transition: all var(--transition-fast);
   user-select: none;
@@ -193,9 +194,9 @@ const handleSelect = (option: NormalizedOption) => {
 
 /* 尺寸變體 */
 .variant-large .option-button {
-  padding: 1.5rem;
-  font-size: 2rem;
-  min-height: 100px;
+  padding: 1.25rem;
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  min-height: var(--game-touch-comfort);
 }
 
 .variant-compact .option-button {
@@ -257,19 +258,14 @@ const handleSelect = (option: NormalizedOption) => {
 
 /* 手機優化 */
 @media (max-width: 640px) {
-  .option-grid {
-    gap: 0.5rem;
-  }
-  
   .option-button {
     padding: 0.875rem;
-    font-size: 1.125rem;
+    font-size: clamp(1.125rem, 3.4vw, 1.375rem);
   }
   
   .variant-large .option-button {
     padding: 1rem;
-    font-size: 1.5rem;
-    min-height: 80px;
+    font-size: clamp(1.375rem, 4.2vw, 1.75rem);
   }
   
   /* 手機上 4 列改為 2 列 */

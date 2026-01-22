@@ -65,7 +65,7 @@ const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
   (event, data) => emit('status-update', data),
   100
 )
-const { isSmallLandscape } = useResponsive()
+const { isSmallLandscape, screenWidth, screenHeight } = useResponsive()
 
 // ===== 遊戲配置 =====
 const baseConfig = computed<MazeConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
@@ -135,7 +135,15 @@ const gridSize = computed(() => config.value.size)
 const cells = computed(() => mazeState.value?.cells || [])
 const playerPosition = computed(() => mazeState.value?.playerPosition || 0)
 const playerPos = computed(() => indexToPosition(playerPosition.value, gridSize.value))
-const mazeWidth = computed(() => Math.min(gridSize.value * 35, Math.min(window.innerWidth - 40, 350)))
+const mazeWidth = computed(() => {
+  const width = screenWidth.value > 0 ? screenWidth.value : window.innerWidth
+  const height = screenHeight.value > 0 ? screenHeight.value : window.innerHeight
+  const headerOffset = isSmallLandscape() ? 170 : 260
+  const heightBudget = Math.max(220, height - headerOffset)
+  const maxWidth = Math.min(width - 32, heightBudget, 420)
+  const cellSize = Math.max(28, Math.min(44, Math.floor(maxWidth / gridSize.value)))
+  return cellSize * gridSize.value
+})
 
 // ===== 回饋映射 =====
 const feedbackData = computed(() => {
@@ -295,7 +303,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
       <!-- 迷宮（含觸控手勢偵測區域） -->
       <div
         ref="gameAreaRef"
-        class="maze-container mt-4 sm:mt-6 flex justify-center touch-area px-2"
+        class="maze-container game-board mt-4 sm:mt-6 flex justify-center touch-area px-2"
         v-if="mazeState"
         v-on="touchHandlers"
       >
@@ -310,7 +318,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           <div
             v-for="(_, index) in cells"
             :key="index"
-            class="maze-cell aspect-square min-h-[25px] sm:min-h-[30px] md:min-h-[35px]"
+            class="maze-cell aspect-square"
             :class="{
               'cell-wall': getCellType(mazeState!, index) === 'wall',
               'cell-path': getCellType(mazeState!, index) === 'path',
@@ -328,7 +336,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
       <!-- 方向控制 -->
       <div class="controls mt-4 sm:mt-6 flex flex-col items-center gap-2 px-4">
         <button
-          class="control-btn min-h-[48px] w-12 sm:w-14 md:w-16 text-lg sm:text-xl md:text-2xl"
+          class="control-btn game-touch text-lg sm:text-xl md:text-2xl"
           @click="handleMove('up')"
           :disabled="!mazeState || !canMove(mazeState, 'up')"
         >
@@ -336,21 +344,21 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         </button>
         <div class="flex gap-2 sm:gap-3">
           <button
-            class="control-btn min-h-[48px] w-12 sm:w-14 md:w-16 text-lg sm:text-xl md:text-2xl"
+            class="control-btn game-touch text-lg sm:text-xl md:text-2xl"
             @click="handleMove('left')"
             :disabled="!mazeState || !canMove(mazeState, 'left')"
           >
             ←
           </button>
           <button
-            class="control-btn min-h-[48px] w-12 sm:w-14 md:w-16 text-lg sm:text-xl md:text-2xl"
+            class="control-btn game-touch text-lg sm:text-xl md:text-2xl"
             @click="handleMove('down')"
             :disabled="!mazeState || !canMove(mazeState, 'down')"
           >
             ↓
           </button>
           <button
-            class="control-btn min-h-[48px] w-12 sm:w-14 md:w-16 text-lg sm:text-xl md:text-2xl"
+            class="control-btn game-touch text-lg sm:text-xl md:text-2xl"
             @click="handleMove('right')"
             :disabled="!mazeState || !canMove(mazeState, 'right')"
           >
@@ -394,14 +402,15 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   background: #333;
   padding: 1px;
   border-radius: 8px;
+  --maze-cell-size: clamp(28px, 7vw, 44px);
 }
 
 .maze-cell {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  min-height: 20px;
+  min-width: var(--maze-cell-size);
+  min-height: var(--maze-cell-size);
   background-size: cover;
   background-position: center;
 }
@@ -438,12 +447,12 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 }
 
 .control-btn {
-  width: 48px;
-  height: 48px;
+  width: var(--game-touch-min);
+  height: var(--game-touch-min);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: clamp(1.25rem, 4vw, 1.75rem);
   background: var(--color-bg-secondary);
   border: 2px solid var(--color-border);
   border-radius: 8px;
@@ -460,6 +469,10 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 .control-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+.maze-navigation-game.is-landscape .maze-grid {
+  --maze-cell-size: clamp(22px, 6vmin, 38px);
 }
 
 /* 手機版觸控控制提示 */
@@ -482,9 +495,8 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 /* 響應式控制按鈕 */
 @media (max-width: 640px) {
   .control-btn {
-    width: 56px;
-    height: 56px;
-    font-size: 1.75rem;
+    width: var(--game-touch-comfort);
+    height: var(--game-touch-comfort);
   }
 }
 </style>

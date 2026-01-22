@@ -37,6 +37,13 @@ describe('找不同遊戲邏輯', () => {
       expect(round.originalGrid.length).toBe(round.compareGrid.length)
     })
 
+    it('應支援非正方形網格', () => {
+      const config = { ...DIFFICULTY_CONFIGS.easy, gridRows: 3, gridCols: 4 }
+      const round = generateRound(config)
+      expect(round.originalGrid.length).toBe(12)
+      expect(round.compareGrid.length).toBe(12)
+    })
+
     it('應在差異位置有不同的 emoji', () => {
       const round = generateRound(DIFFICULTY_CONFIGS.easy)
       for (const diffIndex of round.differences) {

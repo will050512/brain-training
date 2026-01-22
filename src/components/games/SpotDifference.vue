@@ -51,7 +51,7 @@ const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
   (event, data) => emit('status-update', data),
   100
 )
-const { isSmallLandscape } = useResponsive()
+const { isSmallLandscape, isMobile } = useResponsive()
 
 // ===== 遊戲配置 =====
 const baseConfig = computed<SpotDifferenceConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
@@ -61,6 +61,14 @@ const config = computed<SpotDifferenceConfig>(() => {
     props.subDifficulty ?? 2
   )
 })
+const isPhoneLayout = computed(() => isMobile.value && !isSmallLandscape())
+const gridRows = computed(() => (isPhoneLayout.value ? 3 : (config.value.gridRows ?? config.value.gridSize)))
+const gridCols = computed(() => (isPhoneLayout.value ? 4 : (config.value.gridCols ?? config.value.gridSize)))
+const effectiveConfig = computed<SpotDifferenceConfig>(() => ({
+  ...config.value,
+  gridRows: gridRows.value,
+  gridCols: gridCols.value,
+}))
 
 // ===== 遊戲狀態 =====
 const {
@@ -116,7 +124,6 @@ const hintsUsed = ref(0)
 let roundStartTime = 0
 
 // ===== 計算屬性 =====
-const gridSize = computed(() => config.value.gridSize)
 const diffCount = computed(() => config.value.diffCount)
 
 // ===== 回饋映射 =====
@@ -150,7 +157,7 @@ function handleStart() {
 }
 
 function generateNextRound() {
-  currentRoundData.value = generateRound(config.value)
+  currentRoundData.value = generateRound(effectiveConfig.value)
   foundDifferences.value = []
   roundStartTime = Date.now()
   startRound()
@@ -241,7 +248,7 @@ function handleGameEnd() {
     config.value.diffCount,
     wrongClicks.value,
     foundTimes.value,
-    config.value
+    effectiveConfig.value
   )
   
   finishGame()
@@ -309,7 +316,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         </div>
         <button
           v-if="config.maxHints > 0"
-          class="hint-btn text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-lg bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 min-h-[36px] font-medium"
+          class="hint-btn game-touch text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-lg bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 font-medium"
           :disabled="hintsUsed >= config.maxHints"
           @click="handleUseHint"
         >
@@ -319,7 +326,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
       <!-- 圖片對比區域 -->
       <div
-        class="comparison-area mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 px-2"
+        class="comparison-area game-grid mt-4 sm:mt-6 grid-cols-1 sm:grid-cols-2 px-2"
         v-if="currentRoundData"
       >
         <!-- 原圖（左邊） -->
@@ -330,7 +337,9 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           <div
             class="image-grid"
             :style="{
-              gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`
+              gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+              gridTemplateRows: `repeat(${gridRows}, minmax(0, 1fr))`,
+              aspectRatio: `${gridCols} / ${gridRows}`,
             }"
           >
             <div
@@ -351,7 +360,9 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           <div
             class="image-grid"
             :style="{
-              gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`
+              gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+              gridTemplateRows: `repeat(${gridRows}, minmax(0, 1fr))`,
+              aspectRatio: `${gridCols} / ${gridRows}`,
             }"
           >
             <button
@@ -387,19 +398,18 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   display: grid;
   gap: 4px;
   width: 100%;
-  aspect-ratio: 1 / 1;
   grid-auto-rows: 1fr;
 }
 
 .grid-cell {
   width: 100%;
   aspect-ratio: 1 / 1;
-  font-size: clamp(1rem, 3.2vw, 2.25rem);
+  font-size: clamp(1.4rem, 5vw, 2.75rem);
   line-height: 1;
 }
 
 .image-container {
-  width: min(100%, 420px);
+  width: min(100%, var(--game-board-max));
   margin: 0 auto;
 }
 
@@ -410,8 +420,16 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
 @media (min-width: 640px) {
   .image-container {
-    width: min(100%, 420px);
+    width: min(100%, var(--game-board-max));
   }
+}
+
+.spot-difference-game.is-landscape .image-grid {
+  gap: 2px;
+}
+
+.spot-difference-game.is-landscape .grid-cell {
+  font-size: clamp(1.1rem, 4vmin, 2.1rem);
 }
 </style>
 

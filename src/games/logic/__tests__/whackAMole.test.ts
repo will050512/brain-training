@@ -172,13 +172,14 @@ describe('打地鼠遊戲邏輯', () => {
 
   describe('summarizeResult', () => {
     it('應正確彙整遊戲結果', () => {
-      const result = summarizeResult(8, 10, 1, [300, 400, 350], 5, 30)
+      const result = summarizeResult(8, 10, 1, [300, 400, 350], 5, 30, 6)
       expect(result.hitMoles).toBe(8)
       expect(result.totalMoles).toBe(10)
       expect(result.hitBombs).toBe(1)
       expect(result.accuracy).toBe(0.8)
       expect(result.maxCombo).toBe(5)
       expect(result.avgReactionTime).toBe(350)
+      expect(result.holeCount).toBe(6)
     })
   })
 
