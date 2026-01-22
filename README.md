@@ -12,7 +12,7 @@
   - `balance-scale` 天平比重
   - `card-match` 翻牌配對
   - `stroop-test` Stroop測試
-  - `maze-navigation` 迷宮導航
+  - `maze-navigation` 皇家花園迷宮
   - `spot-difference` 找不同
   - `math-calc` 加減乘除
   - `instant-memory` 瞬間記憶

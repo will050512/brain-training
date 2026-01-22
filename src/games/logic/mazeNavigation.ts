@@ -1,141 +1,78 @@
 /**
- * 迷宮導航遊戲邏輯模組
- * 訓練：空間導航、規劃能力、問題解決
+ * 迷宮導航 (皇家花園版) 遊戲邏輯模組
+ * * 修正版：
+ * 1. 配合新遊戲註冊表調整難度參數 (Size: 7/9/11)。
+ * 2. 保持足跡 (visited) 功能。
  */
 
 import type { Difficulty } from '@/types/game'
 
 // ==================== 類型定義 ====================
 
-export type CellType = 'path' | 'wall' | 'start' | 'end'
+export type CellType = 'path' | 'wall' | 'start' | 'end' | 'decoration'
 
 export type Direction = 'up' | 'down' | 'left' | 'right'
 
 export interface MazeConfig {
-  /** 迷宮大小 */
+  /** 地圖大小 */
   size: number
   /** 複雜度 */
   complexity: number
-}
-
-export interface Position {
-  row: number
-  col: number
+  /** 生成模式 */
+  mode: 'scatter' | 'shapes' | 'maze'
 }
 
 export interface MazeState {
-  /** 迷宮格子 */
   cells: CellType[]
-  /** 玩家位置（索引） */
   playerPosition: number
-  /** 起點位置（索引） */
   startPosition: number
-  /** 終點位置（索引） */
   endPosition: number
-  /** 迷宮大小 */
   size: number
+  // 記錄走過的路徑索引，用於顯示足跡
+  visitedPath: number[] 
 }
 
 export interface MazeResult {
-  /** 最終分數 (0-100) */
   score: number
-  /** 步數 */
   moves: number
-  /** 最佳步數估算 */
   optimalMoves: number
-  /** 效率 */
   efficiency: number
-  /** 完成時間（秒） */
   timeSpent: number
-  /** 平均每步時間（毫秒） */
   avgMoveTime: number
 }
 
-// ==================== 難度配置 ====================
+// ==================== 難度配置 (更新) ====================
 
 export const DIFFICULTY_CONFIGS: Record<Difficulty, MazeConfig> = {
   easy: {
-    size: 9,
-    complexity: 0.35,
+    size: 7,
+    complexity: 0.3,
+    mode: 'scatter' // 簡單散點
   },
   medium: {
-    size: 11,
-    complexity: 0.5,
+    size: 9,
+    complexity: 0.4,
+    mode: 'shapes'  // 幾何障礙
   },
   hard: {
-    size: 13,
-    complexity: 0.7,
+    size: 11,
+    complexity: 0.5,
+    mode: 'maze'    // 完整迷宮
   },
 }
 
-// ==================== 迷宮生成 ====================
+// ==================== 核心邏輯 ====================
 
-/**
- * 計算索引轉位置
- */
-export function indexToPosition(index: number, size: number): Position {
-  return {
-    row: Math.floor(index / size),
-    col: index % size,
-  }
+export function indexToPosition(index: number, size: number) {
+  return { row: Math.floor(index / size), col: index % size }
 }
 
-/**
- * 計算位置轉索引
- */
 export function positionToIndex(row: number, col: number, size: number): number {
   return row * size + col
 }
 
 /**
- * 取得未訪問的鄰居（步長為 2，用於迷宮生成）
- */
-function getUnvisitedNeighbors(
-  index: number,
-  visited: Set<number>,
-  size: number
-): number[] {
-  const { row, col } = indexToPosition(index, size)
-  const neighbors: number[] = []
-  const directions = [
-    { dr: -2, dc: 0 },
-    { dr: 2, dc: 0 },
-    { dr: 0, dc: -2 },
-    { dr: 0, dc: 2 },
-  ]
-
-  for (const { dr, dc } of directions) {
-    const newRow = row + dr
-    const newCol = col + dc
-    const newIndex = positionToIndex(newRow, newCol, size)
-
-    if (
-      newRow > 0 && newRow < size - 1 &&
-      newCol > 0 && newCol < size - 1 &&
-      !visited.has(newIndex)
-    ) {
-      neighbors.push(newIndex)
-    }
-  }
-
-  return neighbors
-}
-
-/**
- * 取得兩個格子之間的牆
- */
-function getWallBetween(a: number, b: number, size: number): number {
-  const posA = indexToPosition(a, size)
-  const posB = indexToPosition(b, size)
-  return positionToIndex(
-    (posA.row + posB.row) / 2,
-    (posA.col + posB.col) / 2,
-    size
-  )
-}
-
-/**
- * 計算最短路徑距離（BFS）
+ * 計算最短路徑距離 (BFS)
  */
 export function getShortestPathLength(
   cells: CellType[],
@@ -143,130 +80,185 @@ export function getShortestPathLength(
   startIndex: number,
   endIndex: number
 ): number {
-  const queue: number[] = [startIndex]
-  const distances = new Array<number>(cells.length).fill(-1)
-  distances[startIndex] = 0
+  const queue: { index: number; dist: number }[] = [{ index: startIndex, dist: 0 }]
+  const visited = new Set<number>([startIndex])
+  
+  let head = 0
+  while (head < queue.length) {
+    const current = queue[head++]!
+    if (current.index === endIndex) return current.dist
 
-  while (queue.length > 0) {
-    const current = queue.shift()
-    if (typeof current !== 'number') continue
-    if (current === endIndex) return distances[current] ?? 0
+    const { row, col } = indexToPosition(current.index, size)
+    const dirs = [{ r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 }]
 
-    const { row, col } = indexToPosition(current, size)
-    const neighbors = [
-      { row: row - 1, col },
-      { row: row + 1, col },
-      { row, col: col - 1 },
-      { row, col: col + 1 },
-    ]
-
-    for (const n of neighbors) {
-      if (n.row < 0 || n.row >= size || n.col < 0 || n.col >= size) continue
-      const idx = positionToIndex(n.row, n.col, size)
-      if (cells[idx] === 'wall' || distances[idx] !== -1) continue
-      const currentDistance = distances[current] ?? 0
-      distances[idx] = currentDistance + 1
-      queue.push(idx)
+    for (const d of dirs) {
+      const nr = row + d.r
+      const nc = col + d.c
+      if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
+        const nextIdx = positionToIndex(nr, nc, size)
+        if (!visited.has(nextIdx) && cells[nextIdx] !== 'wall') {
+          visited.add(nextIdx)
+          queue.push({ index: nextIdx, dist: current.dist + 1 })
+        }
+      }
     }
   }
-
-  return Math.max(0, distances[endIndex] ?? 0)
+  return -1
 }
 
-function getDistancesFromStart(
-  cells: CellType[],
-  size: number,
-  startIndex: number
-): number[] {
-  const queue: number[] = [startIndex]
-  const distances = new Array<number>(cells.length).fill(-1)
-  distances[startIndex] = 0
-
-  while (queue.length > 0) {
-    const current = queue.shift()
-    if (typeof current !== 'number') continue
-    const { row, col } = indexToPosition(current, size)
-    const neighbors = [
-      { row: row - 1, col },
-      { row: row + 1, col },
-      { row, col: col - 1 },
-      { row, col: col + 1 },
-    ]
-
-    for (const n of neighbors) {
-      if (n.row < 0 || n.row >= size || n.col < 0 || n.col >= size) continue
-      const idx = positionToIndex(n.row, n.col, size)
-      if (cells[idx] === 'wall' || distances[idx] !== -1) continue
-      const currentDistance = distances[current] ?? 0
-      distances[idx] = currentDistance + 1
-      queue.push(idx)
-    }
+// ========== 生成演算法：簡單 (散點) ==========
+function generateScatterMap(size: number, density: number): CellType[] {
+  const cells: CellType[] = new Array(size * size).fill('path')
+  const count = Math.floor(size * size * density)
+  for (let i = 0; i < count; i++) {
+    const idx = Math.floor(Math.random() * cells.length)
+    cells[idx] = 'wall'
   }
-
-  return distances
+  return cells
 }
 
-function selectEndByComplexity(
-  distances: number[],
-  complexity: number
-): number {
-  const indexed = distances
-    .map((dist, index) => ({ dist, index }))
-    .filter(item => item.dist >= 0)
-    .sort((a, b) => b.dist - a.dist)
-
-  if (indexed.length === 0) return 0
-
-  const bias = Math.max(0, Math.min(1, 1 - complexity))
-  const pickIndex = Math.min(
-    indexed.length - 1,
-    Math.floor(bias * bias * (indexed.length - 1))
-  )
-
-  return indexed[pickIndex]?.index ?? indexed[0]!.index
-}
-
-/**
- * 使用遞歸回溯法生成迷宮
- */
-export function generateMaze(config: MazeConfig): MazeState {
-  const { size } = config
-  const cells: CellType[] = new Array(size * size).fill('wall')
-
-  const visited = new Set<number>()
-  const stack: number[] = []
-
-  // 起點（左上角內部）
-  const startIndex = positionToIndex(1, 1, size)
-  cells[startIndex] = 'path'
-  visited.add(startIndex)
-  stack.push(startIndex)
-
-  // 使用遞歸回溯法生成迷宮
-  while (stack.length > 0) {
-    const current = stack[stack.length - 1]!
-    const neighbors = getUnvisitedNeighbors(current, visited, size)
-
-    if (neighbors.length > 0) {
-      const nextIdx = Math.floor(Math.random() * neighbors.length)
-      const next = neighbors[nextIdx]!
-
-      // 打通牆壁
-      const wallIndex = getWallBetween(current, next, size)
-      cells[wallIndex] = 'path'
-      cells[next] = 'path'
-
-      visited.add(wallIndex)
-      visited.add(next)
-      stack.push(next)
+// ========== 生成演算法：中等 (幾何花圃) ==========
+function generateShapesMap(size: number, complexity: number): CellType[] {
+  const cells: CellType[] = new Array(size * size).fill('path')
+  const numShapes = Math.floor(size / 2)
+  
+  for (let i = 0; i < numShapes; i++) {
+    const type = Math.random() > 0.5 ? 'line' : 'rect'
+    const startRow = Math.floor(Math.random() * (size - 2)) + 1
+    const startCol = Math.floor(Math.random() * (size - 2)) + 1
+    
+    if (type === 'line') {
+      const isHorizontal = Math.random() > 0.5
+      const length = Math.floor(Math.random() * 2) + 2
+      for (let k = 0; k < length; k++) {
+        const r = isHorizontal ? startRow : startRow + k
+        const c = isHorizontal ? startCol + k : startCol
+        if (r < size - 1 && c < size - 1) cells[positionToIndex(r, c, size)] = 'wall'
+      }
     } else {
-      stack.pop()
+      // 2x2 花圃
+      for (let r = startRow; r < startRow + 2 && r < size - 1; r++) {
+        for (let c = startCol; c < startCol + 2 && c < size - 1; c++) {
+          cells[positionToIndex(r, c, size)] = 'wall'
+        }
+      }
+    }
+  }
+  return cells
+}
+
+// ========== 生成演算法：困難 (有機迷宮) ==========
+function generateMazeMap(size: number): CellType[] {
+  const cells: CellType[] = new Array(size * size).fill('wall')
+  const miners = [{ index: positionToIndex(1, 1, size), life: size * 3 }]
+  cells[miners[0].index] = 'path'
+  
+  let loopCount = 0
+  const maxLoops = size * size * 5
+  
+  let carvedCount = 1
+  const targetCarved = Math.floor(size * size * 0.55)
+
+  while (carvedCount < targetCarved && loopCount < maxLoops) {
+    loopCount++
+    if (miners.length === 0) break
+    const minerIdx = Math.floor(Math.random() * miners.length)
+    const miner = miners[minerIdx]
+    
+    const { row, col } = indexToPosition(miner.index, size)
+    const dirs = [{ r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 }]
+    dirs.sort(() => Math.random() - 0.5)
+    
+    let moved = false
+    for (const d of dirs) {
+      const nr = row + d.r
+      const nc = col + d.c
+      if (nr > 0 && nr < size - 1 && nc > 0 && nc < size - 1) {
+        const nextIdx = positionToIndex(nr, nc, size)
+        
+        let adjacentWalls = 0
+        const neighbors = [{ r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 }]
+        for (const n of neighbors) {
+          const nIdx = positionToIndex(nr + n.r, nc + n.c, size)
+          if (cells[nIdx] === 'wall') adjacentWalls++
+        }
+
+        if (cells[nextIdx] === 'wall' && adjacentWalls >= 2) {
+          cells[nextIdx] = 'path'
+          miners.push({ index: nextIdx, life: size })
+          carvedCount++
+          moved = true
+          break
+        }
+      }
+    }
+    
+    if (!moved) {
+      miner.life--
+      if (miner.life <= 0) miners.splice(minerIdx, 1)
     }
   }
 
-  // 選擇距離最遠的終點（依複雜度調整）
-  const distances = getDistancesFromStart(cells, size, startIndex)
-  const endIndex = selectEndByComplexity(distances, config.complexity)
+  cells[positionToIndex(1, 1, size)] = 'path'
+  cells[positionToIndex(size - 2, size - 2, size)] = 'path'
+  
+  return cells
+}
+
+// ========== 主生成函數 ==========
+
+export function generateMaze(config: MazeConfig): MazeState {
+  const { size, complexity, mode } = config
+  let cells: CellType[] = []
+  let startIndex = 0
+  let endIndex = 0
+  let isValid = false
+  let attempts = 0
+
+  while (!isValid && attempts < 50) {
+    attempts++
+    
+    if (mode === 'maze') {
+      cells = generateMazeMap(size)
+    } else if (mode === 'shapes') {
+      cells = generateShapesMap(size, complexity)
+    } else {
+      cells = generateScatterMap(size, complexity)
+    }
+
+    startIndex = positionToIndex(1, 1, size)
+    endIndex = positionToIndex(size - 2, size - 2, size)
+    
+    cells[startIndex] = 'path'
+    cells[endIndex] = 'path'
+    
+    // 保護起終點周圍
+    const protectedIndices = [
+      startIndex, startIndex + 1, startIndex + size, 
+      endIndex, endIndex - 1, endIndex - size
+    ]
+    protectedIndices.forEach(idx => {
+      if (idx >= 0 && idx < cells.length) cells[idx] = 'path'
+    })
+
+    const pathLen = getShortestPathLength(cells, size, startIndex, endIndex)
+    
+    if (pathLen > 0) {
+      // 確保路徑不會太短
+      if (mode === 'maze' && pathLen < size * 1.5) {
+        isValid = false
+      } else {
+        isValid = true
+      }
+    }
+  }
+
+  // Fallback
+  if (!isValid) {
+    cells = new Array(size * size).fill('path')
+    startIndex = 0
+    endIndex = size * size - 1
+  }
 
   cells[startIndex] = 'start'
   cells[endIndex] = 'end'
@@ -277,174 +269,92 @@ export function generateMaze(config: MazeConfig): MazeState {
     startPosition: startIndex,
     endPosition: endIndex,
     size,
+    visitedPath: [startIndex]
   }
 }
 
 // ==================== 移動邏輯 ====================
 
-/**
- * 計算方向移動後的目標位置
- */
 export function getTargetPosition(
   currentIndex: number,
   direction: Direction,
   size: number
 ): number | null {
   const { row, col } = indexToPosition(currentIndex, size)
-
   let targetRow = row
   let targetCol = col
 
   switch (direction) {
-    case 'up':
-      targetRow = row - 1
-      break
-    case 'down':
-      targetRow = row + 1
-      break
-    case 'left':
-      targetCol = col - 1
-      break
-    case 'right':
-      targetCol = col + 1
-      break
+    case 'up': targetRow--; break
+    case 'down': targetRow++; break
+    case 'left': targetCol--; break
+    case 'right': targetCol++; break
   }
 
-  // 檢查邊界
-  if (
-    targetRow < 0 || targetRow >= size ||
-    targetCol < 0 || targetCol >= size
-  ) {
+  if (targetRow < 0 || targetRow >= size || targetCol < 0 || targetCol >= size) {
     return null
   }
-
   return positionToIndex(targetRow, targetCol, size)
 }
 
-/**
- * 檢查是否可以移動到指定方向
- */
-export function canMove(
-  maze: MazeState,
-  direction: Direction
-): boolean {
+export function canMove(maze: MazeState, direction: Direction): boolean {
   const targetIndex = getTargetPosition(maze.playerPosition, direction, maze.size)
-  
   if (targetIndex === null) return false
-  
-  const targetCell = maze.cells[targetIndex]
-  return targetCell !== 'wall'
+  return maze.cells[targetIndex] !== 'wall'
 }
 
-/**
- * 執行移動
- */
-export function move(
-  maze: MazeState,
-  direction: Direction
-): MazeState | null {
+export function move(maze: MazeState, direction: Direction): MazeState | null {
   if (!canMove(maze, direction)) return null
+  const targetIndex = getTargetPosition(maze.playerPosition, direction, maze.size)!
+  
+  const newVisited = [...maze.visitedPath]
+  if (!newVisited.includes(targetIndex)) {
+    newVisited.push(targetIndex)
+  }
 
-  const targetIndex = getTargetPosition(maze.playerPosition, direction, maze.size)
-  if (targetIndex === null) return null
-
-  return {
-    ...maze,
+  return { 
+    ...maze, 
     playerPosition: targetIndex,
+    visitedPath: newVisited
   }
 }
 
-/**
- * 檢查是否到達終點
- */
 export function hasReachedEnd(maze: MazeState): boolean {
   return maze.playerPosition === maze.endPosition
 }
 
-/**
- * 取得格子類型
- */
 export function getCellType(maze: MazeState, index: number): CellType {
-  return maze.cells[index] ?? 'wall'
+  return maze.cells[index]
 }
 
-// ==================== 評分函數 ====================
+// ==================== 評分與統計 ====================
 
-/**
- * 估算最佳步數（曼哈頓距離的近似）
- */
-export function estimateOptimalMoves(size: number): number {
-  return (size - 2) * 2
-}
-
-/**
- * 計算效率
- */
-export function calculateEfficiency(moves: number, optimalMoves: number): number {
-  if (optimalMoves <= 0) return 0
-  if (moves <= optimalMoves) return 1
-  return Math.max(0, 1 - (moves - optimalMoves) / (optimalMoves * 2))
-}
-
-/**
- * 計算最終分數 (0-100)
- */
-export function calculateScore(
-  moves: number,
-  timeSpent: number,
-  optimalMoves: number
-): number {
-  // 效率分數 80%
-  const efficiency = calculateEfficiency(moves, optimalMoves)
-  const efficiencyScore = efficiency * 80
-
-  // 時間分數 20%
-  const maxTime = Math.max(15, Math.round(optimalMoves * 3))
-  const timeScore = Math.max(0, (1 - timeSpent / maxTime) * 20)
-
-  return Math.round(Math.min(100, Math.max(0, efficiencyScore + timeScore)))
-}
-
-/**
- * 計算等級
- */
-export function calculateGrade(score: number): string {
-  if (score >= 90) return 'S'
-  if (score >= 80) return 'A'
-  if (score >= 70) return 'B'
-  if (score >= 60) return 'C'
-  return 'D'
-}
-
-/**
- * 彙整遊戲結果
- */
 export function summarizeResult(
   moves: number,
   timeSpent: number,
   size: number,
   optimalMovesOverride?: number
 ): MazeResult {
-  const optimalMoves = optimalMovesOverride ?? estimateOptimalMoves(size)
-  const efficiency = calculateEfficiency(moves, optimalMoves)
-  const score = calculateScore(moves, timeSpent, optimalMoves)
+  const optimalMoves = optimalMovesOverride ?? (size * 1.5)
+  
+  // 寬容度
+  const tolerance = 1.3
+  const efficiency = Math.max(0, 1 - Math.max(0, moves - optimalMoves * tolerance) / (optimalMoves * 2))
+
+  const efficiencyScore = efficiency * 70
+  
+  const standardTime = Math.max(20, optimalMoves * 2) 
+  const timeScore = Math.max(0, Math.min(30, (standardTime / Math.max(1, timeSpent)) * 30))
+
+  const totalScore = Math.round(efficiencyScore + timeScore)
   const avgMoveTime = moves > 0 ? Math.round((timeSpent * 1000) / moves) : 0
 
   return {
-    score,
+    score: Math.min(100, Math.max(0, totalScore)),
     moves,
-    optimalMoves,
+    optimalMoves: Math.round(optimalMoves),
     efficiency,
     timeSpent,
     avgMoveTime,
   }
-}
-
-/**
- * 格式化時間顯示
- */
-export function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${mins}:${secs.toString().padStart(2, '0')}`
 }

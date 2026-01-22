@@ -137,7 +137,7 @@ const GAME_TO_PROFESSIONAL_MAP: Record<string, {
     moca: { visuospatialExecutive: 0.4, attention: 0.6 },
     casi: { concentration: 0.5, abstraction: 0.5 },
   },
-  // 迷宮導航 - 協調為主
+  // 皇家花園迷宮 - 協調為主
   'maze-navigation': {
     mmse: { visuospatial: 0.8, attention: 0.2 },
     moca: { visuospatialExecutive: 0.8, attention: 0.2 },

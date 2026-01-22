@@ -52,7 +52,7 @@
 - `node.svg`（節點）
 - `line.svg`（連線，保留備用）
 
-### Maze Navigation（迷宮導航）
+### Maze Navigation（皇家花園迷宮）
 
 路徑：`src/assets/images/maze-navigation/`
 

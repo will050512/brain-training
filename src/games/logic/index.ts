@@ -30,7 +30,7 @@ import * as BalanceScaleLogic from './balanceScale'
 export { BalanceScaleLogic }
 export type { BalanceScaleConfig, WeightItem, BalanceScaleResult } from './balanceScale'
 
-// 迷宮導航遊戲
+// 皇家花園迷宮遊戲
 import * as MazeNavigationLogic from './mazeNavigation'
 export { MazeNavigationLogic }
 export type { MazeConfig, MazeState, MazeResult } from './mazeNavigation'

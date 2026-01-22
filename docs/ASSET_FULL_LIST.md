@@ -126,7 +126,7 @@
 | gesture-wave.svg | src/assets/images/gesture-memory/gesture-wave.svg | 手勢（揮手） |
 | gesture-wave-bye.svg | src/assets/images/gesture-memory/gesture-wave-bye.svg | 手勢（揮手再見） |
 
-### 迷宮導航 (Maze-navigation)
+### 皇家花園迷宮 (Maze-navigation)
 
 | 檔案 | 路徑 | 用途 |
 | --- | --- | --- |

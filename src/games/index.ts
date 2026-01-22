@@ -109,10 +109,10 @@ export function registerAllGames(): void {
     ],
   })
 
-  // 5. 迷宮導航 - 協調為主
+  // 5. 皇家花園迷宮 - 協調為主
   gameRegistry.register({
     id: 'maze-navigation',
-    name: '迷宮導航',
+    name: '皇家花園迷宮',
     description: '規劃路線走出迷宮，訓練空間感和手眼協調',
     icon: '🧭',
     category: 'coordination',

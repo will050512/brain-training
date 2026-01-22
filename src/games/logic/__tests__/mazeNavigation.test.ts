@@ -1,5 +1,5 @@
 /**
- * 迷宮導航遊戲邏輯單元測試
+ * 皇家花園迷宮遊戲邏輯單元測試
  */
 import { describe, it, expect } from 'vitest'
 import {
@@ -19,7 +19,7 @@ import {
   DIFFICULTY_CONFIGS,
 } from '../mazeNavigation'
 
-describe('迷宮導航遊戲邏輯', () => {
+describe('皇家花園迷宮遊戲邏輯', () => {
   describe('generateMaze', () => {
     it('應產生有效的迷宮狀態', () => {
       const config = DIFFICULTY_CONFIGS.easy

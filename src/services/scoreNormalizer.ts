@@ -525,7 +525,7 @@ export function convertStroopResult(
 }
 
 /**
- * 迷宮導航結果轉換
+ * 皇家花園迷宮結果轉換
  */
 export function convertMazeResult(
   rawResult: any,

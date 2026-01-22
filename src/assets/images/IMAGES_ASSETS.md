@@ -49,7 +49,7 @@ src/assets/images/
 │   ├── hand-right.svg       # 手向右
 │   └── ...
 │
-├── maze-navigation/         # 迷宮導航遊戲
+├── maze-navigation/         # 皇家花園迷宮遊戲
 │   ├── player.svg           # 玩家角色
 │   ├── exit.svg             # 出口標記
 │   ├── wall.svg             # 牆壁紋理
@@ -188,7 +188,7 @@ src/assets/images/
 |------|------|------|------|
 | 手勢方向 | 4-8 | 80×80 px | 上/下/左/右/斜向 |
 
-### 迷宮導航 (maze-navigation)
+### 皇家花園迷宮 (maze-navigation)
 
 | 圖片 | 數量 | 規格 | 說明 |
 |------|------|------|------|
