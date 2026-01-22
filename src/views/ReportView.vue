@@ -26,7 +26,7 @@
         </div>
 
         <!-- User Card: Compact -->
-        <section class="p-4 rounded-xl bg-[var(--gradient-primary)] text-[var(--color-text-inverse)] shadow-md relative overflow-hidden">
+        <section class="p-3 rounded-xl bg-[var(--gradient-primary)] text-[var(--color-text-inverse)] shadow-md relative overflow-hidden">
           <div class="absolute right-0 top-0 w-32 h-32 bg-[var(--color-surface)]/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
           <div class="relative z-10 flex items-center gap-3">
              <div class="w-12 h-12 rounded-full bg-[var(--color-surface)]/20 backdrop-blur-sm flex items-center justify-center border border-[var(--color-border-inverse)] shadow-inner text-xl">
@@ -44,12 +44,12 @@
         </section>
 
         <!-- Radar Chart -->
-        <section class="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm">
+        <section class="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm">
            <div class="flex items-center gap-2 mb-2">
              <span class="w-1 h-3 rounded-full bg-[var(--color-primary)]"></span>
              <h3 class="text-sm font-bold text-[var(--color-text)]">能力分佈</h3>
            </div>
-           <div class="h-52 -ml-2">
+           <div class="h-44 -ml-2">
              <RadarChart ref="radarChartRef" :scores="gameStore.cognitiveScores" :previousScores="previousScores" />
            </div>
         </section>
@@ -72,15 +72,46 @@
            </div>
         </section>
 
-        <!-- Training Stats Grid -->
-        <section class="grid grid-cols-2 gap-2">
+         <!-- Taiwan Normative Data (Mobile) -->
+         <section v-if="normativeData" class="bg-[var(--color-surface)] p-3 rounded-xl border border-[var(--color-border)] shadow-sm">
+            <h3 class="text-sm font-bold mb-2 flex items-center gap-2 text-[var(--color-text)]">
+              <span>📊</span> 台灣常模參考
+            </h3>
+            <div class="grid grid-cols-3 gap-2">
+               <div class="bg-[var(--color-surface-alt)]/90 backdrop-blur p-2.5 rounded-lg border border-[var(--color-border)] shadow-sm">
+                  <div class="text-[10px] font-bold text-[var(--color-text-muted)] uppercase mb-0.5">MMSE</div>
+                  <div class="text-xl font-bold text-[var(--color-score)]">{{ normativeData.mmse.cutoff || '-' }}</div>
+               </div>
+               <div class="bg-[var(--color-surface-alt)]/90 backdrop-blur p-2.5 rounded-lg border border-[var(--color-border)] shadow-sm">
+                  <div class="text-[10px] font-bold text-[var(--color-text-muted)] uppercase mb-0.5">MoCA</div>
+                  <div class="text-xl font-bold text-[var(--color-progress)]">{{ normativeData.moca.cutoff || '-' }}</div>
+               </div>
+               <div class="bg-[var(--color-surface-alt)]/90 backdrop-blur p-2.5 rounded-lg border border-[var(--color-border)] shadow-sm">
+                  <div class="text-[10px] font-bold text-[var(--color-text-muted)] uppercase mb-0.5">CASI</div>
+                  <div class="text-xl font-bold text-[var(--color-score-good)]">{{ normativeData.casi.cutoff || '-' }}</div>
+               </div>
+            </div>
+         </section>
+
+         <!-- Trends (Mobile) -->
+         <section class="bg-[var(--color-surface)] p-3 rounded-xl border border-[var(--color-border)] shadow-sm">
+            <h3 class="text-sm font-bold mb-2 flex items-center gap-2 text-[var(--color-text)]">
+              <span>📈</span> 歷史趨勢
+            </h3>
+            <div class="h-40 -ml-2">
+              <TrendChart ref="trendChartRef" :history="gameStore.scoreHistory" :showWarningLines="true" :professionalMode="false" />
+            </div>
+         </section>
+
+         <!-- Training Stats Grid -->
+         <section class="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <!-- Daily -->
-          <div class="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm">
-            <div class="flex items-center gap-1.5 mb-2 pb-2 border-b border-[var(--color-border-light)]">
+          <div class="p-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm">
+            <div class="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--color-border-light)]">
               <span class="text-sm">📅</span>
               <span class="text-xs font-bold text-[var(--color-text)]">每日訓練</span>
             </div>
-            <div class="space-y-1.5">
+            <div class="space-y-1">
               <div class="flex justify-between text-xs">
                 <span class="text-[var(--color-text-muted)]">次數</span>
                 <span class="font-bold text-[var(--color-text)]">{{ dailyStats.totalGames }}</span>
@@ -89,15 +120,19 @@
                 <span class="text-[var(--color-text-muted)]">平均</span>
                 <span class="font-bold text-[var(--color-score-good)]">{{ dailyStats.averageScore }}</span>
               </div>
+              <div class="flex justify-between text-xs">
+                <span class="text-[var(--color-text-muted)]">總時長</span>
+                <span class="font-bold text-[var(--color-text)]">{{ formatPlayTime(dailyStats.totalPlayTime) }}</span>
+              </div>
             </div>
           </div>
           <!-- Free -->
-          <div class="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm">
-            <div class="flex items-center gap-1.5 mb-2 pb-2 border-b border-[var(--color-border-light)]">
+          <div class="p-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm">
+            <div class="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--color-border-light)]">
               <span class="text-sm">🎮</span>
               <span class="text-xs font-bold text-[var(--color-text)]">自由遊戲</span>
             </div>
-            <div class="space-y-1.5">
+            <div class="space-y-1">
               <div class="flex justify-between text-xs">
                 <span class="text-[var(--color-text-muted)]">次數</span>
                 <span class="font-bold text-[var(--color-text)]">{{ freeStats.totalGames }}</span>
@@ -106,52 +141,144 @@
                 <span class="text-[var(--color-text-muted)]">平均</span>
                 <span class="font-bold text-[var(--color-score-good)]">{{ freeStats.averageScore }}</span>
               </div>
+              <div class="flex justify-between text-xs">
+                <span class="text-[var(--color-text-muted)]">總時長</span>
+                <span class="font-bold text-[var(--color-text)]">{{ formatPlayTime(freeStats.totalPlayTime) }}</span>
+              </div>
             </div>
           </div>
-        </section>
+          <div class="p-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm sm:col-span-2">
+            <div class="flex items-center gap-1.5 mb-1.5 pb-1.5 border-b border-[var(--color-border-light)]">
+              <span class="text-sm">🔥</span>
+              <span class="text-xs font-bold text-[var(--color-text)]">連續訓練</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-[var(--color-text-muted)]">連續天數</span>
+              <span class="font-bold text-[var(--color-text)]">{{ userStore.currentStats?.streak || 0 }}</span>
+            </div>
+          </div>
+         </section>
 
-        <!-- Mini-Cog -->
-        <section v-if="latestMiniCogResult" class="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm relative overflow-hidden">
-           <div class="absolute right-0 top-0 w-24 h-24 bg-[var(--color-bg-soft)] rounded-full -mr-8 -mt-8 opacity-50 pointer-events-none"></div>
-           <div class="relative z-10">
-             <div class="flex justify-between items-center mb-3">
-               <h3 class="text-sm font-bold flex items-center gap-1.5 text-[var(--color-text)]">
-                 <span class="w-1 h-3 rounded-full bg-[var(--color-accent-purple)]"></span>
-                 Mini-Cog 篩檢
-               </h3>
-               <span class="text-[10px] bg-[var(--color-surface-alt)] px-2 py-0.5 rounded-full text-[var(--color-text-muted)]">
-                 {{ formatDateTime(latestMiniCogResult.completedAt).split(' ')[0] }}
-               </span>
-             </div>
-             <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-full border-2 flex items-center justify-center text-lg font-bold shrink-0 bg-[var(--color-surface)]"
-                     :class="[getMiniCogBorderClass(latestMiniCogResult.totalScore), getMiniCogScoreClass(latestMiniCogResult.totalScore)]">
+         <!-- Mini-Cog -->
+         <section v-if="latestMiniCogResult" class="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm relative overflow-hidden">
+            <div class="absolute right-0 top-0 w-24 h-24 bg-[var(--color-bg-soft)] rounded-full -mr-8 -mt-8 opacity-50 pointer-events-none"></div>
+            <div class="relative z-10">
+              <div class="flex justify-between items-center mb-2">
+                <h3 class="text-sm font-bold flex items-center gap-1.5 text-[var(--color-text)]">
+                  <span class="w-1 h-3 rounded-full bg-[var(--color-accent-purple)]"></span>
+                  Mini-Cog
+                </h3>
+                <span class="text-[10px] bg-[var(--color-surface-alt)] px-2 py-0.5 rounded-full text-[var(--color-text-muted)]">
+                  {{ formatDateTime(latestMiniCogResult.completedAt).split(' ')[0] }}
+                </span>
+              </div>
+              <div class="flex items-center gap-2">
+                 <div class="w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg font-bold shrink-0 bg-[var(--color-surface)]"
+                      :class="[getMiniCogBorderClass(latestMiniCogResult.totalScore), getMiniCogScoreClass(latestMiniCogResult.totalScore)]">
                    {{ latestMiniCogResult.totalScore }}
+                 </div>
+                 <div class="flex-1 text-sm p-2 rounded-lg bg-[var(--color-bg-soft)] border-l-2" :class="getMiniCogInterpretationClass(latestMiniCogResult)">
+                    <div class="font-bold text-xs mb-0.5 leading-none">{{ getMiniCogInterpretation(latestMiniCogResult).label }}</div>
+                    <div class="text-[10px] leading-tight opacity-90 truncate">{{ getMiniCogInterpretation(latestMiniCogResult).description }}</div>
+                 </div>
+              </div>
+            </div>
+            <div v-if="miniCogHistory.length > 1" class="mt-2 pt-2 border-t border-[var(--color-border)]">
+              <button @click="showMiniCogHistory = !showMiniCogHistory" class="flex items-center gap-2 text-xs text-[var(--color-text-secondary)] w-full">
+                <span>{{ showMiniCogHistory ? '▼' : '▶' }}</span>
+                <span>查看歷史 ({{ miniCogHistory.length }})</span>
+              </button>
+              <Transition name="expand">
+                <div v-if="showMiniCogHistory" class="grid grid-cols-1 gap-1.5 mt-2">
+                  <div v-for="record in miniCogHistory.slice(1)" :key="record.id" class="flex justify-between p-2 bg-[var(--color-bg-soft)] rounded-lg text-xs border border-[var(--color-border-light)]">
+                    <span class="text-[var(--color-text-muted)]">{{ formatDateTime(record.completedAt) }}</span>
+                    <span class="font-bold" :class="getMiniCogScoreClass(record.totalScore)">{{ record.totalScore }} 分</span>
+                  </div>
                 </div>
-                <div class="flex-1 text-sm p-2 rounded-lg bg-[var(--color-bg-soft)] border-l-2" :class="getMiniCogInterpretationClass(latestMiniCogResult)">
-                   <div class="font-bold text-xs mb-0.5">{{ getMiniCogInterpretation(latestMiniCogResult).label }}</div>
-                   <div class="text-[10px] leading-tight opacity-90">{{ getMiniCogInterpretation(latestMiniCogResult).description }}</div>
-                </div>
-             </div>
-           </div>
-        </section>
+              </Transition>
+            </div>
+         </section>
+         <section v-else class="p-3 rounded-xl bg-[var(--color-bg-soft)] border border-[var(--color-border)] shadow-sm text-center">
+           <div class="text-2xl mb-2">📋</div>
+           <p class="text-xs text-[var(--color-text-muted)] mb-2">無 Mini-Cog 記錄</p>
+           <router-link to="/assessment" class="btn btn-primary px-4 py-1.5 text-xs shadow-sm">開始評估</router-link>
+         </section>
+
+         <!-- Correlation (Mobile) -->
+         <section class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
+            <h3 class="text-sm font-bold mb-3 flex items-center gap-2 text-[var(--color-text)]">
+              <span>📐</span> 關聯分析
+            </h3>
+            <MiniCogCorrelationChart :mini-cog-results="miniCogHistory" :game-sessions="gameStore.recentSessions" />
+         </section>
 
         <!-- Suggestions -->
-        <section v-if="trainingSuggestions.length > 0" class="space-y-2">
+        <section v-if="trainingSuggestions.length > 0" class="space-y-3">
            <h3 class="text-sm font-bold px-1 flex items-center gap-1.5 text-[var(--color-text)]">
              <span>💡</span> 智能建議
            </h3>
-           <div v-for="(s, i) in trainingSuggestions.slice(0, 3)" :key="i" 
+           <div v-for="(s, i) in trainingSuggestions" :key="i" 
                 class="p-3 rounded-xl border-l-[3px] text-xs bg-[var(--color-surface)] shadow-sm"
                 :class="s.priority === 'high' ? 'border-[var(--color-danger)]' : (s.priority === 'medium' ? 'border-[var(--color-warning)]' : 'border-[var(--color-success)]')">
                 <div class="flex items-center gap-1.5 font-bold mb-1 text-[var(--color-text)]">
                    {{ COGNITIVE_DIMENSIONS[s.dimension].icon }} {{ COGNITIVE_DIMENSIONS[s.dimension].name }}
                 </div>
                 <p class="text-[var(--color-text-secondary)] leading-relaxed">{{ s.message }}</p>
+                <div v-if="s.suggestedGames.length > 0" class="flex flex-wrap gap-1 mt-2">
+                   <span v-for="g in s.suggestedGames" :key="g" class="text-[10px] px-2 py-1 bg-[var(--color-surface-alt)] rounded border border-[var(--color-border)] text-[var(--color-text-muted)]">{{ g }}</span>
+                </div>
            </div>
-        </section>
-        
-        <!-- Nutrition (Mobile) -->
+         </section>
+
+         <!-- Games Performance (Mobile) -->
+         <section class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
+            <h3 class="text-sm font-bold mb-3 flex items-center gap-2 text-[var(--color-text)]">
+              <span>🎮</span> 各遊戲表現
+            </h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+               <div v-for="game in gameStore.allGames" :key="game.id" class="p-3 bg-[var(--color-surface-alt)] rounded-lg border border-[var(--color-border)]">
+                  <div class="flex items-center gap-2 mb-2">
+                     <span class="text-lg">{{ game.icon }}</span>
+                     <span class="text-xs font-bold text-[var(--color-text)]">{{ game.name }}</span>
+                  </div>
+                  <div class="space-y-1 text-xs">
+                     <div class="flex justify-between">
+                        <span class="text-[var(--color-text-muted)]">最佳</span>
+                        <span class="font-bold text-[var(--color-text)]">{{ gameStore.getBestScore(game.id) || '-' }}</span>
+                     </div>
+                     <div class="flex justify-between">
+                        <span class="text-[var(--color-text-muted)]">平均</span>
+                        <span class="text-[var(--color-text)]">{{ gameStore.getAverageScore(game.id) || '-' }}</span>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </section>
+
+         <!-- Recent Games (Mobile) -->
+         <section class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
+            <h3 class="text-sm font-bold mb-3 flex items-center gap-2 text-[var(--color-text)]">
+              <span>🕐</span> 最近遊戲記錄
+            </h3>
+            <div v-if="gameStore.recentSessions.length > 0" class="space-y-2">
+               <div v-for="session in gameStore.recentSessions" :key="session.id" class="flex items-center justify-between p-3 bg-[var(--color-surface-alt)] rounded-lg">
+                  <div class="flex items-center gap-3">
+                     <span class="text-lg">{{ getGameIcon(session.gameId) }}</span>
+                     <div>
+                        <div class="text-xs font-bold text-[var(--color-text)]">{{ getGameName(session.gameId) }}</div>
+                        <div class="text-[10px] text-[var(--color-text-muted)]">{{ formatDateTime(session.createdAt) }}</div>
+                     </div>
+                  </div>
+                  <div class="text-right">
+                     <div class="text-sm font-bold" :class="getScoreClass(session.result.score)">{{ session.result.score }} 分</div>
+                     <span class="text-[10px] text-[var(--color-text-muted)]">{{ DIFFICULTIES[session.difficulty]?.name }}</span>
+                  </div>
+               </div>
+            </div>
+            <div v-else class="text-center py-4 text-[var(--color-text-muted)] text-sm">尚無近期記錄</div>
+         </section>
+
+         <!-- Nutrition (Mobile) -->
         <section class="bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
            <h3 class="text-sm font-bold mb-3 flex items-center gap-2 text-[var(--color-text)]">
              <span>🥗</span> 營養建議
@@ -163,17 +290,51 @@
                <div class="h-full bg-[var(--color-success)]" :style="{ width: `${nutritionUnlockPercent}%` }"></div>
              </div>
            </div>
-           <div v-else-if="nutritionResult">
-              <div v-if="nutritionResult.recommendations.length > 0" class="space-y-2">
-                 <div v-for="rec in nutritionResult.recommendations.slice(0,1)" :key="rec.id" class="p-2.5 bg-[var(--color-surface-alt)] rounded-lg border-l-2 border-[var(--color-primary)]">
-                    <div class="font-bold text-xs text-[var(--color-text)] mb-0.5">{{ rec.supplement.name }}</div>
-                    <p class="text-[10px] text-[var(--color-text-secondary)] leading-tight">{{ rec.reason }}</p>
-                 </div>
-                 <div class="text-center mt-2">
-                    <span class="text-[10px] text-[var(--color-text-muted)]">更多建議請查看電腦版或完整報告</span>
+           <div v-else-if="nutritionResult" class="space-y-3">
+              <div class="bg-[var(--color-warning-bg)] border border-[var(--color-warning)]/30 p-3 rounded-lg">
+                 <div class="flex items-start gap-2">
+                    <span class="text-lg">⚠️</span>
+                    <div class="flex-1">
+                       <p class="text-xs text-[var(--color-text)]">以下建議僅供參考，不構成醫療診斷。</p>
+                       <button @click="showNutritionDisclaimer = !showNutritionDisclaimer" class="text-[10px] text-[var(--color-warning)] underline mt-1">{{ showNutritionDisclaimer ? '收起' : '完整免責聲明' }}</button>
+                       <div v-if="showNutritionDisclaimer" class="mt-2 pt-2 border-t border-[var(--color-warning)]/30 text-[10px] text-[var(--color-text-secondary)] whitespace-pre-wrap">{{ NUTRITION_DISCLAIMER }}</div>
+                    </div>
                  </div>
               </div>
+
+              <div v-if="nutritionResult.recommendations.filter(r => r.priority === 'high').length > 0" class="space-y-2">
+                 <h4 class="text-xs font-bold text-[var(--color-danger)] uppercase tracking-wider flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-[var(--color-danger)]"></span> 重點關注</h4>
+                 <div class="grid grid-cols-1 gap-2">
+                    <div v-for="rec in nutritionResult.recommendations.filter(r => r.priority === 'high')" :key="rec.id" class="p-3 rounded-lg bg-[var(--color-danger-bg)] border-l-4 border-[var(--color-danger)]">
+                       <div class="flex items-center gap-2 mb-1">
+                          <span class="font-bold text-xs text-[var(--color-text)]">{{ rec.supplement.name }}</span>
+                          <span v-if="rec.supplement.isPartnerProduct" class="badge badge--warning text-[10px]">合作</span>
+                       </div>
+                       <p class="text-[10px] text-[var(--color-text-secondary)] mb-2">{{ rec.reason }}</p>
+                       <div class="text-[10px] bg-[var(--color-surface)]/50 p-2 rounded inline-block">建議劑量：{{ rec.supplement.dosageRange }}</div>
+                    </div>
+                 </div>
+              </div>
+
+              <div v-if="nutritionResult.recommendations.filter(r => r.priority !== 'high').length > 0" class="space-y-2">
+                 <h4 class="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-[var(--color-text-muted)]"></span> 其他建議</h4>
+                 <div class="grid grid-cols-1 gap-2">
+                    <div v-for="rec in nutritionResult.recommendations.filter(r => r.priority !== 'high')" :key="rec.id" class="p-3 rounded-lg bg-[var(--color-surface-alt)] border border-[var(--color-border)]">
+                       <div class="font-bold text-xs text-[var(--color-text)] mb-1">{{ rec.supplement.name }}</div>
+                       <p class="text-[10px] text-[var(--color-text-secondary)] mb-2">{{ rec.reason }}</p>
+                       <div class="text-[10px] bg-[var(--color-surface)]/50 p-2 rounded inline-block">建議劑量：{{ rec.supplement.dosageRange }}</div>
+                    </div>
+                 </div>
+              </div>
+
+              <div class="bg-[var(--color-success-bg)] p-4 rounded-lg border border-[var(--color-success)]/30">
+                 <h4 class="text-xs font-bold text-[var(--color-success)] uppercase tracking-wider mb-2">一般建議</h4>
+                 <ul class="grid grid-cols-1 gap-2">
+                    <li v-for="(advice, i) in nutritionResult.generalAdvice" :key="i" class="text-xs text-[var(--color-text-secondary)] flex gap-2"><span class="text-[var(--color-success)] font-bold">✓</span> {{ advice }}</li>
+                 </ul>
+              </div>
            </div>
+           <div v-else class="text-center py-3 text-[var(--color-text-muted)] text-xs">載入中...</div>
         </section>
 
         <div class="h-8"></div>

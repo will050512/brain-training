@@ -16,7 +16,6 @@ import MobileBottomNav from '@/components/ui/MobileBottomNav.vue'
 import InstallPrompt from '@/components/ui/InstallPrompt.vue'
 import ConsentModal from '@/components/ui/ConsentModal.vue'
 import EducationPromptModal from '@/components/ui/EducationPromptModal.vue'
-import ExternalProfileDebugPanel from '@/components/ui/ExternalProfileDebugPanel.vue'
 import ToastNotification from '@/components/ui/ToastNotification.vue'
 import PWAUpdateBanner from '@/components/ui/PWAUpdateBanner.vue'
 import { getDataConsent, checkConsentVersionNeedsUpdate } from '@/services/db'
@@ -37,12 +36,6 @@ const { initTheme } = useTheme()
 const showConsentModal = ref(false)
 const consentModalRef = ref<InstanceType<typeof ConsentModal> | null>(null)
 const showEducationModal = ref(false)
-const showExternalDebugPanel = computed(() => {
-  if (import.meta.env.DEV) return true
-  if (typeof window === 'undefined') return false
-  return new URLSearchParams(window.location.search).get('debugExternal') === '1'
-})
-
 const needsEducationYears = computed(() => {
   const user = userStore.currentUser
   if (!user) return false
@@ -187,12 +180,15 @@ async function handleEducationSave(years: number): Promise<void> {
 // 監聽使用者登入狀態變化
 watch(() => userStore.currentUser, (newUser) => {
   if (newUser?.id) {
+    settingsStore.setAssessmentUser(newUser.id)
     // 延遲檢查，確保 ID 已完全載入
     setTimeout(() => {
       checkConsentStatus()
       syncUserProfileToSheet(newUser)
       backfillAllUserDataToSheet(newUser.id)
     }, 100)
+  } else {
+    settingsStore.setAssessmentUser(null)
   }
 }, { immediate: false })
 
@@ -215,6 +211,7 @@ onMounted(async () => {
   
   // 恢復登入後檢查同意狀態（確保 ID 存在）
   if (userStore.currentUser?.id) {
+    settingsStore.setAssessmentUser(userStore.currentUser.id)
     await checkConsentStatus()
     // 舊用戶資料回填至 Google Sheet（背景執行）
     backfillUserSessionsToSheet(userStore.currentUser.id)
@@ -336,8 +333,6 @@ onUnmounted(() => {
     <!-- Toast 通知 -->
     <ToastNotification />
 
-    <!-- 外部登入 Debug 面板（開發/指定參數） -->
-    <ExternalProfileDebugPanel v-if="showExternalDebugPanel" />
   </div>
 </template>
 

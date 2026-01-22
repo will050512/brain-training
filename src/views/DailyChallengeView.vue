@@ -339,7 +339,7 @@ watch(
     </header>
 
     <main class="app-content-scroll bg-[var(--color-bg-soft)]">
-      <div class="container-desktop p-4 pb-24 max-w-2xl mx-auto">
+      <div class="container-desktop p-3 pb-24 max-w-lg mx-auto">
         <!-- 載入中 -->
         <div v-if="isLoading" class="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
           <div class="animate-spin rounded-full h-12 w-12 border-4 border-[var(--color-primary)] border-t-transparent"></div>
@@ -349,12 +349,12 @@ watch(
         <template v-else-if="trainingPlan">
           <div class="section-label px-1 py-2 text-sm font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">今日摘要</div>
           
-          <div class="space-y-4">
+          <div class="space-y-3">
             <!-- 訓練摘要 (卡片) -->
-            <section class="card p-4 bg-gradient-to-b from-[var(--color-surface)] to-[var(--color-bg-soft)] border border-[var(--color-border-light)] shadow-sm">
+            <section class="card p-3 bg-gradient-to-b from-[var(--color-surface)] to-[var(--color-bg-soft)] border border-[var(--color-border-light)] shadow-sm">
               <h2 class="sr-only">訓練摘要</h2>
 
-              <div class="flex justify-around items-center mb-4">
+              <div class="flex justify-around items-center mb-3">
                 <div class="flex flex-col items-center">
                   <span class="text-2xl font-extrabold text-[var(--color-primary)] leading-tight">{{ trainingPlan.totalGames }}</span>
                   <span class="text-xs font-medium text-[var(--color-text-secondary)] mt-0.5">個遊戲</span>
@@ -371,8 +371,8 @@ watch(
                 </div>
               </div>
 
-              <div v-if="trainingPlan.completedGames > 0" class="bg-[var(--color-surface)]/60 rounded-xl p-3 mb-4 backdrop-blur-sm border border-[var(--color-border)]/40 shadow-inner">
-                <div class="flex justify-between mb-1.5 font-semibold text-xs">
+              <div v-if="trainingPlan.completedGames > 0" class="bg-[var(--color-surface)]/60 rounded-xl p-2.5 mb-3 backdrop-blur-sm border border-[var(--color-border)]/40 shadow-inner">
+                <div class="flex justify-between mb-1 font-semibold text-xs">
                   <span class="text-[var(--color-text-secondary)]">今日進度</span>
                   <span class="text-[var(--color-primary)]">{{ Math.round(todayProgress) }}%</span>
                 </div>

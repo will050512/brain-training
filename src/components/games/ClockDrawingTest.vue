@@ -661,6 +661,7 @@ onUnmounted(() => {
   max-width: var(--game-container-lg);
   margin: 0 auto;
   padding: var(--space-md);
+  padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
 }
 
 .instructions {
@@ -796,9 +797,10 @@ onUnmounted(() => {
 .minute-hand {
   width: 5px;
   height: 40%;
-  background: var(--color-accent-blue);
+  background: var(--color-accent-blue, #2563eb);
   border-radius: 3px;
   margin-left: -2.5px;
+  z-index: 25;
 }
 
 .hand-grip {
@@ -958,4 +960,3 @@ onUnmounted(() => {
   color: white;
 }
 </style>
-

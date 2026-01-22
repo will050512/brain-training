@@ -5,12 +5,10 @@
  */
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/userStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import type { CognitiveDimension } from '@/types/cognitive'
 
 const router = useRouter()
-const userStore = useUserStore()
 const settingsStore = useSettingsStore()
 
 // 步驟
@@ -26,7 +24,7 @@ const userGender = ref<'male' | 'female' | 'other'>('other')
 const userEducationYears = ref<number>(12) // 新增：教育年數
 
 // 評估選擇
-const assessmentChoice = ref<'mini-cog' | 'quick' | 'trial'>('mini-cog')
+const assessmentChoice = ref<'mini-cog' | 'quick'>('mini-cog')
 
 // 設定選項
 const selectedDuration = ref<10 | 15 | 20 | 30>(15)
@@ -137,15 +135,7 @@ async function handleAssessmentChoice(): Promise<void> {
       // 導向 3 分鐘快評（可做基線）
       router.push({ path: '/assessment', query: { mode: 'quick' } })
       break
-    case 'trial':
-      finishAssessment()
-      break
   }
-}
-
-// 跳過評估
-function skipAssessment(): void {
-  finishAssessment()
 }
 
 // 模擬迷你評估遊戲完成
@@ -156,22 +146,6 @@ function completeAssessmentGame(result: MiniGameResult): void {
   if (currentAssessmentGame.value >= assessmentGames.length) {
     nextStep()
   }
-}
-
-// 模擬快速評估（點擊後自動生成結果）
-function runQuickAssessment(): void {
-  // 為每個維度生成模擬分數
-  for (const game of assessmentGames) {
-    const score = Math.round(50 + Math.random() * 50)
-    assessmentResults.value.push({
-      dimension: game.dimension,
-      score,
-      accuracy: Math.round(50 + Math.random() * 50),
-      responseTime: Math.round(500 + Math.random() * 1000)
-    })
-  }
-  currentAssessmentGame.value = assessmentGames.length
-  finishAssessment()
 }
 
 // 完成評估
@@ -413,24 +387,6 @@ function startTraining(): void {
              </div>
            </button>
            
-           <!-- Trial -->
-           <button
-             @click="assessmentChoice = 'trial'"
-             class="card p-4 text-left transition-all border-2 touch-min"
-             :class="assessmentChoice === 'trial' 
-               ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]' 
-               : 'border-transparent hover:border-[var(--color-border)]'"
-           >
-             <div class="flex items-start gap-4">
-               <span class="text-2xl mt-1">⏭️</span>
-               <div class="flex-1">
-                 <p class="font-bold text-lg mb-1" style="color: var(--color-text)">試玩（不計入評估）</p>
-                 <p class="text-sm" style="color: var(--color-text-secondary)">
-                   先體驗訓練內容，不寫入評估基線，也不影響難度匹配。
-                 </p>
-               </div>
-             </div>
-           </button>
         </div>
 
         <!-- Assessment Execution Step -->
@@ -525,14 +481,9 @@ function startTraining(): void {
           @click="nextStep"
           class="btn btn-primary btn-block btn-lg shadow-md"
         >
-          {{ assessmentChoice === 'mini-cog' ? '開始 Mini-Cog 評估' : assessmentChoice === 'quick' ? '開始 3 分鐘快評' : '開始試玩' }}
+          {{ assessmentChoice === 'mini-cog' ? '開始 Mini-Cog 評估' : '開始 3 分鐘快評' }}
         </button>
         
-        <div v-if="currentStep === 'assessment'" class="flex gap-4 w-full">
-           <button @click="skipAssessment" class="btn btn-ghost flex-1">跳過評估</button>
-           <button @click="runQuickAssessment" class="btn btn-secondary flex-1">快速完成</button>
-        </div>
-
         <button 
           v-if="currentStep === 'complete'"
           @click="startTraining"

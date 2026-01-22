@@ -150,23 +150,37 @@ const router = createRouter({
 router.beforeEach((to, _from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
   const requiresAssessment = to.matched.some(record => record.meta.requiresAssessment)
+  const hasUser = localStorage.getItem('brain-training-current-user')
   
   if (requiresAuth) {
     // 檢查 localStorage 是否有登入狀態
-    const hasUser = localStorage.getItem('brain-training-current-user')
     if (!hasUser) {
       next({ name: 'Login', query: { redirect: to.fullPath } })
       return
     }
   }
   
+  // 首次使用者需完成能力評估
+  let hasCompletedAssessment = false
+  if (hasUser) {
+    const assessmentData = localStorage.getItem(`brain-training-assessment-${hasUser}`)
+    if (assessmentData) {
+      try {
+        hasCompletedAssessment = JSON.parse(assessmentData).hasCompletedAssessment === true
+      } catch {
+        hasCompletedAssessment = false
+      }
+    }
+  }
+
+  const assessmentAllowedRoutes = new Set(['Assessment', 'Onboarding', 'Login'])
+  if (hasUser && !hasCompletedAssessment && !assessmentAllowedRoutes.has(to.name as string)) {
+    next({ name: 'Assessment', query: { redirect: to.fullPath } })
+    return
+  }
+
   // 檢查是否需要完成評估才能訪問
   if (requiresAssessment) {
-    const settingsData = localStorage.getItem('brain-training-settings')
-    const hasCompletedAssessment = settingsData 
-      ? JSON.parse(settingsData).hasCompletedAssessment === true
-      : false
-    
     if (!hasCompletedAssessment) {
       // 重定向到評估頁面
       next({ name: 'Assessment', query: { redirect: to.fullPath } })

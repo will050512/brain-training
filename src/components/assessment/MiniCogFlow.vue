@@ -586,13 +586,16 @@ onUnmounted(() => {
 
 <style scoped>
 .mini-cog-flow {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 0.75rem;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 0 calc(1rem + env(safe-area-inset-bottom)) 0;
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Progress Bar */
@@ -660,6 +663,7 @@ onUnmounted(() => {
   margin-top: -1.75rem;
   margin-left: 1.25rem;
   margin-right: 1.25rem;
+  pointer-events: none;
 }
 
 .progress-fill {
@@ -667,19 +671,22 @@ onUnmounted(() => {
   background: linear-gradient(90deg, var(--color-step-complete) 0%, var(--color-primary) 100%);
   border-radius: 2px;
   transition: width 0.5s ease;
+  pointer-events: none;
 }
 
 /* Step Content */
 .step-content {
-  background: var(--color-surface);
-  border-radius: 1.5rem;
-  padding: 1.25rem;
-  box-shadow: var(--shadow-lg);
+  background: transparent;
+  border-radius: 0;
+  padding: 0.75rem 0 1.25rem;
+  box-shadow: none;
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow-y: visible;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 /* Intro Step */
@@ -858,7 +865,7 @@ onUnmounted(() => {
 
 /* Recall Step */
 .recall-step {
-  overflow: hidden;
+  overflow: visible;
 }
 
 .recall-step h2 {
@@ -871,11 +878,11 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 1rem;
-  margin: 2rem 0;
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  padding-bottom: 1rem;
+  margin: 1rem 0 0.75rem;
+  flex: 0 0 auto;
+  min-height: auto;
+  overflow: visible;
+  padding-bottom: 0.5rem;
 }
 
 .recall-actions {
@@ -1274,17 +1281,16 @@ onUnmounted(() => {
 /* Responsive */
 @media (max-width: 640px) {
   .mini-cog-flow {
-    padding: 1rem;
+    padding: 0.5rem 0.75rem calc(1rem + env(safe-area-inset-bottom));
     max-width: 100%;
     min-height: 100vh;
     min-height: 100dvh;
   }
 
   .step-content {
-    padding: 1.5rem;
-    border-radius: 1rem;
-    min-height: calc(100vh - 150px);
-    min-height: calc(100dvh - 150px);
+    padding: 0.75rem 0;
+    border-radius: 0;
+    min-height: auto;
   }
 
   .step-label {
@@ -1326,15 +1332,14 @@ onUnmounted(() => {
 @media (min-width: 641px) and (max-width: 1024px) {
   .mini-cog-flow {
     max-width: 100%;
-    padding: 1.5rem;
+    padding: 0.75rem 1rem calc(1rem + env(safe-area-inset-bottom));
     min-height: 100vh;
     min-height: 100dvh;
   }
 
   .step-content {
-    padding: 2rem;
-    min-height: calc(100vh - 180px);
-    min-height: calc(100dvh - 180px);
+    padding: 1rem 0;
+    min-height: auto;
   }
 
   .btn-primary,
@@ -1389,11 +1394,11 @@ onUnmounted(() => {
 /* 超大螢幕（桌面全螢幕） */
 @media (min-width: 1200px) {
   .mini-cog-flow {
-    max-width: 900px;
+    max-width: none;
   }
 
   .step-content {
-    padding: 3rem;
+    padding: 1rem 0;
   }
 }
 

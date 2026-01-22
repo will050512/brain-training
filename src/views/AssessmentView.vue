@@ -1,15 +1,14 @@
 <template>
   <div 
-    class="min-h-screen bg-[var(--color-bg)] flex flex-col transition-colors duration-300 font-sans"
-    :class="{ 'h-screen overflow-hidden': stage === 'mini-cog' }"
+    class="min-h-screen bg-[var(--color-bg)] flex flex-col transition-colors duration-300 font-sans h-screen overflow-hidden"
   >
     <!-- Header: Clean & Minimal -->
-    <header class="bg-[var(--color-surface)]/80 backdrop-blur-md border-b border-[var(--color-border)] sticky top-0 z-30 safe-area-top">
+    <header class="bg-[var(--color-surface)]/90 backdrop-blur-md border-b border-[var(--color-border)] shrink-0 z-30 safe-area-top">
       <div class="px-4 sm:px-6">
         <div class="flex items-center justify-between h-14">
           <router-link 
             to="/" 
-            class="btn btn-ghost btn-sm -ml-2 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] gap-1"
+            class="btn btn-ghost -ml-2 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] gap-1 h-11 min-h-[44px]"
           >
             <span class="text-xl">←</span> <span class="text-sm font-medium">返回</span>
           </router-link>
@@ -21,8 +20,7 @@
 
     <!-- Main Content -->
     <main 
-      class="flex-1 w-full px-3 py-2 sm:px-4 flex flex-col safe-area-bottom"
-      :class="{ 'overflow-hidden p-0': stage === 'mini-cog' }"
+      class="flex-1 w-full flex flex-col safe-area-bottom relative overflow-hidden"
     >
       
       <!-- 1. Mini-Cog Mode (Preserved Wrapper) -->
@@ -31,96 +29,93 @@
         :language="selectedLanguage"
         @complete="handleMiniCogComplete"
         @cancel="stage = 'select'"
-        class="h-full"
+        class="h-full w-full overflow-y-auto"
       />
 
       <!-- 2. Select Assessment Type -->
-      <section v-else-if="stage === 'select'" class="flex-1 flex flex-col gap-3 animate-fade-in">
-        <div class="text-center sm:text-left py-1">
-          <div class="text-4xl mb-1 filter drop-shadow-sm">🧠</div>
-          <h2 class="text-xl font-bold text-[var(--color-text)] mb-0.5">選擇評估方式</h2>
-          <p class="text-[var(--color-text-secondary)] text-sm">了解您的認知狀態，量身打造訓練計畫</p>
+      <section v-else-if="stage === 'select'" class="flex-1 h-full flex flex-col gap-5 p-4 md:p-6 overflow-y-auto animate-fade-in w-full">
+        <div class="shrink-0 space-y-1 pt-2">
+           <h2 class="text-2xl font-bold text-[var(--color-text)] flex items-center gap-2">
+             <span>🧠</span> 選擇評估方式
+           </h2>
+           <p class="text-[var(--color-text-secondary)] text-sm">了解您的認知狀態，量身打造訓練計畫</p>
         </div>
 
-        <div class="grid gap-3 lg:grid-cols-2">
-          <!-- Mini-Cog Card -->
-          <button 
-            class="card text-left p-4 relative group transition-all duration-300 border border-[var(--color-primary)]/20 hover:border-[var(--color-primary)] hover:shadow-lg bg-[var(--color-surface)] overflow-visible"
-            @click="startMiniCog"
-          >
-            <div class="absolute -top-3 -right-3">
-              <span class="bg-[var(--color-primary)] text-[var(--color-text-inverse)] text-xs font-bold px-3 py-1 rounded-full shadow-md animate-pulse">
-                推薦
-              </span>
-            </div>
-            <div class="flex items-start gap-3">
-              <div class="text-2xl sm:text-3xl group-hover:scale-110 transition-transform duration-300 bg-[var(--color-primary-bg)] w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shrink-0">⏱️</div>
-              <div>
-                <h3 class="text-base font-bold text-[var(--color-text)] mb-0.5 group-hover:text-[var(--color-primary)] transition-colors">Mini-Cog™ 快篩</h3>
-                <div class="flex items-center gap-2 text-xs font-medium text-[var(--color-primary)] bg-[var(--color-primary-bg)]/50 px-2 py-0.5 rounded-md w-fit mb-1">
-                  <span>⚡ 3 分鐘</span>
-                  <span>•</span>
-                  <span>國際標準</span>
+        <div class="grid gap-4 sm:grid-cols-2 shrink-0">
+            <!-- Mini-Cog Card -->
+            <button 
+              class="card text-left p-5 relative group transition-all duration-300 border border-[var(--color-primary)]/20 hover:border-[var(--color-primary)] active:scale-[0.98] bg-[var(--color-surface)] shadow-sm min-h-[140px]"
+              @click="startMiniCog"
+            >
+              <div class="absolute -top-2 -right-2 z-10">
+                <span class="bg-[var(--color-primary)] text-[var(--color-text-inverse)] text-xs font-bold px-2 py-1 rounded-lg shadow-sm animate-pulse">
+                  推薦
+                </span>
+              </div>
+              <div class="flex items-start gap-4">
+                <div class="text-4xl bg-[var(--color-primary-bg)] w-14 h-14 flex items-center justify-center rounded-xl shrink-0">⏱️</div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-lg font-bold text-[var(--color-text)] leading-tight mb-1">Mini-Cog™ 快篩</h3>
+                  <div class="flex items-center gap-1.5 text-xs font-medium text-[var(--color-primary)] mt-2">
+                    <span class="bg-[var(--color-primary-bg)] px-2 py-1 rounded text-sm">⚡ 3 分鐘</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <p class="text-xs sm:text-sm text-[var(--color-text-secondary)] mt-1.5 leading-relaxed">
-              透過詞語記憶與畫鐘測驗，快速篩檢認知功能狀態。
-            </p>
-          </button>
+              <p class="text-sm text-[var(--color-text-secondary)] mt-4 leading-relaxed line-clamp-2">
+                透過詞語記憶與畫鐘測驗，快速篩檢認知功能狀態。
+              </p>
+            </button>
 
-          <!-- Full Assessment Card -->
-          <button 
-            class="card text-left p-4 group transition-all duration-300 border border-[var(--color-border)] hover:border-[var(--color-primary)]/50 hover:shadow-lg bg-[var(--color-surface)]"
-            @click="stage = 'intro'"
-          >
-            <div class="flex items-start gap-3">
-              <div class="text-2xl sm:text-3xl group-hover:scale-110 transition-transform duration-300 bg-[var(--color-bg-muted)] w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shrink-0">📋</div>
-              <div>
-                <h3 class="text-base font-bold text-[var(--color-text)] mb-0.5 group-hover:text-[var(--color-primary)] transition-colors">完整能力評估</h3>
-                <div class="flex items-center gap-2 text-xs font-medium text-[var(--color-text-muted)] bg-[var(--color-bg-muted)]/50 px-2 py-0.5 rounded-md w-fit mb-1">
-                  <span>🎯 5 分鐘</span>
-                  <span>•</span>
-                  <span>綜合分析</span>
+            <!-- Full Assessment Card -->
+            <button 
+              class="card text-left p-5 group transition-all duration-300 border border-[var(--color-border)] hover:border-[var(--color-primary)]/50 active:scale-[0.98] bg-[var(--color-surface)] shadow-sm min-h-[140px]"
+              @click="stage = 'intro'"
+            >
+              <div class="flex items-start gap-4">
+                <div class="text-4xl bg-[var(--color-bg-muted)] w-14 h-14 flex items-center justify-center rounded-xl shrink-0">📋</div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-lg font-bold text-[var(--color-text)] leading-tight mb-1">完整能力評估</h3>
+                  <div class="flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-muted)] mt-2">
+                    <span class="bg-[var(--color-bg-muted)] px-2 py-1 rounded text-sm">🎯 5 分鐘</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <p class="text-xs sm:text-sm text-[var(--color-text-secondary)] mt-1.5 leading-relaxed">
-              全面測試反應、記憶與邏輯能力，提供詳細雷達圖分析。
-            </p>
-          </button>
+              <p class="text-sm text-[var(--color-text-secondary)] mt-4 leading-relaxed line-clamp-2">
+                全面測試反應、記憶與邏輯能力，提供詳細雷達圖分析。
+              </p>
+            </button>
         </div>
 
         <!-- Language Selector -->
-        <div class="flex flex-wrap items-center gap-2 mt-2">
-          <label class="text-xs font-medium text-[var(--color-text-muted)]">Mini-Cog 語言：</label>
-          <div class="relative">
+        <div class="flex items-center gap-3 shrink-0 bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] mt-2">
+          <label class="text-base font-medium text-[var(--color-text-muted)] whitespace-nowrap">Mini-Cog 語言</label>
+          <div class="relative flex-1">
             <select 
               v-model="selectedLanguage" 
-              class="appearance-none bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)] py-1.5 pl-3 pr-8 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent text-xs font-medium shadow-sm min-h-[36px]"
+              class="w-full appearance-none bg-transparent text-[var(--color-text)] py-2 pl-2 pr-8 focus:outline-none text-base font-medium h-12"
             >
               <option value="zh-TW">繁體中文</option>
               <option value="zh-CN">简体中文</option>
               <option value="en">English</option>
             </select>
-            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--color-text-muted)]">
-              <svg class="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center text-[var(--color-text-muted)]">
+              <svg class="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
             </div>
           </div>
         </div>
 
         <!-- History Hint -->
-        <div v-if="hasRecentMiniCog" class="animate-slide-up mt-auto">
-          <div class="bg-[var(--color-success-bg)] border border-[var(--color-success)]/20 rounded-xl p-3 flex items-center justify-between shadow-sm">
-            <div class="flex items-center gap-2">
-              <div class="bg-white rounded-full p-1.5 shadow-sm text-base">📊</div>
+        <div v-if="hasRecentMiniCog" class="mt-auto pt-4 shrink-0 pb-2">
+          <div class="bg-[var(--color-success-bg)] border border-[var(--color-success)]/20 rounded-xl p-4 flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-3">
+              <div class="bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-sm text-lg">📊</div>
               <div>
-                <p class="font-bold text-[var(--color-success)] text-xs">最近記錄</p>
-                <p class="text-[10px] text-[var(--color-text-secondary)] opacity-80">{{ formatRecentMiniCogDate }}</p>
+                <p class="font-bold text-[var(--color-success)] text-sm mb-0.5">最近記錄</p>
+                <p class="text-sm text-[var(--color-text-secondary)] opacity-80">{{ formatRecentMiniCogDate }}</p>
               </div>
             </div>
             <button 
-              class="btn btn-sm btn-outline border-[var(--color-success)] text-[var(--color-success)] hover:bg-[var(--color-success)] hover:text-white px-3 text-xs h-8 min-h-0"
+              class="btn btn-sm btn-outline border-[var(--color-success)] text-[var(--color-success)] hover:bg-[var(--color-success)] hover:text-white h-12 min-h-[48px] px-5 text-base"
               @click="viewMiniCogHistory"
             >
               查看
@@ -130,64 +125,69 @@
       </section>
 
       <!-- 3. Intro Stage -->
-      <section v-else-if="stage === 'intro'" class="flex-1 flex flex-col animate-slide-up w-full max-w-lg mx-auto py-2">
-        <div class="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:p-6 text-center shadow-lg flex flex-col h-full sm:h-auto">
-          <div class="w-12 h-12 bg-[var(--color-primary-bg)] rounded-full flex items-center justify-center mx-auto mb-2 text-2xl shadow-inner shrink-0">
-            🧠
-          </div>
-          <h2 class="text-lg font-bold mb-1 text-[var(--color-text)]">準備好了嗎？</h2>
-          <p class="text-[var(--color-text-secondary)] mb-4 leading-relaxed text-xs sm:text-sm">
-            我們將進行三個簡單的測驗，<br/>幫助系統了解您目前的狀態。
-          </p>
-          
-          <div class="space-y-2 mb-6 flex-1 sm:flex-none overflow-y-auto">
-            <div class="flex items-center gap-3 p-2.5 rounded-xl bg-[var(--color-bg-soft)] border border-[var(--color-border)]">
-              <span class="text-lg bg-white rounded-lg p-1 shadow-sm">⚡</span>
-              <div class="text-left">
-                <div class="font-bold text-[var(--color-text)] text-sm">反應力</div>
-                <div class="text-[10px] text-[var(--color-text-muted)]">快速選擇看到的顏色</div>
-              </div>
+      <section v-else-if="stage === 'intro'" class="flex-1 flex flex-col p-4 md:p-6 w-full animate-slide-up overflow-y-auto">
+        <div class="w-full bg-[var(--color-surface)] border border-[var(--color-border)] p-6 shadow-lg flex flex-col min-h-full sm:min-h-0 rounded-2xl">
+          <div class="text-center mb-6">
+            <div class="w-16 h-16 bg-[var(--color-primary-bg)] rounded-2xl flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner shrink-0">
+              🧠
             </div>
-            <div class="flex items-center gap-3 p-2.5 rounded-xl bg-[var(--color-bg-soft)] border border-[var(--color-border)]">
-              <span class="text-lg bg-white rounded-lg p-1 shadow-sm">🧠</span>
-              <div class="text-left">
-                <div class="font-bold text-[var(--color-text)] text-sm">記憶力</div>
-                <div class="text-[10px] text-[var(--color-text-muted)]">記住數字序列並輸入</div>
-              </div>
-            </div>
-            <div class="flex items-center gap-3 p-2.5 rounded-xl bg-[var(--color-bg-soft)] border border-[var(--color-border)]">
-              <span class="text-lg bg-white rounded-lg p-1 shadow-sm">🧩</span>
-              <div class="text-left">
-                <div class="font-bold text-[var(--color-text)] text-sm">邏輯力</div>
-                <div class="text-[10px] text-[var(--color-text-muted)]">簡單的數學計算</div>
-              </div>
-            </div>
+            <h2 class="text-2xl font-bold mb-3 text-[var(--color-text)]">準備好了嗎？</h2>
+            <p class="text-[var(--color-text-secondary)] text-base leading-relaxed">
+              將進行三個簡單測驗，<br/>幫助系統了解您目前的狀態。
+            </p>
           </div>
           
-          <div class="space-y-2 mt-auto sm:mt-0">
-            <button @click="startAssessment" class="btn btn-primary btn-lg w-full text-base shadow-lg hover:shadow-xl transform transition hover:-translate-y-1">
+          <div class="space-y-4 mb-8 flex-1">
+            <div class="flex items-center gap-5 p-4 rounded-xl bg-[var(--color-bg-soft)] border border-[var(--color-border)]/50">
+              <span class="text-3xl bg-white rounded-xl w-12 h-12 flex items-center justify-center shadow-sm shrink-0">⚡</span>
+              <div>
+                <div class="font-bold text-[var(--color-text)] text-lg">反應力</div>
+                <div class="text-sm text-[var(--color-text-muted)] mt-1">快速選擇看到的顏色</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-5 p-4 rounded-xl bg-[var(--color-bg-soft)] border border-[var(--color-border)]/50">
+              <span class="text-3xl bg-white rounded-xl w-12 h-12 flex items-center justify-center shadow-sm shrink-0">🧠</span>
+              <div>
+                <div class="font-bold text-[var(--color-text)] text-lg">記憶力</div>
+                <div class="text-sm text-[var(--color-text-muted)] mt-1">記住數字序列並輸入</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-5 p-4 rounded-xl bg-[var(--color-bg-soft)] border border-[var(--color-border)]/50">
+              <span class="text-3xl bg-white rounded-xl w-12 h-12 flex items-center justify-center shadow-sm shrink-0">🧩</span>
+              <div>
+                <div class="font-bold text-[var(--color-text)] text-lg">邏輯力</div>
+                <div class="text-sm text-[var(--color-text-muted)] mt-1">簡單的數學計算</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="space-y-4 shrink-0">
+            <button @click="startAssessment" class="btn btn-primary btn-lg w-full text-xl font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all min-h-[60px]">
               開始測試
             </button>
-            <button @click="stage = 'select'" class="btn btn-ghost w-full btn-sm">
+            <button @click="stage = 'select'" class="btn btn-ghost w-full min-h-[50px] text-[var(--color-text-muted)] text-base">
               稍後再說
             </button>
           </div>
         </div>
       </section>
 
-      <!-- 4. Testing Stage -->
-      <div v-else-if="stage === 'testing'" class="flex-1 flex flex-col w-full py-1 max-w-lg mx-auto h-full overflow-hidden">
+      <!-- 4. Testing Stage (Optimized Layout for Elderly) -->
+      <div v-else-if="stage === 'testing'" class="flex-1 flex flex-col w-full p-3 md:p-6 h-full overflow-hidden bg-[var(--color-bg)]">
+        
         <!-- Progress Header -->
-        <div class="mb-2 px-1 shrink-0">
-          <div class="flex justify-between items-end mb-1">
-            <span class="text-[10px] font-bold text-[var(--color-primary)] bg-[var(--color-primary-bg)] px-2 py-0.5 rounded-full">
+        <div class="mb-3 shrink-0 rounded-xl bg-[var(--color-surface)]/90 border border-[var(--color-border)]/70 px-4 py-3 shadow-sm z-10">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-sm font-bold text-[var(--color-primary)] bg-[var(--color-primary-bg)] px-3 py-1.5 rounded-lg">
               {{ questionTypeLabel }}
             </span>
-            <span class="text-[10px] font-medium text-[var(--color-text-muted)] tracking-wider">
-              {{ currentIndex + 1 }} <span class="text-[9px] opacity-60">/</span> {{ questions.length }}
+            <span class="text-sm font-medium text-[var(--color-text-muted)] tracking-wider">
+              <span class="text-xl font-bold text-[var(--color-text)]">{{ currentIndex + 1 }}</span>
+              <span class="opacity-40 mx-1">/</span>
+              <span>{{ questions.length }}</span>
             </span>
           </div>
-          <div class="h-1 bg-[var(--color-bg-muted)] rounded-full overflow-hidden shadow-inner">
+          <div class="h-3 bg-[var(--color-bg-muted)] rounded-full overflow-hidden">
             <div 
               class="h-full bg-[var(--color-primary)] transition-all duration-500 ease-out rounded-full"
               :style="{ width: `${((currentIndex + 1) / questions.length) * 100}%` }"
@@ -196,9 +196,9 @@
         </div>
 
         <!-- Question Card -->
-        <div class="card flex-1 flex flex-col relative overflow-hidden shadow-lg border border-[var(--color-border-light)] min-h-0">
+        <div ref="questionCardRef" class="card flex-1 flex flex-col relative overflow-hidden shadow-lg border border-[var(--color-border-light)] bg-[var(--color-surface)] rounded-2xl">
           <!-- Timer Bar (Top) -->
-          <div class="absolute top-0 left-0 w-full h-1 bg-[var(--color-bg-muted)] z-20">
+          <div class="absolute top-0 left-0 w-full h-2 bg-[var(--color-bg-muted)] z-20">
             <div 
               class="h-full transition-all duration-1000 linear"
               :class="timeLeft <= 3 ? 'bg-[var(--color-danger)]' : 'bg-[var(--color-primary)]'"
@@ -206,104 +206,125 @@
             ></div>
           </div>
 
-          <!-- Timer Badge -->
-          <div class="absolute top-2 right-2 z-10">
-             <div 
-               class="flex items-center justify-center w-7 h-7 rounded-full font-bold text-[10px] shadow-sm transition-all duration-300 border-2"
-               :class="timeLeft <= 3 
-                 ? 'bg-[var(--color-danger-bg)] text-[var(--color-danger)] border-[var(--color-danger)] scale-110' 
-                 : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border-[var(--color-border)]'"
-             >
-               {{ timeLeft }}
-             </div>
-           </div>
-          
-          <div class="flex-1 flex flex-col items-center justify-center p-3 text-center overflow-y-auto">
+          <!-- Scrollable Content Area -->
+          <div ref="questionScrollRef" class="flex-1 flex flex-col p-4 w-full h-full overflow-y-auto">
             
             <!-- Reaction Type -->
             <template v-if="currentQuestion?.type === 'reaction'">
-              <h3 class="text-base text-[var(--color-text)] mb-3 font-bold">{{ currentQuestion.question }}</h3>
-              
-              <div 
-                class="w-full aspect-video max-h-32 rounded-xl shadow-md mb-4 flex items-center justify-center transform transition-all duration-300"
-                :style="{ 
-                  backgroundColor: currentQuestion.data?.displayColor as string,
-                  boxShadow: `0 8px 20px -8px ${currentQuestion.data?.displayColor}`
-                }"
-              >
-                <span class="text-3xl font-black text-white drop-shadow-md tracking-widest">
-                  {{ currentQuestion.data?.displayText }}
-                </span>
-              </div>
+              <div class="flex flex-col h-full">
+                <!-- Question Title (Fixed) -->
+                <div class="shrink-0 mb-4 text-center">
+                   <h3 class="text-2xl md:text-3xl text-[var(--color-text)] font-bold tracking-tight leading-tight">
+                     {{ currentQuestion.question }}
+                   </h3>
+                </div>
+                
+                <!-- Color Block (Flexible Height - can shrink) -->
+                <div class="flex-1 min-h-[80px] flex flex-col justify-center mb-6">
+                  <div 
+                    class="w-full h-full max-h-[35vh] rounded-3xl shadow-sm flex items-center justify-center transform transition-all duration-300 border-4 border-white/20 relative overflow-hidden"
+                    :style="{ 
+                      backgroundColor: currentQuestion.data?.displayColor as string,
+                      boxShadow: `0 10px 30px -10px ${currentQuestion.data?.displayColor}`
+                    }"
+                  >
+                    <span class="text-5xl md:text-7xl font-black text-white drop-shadow-lg tracking-widest z-10">
+                      {{ currentQuestion.data?.displayText }}
+                    </span>
+                  </div>
+                </div>
 
-              <div class="grid grid-cols-2 gap-2 w-full mt-auto">
-                <button
-                  v-for="option in currentQuestion.options"
-                  :key="option"
-                  @click="submitAnswer(option)"
-                  class="btn btn-secondary btn-lg text-sm font-bold border-2 border-transparent hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-bg)] hover:text-[var(--color-primary)] transition-all active:scale-95 py-2 min-h-[48px]"
-                  :disabled="isSubmitting"
-                >
-                  {{ option }}
-                </button>
+                <!-- Options (Fixed Bottom - LARGE BUTTONS) -->
+                <div class="grid grid-cols-2 gap-4 shrink-0 mt-auto">
+                  <button
+                    v-for="option in currentQuestion.options"
+                    :key="option"
+                    @click="submitAnswer(option)"
+                    class="btn btn-secondary text-2xl md:text-3xl font-bold border-2 border-transparent hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-bg)] hover:text-[var(--color-primary)] transition-all active:scale-95 py-6 min-h-[80px] md:min-h-[100px] rounded-2xl shadow-sm"
+                    :disabled="isSubmitting"
+                  >
+                    {{ option }}
+                  </button>
+                </div>
               </div>
             </template>
 
             <!-- Memory Type -->
             <template v-else-if="currentQuestion?.type === 'memory'">
-              <h3 class="text-base text-[var(--color-text)] mb-4 font-bold">{{ currentQuestion.question }}</h3>
-              
-              <div v-if="memoryPhase === 'display'" class="flex-1 flex flex-col items-center justify-center animate-fade-in w-full min-h-[160px]">
-                <div class="text-5xl font-black text-[var(--color-primary)] tracking-[0.2em] mb-4 scale-110 transform transition-transform">
-                  {{ currentQuestion.data?.sequence }}
+              <div class="flex flex-col h-full items-center justify-center text-center">
+                 <!-- Question Title -->
+                <h3 class="text-2xl md:text-3xl text-[var(--color-text)] mb-8 font-bold shrink-0">
+                  {{ currentQuestion.question }}
+                </h3>
+                
+                <div class="flex-1 flex flex-col items-center justify-center w-full max-w-lg mx-auto">
+                  <!-- Display Phase -->
+                  <div v-if="memoryPhase === 'display'" class="w-full flex flex-col items-center animate-fade-in">
+                    <div class="text-[clamp(4rem,18vw,6rem)] font-black text-[var(--color-primary)] tracking-[0.15em] mb-10 select-none leading-none">
+                      {{ currentQuestion.data?.sequence }}
+                    </div>
+                    <div class="w-full max-w-[240px] bg-[var(--color-bg-muted)] h-3 rounded-full overflow-hidden">
+                       <div class="h-full bg-[var(--color-primary)] animate-[shrink_3s_linear_forwards]"></div>
+                    </div>
+                  </div>
+                  
+                  <!-- Input Phase -->
+                  <div v-else class="w-full flex flex-col items-center animate-fade-in">
+                    <input
+                      v-model="memoryInput"
+                      type="text"
+                      inputmode="numeric"
+                      pattern="[0-9]*"
+                      class="input text-center text-5xl font-bold tracking-[0.3em] h-24 w-full mb-8 rounded-2xl shadow-inner bg-[var(--color-bg-soft)] border-2 focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[var(--color-primary)]/10"
+                      placeholder="____"
+                      @keyup.enter="submitAnswer(memoryInput)"
+                      ref="memoryInputRef"
+                      autocomplete="off"
+                    />
+                    <button
+                      @click="submitAnswer(memoryInput)"
+                      class="btn btn-primary btn-lg w-full shadow-lg py-5 min-h-[70px] text-2xl font-bold rounded-2xl"
+                      :disabled="!memoryInput || isSubmitting"
+                    >
+                      確認答案
+                    </button>
+                  </div>
                 </div>
-                <div class="w-full bg-[var(--color-bg-muted)] h-1 mt-4 rounded-full overflow-hidden max-w-[160px] mx-auto">
-                   <div class="h-full bg-[var(--color-primary)] animate-[shrink_3s_linear_forwards]"></div>
-                </div>
-              </div>
-              
-              <div v-else class="flex-1 flex flex-col items-center justify-center w-full animate-fade-in min-h-[160px]">
-                <input
-                  v-model="memoryInput"
-                  type="text"
-                  inputmode="numeric"
-                  pattern="[0-9]*"
-                  class="input text-center text-2xl font-bold tracking-[0.5em] h-14 w-full max-w-[220px] mb-4 rounded-xl shadow-inner bg-[var(--color-bg-soft)] border-2 focus:border-[var(--color-primary)]"
-                  placeholder="____"
-                  @keyup.enter="submitAnswer(memoryInput)"
-                  ref="memoryInputRef"
-                  autocomplete="off"
-                />
-                <button
-                  @click="submitAnswer(memoryInput)"
-                  class="btn btn-primary btn-lg w-full max-w-xs shadow-lg py-2.5 min-h-[48px]"
-                  :disabled="!memoryInput || isSubmitting"
-                >
-                  確認答案
-                </button>
+                <!-- Spacer -->
+                <div class="h-10 shrink-0"></div>
               </div>
             </template>
 
             <!-- Logic Type -->
             <template v-else-if="currentQuestion?.type === 'logic'">
-              <h3 class="text-base text-[var(--color-text)] mb-4 font-bold">請計算結果</h3>
-              
-              <div class="w-full bg-[var(--color-accent-purple)]/10 border border-[var(--color-accent-purple)]/20 rounded-xl p-4 mb-6 flex-1 flex items-center justify-center max-h-36">
-                <div class="text-4xl font-black text-[var(--color-accent-purple)] tracking-wider">
-                  {{ currentQuestion.question }}
+               <div class="flex flex-col h-full">
+                <!-- Title -->
+                <div class="shrink-0 mb-4 text-center">
+                  <h3 class="text-2xl md:text-3xl text-[var(--color-text)] font-bold">請計算結果</h3>
                 </div>
-              </div>
+                
+                <!-- Calculation Display (Flexible - can shrink) -->
+                <div class="flex-1 flex items-center justify-center mb-6 min-h-[80px]">
+                  <div class="w-full bg-[var(--color-accent-purple)]/5 border-2 border-[var(--color-accent-purple)]/20 rounded-3xl p-4 flex items-center justify-center h-full max-h-[35vh]">
+                    <!-- Use standard break words to prevent overflow, and clamp for sizing -->
+                    <div class="text-[clamp(2.5rem,12vw,4.5rem)] font-black text-[var(--color-accent-purple)] tracking-wider leading-none text-center break-words w-full">
+                      {{ currentQuestion.question }}
+                    </div>
+                  </div>
+                </div>
 
-              <div class="grid grid-cols-2 gap-2 w-full mt-auto">
-                <button
-                  v-for="option in currentQuestion.options"
-                  :key="option"
-                  @click="submitAnswer(option)"
-                  class="btn btn-secondary btn-lg text-lg font-bold border-2 border-transparent hover:border-[var(--color-accent-purple)] hover:text-[var(--color-accent-purple)] active:scale-95 py-2 min-h-[48px]"
-                  :disabled="isSubmitting"
-                >
-                  {{ option }}
-                </button>
+                <!-- Options (LARGE BUTTONS) -->
+                <div class="grid grid-cols-2 gap-4 shrink-0 mt-auto">
+                  <button
+                    v-for="option in currentQuestion.options"
+                    :key="option"
+                    @click="submitAnswer(option)"
+                    class="btn btn-secondary text-3xl md:text-4xl font-bold border-2 border-transparent hover:border-[var(--color-accent-purple)] hover:text-[var(--color-accent-purple)] active:scale-95 py-6 min-h-[80px] md:min-h-[100px] rounded-2xl shadow-sm"
+                    :disabled="isSubmitting"
+                  >
+                    {{ option }}
+                  </button>
+                </div>
               </div>
             </template>
           </div>
@@ -311,50 +332,50 @@
       </div>
 
       <!-- 5. Mini-Cog Result -->
-      <section v-else-if="stage === 'mini-cog-result'" class="flex-1 flex flex-col w-full animate-fade-in py-1 max-w-lg mx-auto">
-        <div class="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-center shadow-lg">
-          <div class="mb-2 inline-block p-2.5 rounded-full bg-[var(--color-success-bg)] text-2xl shadow-sm">
+      <section v-else-if="stage === 'mini-cog-result'" class="flex-1 flex flex-col w-full animate-fade-in p-4 md:p-6 overflow-y-auto">
+        <div class="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center shadow-lg my-auto">
+          <div class="mb-4 inline-block p-4 rounded-full bg-[var(--color-success-bg)] text-4xl shadow-sm">
             🎉
           </div>
-          <h2 class="text-lg font-bold mb-0.5 text-[var(--color-text)]">篩檢完成</h2>
-          <p class="text-[var(--color-text-secondary)] mb-3 text-xs">您的認知篩檢結果如下</p>
+          <h2 class="text-2xl font-bold mb-2 text-[var(--color-text)]">篩檢完成</h2>
+          <p class="text-[var(--color-text-secondary)] mb-6 text-base">您的認知篩檢結果如下</p>
           
-          <div class="bg-[var(--color-bg-soft)] rounded-xl p-3 mb-3 border border-[var(--color-border)] relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1 bg-[var(--color-primary)]/20"></div>
-            <div class="text-3xl font-black text-[var(--color-primary)] mb-0.5 tracking-tighter">
-              {{ recentMiniCogResult?.totalScore }}<span class="text-lg text-[var(--color-text-muted)] font-medium">/5</span>
+          <div class="bg-[var(--color-bg-soft)] rounded-2xl p-5 mb-5 border border-[var(--color-border)] relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-[var(--color-primary)]/20"></div>
+            <div class="text-5xl font-black text-[var(--color-primary)] mb-1 tracking-tighter">
+              {{ recentMiniCogResult?.totalScore }}<span class="text-2xl text-[var(--color-text-muted)] font-medium">/5</span>
             </div>
-            <div class="text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wide">總分</div>
+            <div class="text-sm font-bold text-[var(--color-text-secondary)] uppercase tracking-wide">總分</div>
             
-            <div class="grid grid-cols-2 gap-px bg-[var(--color-border)] mt-3 rounded-lg overflow-hidden border border-[var(--color-border)]">
-              <div class="bg-[var(--color-surface)] p-2">
-                <div class="text-base font-bold text-[var(--color-text)]">
+            <div class="grid grid-cols-2 gap-px bg-[var(--color-border)] mt-5 rounded-xl overflow-hidden border border-[var(--color-border)]">
+              <div class="bg-[var(--color-surface)] p-4">
+                <div class="text-xl font-bold text-[var(--color-text)]">
                   {{ recentMiniCogResult?.wordRecall.score }} / 3
                 </div>
-                <div class="text-[9px] text-[var(--color-text-muted)]">詞語回憶</div>
+                <div class="text-xs text-[var(--color-text-muted)] mt-1">詞語回憶</div>
               </div>
-              <div class="bg-[var(--color-surface)] p-2">
-                <div class="text-base font-bold text-[var(--color-text)]">
+              <div class="bg-[var(--color-surface)] p-4">
+                <div class="text-xl font-bold text-[var(--color-text)]">
                   {{ recentMiniCogResult?.clockDrawing.score }} / 2
                 </div>
-                <div class="text-[9px] text-[var(--color-text-muted)]">時鐘繪圖</div>
+                <div class="text-xs text-[var(--color-text-muted)] mt-1">時鐘繪圖</div>
               </div>
             </div>
           </div>
 
-          <div class="bg-[var(--color-info-bg)]/40 rounded-lg p-2.5 mb-4 text-left border border-[var(--color-info-bg)] flex gap-2">
-            <span class="text-lg shrink-0">💡</span>
-            <p class="text-[var(--color-text-primary)] text-xs leading-relaxed">
-              <span class="font-bold block mb-0.5">系統建議</span>
+          <div class="bg-[var(--color-info-bg)]/30 rounded-xl p-4 mb-6 text-left border border-[var(--color-info-bg)] flex gap-4">
+            <span class="text-2xl shrink-0 mt-0.5">💡</span>
+            <p class="text-[var(--color-text-primary)] text-base leading-relaxed">
+              <span class="font-bold block mb-1 text-[var(--color-info)]">系統建議</span>
               已根據結果調整遊戲難度。建議每天進行 15 分鐘認知訓練。
             </p>
           </div>
 
-          <div class="space-y-2">
-            <button @click="startDailyTraining" class="btn btn-primary btn-lg w-full shadow-lg hover:shadow-xl hover:-translate-y-1">
+          <div class="space-y-4">
+            <button @click="startDailyTraining" class="btn btn-primary btn-lg w-full shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all min-h-[60px] text-xl font-bold">
               開始今日訓練
             </button>
-            <button @click="viewReport" class="btn btn-ghost w-full text-xs min-h-[32px] h-8">
+            <button @click="viewReport" class="btn btn-ghost w-full text-base min-h-[50px]">
               查看詳細報告
             </button>
           </div>
@@ -362,59 +383,59 @@
       </section>
 
       <!-- 6. Full Assessment Result -->
-      <section v-else-if="stage === 'result'" class="flex-1 flex flex-col w-full animate-fade-in py-1 max-w-lg mx-auto">
-        <div class="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-center shadow-lg">
-          <div class="mb-2 inline-block p-2.5 rounded-full bg-[var(--color-primary-bg)] text-2xl shadow-sm">
+      <section v-else-if="stage === 'result'" class="flex-1 flex flex-col w-full animate-fade-in p-4 md:p-6 overflow-y-auto">
+        <div class="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center shadow-lg my-auto">
+          <div class="mb-3 inline-block p-4 rounded-full bg-[var(--color-primary-bg)] text-4xl shadow-sm">
             🏆
           </div>
-          <h2 class="text-lg font-bold mb-0.5 text-[var(--color-text)]">能力評估完成！</h2>
-          <p class="text-[var(--color-text-secondary)] mb-3 text-xs">您的各項能力分析</p>
+          <h2 class="text-2xl font-bold mb-2 text-[var(--color-text)]">能力評估完成！</h2>
+          <p class="text-[var(--color-text-secondary)] mb-6 text-base">您的各項能力分析</p>
 
-          <div class="grid grid-cols-3 gap-2 mb-3">
-            <div class="bg-[var(--color-surface)] rounded-xl p-2 border border-[var(--color-border)] shadow-sm flex flex-col items-center">
-              <div class="text-base mb-1 bg-[var(--color-bg-soft)] w-6 h-6 flex items-center justify-center rounded-full">⚡</div>
-              <div class="text-base font-black text-[var(--color-reaction)]">{{ result?.scores.reaction }}</div>
-              <div class="text-[9px] uppercase font-bold text-[var(--color-text-muted)] mt-0.5">反應力</div>
+          <div class="grid grid-cols-3 gap-3 mb-6">
+            <div class="bg-[var(--color-surface)] rounded-2xl p-4 border border-[var(--color-border)] shadow-sm flex flex-col items-center">
+              <div class="text-xl mb-2 bg-[var(--color-bg-soft)] w-10 h-10 flex items-center justify-center rounded-full">⚡</div>
+              <div class="text-2xl font-black text-[var(--color-reaction)]">{{ result?.scores.reaction }}</div>
+              <div class="text-xs uppercase font-bold text-[var(--color-text-muted)] mt-1">反應力</div>
             </div>
-            <div class="bg-[var(--color-surface)] rounded-xl p-2 border border-[var(--color-border)] shadow-sm flex flex-col items-center">
-              <div class="text-base mb-1 bg-[var(--color-bg-soft)] w-6 h-6 flex items-center justify-center rounded-full">🧠</div>
-              <div class="text-base font-black text-[var(--color-memory)]">{{ result?.scores.memory }}</div>
-              <div class="text-[9px] uppercase font-bold text-[var(--color-text-muted)] mt-0.5">記憶力</div>
+            <div class="bg-[var(--color-surface)] rounded-2xl p-4 border border-[var(--color-border)] shadow-sm flex flex-col items-center">
+              <div class="text-xl mb-2 bg-[var(--color-bg-soft)] w-10 h-10 flex items-center justify-center rounded-full">🧠</div>
+              <div class="text-2xl font-black text-[var(--color-memory)]">{{ result?.scores.memory }}</div>
+              <div class="text-xs uppercase font-bold text-[var(--color-text-muted)] mt-1">記憶力</div>
             </div>
-            <div class="bg-[var(--color-surface)] rounded-xl p-2 border border-[var(--color-border)] shadow-sm flex flex-col items-center">
-              <div class="text-base mb-1 bg-[var(--color-bg-soft)] w-6 h-6 flex items-center justify-center rounded-full">🧩</div>
-              <div class="text-base font-black text-[var(--color-logic)]">{{ result?.scores.logic }}</div>
-              <div class="text-[9px] uppercase font-bold text-[var(--color-text-muted)] mt-0.5">邏輯力</div>
+            <div class="bg-[var(--color-surface)] rounded-2xl p-4 border border-[var(--color-border)] shadow-sm flex flex-col items-center">
+              <div class="text-xl mb-2 bg-[var(--color-bg-soft)] w-10 h-10 flex items-center justify-center rounded-full">🧩</div>
+              <div class="text-2xl font-black text-[var(--color-logic)]">{{ result?.scores.logic }}</div>
+              <div class="text-xs uppercase font-bold text-[var(--color-text-muted)] mt-1">邏輯力</div>
             </div>
           </div>
 
-          <div class="bg-[var(--color-surface-alt)] rounded-lg p-2.5 mb-3 grid grid-cols-2 gap-2 text-sm border border-[var(--color-border)]">
+          <div class="bg-[var(--color-surface-alt)] rounded-xl p-4 mb-6 grid grid-cols-2 gap-4 text-base border border-[var(--color-border)]">
              <div class="border-r border-[var(--color-border)] pr-2">
-               <div class="text-[var(--color-text-muted)] text-[9px] mb-0.5">答對題數</div>
-               <div class="font-bold text-sm text-[var(--color-text)]">{{ result?.correctCount }} <span class="text-[9px] font-normal opacity-60">/ {{ result?.totalQuestions }}</span></div>
+               <div class="text-[var(--color-text-muted)] text-xs mb-1 uppercase tracking-wider">答對題數</div>
+               <div class="font-bold text-lg text-[var(--color-text)]">{{ result?.correctCount }} <span class="text-sm font-normal opacity-60">/ {{ result?.totalQuestions }}</span></div>
              </div>
              <div class="pl-2">
-               <div class="text-[var(--color-text-muted)] text-[9px] mb-0.5">平均反應</div>
-               <div class="font-bold text-sm text-[var(--color-text)]">{{ ((result?.averageReactionTime ?? 0) / 1000).toFixed(1) }}s</div>
+               <div class="text-[var(--color-text-muted)] text-xs mb-1 uppercase tracking-wider">平均反應</div>
+               <div class="font-bold text-lg text-[var(--color-text)]">{{ ((result?.averageReactionTime ?? 0) / 1000).toFixed(1) }}s</div>
              </div>
           </div>
 
-          <div class="bg-[var(--color-success-bg)] border border-[var(--color-success)]/30 rounded-xl p-3 mb-4 text-left relative overflow-hidden">
-            <div class="absolute right-0 top-0 opacity-10 text-4xl transform translate-x-1/4 -translate-y-1/4">🎯</div>
-            <h3 class="font-bold text-[var(--color-success)] text-[9px] uppercase tracking-wider mb-0.5">建議訓練難度</h3>
-            <div class="text-xl font-black text-[var(--color-success)] mb-0.5">
+          <div class="bg-[var(--color-success-bg)] border border-[var(--color-success)]/30 rounded-xl p-5 mb-8 text-left relative overflow-hidden">
+            <div class="absolute right-0 top-0 opacity-10 text-7xl transform translate-x-1/4 -translate-y-1/4">🎯</div>
+            <h3 class="font-bold text-[var(--color-success)] text-xs uppercase tracking-wider mb-2">建議訓練難度</h3>
+            <div class="text-4xl font-black text-[var(--color-success)] mb-2">
               {{ difficultyLabel }}
             </div>
-            <p class="text-[var(--color-text-primary)] text-xs opacity-90 leading-relaxed">
+            <p class="text-[var(--color-text-primary)] text-base opacity-90 leading-relaxed">
               {{ difficultyDescription }}
             </p>
           </div>
 
-          <div class="flex gap-2 justify-center">
-            <button @click="saveAndContinue" class="btn btn-primary flex-1 btn-lg shadow-lg hover:shadow-xl hover:-translate-y-1">
+          <div class="flex gap-4 justify-center">
+            <button @click="saveAndContinue" class="btn btn-primary flex-1 btn-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 min-h-[60px] text-xl font-bold">
               儲存並開始
             </button>
-            <button @click="retakeAssessment" class="btn btn-ghost px-3 btn-lg">
+            <button @click="retakeAssessment" class="btn btn-ghost px-5 btn-lg min-h-[60px] text-lg">
               重測
             </button>
           </div>
@@ -465,6 +486,8 @@ const recentMiniCogResult = ref<MiniCogResult | null>(null)
 const memoryPhase = ref<'display' | 'input'>('display')
 const memoryInput = ref('')
 const memoryInputRef = ref<HTMLInputElement | null>(null)
+const questionScrollRef = ref<HTMLDivElement | null>(null)
+const questionCardRef = ref<HTMLDivElement | null>(null)
 
 onMounted(() => {
   const mode = String(route.query.mode || '').toLowerCase()
@@ -574,6 +597,10 @@ function startAssessment() {
   answers.value = []
   currentIndex.value = 0
   stage.value = 'testing'
+  // 重置滾動位置
+  nextTick(() => {
+     window.scrollTo(0, 0)
+  })
   startQuestion()
 }
 
@@ -585,6 +612,16 @@ function startQuestion() {
   timeLeft.value = q.timeLimit
   questionStartTime = Date.now()
   isSubmitting.value = false
+  
+  // 確保滾動回到頂部，解決換題看不到題目的問題
+  nextTick(() => {
+    window.scrollTo(0, 0)
+    document.body.scrollTop = 0
+    document.documentElement.scrollTop = 0
+    if (questionScrollRef.value) {
+      questionScrollRef.value.scrollTop = 0
+    }
+  })
 
   // 記憶題特殊處理
   if (q.type === 'memory') {

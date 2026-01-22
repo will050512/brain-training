@@ -328,7 +328,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
               記住這些數字...
             </div>
             <div
-              class="digit-display text-7xl sm:text-8xl md:text-9xl lg:text-10xl font-bold transition-all duration-200 min-h-40 sm:min-h-48 md:min-h-56 lg:min-h-64 flex items-center justify-center"
+              class="digit-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl xl:text-10xl font-bold transition-all duration-200 min-h-32 sm:min-h-40 md:min-h-48 lg:min-h-56 xl:min-h-64 flex items-center justify-center"
               :class="{ 'opacity-0': displayDigit === null, 'opacity-100 scale-110': displayDigit !== null }"
             >
               {{ displayDigit ?? '' }}

@@ -98,6 +98,8 @@ export const WEEKLY_TRAINING_OPTIONS: { value: WeeklyTrainingGoal; label: string
   { value: 7, label: '每天', description: '最佳效果' },
 ]
 
+const ASSESSMENT_STORAGE_PREFIX = 'brain-training-assessment-'
+
 export const useSettingsStore = defineStore('settings', () => {
   const hasWindow = typeof window !== 'undefined'
   let systemThemeQuery: MediaQueryList | null = null
@@ -145,6 +147,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const syncUiStatus = ref<SyncUiStatus>('idle')
   const lastManualSyncAt = ref<string | null>(null)
   const lastManualSyncError = ref<string | null>(null)
+  const assessmentUserId = ref<string | null>(null)
 
   // ===== 提醒設定 =====
   const assessmentReminderEnabled = ref(true) // 月度評估提醒（預設開啟）
@@ -175,8 +178,6 @@ export const useSettingsStore = defineStore('settings', () => {
         musicVolume.value = data.musicVolume ?? 0.5
         hasSeenWelcome.value = data.hasSeenWelcome ?? false
         fontSize.value = data.fontSize ?? 'large'
-        hasCompletedAssessment.value = data.hasCompletedAssessment ?? false
-        assessmentResult.value = data.assessmentResult ?? null
         // 主題設定
         themeMode.value = data.themeMode ?? 'light'
         // 螢幕方向偏好
@@ -211,6 +212,70 @@ export const useSettingsStore = defineStore('settings', () => {
     ensureSystemThemeListener()
   }
 
+  function getAssessmentStorageKey(odId: string): string {
+    return `${ASSESSMENT_STORAGE_PREFIX}${odId}`
+  }
+
+  function loadAssessmentFromStorage(odId: string): void {
+    const stored = localStorage.getItem(getAssessmentStorageKey(odId))
+    if (stored) {
+      try {
+        const data = JSON.parse(stored)
+        hasCompletedAssessment.value = data.hasCompletedAssessment === true
+        assessmentResult.value = data.assessmentResult ?? null
+        return
+      } catch {
+        // 忽略解析錯誤
+      }
+    }
+
+    // 無法判斷舊資料歸屬時，不自動繼承
+    hasCompletedAssessment.value = false
+    assessmentResult.value = null
+
+    const lastUserId = localStorage.getItem('brain-training-last-user') || localStorage.getItem('brain-training-current-user')
+    if (lastUserId !== odId) return
+
+    const legacy = localStorage.getItem('brain-training-settings')
+    if (!legacy) return
+
+    try {
+      const legacyData = JSON.parse(legacy)
+      if (legacyData.hasCompletedAssessment || legacyData.assessmentResult) {
+        hasCompletedAssessment.value = legacyData.hasCompletedAssessment === true
+        assessmentResult.value = legacyData.assessmentResult ?? null
+        saveAssessmentToStorage()
+
+        delete legacyData.hasCompletedAssessment
+        delete legacyData.assessmentResult
+        localStorage.setItem('brain-training-settings', JSON.stringify(legacyData))
+      }
+    } catch {
+      // 忽略解析錯誤
+    }
+  }
+
+  function saveAssessmentToStorage(): void {
+    const odId = assessmentUserId.value
+    if (!odId) return
+
+    const data = {
+      hasCompletedAssessment: hasCompletedAssessment.value,
+      assessmentResult: assessmentResult.value,
+    }
+    localStorage.setItem(getAssessmentStorageKey(odId), JSON.stringify(data))
+  }
+
+  function setAssessmentUser(odId: string | null): void {
+    assessmentUserId.value = odId
+    if (!odId) {
+      hasCompletedAssessment.value = false
+      assessmentResult.value = null
+      return
+    }
+    loadAssessmentFromStorage(odId)
+  }
+
   // 儲存到 localStorage
   function saveToStorage(): void {
     const data = {
@@ -220,8 +285,6 @@ export const useSettingsStore = defineStore('settings', () => {
       musicVolume: musicVolume.value,
       hasSeenWelcome: hasSeenWelcome.value,
       fontSize: fontSize.value,
-      hasCompletedAssessment: hasCompletedAssessment.value,
-      assessmentResult: assessmentResult.value,
       // 主題設定
       themeMode: themeMode.value,
       // 螢幕方向偏好
@@ -300,12 +363,14 @@ export const useSettingsStore = defineStore('settings', () => {
   // 監聽變化自動儲存
   watch(
     [soundEnabled, musicEnabled, soundVolume, musicVolume, hasSeenWelcome, fontSize, 
-     hasCompletedAssessment, assessmentResult, themeMode, orientationPreference, declineDetectionMode, dailyTrainingDuration, weeklyTrainingGoal,
+     themeMode, orientationPreference, declineDetectionMode, dailyTrainingDuration, weeklyTrainingGoal,
      enableBehaviorTracking, reduceMotion, highContrast, enableVoicePrompts, enableHapticFeedback, assessmentReminderEnabled,
      sidebarCollapsed, defaultDifficulty, defaultSubDifficulty, gameDifficultySettings],
     () => saveToStorage(),
     { deep: true }
   )
+
+  watch([hasCompletedAssessment, assessmentResult], () => saveAssessmentToStorage(), { deep: true })
 
   // 監聽字體大小變化
   watch(fontSize, () => applyFontSize())
@@ -560,6 +625,7 @@ export const useSettingsStore = defineStore('settings', () => {
     setSyncUiStatus,
     initFromStorage,
     loadSettings,
+    setAssessmentUser,
     // 佈局動作
     setSidebarCollapsed,
     toggleSidebar,

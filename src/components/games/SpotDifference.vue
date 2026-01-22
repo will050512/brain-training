@@ -320,7 +320,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
       <!-- 圖片對比區域 -->
       <div
-        class="comparison-area mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 px-2"
+        class="comparison-area mt-3 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 px-2"
         v-if="currentRoundData"
       >
         <!-- 原圖（左邊） -->
@@ -396,8 +396,8 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
 .grid-cell {
   width: 100%;
-  min-height: 60px;
-  font-size: clamp(1.5rem, 4.5vw, 2.5rem);
+  min-height: 50px;
+  font-size: clamp(1.25rem, 5vw, 2.5rem);
   line-height: 1;
 }
 
