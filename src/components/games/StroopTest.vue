@@ -350,11 +350,11 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         </div>
 
         <!-- 顏色選項 -->
-        <div class="color-options game-grid grid-cols-2 mt-4 sm:mt-6 max-w-sm sm:max-w-md mx-auto">
+        <div class="color-options grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 mt-4 sm:mt-6 max-w-sm sm:max-w-md mx-auto">
           <button
             v-for="option in options"
             :key="option.name"
-            class="color-option game-tile text-white font-bold text-base sm:text-lg md:text-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            class="color-option p-3 sm:p-4 md:p-5 rounded-xl text-white font-bold text-base sm:text-lg md:text-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[60px] sm:min-h-[70px] md:min-h-[80px] flex items-center justify-center"
             :style="{ backgroundColor: option.value }"
             :disabled="isAnswering"
             @click="handleSelectAnswer(option.name)"

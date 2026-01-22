@@ -377,7 +377,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
             <div
               v-for="(sound, index) in sequence"
               :key="index"
-              class="sound-dot game-tile-sm rounded-full transition-all duration-200 flex items-center justify-center text-lg sm:text-2xl"
+              class="sound-dot w-10 h-10 sm:w-12 sm:h-12 rounded-full transition-all duration-200 flex items-center justify-center text-lg sm:text-2xl min-h-[40px] min-w-[40px] sm:min-h-[48px] sm:min-w-[48px]"
               :class="{
                 'bg-[var(--color-score)] scale-125 shadow-lg shadow-[var(--color-score)]/40': currentPlayingIndex === index,
                 'bg-[var(--color-bg-muted)]': currentPlayingIndex !== index,
@@ -402,14 +402,14 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
             <div
               v-for="(sound, index) in userInput"
               :key="index"
-              class="sound-icon game-tile-sm flex items-center justify-center text-lg sm:text-2xl bg-[var(--color-primary-bg)] rounded-full"
+              class="sound-icon w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-lg sm:text-2xl bg-[var(--color-primary-bg)] rounded-full min-h-[40px] min-w-[40px] sm:min-h-[48px] sm:min-w-[48px]"
             >
               {{ sound.emoji }}
             </div>
             <div
               v-for="i in (currentLength - userInput.length)"
               :key="'placeholder-' + i"
-              class="sound-placeholder game-tile-sm flex items-center justify-center border-2 border-dashed border-[var(--color-border)] rounded-full"
+              class="sound-placeholder w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center border-2 border-dashed border-[var(--color-border)] rounded-full min-h-[40px] min-w-[40px] sm:min-h-[48px] sm:min-w-[48px]"
             >
               ?
             </div>
@@ -418,7 +418,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           <!-- 重播按鈕 -->
           <div class="text-center mb-3 sm:mb-4">
             <button
-              class="replay-btn game-touch px-4 py-2 rounded-lg bg-[var(--color-bg-muted)] hover:bg-[var(--color-bg-soft)] transition-colors text-base sm:text-lg font-medium"
+              class="replay-btn min-h-[48px] px-4 py-2 rounded-lg bg-[var(--color-bg-muted)] hover:bg-[var(--color-bg-soft)] transition-colors text-base sm:text-lg font-medium"
               @click="replaySequence"
             >
               🔁 重播聲音
@@ -426,11 +426,11 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           </div>
 
           <!-- 聲音選擇區 -->
-          <div class="sound-grid game-grid grid-cols-3 sm:grid-cols-4 max-w-sm sm:max-w-lg mx-auto">
+          <div class="sound-grid grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3 max-w-sm sm:max-w-lg mx-auto">
             <button
               v-for="sound in soundPool"
               :key="sound.id"
-              class="sound-btn game-tile rounded-xl bg-[var(--color-bg-soft)] hover:bg-[var(--color-primary-bg)] transition-all transform hover:scale-105 active:scale-95"
+              class="sound-btn p-3 sm:p-4 rounded-xl bg-[var(--color-bg-soft)] hover:bg-[var(--color-primary-bg)] transition-all transform hover:scale-105 active:scale-95 min-h-[60px] sm:min-h-[70px] md:min-h-[80px]"
               @click="handleSoundClick(sound)"
             >
               <div class="text-2xl sm:text-3xl">{{ sound.emoji }}</div>
@@ -450,7 +450,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
               <div
                 v-for="(sound, index) in sequence"
                 :key="index"
-                class="game-tile-sm flex items-center justify-center text-2xl bg-[var(--color-success-bg)] rounded-full"
+                class="w-12 h-12 flex items-center justify-center text-2xl bg-[var(--color-success-bg)] rounded-full"
               >
                 {{ sound.emoji }}
               </div>
@@ -460,7 +460,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
               <div
                 v-for="(sound, index) in userInput"
                 :key="index"
-                class="game-tile-sm flex items-center justify-center text-2xl rounded-full"
+                class="w-12 h-12 flex items-center justify-center text-2xl rounded-full"
                 :class="{
                   'bg-[var(--color-success-bg)]': sound.id === sequence[index]?.id,
                   'bg-[var(--color-danger-bg)]': sound.id !== sequence[index]?.id,

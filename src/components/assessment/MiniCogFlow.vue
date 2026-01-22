@@ -588,7 +588,7 @@ onUnmounted(() => {
 .mini-cog-flow {
   max-width: 800px;
   margin: 0 auto;
-  padding: var(--space-sm);
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -672,8 +672,8 @@ onUnmounted(() => {
 /* Step Content */
 .step-content {
   background: var(--color-surface);
-  border-radius: var(--game-card-radius);
-  padding: clamp(0.75rem, 3vw, 1.5rem);
+  border-radius: 1.5rem;
+  padding: 1.25rem;
   box-shadow: var(--shadow-lg);
   flex: 1;
   min-height: 0;
@@ -706,8 +706,8 @@ onUnmounted(() => {
 
 .info-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: var(--game-gap);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
   margin-bottom: 1rem;
 }
 
@@ -779,10 +779,10 @@ onUnmounted(() => {
 }
 
 .word-card {
-  padding: clamp(0.75rem, 3vw, 1.5rem) clamp(1.25rem, 4vw, 2.5rem);
+  padding: 1.5rem 2.5rem;
   background: var(--gradient-primary);
   color: var(--color-text-inverse);
-  font-size: clamp(1.125rem, 4vw, 1.6rem);
+  font-size: 1.5rem;
   font-weight: 700;
   border-radius: 1rem;
   box-shadow: var(--shadow-lg);
@@ -804,7 +804,7 @@ onUnmounted(() => {
 }
 
 .countdown {
-  font-size: clamp(2rem, 7vw, 3rem);
+  font-size: 3rem;
   font-weight: 700;
   color: var(--color-primary);
   margin-top: 0.5rem;
@@ -870,7 +870,7 @@ onUnmounted(() => {
 .recall-options {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: var(--game-gap);
+  gap: 1rem;
   margin: 2rem 0;
   flex: 1;
   min-height: 0;
@@ -889,17 +889,16 @@ onUnmounted(() => {
 
 .recall-option {
   position: relative;
-  padding: clamp(0.75rem, 3vw, 1.25rem);
+  padding: 1rem 1.5rem;
   background: var(--color-wordcard);
   border: 2px solid var(--color-wordcard-border);
   border-radius: 1rem;
-  font-size: clamp(1rem, 3.5vw, 1.25rem);
+  font-size: 1.125rem;
   font-weight: 500;
   color: var(--color-text);
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
-  min-height: var(--game-touch-min);
 }
 
 .recall-option:hover {
@@ -962,8 +961,8 @@ onUnmounted(() => {
 }
 
 .score-circle {
-  width: clamp(96px, 28vw, 130px);
-  height: clamp(96px, 28vw, 130px);
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   display: flex;
   flex-direction: column;
@@ -989,7 +988,7 @@ onUnmounted(() => {
 }
 
 .score-value {
-  font-size: clamp(2rem, 6vw, 2.6rem);
+  font-size: 2.5rem;
   font-weight: 700;
   line-height: 1;
 }
@@ -1199,14 +1198,13 @@ onUnmounted(() => {
 /* Buttons */
 .btn-primary,
 .btn-secondary {
-  padding: 0.9rem 1.5rem;
-  font-size: clamp(1rem, 3vw, 1.125rem);
+  padding: 1rem 2rem;
+  font-size: 1rem;
   font-weight: 600;
   border-radius: 0.75rem;
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;
-  min-height: var(--game-touch-comfort);
 }
 
 .btn-primary {
@@ -1226,8 +1224,8 @@ onUnmounted(() => {
 }
 
 .btn-primary.btn-large {
-  padding: 1.1rem 2.5rem;
-  font-size: clamp(1.125rem, 3.6vw, 1.25rem);
+  padding: 1.25rem 3rem;
+  font-size: 1.125rem;
 }
 
 .btn-secondary {

@@ -364,25 +364,25 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
             <div
               v-for="(gesture, index) in userInput"
               :key="index"
-              class="gesture-icon game-tile-sm flex items-center justify-center text-lg sm:text-2xl bg-blue-100 dark:bg-blue-900 rounded-lg"
+              class="gesture-icon w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-lg sm:text-2xl bg-blue-100 dark:bg-blue-900 rounded-lg min-h-[32px] min-w-[32px] sm:min-h-[40px] sm:min-w-[40px]"
             >
               {{ gesture.icon }}
             </div>
             <div
               v-for="i in (currentLength - userInput.length)"
               :key="'placeholder-' + i"
-              class="gesture-placeholder game-tile-sm flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg"
+              class="gesture-placeholder w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg min-h-[32px] min-w-[32px] sm:min-h-[40px] sm:min-w-[40px]"
             >
               ?
             </div>
           </div>
 
           <!-- 手勢選擇區 -->
-          <div class="gesture-grid game-grid grid-cols-3 sm:grid-cols-4 max-w-sm sm:max-w-md mx-auto">
+          <div class="gesture-grid grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3 max-w-sm sm:max-w-md mx-auto">
             <button
               v-for="gesture in gesturePool"
               :key="gesture.id"
-              class="gesture-btn game-tile rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-blue-500 hover:text-white transition-all transform hover:scale-105 active:scale-95"
+              class="gesture-btn p-3 sm:p-4 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-blue-500 hover:text-white transition-all transform hover:scale-105 active:scale-95 min-h-[60px] sm:min-h-[70px] md:min-h-[80px]"
               @click="handleGestureClick(gesture)"
             >
               <div class="text-2xl sm:text-3xl">{{ gesture.icon }}</div>
@@ -402,7 +402,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
               <div
                 v-for="(gesture, index) in roundState?.sequence"
                 :key="index"
-                class="game-tile-sm flex items-center justify-center text-2xl bg-green-100 dark:bg-green-900 rounded-lg"
+                class="w-10 h-10 flex items-center justify-center text-2xl bg-green-100 dark:bg-green-900 rounded-lg"
               >
                 {{ gesture.icon }}
               </div>
@@ -412,7 +412,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
               <div
                 v-for="(gesture, index) in roundState?.userInput"
                 :key="index"
-                class="game-tile-sm flex items-center justify-center text-2xl rounded-lg"
+                class="w-10 h-10 flex items-center justify-center text-2xl rounded-lg"
                 :class="{
                   'bg-green-100 dark:bg-green-900': gesture.id === roundState?.sequence[index]?.id,
                   'bg-red-100 dark:bg-red-900': gesture.id !== roundState?.sequence[index]?.id,

@@ -328,7 +328,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
       </div>
 
       <!-- 天平 -->
-      <div class="scale-container relative mt-3 sm:mt-5 px-4" v-if="currentRoundData">
+      <div class="scale-container relative mt-4 sm:mt-6 px-4" v-if="currentRoundData">
         <img class="scale-bg" :src="scaleImg" alt="" aria-hidden="true" />
         <!-- 天平支架 -->
         <div class="scale-stand">
@@ -344,7 +344,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         >
           <!-- 左盤 -->
           <div
-            class="scale-pan left game-touch cursor-pointer hover:ring-4 hover:ring-blue-300 transition-all"
+            class="scale-pan left cursor-pointer hover:ring-4 hover:ring-blue-300 transition-all min-h-[120px] sm:min-h-[140px]"
             :class="{
               'ring-4 ring-green-400': showResult && currentRoundData.leftWeight > currentRoundData.rightWeight,
               'ring-4 ring-red-400': showResult && currentRoundData.leftWeight < currentRoundData.rightWeight && selectedSide === 'left'
@@ -374,7 +374,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
           <!-- 右盤 -->
           <div
-            class="scale-pan right game-touch cursor-pointer hover:ring-4 hover:ring-blue-300 transition-all"
+            class="scale-pan right cursor-pointer hover:ring-4 hover:ring-blue-300 transition-all min-h-[120px] sm:min-h-[140px]"
             :class="{
               'ring-4 ring-green-400': showResult && currentRoundData.rightWeight > currentRoundData.leftWeight,
               'ring-4 ring-red-400': showResult && currentRoundData.rightWeight < currentRoundData.leftWeight && selectedSide === 'right'
@@ -439,8 +439,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
 <style scoped>
 .scale-container {
-  min-height: clamp(220px, 38vh, 320px);
-  max-height: 52vh;
+  min-height: 300px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -450,7 +449,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 .scale-bg {
   position: absolute;
   bottom: 0;
-  width: clamp(220px, 60vmin, 360px);
+  width: min(420px, 100%);
   opacity: 0.15;
   pointer-events: none;
 }
@@ -464,24 +463,24 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 }
 
 .stand-base {
-  width: clamp(90px, 24vw, 140px);
-  height: clamp(14px, 3.5vw, 22px);
+  width: 120px;
+  height: 20px;
   background: linear-gradient(to bottom, #8B4513, #654321);
   border-radius: 4px;
   margin: 0 auto;
 }
 
 .stand-pole {
-  width: clamp(12px, 3vw, 18px);
-  height: clamp(80px, 24vw, 130px);
+  width: 16px;
+  height: 120px;
   background: linear-gradient(to right, #8B4513, #A0522D, #8B4513);
   margin: 0 auto;
   border-radius: 2px;
 }
 
 .stand-top {
-  width: clamp(24px, 6vw, 32px);
-  height: clamp(24px, 6vw, 32px);
+  width: 30px;
+  height: 30px;
   background: #FFD700;
   border-radius: 50%;
   margin: -15px auto 0;
@@ -490,8 +489,8 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
 .scale-arm {
   position: relative;
-  width: clamp(220px, 66vmin, 360px);
-  height: clamp(8px, 2.5vw, 12px);
+  width: min(400px, 100%);
+  height: 12px;
   background: linear-gradient(to bottom, #D4AF37, #B8860B);
   border-radius: 6px;
   display: flex;
@@ -503,7 +502,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
 .scale-pan {
   position: absolute;
-  width: clamp(88px, 22vmin, 132px);
+  width: 140px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -520,11 +519,11 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 }
 
 .pan-items {
-  min-height: clamp(60px, 15vmin, 88px);
-  padding: clamp(8px, 2vmin, 14px);
+  min-height: 80px;
+  padding: 12px;
   background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
   border-radius: 50%;
-  width: clamp(72px, 18vmin, 112px);
+  width: 120px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -541,8 +540,8 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 }
 
 .weight-img {
-  width: clamp(24px, 6vmin, 34px);
-  height: clamp(24px, 6vmin, 34px);
+  width: 36px;
+  height: 36px;
 }
 
 .weight-label {
@@ -553,7 +552,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   padding: 0 4px;
   background: #1f2937;
   color: #fff;
-  font-size: clamp(9px, 2.2vw, 11px);
+  font-size: 10px;
   line-height: 16px;
   border-radius: 999px;
 }
@@ -563,16 +562,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 }
 
 .is-landscape .scale-container {
-  min-height: clamp(170px, 30vh, 260px);
-  max-height: 44vh;
-}
-
-.is-landscape .scale-bg {
-  width: clamp(200px, 56vmin, 320px);
-}
-
-.is-landscape .scale-arm {
-  width: clamp(200px, 60vmin, 320px);
+  min-height: 240px;
 }
 
 .pan-base {
@@ -593,33 +583,19 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 }
 
 @media (max-width: 640px) {
-  .scale-container {
-    min-height: clamp(200px, 42vh, 300px);
-    max-height: 46vh;
-  }
-}
-
-@media (max-width: 420px) {
-  .scale-bg {
-    width: clamp(200px, 62vw, 320px);
-  }
-
-  .stand-pole {
-    height: clamp(70px, 20vw, 110px);
-  }
-
   .scale-arm {
-    width: clamp(200px, 70vw, 340px);
+    width: min(300px, 100%);
   }
-
+  
   .scale-pan {
-    width: clamp(80px, 22vw, 120px);
+    width: 100px;
   }
-
+  
   .pan-items {
-    min-height: clamp(52px, 14vw, 80px);
-    width: clamp(64px, 18vw, 106px);
+    width: 90px;
+    min-height: 60px;
   }
+  
 }
 </style>
 

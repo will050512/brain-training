@@ -92,8 +92,7 @@
     <!-- 手機版浮動狀態欄 - 始終顯示關鍵狀態 -->
     <div
       v-if="isMobile && gameState === 'playing'"
-      class="game-mobile-status fixed top-12 left-0 right-0 z-20 bg-[var(--color-surface)]/95 backdrop-blur-sm border-b border-[var(--color-border)] px-2 py-1"
-      :class="{ 'game-mobile-status-landscape': isLandscape }"
+      class="fixed top-12 left-0 right-0 z-20 bg-[var(--color-surface)]/95 backdrop-blur-sm border-b border-[var(--color-border)] px-2 py-1"
     >
       <div class="flex items-center justify-between gap-2 text-xs">
         <!-- 左側：時間和分數 -->
@@ -137,10 +136,7 @@
 
     <div
       class="game-play-area flex-1 min-h-0 container mx-auto w-full"
-      :class="{
-        'pt-9': isMobile && gameState === 'playing',
-        'game-content-landscape': isLandscape
-      }"
+      :class="{ 'pt-9': isMobile && gameState === 'playing' }"
     >
             <!-- 準備畫面 - 適應螢幕高度 -->
         <div v-if="gameState === 'ready'" class="game-content-fit max-w-lg mx-auto text-center">
@@ -193,30 +189,21 @@
       </div>
 <!-- 遊戲進行中 - 填滿可用空間 -->
       <div v-else-if="gameState === 'playing'" class="game-content-full w-full h-full min-h-0 overflow-x-hidden overflow-y-auto">
-        <div
-          class="game-stage"
-          :class="{ 'is-landscape': isLandscape }"
-          :data-game-id="resolvedGameId"
-          :style="gameStageStyle"
-        >
-          <div class="game-stage-inner">
-            <component
-              :is="gameComponent"
-              :key="gameComponentKey"
-              :difficulty="gameStore.currentDifficulty"
-              :sub-difficulty="gameStore.currentSubDifficulty"
-              :settings="difficultySettings"
-              @score-change="handleScoreChange"
-              @score-update="handleScoreChange"
-              @score:update="handleScoreChange"
-              @game-start="handleGameStart"
-              @game-end="handleGameEnd"
-              @status-update="handleStatusUpdate"
-              :auto-start="shouldAutoStart"
-              class="game-stage-content w-full h-full min-h-0"
-            />
-          </div>
-        </div>
+        <component
+          :is="gameComponent"
+          :key="gameComponentKey"
+          :difficulty="gameStore.currentDifficulty"
+          :sub-difficulty="gameStore.currentSubDifficulty"
+          :settings="difficultySettings"
+          @score-change="handleScoreChange"
+          @score-update="handleScoreChange"
+          @score:update="handleScoreChange"
+          @game-start="handleGameStart"
+          @game-end="handleGameEnd"
+          @status-update="handleStatusUpdate"
+          :auto-start="shouldAutoStart"
+          class="w-full h-full min-h-0"
+        />
       </div>
 
       <!-- 暫停畫面 -->
@@ -527,50 +514,6 @@ const routeGameId = computed(() => {
 })
 
 const resolvedGameId = computed(() => routeGameId.value || gameStore.currentGameId || '')
-
-type GameStageConfig = {
-  ratio: string
-  aspect: number
-  maxWidth: string
-}
-
-const gameStageConfigs: Record<string, GameStageConfig> = {
-  'whack-a-mole': { ratio: '1 / 1', aspect: 1, maxWidth: 'min(92vw, 520px)' },
-  'balance-scale': { ratio: '4 / 3', aspect: 1.3333, maxWidth: 'min(92vw, 640px)' },
-  'card-match': { ratio: '1 / 1', aspect: 1, maxWidth: 'min(92vw, 520px)' },
-  'stroop-test': { ratio: '4 / 3', aspect: 1.3333, maxWidth: 'min(92vw, 620px)' },
-  'maze-navigation': { ratio: '1 / 1', aspect: 1, maxWidth: 'min(92vw, 520px)' },
-  'spot-difference': { ratio: '16 / 9', aspect: 1.7778, maxWidth: 'min(96vw, 900px)' },
-  'math-calc': { ratio: '4 / 3', aspect: 1.3333, maxWidth: 'min(92vw, 620px)' },
-  'instant-memory': { ratio: '3 / 4', aspect: 0.75, maxWidth: 'min(92vw, 520px)' },
-  'poker-memory': { ratio: '4 / 3', aspect: 1.3333, maxWidth: 'min(94vw, 760px)' },
-  'rock-paper-scissors': { ratio: '4 / 3', aspect: 1.3333, maxWidth: 'min(92vw, 620px)' },
-  'gesture-memory': { ratio: '4 / 3', aspect: 1.3333, maxWidth: 'min(92vw, 620px)' },
-  'number-connect': { ratio: '4 / 3', aspect: 1.3333, maxWidth: 'min(92vw, 680px)' },
-  'pattern-reasoning': { ratio: '4 / 3', aspect: 1.3333, maxWidth: 'min(92vw, 620px)' },
-  'audio-memory': { ratio: '4 / 3', aspect: 1.3333, maxWidth: 'min(92vw, 620px)' },
-  'rhythm-mimic': { ratio: '4 / 3', aspect: 1.3333, maxWidth: 'min(92vw, 620px)' },
-  'clock-drawing': { ratio: '4 / 3', aspect: 1.3333, maxWidth: 'min(92vw, 620px)' }
-}
-
-const defaultGameStageConfig: GameStageConfig = {
-  ratio: '4 / 3',
-  aspect: 1.3333,
-  maxWidth: 'min(92vw, 620px)'
-}
-
-const gameStageConfig = computed<GameStageConfig>(() => {
-  return gameStageConfigs[resolvedGameId.value] ?? defaultGameStageConfig
-})
-
-const gameStageStyle = computed<Record<string, string>>(() => {
-  const config = gameStageConfig.value
-  return {
-    '--game-stage-ratio': config.ratio,
-    '--game-stage-aspect': config.aspect.toString(),
-    '--game-stage-max-width': config.maxWidth
-  }
-})
 
 // 當前遊戲（優先使用路由 ID，避免 store 殘留導致顯示錯誤）
 const currentGame = computed(() => {

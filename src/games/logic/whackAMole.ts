@@ -44,8 +44,6 @@ export interface WhackAMoleConfig {
 export interface WhackAMoleResult {
   /** 最終分數 (0-100) */
   score: number
-  /** 洞的數量 */
-  holeCount: number
   /** 打中的地鼠數 */
   hitMoles: number
   /** 總共出現的地鼠數 */
@@ -68,7 +66,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, WhackAMoleConfig> = {
   easy: {
     interval: 2000,
     duration: 1500,
-    holes: 3,
+    holes: 6,
     bombChance: 0.1,
     gameTime: 30,
     baseScore: 10,
@@ -77,7 +75,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, WhackAMoleConfig> = {
   medium: {
     interval: 1500,
     duration: 1200,
-    holes: 6,
+    holes: 9,
     bombChance: 0.15,
     gameTime: 45,
     baseScore: 10,
@@ -306,8 +304,7 @@ export function summarizeResult(
   hitBombs: number,
   reactionTimes: number[],
   maxCombo: number,
-  gameTime: number,
-  holeCount: number
+  gameTime: number
 ): WhackAMoleResult {
   const accuracy = totalMoles > 0 ? hitMoles / totalMoles : 0
   const avgReactionTime = reactionTimes.length > 0
@@ -318,7 +315,6 @@ export function summarizeResult(
 
   return {
     score,
-    holeCount,
     hitMoles,
     totalMoles,
     hitBombs,

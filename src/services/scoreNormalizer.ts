@@ -20,14 +20,6 @@ import {
   REACTION_TIME_BENCHMARKS,
   getGradeFromScore
 } from '@/types/game'
-import {
-  clampScore,
-  normalizeAccuracy,
-  normalizeReactionTimeMs,
-  normalizeScoreWithMax
-} from './scoreNormalizer/normalizationUtils'
-
-export { clampScore } from './scoreNormalizer/normalizationUtils'
 
 // ========== 遊戲評分配置 ==========
 
@@ -182,7 +174,12 @@ export function calculateSpeedScore(
 ): number {
   // 單位校驗：若看起來是「秒」(例如 1.2、5、12)，轉為毫秒。
   // 人類反應時間不太可能 < 50ms，因此小於 50 且 > 0 時，優先視為秒。
-  const rtMs = normalizeReactionTimeMs(avgReactionTime)
+  const rtMs = (() => {
+    const rt = Number(avgReactionTime)
+    if (!Number.isFinite(rt) || rt < 0) return 0
+    if (rt > 0 && rt < 50) return rt * 1000
+    return rt
+  })()
 
   const { excellent, good, acceptable } = REACTION_TIME_BENCHMARKS[benchmark]
   
@@ -226,6 +223,9 @@ export function calculateComboBonus(maxCombo: number, totalCount: number): numbe
 /**
  * 限制分數在 0-100 範圍內
  */
+export function clampScore(score: number): number {
+  return Math.max(0, Math.min(100, Math.round(score)))
+}
 
 function applyDifficultyMultiplier(
   score: number,
@@ -283,7 +283,6 @@ export function convertWhackAMoleResult(
     avgReactionTime: number
     maxCombo: number
     score: number
-    holeCount?: number
   },
   difficulty: Difficulty,
   subDifficulty?: SubDifficulty,
@@ -326,8 +325,7 @@ export function convertWhackAMoleResult(
       hitMoles,
       hitBombs,
       missedMoles,
-      totalMoles,
-      ...(typeof rawResult?.holeCount === 'number' ? { holeCount: rawResult.holeCount } : {})
+      totalMoles
     },
     displayStats: generateWhackAMoleDisplayStats(rawResult, finalScore)
   }
@@ -623,10 +621,6 @@ export function convertSpotDifferenceResult(
 
   const wrongClicks = typeof rawResult?.wrongClicks === 'number' ? rawResult.wrongClicks : 0
   const avgFoundTime = typeof rawResult?.avgFoundTime === 'number' ? rawResult.avgFoundTime : 0
-  const gridRows = typeof rawResult?.gridRows === 'number' ? rawResult.gridRows : null
-  const gridCols = typeof rawResult?.gridCols === 'number' ? rawResult.gridCols : null
-  const diffCount = typeof rawResult?.diffCount === 'number' ? rawResult.diffCount : null
-  const totalRounds = typeof rawResult?.totalRounds === 'number' ? rawResult.totalRounds : null
   
   const accuracy = totalDifferences > 0 ? foundCount / totalDifferences : 0
   const speedScore = calculateSpeedScore(avgFoundTime, config.reactionBenchmark)
@@ -657,12 +651,6 @@ export function convertSpotDifferenceResult(
       wrongCount: wrongClicks,
       missedCount: Math.max(0, totalDifferences - foundCount),
       avgReactionTime: avgFoundTime
-    },
-    gameSpecific: {
-      ...(gridRows !== null ? { gridRows } : {}),
-      ...(gridCols !== null ? { gridCols } : {}),
-      ...(diffCount !== null ? { diffCount } : {}),
-      ...(totalRounds !== null ? { totalRounds } : {}),
     },
     displayStats: [
       { label: '找到數量', value: `${foundCount}/${totalDifferences}`, icon: '🔍', highlight: true },
@@ -954,15 +942,28 @@ export function convertGestureMemoryResult(
   const maxStreak = typeof rawResult?.maxStreak === 'number' ? rawResult.maxStreak : 0
   const maxLength = typeof rawResult?.maxLength === 'number' ? rawResult.maxLength : 0
 
-  const normalizedScore = normalizeScoreWithMax(
-    rawResult?.score,
-    rawResult?.maxPossibleScore ?? rawResult?.maxScore ?? null
-  )
+  const rawScore = typeof rawResult?.score === 'number' ? rawResult.score : 0
+  const maxPossibleScore =
+    (typeof rawResult?.maxPossibleScore === 'number' ? rawResult.maxPossibleScore : null) ??
+    (typeof rawResult?.maxScore === 'number' ? rawResult.maxScore : null) ??
+    null
 
-  const accuracy = normalizeAccuracy(
-    rawResult?.accuracy,
-    totalRounds > 0 ? correctCount / totalRounds : 0
-  )
+  const normalizedScore = (() => {
+    if (maxPossibleScore && maxPossibleScore > 0) return normalizeScore(rawScore, maxPossibleScore)
+    // 若看起來已是 0..100
+    if (rawScore >= 0 && rawScore <= 100) return clampScore(rawScore)
+    // 否則用 config maxScore 做保守正規化
+    return normalizeScore(rawScore, 100)
+  })()
+
+  const accuracy = (() => {
+    const a = typeof rawResult?.accuracy === 'number' ? rawResult.accuracy : null
+    if (a !== null) {
+      if (a <= 1) return Math.max(0, Math.min(1, a))
+      if (a <= 100) return Math.max(0, Math.min(1, a / 100))
+    }
+    return totalRounds > 0 ? Math.max(0, Math.min(1, correctCount / totalRounds)) : 0
+  })()
 
   const comboBonus = calculateComboBonus(maxStreak, correctCount + wrongCount)
   
@@ -1184,11 +1185,15 @@ export function convertAuditoryMemoryResult(
   const maxStreak = Number(rawResult?.maxStreak ?? 0)
   const maxLength = Number(rawResult?.maxLength ?? 0)
 
-  const accuracy = normalizeAccuracy(
-    rawResult?.accuracy,
-    totalCount > 0 ? Math.max(0, correctCount) / totalCount : 0
-  )
-  const accuracyPercent = clampScore(accuracy * 100)
+  const accuracyPercent = (() => {
+    const a = Number(rawResult?.accuracy)
+    if (Number.isFinite(a)) return clampScore(a)
+    const total = Math.max(0, totalCount)
+    if (total <= 0) return 0
+    return clampScore((Math.max(0, correctCount) / total) * 100)
+  })()
+
+  const accuracy = accuracyPercent / 100
   const comboBonus = calculateComboBonus(maxStreak, Math.max(1, totalCount))
   const metrics: StandardizedMetrics = {
     completion: 1,

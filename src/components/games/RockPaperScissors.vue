@@ -362,7 +362,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         <button
           v-for="gesture in GESTURE_LIST"
           :key="gesture"
-          class="gesture-btn game-touch-comfort rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-blue-500 hover:text-white transition-all transform hover:scale-105 active:scale-95 flex flex-col items-center justify-center gap-1 p-2"
+          class="gesture-btn min-w-[80px] w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-blue-500 hover:text-white transition-all transform hover:scale-105 active:scale-95 flex flex-col items-center justify-center gap-1 p-2"
           @click="handleSelectGesture(gesture)"
         >
                     <img
@@ -395,13 +395,11 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: var(--game-touch-comfort);
-  height: var(--game-touch-comfort);
 }
 
 .gesture-img {
-  width: clamp(72px, 20vmin, 140px);
-  height: clamp(72px, 20vmin, 140px);
+  width: clamp(80px, 24vw, 140px);
+  height: clamp(80px, 24vw, 140px);
 }
 
 .gesture-img.inline {
@@ -417,11 +415,6 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
 .gesture-btn:active {
   transform: scale(0.9);
-}
-
-.rock-paper-scissors-game.is-landscape .gesture-img {
-  width: clamp(64px, 18vmin, 120px);
-  height: clamp(64px, 18vmin, 120px);
 }
 </style>
 

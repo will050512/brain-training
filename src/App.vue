@@ -16,6 +16,7 @@ import MobileBottomNav from '@/components/ui/MobileBottomNav.vue'
 import InstallPrompt from '@/components/ui/InstallPrompt.vue'
 import ConsentModal from '@/components/ui/ConsentModal.vue'
 import EducationPromptModal from '@/components/ui/EducationPromptModal.vue'
+import ExternalProfileDebugPanel from '@/components/ui/ExternalProfileDebugPanel.vue'
 import ToastNotification from '@/components/ui/ToastNotification.vue'
 import PWAUpdateBanner from '@/components/ui/PWAUpdateBanner.vue'
 import { getDataConsent, checkConsentVersionNeedsUpdate } from '@/services/db'
@@ -36,6 +37,12 @@ const { initTheme } = useTheme()
 const showConsentModal = ref(false)
 const consentModalRef = ref<InstanceType<typeof ConsentModal> | null>(null)
 const showEducationModal = ref(false)
+const showExternalDebugPanel = computed(() => {
+  if (import.meta.env.DEV) return true
+  if (typeof window === 'undefined') return false
+  return new URLSearchParams(window.location.search).get('debugExternal') === '1'
+})
+
 const needsEducationYears = computed(() => {
   const user = userStore.currentUser
   if (!user) return false
@@ -328,6 +335,9 @@ onUnmounted(() => {
     
     <!-- Toast 通知 -->
     <ToastNotification />
+
+    <!-- 外部登入 Debug 面板（開發/指定參數） -->
+    <ExternalProfileDebugPanel v-if="showExternalDebugPanel" />
   </div>
 </template>
 

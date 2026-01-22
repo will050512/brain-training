@@ -74,21 +74,6 @@
   --game-highlight: #F59E0B;
   --game-maze-wall: #334155;
   --game-maze-path: #E2E8F0;
-  --game-touch-min: clamp(56px, 14vw, 84px);
-  --game-touch-comfort: clamp(64px, 16vw, 96px);
-  --game-tile-sm: clamp(44px, 12vw, 72px);
-  --game-tile: clamp(56px, 17vw, 96px);
-  --game-tile-lg: clamp(72px, 20vw, 120px);
-  --game-gap: clamp(0.4rem, 1.4vw, 0.9rem);
-  --game-board-max: min(92vw, 520px);
-  --game-board-max-wide: min(96vw, 720px);
-  --game-card-radius: clamp(0.75rem, 2vw, 1.25rem);
-  --game-container-xs: clamp(100%, 95vw, 18rem);
-  --game-container-sm: clamp(100%, 90vw, 22rem);
-  --game-container-md: clamp(100%, 85vw, 26rem);
-  --game-container-lg: clamp(100%, 80vw, 30rem);
-  --game-container-xl: clamp(100%, 75vw, 34rem);
-  --game-container-2xl: clamp(100%, 70vw, 38rem);
   
   /* 步驟進度指示器 */
   --color-step: #CBD5E1;
@@ -1926,12 +1911,6 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   display: none;
 }
 
-.game-mobile-status-landscape {
-  left: 60px;
-  right: 0;
-  top: 0;
-}
-
 /* ===== 遊戲區域響應式 - 手機橫豎屏優化 ===== */
 
 /* 遊戲畫面基礎容器 */
@@ -2209,7 +2188,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   border-top: 1px solid var(--color-border);
 }
 
-.game-content-full {
+  .game-content-full {
     flex: 1;
     width: 100%;
     height: 100%;
@@ -2220,111 +2199,6 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
     overflow-x: hidden;
     overflow-y: auto;
   }
-
-.game-stage {
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-sm);
-  --game-stage-max-height: 100dvh;
-}
-
-.game-stage-inner {
-  width: min(
-    100%,
-    var(--game-stage-max-width, 720px),
-    calc(var(--game-stage-max-height, 100%) * var(--game-stage-aspect, 1.3333))
-  );
-  max-height: min(100%, var(--game-stage-max-height, 100%));
-  aspect-ratio: var(--game-stage-ratio, 4 / 3);
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-sm);
-  overflow: auto;
-}
-
-.game-stage-content {
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-}
-
-.game-stage .game-root {
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  margin: 0;
-}
-
-/* ===== Game Layout Utilities ===== */
-.game-root {
-  width: 100%;
-  max-width: var(--game-container-2xl);
-  margin: 0 auto;
-  padding: var(--space-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-  min-height: 0;
-}
-
-@media (max-width: 640px) {
-  .game-root {
-    padding: var(--space-sm);
-    gap: var(--space-xs);
-  }
-}
-
-.game-section {
-  margin-top: var(--space-sm);
-}
-
-.game-board {
-  width: 100%;
-  max-width: var(--game-board-max);
-  margin: 0 auto;
-}
-
-.game-board-wide {
-  max-width: var(--game-board-max-wide);
-}
-
-.game-grid {
-  display: grid;
-  gap: var(--game-gap);
-}
-
-.game-tile {
-  min-width: var(--game-tile);
-  min-height: var(--game-tile);
-}
-
-.game-tile-lg {
-  min-width: var(--game-tile-lg);
-  min-height: var(--game-tile-lg);
-}
-
-.game-tile-sm {
-  min-width: var(--game-tile-sm);
-  min-height: var(--game-tile-sm);
-}
-
-.game-touch {
-  min-width: var(--game-touch-min);
-  min-height: var(--game-touch-min);
-}
-
-.game-touch-comfort {
-  min-width: var(--game-touch-comfort);
-  min-height: var(--game-touch-comfort);
-}
 
 /* 手機豎屏模式 (Portrait) */
 @media (orientation: portrait) and (max-width: 768px) {
@@ -2438,14 +2312,6 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   /* 隱藏非必要元素 */
   .hide-landscape {
     display: none !important;
-  }
-
-  .game-stage {
-    padding: var(--spacing-xs);
-  }
-
-  .game-stage-inner {
-    border-radius: var(--radius-lg);
   }
 }
 
