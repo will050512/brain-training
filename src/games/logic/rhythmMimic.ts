@@ -1,6 +1,9 @@
 /**
- * 節拍模仿遊戲邏輯模組
- * 訓練：節奏感、時間感知、協調能力
+ * 節拍模仿遊戲邏輯模組 (3回合精華版)
+ * 更新重點：
+ * 1. 總回合數統一為 3 回合 (Total Rounds = 3)
+ * 2. 新增更有趣、具備音樂性的節奏譜面 (Fun Patterns)
+ * 3. 保持 1000ms 起始緩衝 (Start Buffer)
  */
 
 import type { Difficulty } from '@/types/game'
@@ -12,76 +15,59 @@ export interface Beat {
   time: number
   /** 節拍類型 */
   type: 'tap' | 'hold'
-  /** 持續時間（毫秒，僅 hold 類型） */
+  /** 持續時間 */
   duration?: number
 }
 
 export interface RhythmPattern {
-  /** 模式 ID */
   id: string
-  /** 模式名稱 */
   name: string
-  /** BPM（每分鐘節拍數） */
   bpm: number
-  /** 節拍序列 */
   beats: Beat[]
-  /** 難度等級 */
   difficulty: 'easy' | 'medium' | 'hard'
+  /** 視覺上的總長度 (用於時間軸顯示) */
+  totalDuration?: number
 }
 
 export interface RhythmMimicConfig {
-  /** 總回合數 */
   totalRounds: number
-  /** 允許誤差（毫秒） */
   tolerance: number
-  /** 播放模式次數 */
   playCount: number
-  /** 間隔等待時間（毫秒） */
   waitTime: number
-  /** 輸入階段開始前的提示延遲（毫秒） */
   leadInMs: number
-  /** 允許重播次數 */
   replayLimit: number
 }
 
 export interface TapResult {
-  /** 預期時間 */
   expected: number
-  /** 實際時間 */
   actual: number
-  /** 誤差（毫秒） */
   error: number
-  /** 是否在容許範圍內 */
   isGood: boolean
-  /** 評分等級 */
   rating: 'perfect' | 'good' | 'ok' | 'miss'
+  isGhost?: boolean
 }
 
 export interface RoundResult {
-  /** 節拍準確率 */
   accuracy: number
-  /** 各節拍結果 */
   taps: TapResult[]
-  /** 回合分數 */
   score: number
+  stats: {
+    perfect: number
+    good: number
+    ok: number
+    miss: number
+    extra: number
+  }
 }
 
 export interface RhythmMimicResult {
-  /** 最終分數 */
   score: number
-  /** 總體準確率 */
   accuracy: number
-  /** 完美節拍數 */
   perfectCount: number
-  /** 良好節拍數 */
   goodCount: number
-  /** 失誤節拍數 */
   missCount: number
-  /** 總節拍數 */
   totalBeats: number
-  /** 平均誤差（毫秒） */
   avgError: number
-  /** 各回合結果 */
   roundResults: RoundResult[]
 }
 
@@ -89,391 +75,358 @@ export interface RhythmMimicResult {
 
 export const DIFFICULTY_CONFIGS: Record<Difficulty, RhythmMimicConfig> = {
   easy: {
-    totalRounds: 5,
-    tolerance: 300,
+    totalRounds: 3, // 改為 3 回合
+    tolerance: 350,
     playCount: 2,
-    waitTime: 1000,
-    leadInMs: 700,
-    replayLimit: 2,
+    waitTime: 1500,
+    leadInMs: 1000,
+    replayLimit: 3,
   },
   medium: {
-    totalRounds: 7,
-    tolerance: 200,
+    totalRounds: 3, // 改為 3 回合
+    tolerance: 250,
     playCount: 2,
-    waitTime: 800,
-    leadInMs: 600,
-    replayLimit: 1,
+    waitTime: 1200,
+    leadInMs: 1000,
+    replayLimit: 2,
   },
   hard: {
-    totalRounds: 10,
+    totalRounds: 3, // 改為 3 回合
     tolerance: 150,
     playCount: 1,
-    waitTime: 600,
-    leadInMs: 500,
-    replayLimit: 0,
+    waitTime: 1000,
+    leadInMs: 800,
+    replayLimit: 1,
   },
 }
 
-/** 預設節奏模式庫 */
+/** * 全新設計的趣味譜面庫 
+ * 所有 Beats 時間皆已包含 1000ms 的起始緩衝
+ */
 export const RHYTHM_PATTERNS: RhythmPattern[] = [
-  // 簡單模式 - 等距節拍
+  // === 簡單模式 (規律、口號感) ===
   {
-    id: 'simple_4',
-    name: '基本四拍',
+    id: 'one_two_three_four',
+    name: '做體操 1-2-3-4',
     bpm: 60,
     difficulty: 'easy',
     beats: [
-      { time: 0, type: 'tap' },
       { time: 1000, type: 'tap' },
       { time: 2000, type: 'tap' },
       { time: 3000, type: 'tap' },
+      { time: 4000, type: 'tap' },
     ],
   },
   {
-    id: 'simple_3',
-    name: '三拍子',
+    id: 'knock_knock_who',
+    name: '敲敲門',
     bpm: 80,
     difficulty: 'easy',
     beats: [
-      { time: 0, type: 'tap' },
-      { time: 750, type: 'tap' },
-      { time: 1500, type: 'tap' },
+      { time: 1000, type: 'tap' }, // 叩
+      { time: 1300, type: 'tap' }, // 叩
+      // 停頓
+      { time: 2300, type: 'tap' }, // 請
+      { time: 2800, type: 'tap' }, // 進
     ],
   },
   {
-    id: 'waltz',
-    name: '華爾滋',
-    bpm: 90,
+    id: 'heartbeat_simple',
+    name: '噗通噗通',
+    bpm: 70,
     difficulty: 'easy',
     beats: [
-      { time: 0, type: 'tap' },
-      { time: 667, type: 'tap' },
-      { time: 1333, type: 'tap' },
-      { time: 2000, type: 'tap' },
-      { time: 2667, type: 'tap' },
-      { time: 3333, type: 'tap' },
+      { time: 1000, type: 'tap' },
+      { time: 1250, type: 'tap' },
+      // 休息
+      { time: 2250, type: 'tap' },
+      { time: 2500, type: 'tap' },
     ],
   },
 
-  // 中等模式 - 變化節拍
+  // === 中等模式 (經典節奏、切分) ===
   {
-    id: 'syncopated',
-    name: '切分音',
+    id: 'rock_stomp',
+    name: '搖滾震撼',
+    bpm: 90,
+    difficulty: 'medium',
+    beats: [
+      // 咚 咚 啪！ (We Will Rock You 風格)
+      { time: 1000, type: 'tap' },
+      { time: 1400, type: 'tap' },
+      { time: 2000, type: 'tap' },
+      
+      // 重複一次
+      { time: 3000, type: 'tap' },
+      { time: 3400, type: 'tap' },
+      { time: 4000, type: 'tap' },
+    ],
+  },
+  {
+    id: 'shave_haircut',
+    name: '刮鬍子掉下來',
     bpm: 100,
     difficulty: 'medium',
     beats: [
-      { time: 0, type: 'tap' },
-      { time: 600, type: 'tap' },
-      { time: 900, type: 'tap' },
-      { time: 1500, type: 'tap' },
-      { time: 2100, type: 'tap' },
-      { time: 2400, type: 'tap' },
-    ],
-  },
-  {
-    id: 'dotted',
-    name: '附點節奏',
-    bpm: 80,
-    difficulty: 'medium',
-    beats: [
-      { time: 0, type: 'tap' },
-      { time: 750, type: 'tap' },
-      { time: 1000, type: 'tap' },
-      { time: 1750, type: 'tap' },
-      { time: 2000, type: 'tap' },
-      { time: 2750, type: 'tap' },
-    ],
-  },
-  {
-    id: 'march',
-    name: '進行曲',
-    bpm: 120,
-    difficulty: 'medium',
-    beats: [
-      { time: 0, type: 'tap' },
-      { time: 250, type: 'tap' },
-      { time: 500, type: 'tap' },
+      // 刮-鬍-子-掉-下-來
       { time: 1000, type: 'tap' },
       { time: 1250, type: 'tap' },
       { time: 1500, type: 'tap' },
+      { time: 1750, type: 'tap' },
       { time: 2000, type: 'tap' },
+      // 兩拍休息，接最後兩下 (沒打完，留白給難度)
+      { time: 3000, type: 'tap' },
+      { time: 3500, type: 'tap' },
+    ],
+  },
+  {
+    id: 'horse_gallop',
+    name: '賽馬奔馳',
+    bpm: 110,
+    difficulty: 'medium',
+    beats: [
+      // 噠-噠-噠 (三連音感)
+      { time: 1000, type: 'tap' },
+      { time: 1200, type: 'tap' },
+      { time: 1400, type: 'tap' },
+      
+      // 停一下
+      { time: 2200, type: 'tap' },
+      { time: 2400, type: 'tap' },
+      { time: 2600, type: 'tap' },
     ],
   },
 
-  // 困難模式 - 複雜節奏
+  // === 困難模式 (切分音、連續快速) ===
   {
-    id: 'triplet',
-    name: '三連音',
-    bpm: 90,
+    id: 'samba_whistle',
+    name: '森巴哨子',
+    bpm: 120,
     difficulty: 'hard',
     beats: [
-      { time: 0, type: 'tap' },
-      { time: 222, type: 'tap' },
-      { time: 444, type: 'tap' },
-      { time: 667, type: 'tap' },
-      { time: 889, type: 'tap' },
-      { time: 1111, type: 'tap' },
-      { time: 1333, type: 'tap' },
-      { time: 1556, type: 'tap' },
-      { time: 1778, type: 'tap' },
+      { time: 1000, type: 'tap' },
+      { time: 1200, type: 'tap' }, // 快
+      { time: 1400, type: 'tap' }, // 快
+      { time: 1800, type: 'tap' }, // 切分
+      { time: 2200, type: 'tap' },
+      { time: 2400, type: 'tap' },
+      { time: 2600, type: 'tap' },
     ],
   },
   {
-    id: 'complex',
-    name: '複合節奏',
+    id: 'trap_beat',
+    name: '陷阱節拍',
     bpm: 100,
     difficulty: 'hard',
     beats: [
-      { time: 0, type: 'tap' },
-      { time: 300, type: 'tap' },
-      { time: 450, type: 'tap' },
-      { time: 600, type: 'tap' },
       { time: 1000, type: 'tap' },
-      { time: 1200, type: 'tap' },
-      { time: 1500, type: 'tap' },
-      { time: 1700, type: 'tap' },
+      // 快速三連打
+      { time: 1700, type: 'tap' }, 
+      { time: 1850, type: 'tap' }, 
       { time: 2000, type: 'tap' },
+      // 反拍
+      { time: 2750, type: 'tap' },
+      { time: 3500, type: 'tap' },
     ],
   },
   {
-    id: 'jazz',
-    name: '爵士節奏',
+    id: 'funky_sync',
+    name: '放克切分',
     bpm: 110,
     difficulty: 'hard',
     beats: [
-      { time: 0, type: 'tap' },
-      { time: 273, type: 'tap' },
-      { time: 545, type: 'tap' },
-      { time: 727, type: 'tap' },
-      { time: 1091, type: 'tap' },
-      { time: 1364, type: 'tap' },
-      { time: 1545, type: 'tap' },
-      { time: 1818, type: 'tap' },
+      { time: 1000, type: 'tap' },
+      { time: 1750, type: 'tap' }, // 附點後
+      { time: 2250, type: 'tap' }, // 反拍
+      { time: 2750, type: 'tap' }, 
+      { time: 3250, type: 'tap' }, 
+      { time: 3500, type: 'tap' }, // 連接
     ],
   },
 ]
 
 // ==================== 工具函數 ====================
 
-/**
- * 根據難度取得可用的節奏模式
- */
-export function getPatternsByDifficulty(difficulty: Difficulty): RhythmPattern[] {
-  const difficultyMap: Record<Difficulty, ('easy' | 'medium' | 'hard')[]> = {
-    easy: ['easy'],
-    medium: ['easy', 'medium'],
-    hard: ['easy', 'medium', 'hard'],
-  }
-
-  const allowedDifficulties = difficultyMap[difficulty]
-  return RHYTHM_PATTERNS.filter(p => allowedDifficulties.includes(p.difficulty))
+export function getPatternsByPool(targetDifficulty: 'easy' | 'medium' | 'hard'): RhythmPattern[] {
+  return RHYTHM_PATTERNS.filter(p => p.difficulty === targetDifficulty)
 }
 
-/**
- * 隨機選擇節奏模式
- */
 export function selectRandomPattern(patterns: RhythmPattern[]): RhythmPattern {
+  if (patterns.length === 0) return RHYTHM_PATTERNS[0]!
   const index = Math.floor(Math.random() * patterns.length)
-  return patterns[index] || patterns[0]!
+  return patterns[index]!
 }
 
-/**
- * 產生回合的節奏模式序列
- */
 export function generateRoundPatterns(
   totalRounds: number,
   difficulty: Difficulty
 ): RhythmPattern[] {
   const patterns: RhythmPattern[] = []
-  const easyPool = getPatternsByDifficulty('easy')
-  const mediumPool = getPatternsByDifficulty('medium')
-  const hardPool = getPatternsByDifficulty('hard')
+  const easyPool = getPatternsByPool('easy')
+  const mediumPool = getPatternsByPool('medium')
+  const hardPool = getPatternsByPool('hard')
 
   for (let i = 0; i < totalRounds; i++) {
-    const progress = (i + 1) / totalRounds
+    // 針對 3 回合制的難度曲線優化
+    // Round 1 (i=0): 暖身
+    // Round 2 (i=1): 進階
+    // Round 3 (i=2): 挑戰
+    
     let pool: RhythmPattern[]
 
     if (difficulty === 'easy') {
+      // Easy: 全程簡單
       pool = easyPool
     } else if (difficulty === 'medium') {
-      pool = progress < 0.4 ? easyPool : mediumPool
+      // Medium: 簡單 -> 中等 -> 中等
+      pool = i === 0 ? easyPool : mediumPool
     } else {
-      if (progress < 0.3) {
-        pool = mediumPool
-      } else if (progress < 0.7) {
-        pool = mediumPool
-      } else {
-        pool = hardPool
-      }
+      // Hard: 中等 -> 困難 -> 困難
+      pool = i === 0 ? mediumPool : hardPool
     }
-
+    
+    // 確保有東西可選，否則降級選取
+    if (pool.length === 0) pool = easyPool
+    
     patterns.push(selectRandomPattern(pool))
   }
-
   return patterns
 }
 
-/**
- * 評估單次點擊
- */
-export function evaluateTap(
-  actualTime: number,
-  expectedTime: number,
-  tolerance: number
-): TapResult {
-  const error = Math.abs(actualTime - expectedTime)
-
-  let rating: TapResult['rating']
-  if (error <= tolerance * 0.3) {
-    rating = 'perfect'
-  } else if (error <= tolerance * 0.6) {
-    rating = 'good'
-  } else if (error <= tolerance) {
-    rating = 'ok'
-  } else {
-    rating = 'miss'
-  }
-
-  return {
-    expected: expectedTime,
-    actual: actualTime,
-    error,
-    isGood: rating !== 'miss',
-    rating,
-  }
+function calculateRating(error: number, tolerance: number): TapResult['rating'] {
+  if (error <= tolerance * 0.3) return 'perfect'
+  if (error <= tolerance * 0.6) return 'good'
+  if (error <= tolerance) return 'ok'
+  return 'miss'
 }
 
-/**
- * 評估回合結果
- */
 export function evaluateRound(
   userTaps: number[],
   pattern: RhythmPattern,
   config: RhythmMimicConfig
 ): RoundResult {
   const expectedTimes = pattern.beats.map(b => b.time)
-  const taps: TapResult[] = []
+  const results: TapResult[] = []
+  
+  const availableUserTaps = userTaps.map(time => ({ time, used: false }))
+  const stats = { perfect: 0, good: 0, ok: 0, miss: 0, extra: 0 }
 
-  // 依序比對：每個預期節拍對應同序號點擊，避免「最近點」造成錯亂
-  for (let i = 0; i < expectedTimes.length; i++) {
-    const expected = expectedTimes[i]!
-    const actual = userTaps[i]
-    if (typeof actual !== 'number') {
-      taps.push(evaluateTap(expected + config.tolerance * 2, expected, config.tolerance))
-      continue
-    }
-    taps.push(evaluateTap(actual, expected, config.tolerance))
-  }
+  // 1. 匹配階段
+  for (const expected of expectedTimes) {
+    let bestMatchIndex = -1
+    let minError = Infinity
 
-  // 多餘點擊視為失誤
-  if (userTaps.length > expectedTimes.length) {
-    for (let i = expectedTimes.length; i < userTaps.length; i++) {
-      const actual = userTaps[i]
-      if (typeof actual === 'number') {
-        taps.push({
-          expected: actual,
-          actual,
-          error: config.tolerance * 2,
-          isGood: false,
-          rating: 'miss',
-        })
+    for (let i = 0; i < availableUserTaps.length; i++) {
+      const uTap = availableUserTaps[i]!
+      if (uTap.used) continue
+
+      const error = Math.abs(uTap.time - expected)
+      if (error <= config.tolerance) {
+        if (error < minError) {
+          minError = error
+          bestMatchIndex = i
+        }
       }
     }
+
+    if (bestMatchIndex !== -1) {
+      availableUserTaps[bestMatchIndex]!.used = true
+      const actual = availableUserTaps[bestMatchIndex]!.time
+      const error = minError
+      const rating = calculateRating(error, config.tolerance)
+      
+      stats[rating]++
+      results.push({ expected, actual, error, isGood: rating !== 'miss', rating })
+    } else {
+      stats.miss++
+      results.push({ expected, actual: -1, error: config.tolerance, isGood: false, rating: 'miss' })
+    }
   }
 
-  const goodTaps = taps.filter(t => t.isGood).length
-  const accuracy = (goodTaps / taps.length) * 100
+  // 2. 多餘點擊
+  for (const uTap of availableUserTaps) {
+    if (!uTap.used) {
+      stats.miss++ 
+      stats.extra++
+      results.push({
+        expected: -1,
+        actual: uTap.time,
+        error: config.tolerance,
+        isGood: false,
+        rating: 'miss',
+        isGhost: true,
+      })
+    }
+  }
 
-  // 計算分數
-  const scoreMap = { perfect: 100, good: 70, ok: 40, miss: 0 }
-  const totalScore = taps.reduce((sum, tap) => sum + scoreMap[tap.rating], 0)
-  const score = Math.round(totalScore / taps.length)
+  // 3. 計算分數
+  const maxPossibleScore = expectedTimes.length * 100
+  const currentScore = (stats.perfect * 100) + (stats.good * 70) + (stats.ok * 40)
+  const penalty = stats.extra * 10
+  
+  let finalScore = maxPossibleScore > 0 ? Math.round(((currentScore - penalty) / maxPossibleScore) * 100) : 0
+  finalScore = Math.max(0, finalScore)
+
+  const validHits = stats.perfect + stats.good + stats.ok
+  const accuracy = expectedTimes.length > 0 ? (validHits / expectedTimes.length) * 100 : 0
 
   return {
     accuracy: Math.round(accuracy),
-    taps,
-    score,
+    taps: results.sort((a, b) => (a.actual > -1 ? a.actual : a.expected) - (b.actual > -1 ? b.actual : b.expected)),
+    score: finalScore,
+    stats
   }
 }
 
-/**
- * 計算節拍的總持續時間
- */
+/** 計算節奏總長度 */
 export function getPatternDuration(pattern: RhythmPattern): number {
-  if (pattern.beats.length === 0) return 0
-
+  if (pattern.beats.length === 0) return 2000
   const lastBeat = pattern.beats[pattern.beats.length - 1]!
-  return lastBeat.time + (lastBeat.duration || 0) + 500 // 加500ms緩衝
+  // 保持結尾也有 1000ms 的留白，讓視覺更平衡
+  return lastBeat.time + 1000 
 }
 
-// ==================== 評分函數 ====================
-
-/**
- * 計算最終分數
- */
 export function calculateScore(roundResults: RoundResult[]): number {
   if (roundResults.length === 0) return 0
-
   const totalScore = roundResults.reduce((sum, r) => sum + r.score, 0)
   return Math.round(totalScore / roundResults.length)
 }
 
-/**
- * 計算等級
- */
-export function calculateGrade(score: number): string {
-  if (score >= 90) return 'S'
-  if (score >= 80) return 'A'
-  if (score >= 70) return 'B'
-  if (score >= 60) return 'C'
-  return 'D'
-}
-
-/**
- * 統計各評分等級數量
- */
-export function countRatings(
-  roundResults: RoundResult[]
-): { perfect: number; good: number; ok: number; miss: number } {
-  const counts = { perfect: 0, good: 0, ok: 0, miss: 0 }
-
-  for (const round of roundResults) {
-    for (const tap of round.taps) {
-      counts[tap.rating]++
-    }
-  }
-
-  return counts
-}
-
-/**
- * 彙整遊戲結果
- */
 export function summarizeResult(roundResults: RoundResult[]): RhythmMimicResult {
-  const counts = countRatings(roundResults)
-  const totalBeats = counts.perfect + counts.good + counts.ok + counts.miss
+  let totalBeats = 0
+  let perfectCount = 0
+  let goodCount = 0
+  let missCount = 0
+  let totalErrorSum = 0
+  let validHitCount = 0
 
-  // 計算平均誤差
-  let totalError = 0
-  let tapCount = 0
   for (const round of roundResults) {
+    perfectCount += round.stats.perfect
+    goodCount += round.stats.good + round.stats.ok
+    missCount += round.stats.miss 
+    totalBeats += round.taps.filter(t => !t.isGhost).length
+
     for (const tap of round.taps) {
-      totalError += tap.error
-      tapCount++
+      if (tap.isGood && tap.actual !== -1) {
+        totalErrorSum += tap.error
+        validHitCount++
+      }
     }
   }
-  const avgError = tapCount > 0 ? totalError / tapCount : 0
 
-  // 計算總體準確率
-  const goodCount = counts.perfect + counts.good + counts.ok
-  const accuracy = totalBeats > 0 ? (goodCount / totalBeats) * 100 : 0
+  const avgError = validHitCount > 0 ? totalErrorSum / validHitCount : 0
+  const finalScore = calculateScore(roundResults)
+  
+  const totalExpected = roundResults.reduce((sum, r) => sum + r.taps.filter(t => !t.isGhost).length, 0)
+  const totalHits = perfectCount + goodCount
+  const globalAccuracy = totalExpected > 0 ? (totalHits / totalExpected) * 100 : 0
 
   return {
-    score: calculateScore(roundResults),
-    accuracy: Math.round(accuracy),
-    perfectCount: counts.perfect,
-    goodCount: counts.good,
-    missCount: counts.miss,
+    score: finalScore,
+    accuracy: Math.round(globalAccuracy),
+    perfectCount,
+    goodCount,
+    missCount,
     totalBeats,
     avgError: Math.round(avgError),
     roundResults,
