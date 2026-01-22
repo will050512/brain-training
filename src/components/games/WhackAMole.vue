@@ -138,8 +138,9 @@ let spawnTimer: ReturnType<typeof setInterval> | null = null
 // ===== 計算屬性 =====
 const gridClass = computed(() => {
   const holeCount = config.value.holes
-  if (holeCount <= 6) return 'grid-cols-3'
-  return 'grid-cols-3'
+  if (holeCount === 3) return 'grid-cols-3 max-w-sm'
+  if (holeCount === 6) return 'grid-cols-3 max-w-md'
+  return 'grid-cols-3 max-w-lg'
 })
 
 const displayScore = computed(() => score.value)
@@ -353,7 +354,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         <div
           v-for="(hole, index) in holes"
           :key="index"
-          class="hole relative aspect-square flex items-center justify-center cursor-pointer select-none min-h-[80px] sm:min-h-[100px] md:min-h-[120px]"
+          class="hole relative aspect-square flex items-center justify-center cursor-pointer select-none min-h-[100px] sm:min-h-[120px] md:min-h-[140px] lg:min-h-[160px]"
           @click="handleHoleClick(index)"
         >
           <img class="hole-img" :src="holeImg" alt="" aria-hidden="true" />

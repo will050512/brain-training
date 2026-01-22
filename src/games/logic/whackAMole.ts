@@ -66,7 +66,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, WhackAMoleConfig> = {
   easy: {
     interval: 2000,
     duration: 1500,
-    holes: 6,
+    holes: 3,
     bombChance: 0.1,
     gameTime: 30,
     baseScore: 10,
@@ -75,7 +75,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, WhackAMoleConfig> = {
   medium: {
     interval: 1500,
     duration: 1200,
-    holes: 9,
+    holes: 6,
     bombChance: 0.15,
     gameTime: 45,
     baseScore: 10,

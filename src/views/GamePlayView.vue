@@ -139,8 +139,8 @@
       :class="{ 'pt-9': isMobile && gameState === 'playing' }"
     >
             <!-- 準備畫面 - 適應螢幕高度 -->
-        <div v-if="gameState === 'ready'" class="game-content-fit max-w-lg mx-auto text-center">
-        <div class="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 sm:p-5 shadow-md">
+        <div v-if="gameState === 'ready'" class="game-content-fit max-w-lg mx-auto text-center p-2 sm:p-4">
+        <div class="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-3 sm:p-4 shadow-md">
           <div class="text-4xl sm:text-5xl lg:text-6xl mb-4 transform hover:scale-110 transition-transform">{{ currentGame?.icon }}</div>
           <h2 class="text-lg sm:text-xl lg:text-2xl font-bold mb-4 text-[var(--color-text)]">{{ currentGame?.name }}</h2>
 

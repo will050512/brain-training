@@ -8,8 +8,10 @@ import type { Difficulty } from '@/types/game'
 // ==================== 類型定義 ====================
 
 export interface SpotDifferenceConfig {
-  /** 網格大小 */
-  gridSize: number
+  /** 網格行數 */
+  gridRows: number
+  /** 網格列數 */
+  gridCols: number
   /** 不同之處數量 */
   diffCount: number
   /** 總回合數 */
@@ -57,21 +59,24 @@ export const EMOJI_SETS = {
 
 export const DIFFICULTY_CONFIGS: Record<Difficulty, SpotDifferenceConfig> = {
   easy: {
-    gridSize: 4,
+    gridRows: 3,
+    gridCols: 4,
     diffCount: 2,
     rounds: 3,
     timePerRound: 45,
     maxHints: 3,
   },
   medium: {
-    gridSize: 5,
+    gridRows: 3,
+    gridCols: 4,
     diffCount: 3,
     rounds: 4,
     timePerRound: 40,
     maxHints: 2,
   },
   hard: {
-    gridSize: 6,
+    gridRows: 3,
+    gridCols: 4,
     diffCount: 4,
     rounds: 5,
     timePerRound: 35,
@@ -101,8 +106,8 @@ function randomFrom<T>(arr: T[]): T {
  * 產生一回合的題目
  */
 export function generateRound(config: SpotDifferenceConfig): RoundData {
-  const { gridSize, diffCount } = config
-  const totalCells = gridSize * gridSize
+  const { gridRows, gridCols, diffCount } = config
+  const totalCells = gridRows * gridCols
   const emojiSet = getRandomEmojiSet()
 
   // 產生原圖

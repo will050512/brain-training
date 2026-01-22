@@ -166,10 +166,10 @@ describe('找不同遊戲邏輯', () => {
       )
     })
 
-    it('困難難度應有較大網格', () => {
-      expect(DIFFICULTY_CONFIGS.hard.gridSize).toBeGreaterThanOrEqual(
-        DIFFICULTY_CONFIGS.easy.gridSize
-      )
+    it('困難難度應有適當網格配置', () => {
+      const totalHard = DIFFICULTY_CONFIGS.hard.gridRows * DIFFICULTY_CONFIGS.hard.gridCols
+      const totalEasy = DIFFICULTY_CONFIGS.easy.gridRows * DIFFICULTY_CONFIGS.easy.gridCols
+      expect(totalHard).toBeGreaterThanOrEqual(totalEasy)
     })
   })
 })

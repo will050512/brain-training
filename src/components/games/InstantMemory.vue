@@ -318,45 +318,45 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
       </div>
 
       <!-- 顯示區域 -->
-      <div class="display-area mt-6 sm:mt-8 px-4">
+      <div class="display-area mt-4 sm:mt-6 px-2 sm:px-4 flex flex-col flex-grow">
         <!-- 顯示階段：顯示數字 -->
-        <div
-          v-if="showingPhase === 'showing'"
-          class="showing-phase text-center"
-        >
-          <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4">
-            記住這些數字...
-          </div>
           <div
-            class="digit-display text-6xl sm:text-7xl md:text-8xl font-bold transition-all duration-200 min-h-24 sm:min-h-28 md:min-h-32 flex items-center justify-center"
-            :class="{ 'opacity-0': displayDigit === null, 'opacity-100 scale-110': displayDigit !== null }"
+            v-if="showingPhase === 'showing'"
+            class="showing-phase text-center flex flex-col flex-grow justify-center items-center"
           >
-            {{ displayDigit ?? '' }}
+            <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-4 sm:mb-6">
+              記住這些數字...
+            </div>
+            <div
+              class="digit-display text-7xl sm:text-8xl md:text-9xl lg:text-10xl font-bold transition-all duration-200 min-h-40 sm:min-h-48 md:min-h-56 lg:min-h-64 flex items-center justify-center"
+              :class="{ 'opacity-0': displayDigit === null, 'opacity-100 scale-110': displayDigit !== null }"
+            >
+              {{ displayDigit ?? '' }}
+            </div>
           </div>
-        </div>
 
         <!-- 輸入階段 -->
         <div
           v-else-if="showingPhase === 'input'"
-          class="input-phase"
+          class="input-phase flex flex-col flex-grow justify-center"
         >
-          <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center mb-3 sm:mb-4">
+          <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center mb-4 sm:mb-6">
             輸入剛才看到的數字
           </div>
 
           <!-- 輸入顯示 -->
-          <div class="input-display flex justify-center gap-1 sm:gap-2 mb-4 sm:mb-6 min-h-12 sm:min-h-16 flex-wrap">
+          <div class="input-display flex justify-center gap-2 sm:gap-3 mb-6 sm:mb-8 min-h-16 sm:min-h-20 flex-wrap">
             <div
               v-for="(digit, index) in userInput"
               :key="index"
-              class="digit-box w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-lg sm:text-2xl font-bold bg-blue-100 dark:bg-blue-900 rounded-lg min-h-[40px] min-w-[40px] sm:min-h-[48px] sm:min-w-[48px]"
+              class="digit-box w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center text-xl sm:text-2xl lg:text-3xl font-bold bg-blue-100 dark:bg-blue-900 rounded-lg min-h-[48px] min-w-[48px] sm:min-h-[56px] sm:min-w-[56px]"
             >
               {{ digit }}
             </div>
             <div
               v-for="i in (currentLength - userInput.length)"
               :key="'placeholder-' + i"
-              class="digit-box w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-lg sm:text-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg min-h-[40px] min-w-[40px] sm:min-h-[48px] sm:min-w-[48px]"
+              class="digit-box w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center text-xl sm:text-2xl lg:text-3xl border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg min-h-[48px] min-w-[48px] sm:min-h-[56px] sm:min-w-[56px]"
             >
               _
             </div>

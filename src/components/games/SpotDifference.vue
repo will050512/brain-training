@@ -116,7 +116,8 @@ const hintsUsed = ref(0)
 let roundStartTime = 0
 
 // ===== 計算屬性 =====
-const gridSize = computed(() => config.value.gridSize)
+const gridRows = computed(() => config.value.gridRows)
+const gridCols = computed(() => config.value.gridCols)
 const diffCount = computed(() => config.value.diffCount)
 
 // ===== 回饋映射 =====
@@ -330,7 +331,8 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           <div
             class="image-grid"
             :style="{
-              gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`
+              gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+              gridTemplateRows: `repeat(${gridRows}, minmax(0, 1fr))`
             }"
           >
             <div
@@ -348,12 +350,13 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           <div class="label text-center text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
             找出不同（點擊此處）
           </div>
-          <div
-            class="image-grid"
-            :style="{
-              gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`
-            }"
-          >
+           <div
+             class="image-grid"
+             :style="{
+               gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+               gridTemplateRows: `repeat(${gridRows}, minmax(0, 1fr))`
+             }"
+           >
             <button
               v-for="(emoji, index) in currentRoundData.compareGrid"
               :key="`compare-${index}`"
@@ -393,13 +396,13 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
 .grid-cell {
   width: 100%;
-  aspect-ratio: 1 / 1;
-  font-size: clamp(1rem, 3.2vw, 2.25rem);
+  min-height: 60px;
+  font-size: clamp(1.5rem, 4.5vw, 2.5rem);
   line-height: 1;
 }
 
 .image-container {
-  width: min(100%, 420px);
+  width: min(100%, 95vw);
   margin: 0 auto;
 }
 
