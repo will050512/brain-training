@@ -79,6 +79,7 @@ const {
   startGame: startGameState,
   finishGame: finishGameState,
   resetGame,
+  addScore,
 } = useGameState({ totalRounds: 1 })
 
 const {
@@ -253,7 +254,7 @@ function handleGameEnd() {
     optimalMoves
   )
   
-  score.value = result.score
+  addScore(result.score - score.value)
   finishGameState()
   emit('game-end', result)
 }
@@ -266,9 +267,10 @@ function handleKeyDown(event: KeyboardEvent) {
     'ArrowLeft': 'left', 'a': 'left', 'A': 'left',
     'ArrowRight': 'right', 'd': 'right', 'D': 'right',
   }
-  if (keyMap[event.key]) {
+  const direction = keyMap[event.key]
+  if (direction) {
     event.preventDefault()
-    handleMove(keyMap[event.key])
+    handleMove(direction)
   }
 }
 

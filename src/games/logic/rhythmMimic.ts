@@ -68,7 +68,18 @@ export interface RhythmMimicResult {
   missCount: number
   totalBeats: number
   avgError: number
-  roundResults: RoundResult[]
+  roundResults: RoundSummary[]
+}
+
+export type RoundSummary = Pick<RoundResult, 'accuracy' | 'taps' | 'score'> & {
+  stats?: RoundResult['stats']
+}
+
+export interface RatingCounts {
+  perfect: number
+  good: number
+  ok: number
+  miss: number
 }
 
 // ==================== 常數配置 ====================
@@ -251,6 +262,16 @@ export function getPatternsByPool(targetDifficulty: 'easy' | 'medium' | 'hard'):
   return RHYTHM_PATTERNS.filter(p => p.difficulty === targetDifficulty)
 }
 
+export function getPatternsByDifficulty(difficulty: Difficulty): RhythmPattern[] {
+  if (difficulty === 'easy') {
+    return getPatternsByPool('easy')
+  }
+  if (difficulty === 'medium') {
+    return RHYTHM_PATTERNS.filter(p => p.difficulty === 'easy' || p.difficulty === 'medium')
+  }
+  return RHYTHM_PATTERNS.slice()
+}
+
 export function selectRandomPattern(patterns: RhythmPattern[]): RhythmPattern {
   if (patterns.length === 0) return RHYTHM_PATTERNS[0]!
   const index = Math.floor(Math.random() * patterns.length)
@@ -298,6 +319,22 @@ function calculateRating(error: number, tolerance: number): TapResult['rating'] 
   if (error <= tolerance * 0.6) return 'good'
   if (error <= tolerance) return 'ok'
   return 'miss'
+}
+
+export function evaluateTap(
+  actual: number,
+  expected: number,
+  tolerance: number
+): TapResult {
+  const error = Math.abs(actual - expected)
+  const rating = calculateRating(error, tolerance)
+  return {
+    expected,
+    actual,
+    error,
+    isGood: rating !== 'miss',
+    rating,
+  }
 }
 
 export function evaluateRound(
@@ -386,13 +423,34 @@ export function getPatternDuration(pattern: RhythmPattern): number {
   return lastBeat.time + 1000 
 }
 
-export function calculateScore(roundResults: RoundResult[]): number {
+export function calculateScore(roundResults: RoundSummary[]): number {
   if (roundResults.length === 0) return 0
   const totalScore = roundResults.reduce((sum, r) => sum + r.score, 0)
   return Math.round(totalScore / roundResults.length)
 }
 
-export function summarizeResult(roundResults: RoundResult[]): RhythmMimicResult {
+export function calculateGrade(score: number): string {
+  if (score >= 90) return 'S'
+  if (score >= 80) return 'A'
+  if (score >= 70) return 'B'
+  if (score >= 60) return 'C'
+  return 'D'
+}
+
+export function countRatings(roundResults: RoundSummary[]): RatingCounts {
+  const counts: RatingCounts = { perfect: 0, good: 0, ok: 0, miss: 0 }
+  for (const round of roundResults) {
+    for (const tap of round.taps) {
+      if (tap.rating === 'perfect') counts.perfect++
+      else if (tap.rating === 'good') counts.good++
+      else if (tap.rating === 'ok') counts.ok++
+      else counts.miss++
+    }
+  }
+  return counts
+}
+
+export function summarizeResult(roundResults: RoundSummary[]): RhythmMimicResult {
   let totalBeats = 0
   let perfectCount = 0
   let goodCount = 0
@@ -401,9 +459,10 @@ export function summarizeResult(roundResults: RoundResult[]): RhythmMimicResult 
   let validHitCount = 0
 
   for (const round of roundResults) {
-    perfectCount += round.stats.perfect
-    goodCount += round.stats.good + round.stats.ok
-    missCount += round.stats.miss 
+    const roundStats = round.stats ?? countRatings([round])
+    perfectCount += roundStats.perfect
+    goodCount += roundStats.good + roundStats.ok
+    missCount += roundStats.miss 
     totalBeats += round.taps.filter(t => !t.isGhost).length
 
     for (const tap of round.taps) {

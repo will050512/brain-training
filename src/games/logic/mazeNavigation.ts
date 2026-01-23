@@ -151,7 +151,8 @@ function generateShapesMap(size: number, complexity: number): CellType[] {
 function generateMazeMap(size: number): CellType[] {
   const cells: CellType[] = new Array(size * size).fill('wall')
   const miners = [{ index: positionToIndex(1, 1, size), life: size * 3 }]
-  cells[miners[0].index] = 'path'
+  const initialMiner = miners[0]!
+  cells[initialMiner.index] = 'path'
   
   let loopCount = 0
   const maxLoops = size * size * 5
@@ -164,6 +165,7 @@ function generateMazeMap(size: number): CellType[] {
     if (miners.length === 0) break
     const minerIdx = Math.floor(Math.random() * miners.length)
     const miner = miners[minerIdx]
+    if (!miner) continue
     
     const { row, col } = indexToPosition(miner.index, size)
     const dirs = [{ r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 }]
@@ -324,10 +326,45 @@ export function hasReachedEnd(maze: MazeState): boolean {
 }
 
 export function getCellType(maze: MazeState, index: number): CellType {
-  return maze.cells[index]
+  return maze.cells[index] ?? 'wall'
 }
 
 // ==================== 評分與統計 ====================
+
+export function estimateOptimalMoves(size: number): number {
+  return Math.max(1, (size - 2) * 2)
+}
+
+export function calculateEfficiency(moves: number, optimalMoves: number): number {
+  if (optimalMoves <= 0) return 0
+  if (moves <= optimalMoves) return 1
+  return Math.max(0, 1 - (moves - optimalMoves) / (optimalMoves * 2))
+}
+
+export function calculateScore(
+  moves: number,
+  timeSpent: number,
+  size: number,
+  optimalMovesOverride?: number
+): number {
+  const optimalMoves = optimalMovesOverride ?? estimateOptimalMoves(size)
+  const efficiency = calculateEfficiency(moves, optimalMoves)
+  const efficiencyScore = efficiency * 70
+
+  const standardTime = Math.max(20, optimalMoves * 2)
+  const timeScore = Math.max(0, Math.min(30, (standardTime / Math.max(1, timeSpent)) * 30))
+
+  const totalScore = Math.round(efficiencyScore + timeScore)
+  return Math.min(100, Math.max(0, totalScore))
+}
+
+export function calculateGrade(score: number): string {
+  if (score >= 90) return 'S'
+  if (score >= 80) return 'A'
+  if (score >= 70) return 'B'
+  if (score >= 60) return 'C'
+  return 'D'
+}
 
 export function summarizeResult(
   moves: number,
@@ -335,22 +372,13 @@ export function summarizeResult(
   size: number,
   optimalMovesOverride?: number
 ): MazeResult {
-  const optimalMoves = optimalMovesOverride ?? (size * 1.5)
-  
-  // 寬容度
-  const tolerance = 1.3
-  const efficiency = Math.max(0, 1 - Math.max(0, moves - optimalMoves * tolerance) / (optimalMoves * 2))
-
-  const efficiencyScore = efficiency * 70
-  
-  const standardTime = Math.max(20, optimalMoves * 2) 
-  const timeScore = Math.max(0, Math.min(30, (standardTime / Math.max(1, timeSpent)) * 30))
-
-  const totalScore = Math.round(efficiencyScore + timeScore)
+  const optimalMoves = optimalMovesOverride ?? estimateOptimalMoves(size)
+  const efficiency = calculateEfficiency(moves, optimalMoves)
+  const totalScore = calculateScore(moves, timeSpent, size, optimalMoves)
   const avgMoveTime = moves > 0 ? Math.round((timeSpent * 1000) / moves) : 0
 
   return {
-    score: Math.min(100, Math.max(0, totalScore)),
+    score: totalScore,
     moves,
     optimalMoves: Math.round(optimalMoves),
     efficiency,

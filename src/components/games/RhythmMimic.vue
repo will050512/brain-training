@@ -111,6 +111,17 @@ const currentTime = ref(0)
 const totalDuration = ref(3000) 
 const playToken = ref(0) 
 
+// ===== 回饋映射 =====
+const feedbackData = computed(() => {
+  if (!feedback.value) return undefined
+  return {
+    type: feedback.value.type,
+    show: showFeedback.value,
+    message: feedback.value.message,
+    score: feedback.value.score,
+  }
+})
+
 // ===== 遊戲流程控制 =====
 
 function startGame() {
@@ -120,11 +131,6 @@ function startGame() {
   // 生成新的譜面
   patterns.value = generateRoundPatterns(config.value.totalRounds, props.difficulty)
   roundResults.value = []
-  
-  // 雙重保險重置回合 (防止 useGameState 內部狀態未同步)
-  if (typeof currentRound.value === 'number') {
-    currentRound.value = 0 
-  }
   
   startNewRound()
 }
@@ -357,7 +363,7 @@ watch(phase, () => {
       correctCount: correctCount.value,
       wrongCount: wrongCount.value,
       currentRound: currentRound.value,
-      totalRounds: totalRounds.value,
+      totalRounds,
       showTimer: false,
       showScore: true,
       showProgress: true
