@@ -115,6 +115,8 @@ watch(() => props.show, (newVal) => {
   border-radius: var(--radius-xl);
   font-weight: 600;
   z-index: 100;
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-lg);
 }
 
 /* 位置 */
@@ -200,6 +202,7 @@ watch(() => props.show, (newVal) => {
   color: white;
   border: none;
   animation: combo-bounce 0.3s ease-out;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .feedback-icon {
@@ -289,6 +292,16 @@ watch(() => props.show, (newVal) => {
   
   .size-md .feedback-message {
     font-size: 1.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feedback-wrong,
+  .feedback-perfect,
+  .feedback-combo,
+  .feedback-enter-active,
+  .feedback-leave-active {
+    animation: none;
   }
 }
 </style>

@@ -5,7 +5,7 @@
     :class="{ 'is-landscape': isSmallLandscape() }"
   >
     <!-- 指示區域 -->
-    <div class="instructions px-4" v-if="!isComplete">
+      <div class="instructions game-panel px-4 py-4" v-if="!isComplete">
       <h3 class="text-lg sm:text-xl font-bold text-[var(--color-text)]">🕐 時鐘測驗</h3>
       <p class="target-time text-sm sm:text-base text-[var(--color-text-secondary)]">
         請組裝一個時鐘，並將指針指向
@@ -17,11 +17,11 @@
     </div>
 
     <!-- 組裝模式區域 -->
-    <div 
-      class="assemble-container" 
-      v-if="!isComplete"
-      ref="assembleContainerRef"
-    >
+      <div 
+        class="assemble-container game-panel" 
+        v-if="!isComplete"
+        ref="assembleContainerRef"
+      >
       <!-- 時鐘面盤 -->
       <div 
         class="clock-face"

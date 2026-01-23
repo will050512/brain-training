@@ -317,7 +317,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 題目區域 -->
-      <div class="question-area mt-6 sm:mt-8 text-center px-2">
+      <div class="question-area game-panel stroop-panel mt-6 sm:mt-8 text-center px-3 sm:px-4">
         <div class="question-number text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2">
           第 {{ currentRound + 1 }} / {{ totalRounds }} 題
         </div>
@@ -325,7 +325,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         <!-- 題目提示 -->
         <div
           v-if="questionPrompt"
-          class="question-prompt mb-3 sm:mb-4 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 inline-block"
+          class="question-prompt mb-3 sm:mb-4 p-2 rounded-lg bg-[var(--color-bg-soft)] inline-block border border-[var(--color-border)]"
         >
           <span class="text-base sm:text-lg mr-2">{{ questionPrompt.icon }}</span>
           <span class="text-xs sm:text-sm font-medium">{{ questionPrompt.text }}</span>
@@ -337,7 +337,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           class="stroop-display py-4 sm:py-6 md:py-8"
         >
           <div
-            class="stroop-word text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold select-none p-3 sm:p-4 rounded-lg inline-block break-words leading-tight"
+            class="stroop-word text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold select-none p-3 sm:p-4 rounded-xl inline-block break-words leading-tight"
             :style="{
               color: currentQuestion.inkColor,
               borderColor: currentQuestion.borderColor,
@@ -378,14 +378,32 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 <style scoped>
 .stroop-word {
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 2px 6px rgba(15, 23, 42, 0.08);
 }
 
 .color-option {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(6px);
 }
 
 .color-option:hover:not(:disabled) {
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
 }
-</style>
 
+.game-panel.stroop-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: 1.25rem;
+  padding-top: 1rem;
+  padding-bottom: 1.25rem;
+  box-shadow: var(--shadow-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .color-option {
+    transition: none;
+  }
+}
+</style>

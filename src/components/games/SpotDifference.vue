@@ -297,7 +297,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲資訊 -->
-      <div class="game-info flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-0 mt-4 px-2">
+      <div class="game-info game-panel flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4 mt-4 px-3 py-2">
         <div class="text-xs sm:text-sm">
           <span class="text-gray-500 dark:text-gray-400">第</span>
           <span class="font-bold mx-1">{{ currentRound + 1 }} / {{ totalRounds }}</span>
@@ -324,7 +324,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         v-if="currentRoundData"
       >
         <!-- 原圖（左邊） -->
-        <div class="image-container">
+        <div class="image-container game-panel p-3">
           <div class="label text-center text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
             原圖
           </div>
@@ -346,7 +346,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         </div>
 
         <!-- 比對圖（右邊，可點擊） -->
-        <div class="image-container">
+        <div class="image-container game-panel p-3">
           <div class="label text-center text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
             找出不同（點擊此處）
           </div>
@@ -399,6 +399,8 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   min-height: 50px;
   font-size: clamp(1.25rem, 5vw, 2.5rem);
   line-height: 1;
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-xs);
 }
 
 .image-container {
@@ -417,4 +419,3 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   }
 }
 </style>
-

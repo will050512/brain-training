@@ -327,16 +327,16 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲資訊 -->
-      <div class="game-info flex justify-center gap-4 sm:gap-6 mt-4 text-xs sm:text-sm px-4">
-        <div class="stat">
-          <span class="text-gray-500 dark:text-gray-400">配對：</span>
-          <span class="font-bold">{{ matchedPairs }} / {{ config.pairs }}</span>
+        <div class="game-info game-panel flex justify-center gap-4 sm:gap-6 mt-4 text-xs sm:text-sm px-4 py-2">
+          <div class="stat">
+            <span class="text-[var(--color-text-muted)]">配對：</span>
+            <span class="font-bold">{{ matchedPairs }} / {{ config.pairs }}</span>
+          </div>
+          <div class="stat">
+            <span class="text-[var(--color-text-muted)]">翻牌：</span>
+            <span class="font-bold">{{ moves }}</span>
+          </div>
         </div>
-        <div class="stat">
-          <span class="text-gray-500 dark:text-gray-400">翻牌：</span>
-          <span class="font-bold">{{ moves }}</span>
-        </div>
-      </div>
 
       <!-- 預覽提示 -->
       <div
@@ -347,12 +347,12 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
       </div>
 
       <!-- 卡片網格 -->
-        <div
-          class="card-grid mt-4 sm:mt-6 grid gap-2 sm:gap-3 md:gap-4 mx-auto w-full px-2 sm:px-4"
-          :style="{
-            gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`
-          }"
-        >
+          <div
+            class="card-grid game-panel mt-4 sm:mt-6 grid gap-2 sm:gap-3 md:gap-4 mx-auto w-full px-3 sm:px-4 py-3"
+            :style="{
+              gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`
+            }"
+          >
         <div
           v-for="card in cards"
           :key="card.id"
@@ -467,4 +467,3 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   gap: 0.35rem;
 }
 </style>
-

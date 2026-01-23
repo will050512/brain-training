@@ -84,14 +84,15 @@ function normalizeShape(shape: string): string | null {
   return null
 }
 
-function normalizeColorKey(color: string): 'red' | 'green' | 'blue' {
-  return COLOR_KEY_MAP[color] ?? 'blue'
+function normalizeColorKey(color: string): 'red' | 'green' | 'blue' | null {
+  return COLOR_KEY_MAP[color] ?? null
 }
 
 function getShapeAsset(shape: string, color: string): string | null {
   const key = normalizeShape(shape)
   if (!key) return null
   const colorKey = normalizeColorKey(color)
+  if (!colorKey) return null
   return SHAPE_ASSETS[key]?.[colorKey] ?? null
 }
 
@@ -376,23 +377,23 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <template v-else-if="phase === 'playing' || phase === 'paused'">
 
       <!-- 遊戲資訊 -->
-      <div class="game-info text-center mt-4 px-4">
-        <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-          第 {{ currentRound + 1 }} / {{ totalRounds }} 題
-        </div>
-        <div class="flex justify-center gap-4 mt-2 text-xs sm:text-sm">
-          <div>
-            <span class="text-gray-500 dark:text-gray-400">連續正確：</span>
-            <span class="font-bold text-orange-500">{{ streak }}</span>
+        <div class="game-info game-panel text-center mt-4 px-4 py-3">
+          <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
+            第 {{ currentRound + 1 }} / {{ totalRounds }} 題
+          </div>
+          <div class="flex justify-center gap-4 mt-2 text-xs sm:text-sm">
+            <div>
+              <span class="text-[var(--color-text-muted)]">連續正確：</span>
+              <span class="font-bold text-[var(--color-combo)]">{{ streak }}</span>
+            </div>
           </div>
         </div>
-      </div>
 
       <!-- 序列顯示區 -->
-      <div class="sequence-area mt-6 sm:mt-8 px-4">
-        <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center mb-3 sm:mb-4">
-          {{ instruction }}
-        </div>
+        <div class="sequence-area game-panel mt-6 sm:mt-8 px-4 py-4">
+          <div class="text-xs sm:text-sm text-[var(--color-text-muted)] text-center mb-3 sm:mb-4">
+            {{ instruction }}
+          </div>
 
         <div class="sequence-display flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
           <div
@@ -423,10 +424,10 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
       </div>
 
       <!-- 選項區 -->
-      <div class="options-area mt-6 sm:mt-8 px-4">
-        <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center mb-3 sm:mb-4">
-          選擇答案
-        </div>
+        <div class="options-area game-panel mt-6 sm:mt-8 px-4 py-4">
+          <div class="text-xs sm:text-sm text-[var(--color-text-muted)] text-center mb-3 sm:mb-4">
+            選擇答案
+          </div>
 
         <div class="options-grid grid gap-2 sm:gap-3" :class="{
           'grid-cols-3': config.optionCount === 3,
@@ -436,7 +437,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           <button
             v-for="(opt, idx) in options"
             :key="opt.id"
-            class="option-btn p-3 sm:p-4 rounded-xl flex items-center justify-center transition-all transform hover:scale-105 min-h-[60px] sm:min-h-[70px] md:min-h-[80px]"
+            class="option-btn p-3 sm:p-4 rounded-xl flex items-center justify-center transition-all transform enabled:hover:scale-105 min-h-[60px] sm:min-h-[70px] md:min-h-[80px]"
             :class="{
               'bg-gray-100 dark:bg-gray-700': !isAnswerLocked,
               'bg-green-500': isAnswerLocked && idx === currentQuestion?.correctIndex,
@@ -495,4 +496,3 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   gap: 0.35rem;
 }
 </style>
-

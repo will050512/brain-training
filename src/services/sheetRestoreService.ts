@@ -99,6 +99,10 @@ function asDate(value: unknown): Date {
   return new Date()
 }
 
+function hasKey(record: Record<string, unknown>, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(record, key)
+}
+
 function parseJsonObject(value: unknown): Record<string, unknown> {
   if (!value) return {}
   if (typeof value === 'object' && !Array.isArray(value)) return value as Record<string, unknown>
@@ -273,25 +277,36 @@ function mapGameResult(raw: Record<string, unknown>): GameSession | null {
 
   const difficulty = parseDifficulty(raw.difficulty)
   const subDifficulty = parseSubDifficulty(raw.subDifficulty)
+  const metricsCompletionRaw = hasKey(raw, 'metrics.completion') ? raw['metrics.completion'] : raw.completion
+  const metricsAccuracyRaw = hasKey(raw, 'metrics.accuracy') ? raw['metrics.accuracy'] : raw.accuracy
+  const metricsSpeedRaw = hasKey(raw, 'metrics.speed') ? raw['metrics.speed'] : raw.speed
+  const metricsEfficiencyRaw = hasKey(raw, 'metrics.efficiency') ? raw['metrics.efficiency'] : raw.efficiency
+
   const metrics: StandardizedMetrics = {
-    completion: asNumber(raw['metrics.completion'], 0),
-    accuracy: asNumber(raw['metrics.accuracy'], 0),
-    speed: asNumber(raw['metrics.speed'], 0),
-    efficiency: asNumber(raw['metrics.efficiency'], 0),
+    completion: asNumber(metricsCompletionRaw, 0),
+    accuracy: asNumber(metricsAccuracyRaw, 0),
+    speed: asNumber(metricsSpeedRaw, 0),
+    efficiency: asNumber(metricsEfficiencyRaw, 0),
   }
 
-  const trackingCorrect = asNumber(raw['tracking.correctCount'], 0)
-  const trackingWrong = asNumber(raw['tracking.wrongCount'], 0)
-  const trackingMissed = asNumber(raw['tracking.missedCount'], 0)
-  const trackingMaxCombo = asNumber(raw['tracking.maxCombo'], 0)
-  const trackingAvgReaction = asNumber(raw['tracking.avgReactionTimeMs'], 0)
-  const trackingAvgThinking = asNumber(raw['tracking.avgThinkingTimeMs'], 0)
-  const trackingTotalActions = asNumber(raw['tracking.totalActions'], 0)
+  const trackingCorrect = asNumber(raw['tracking.correctCount'] ?? raw.correctCount, 0)
+  const trackingWrong = asNumber(raw['tracking.wrongCount'] ?? raw.wrongCount, 0)
+  const trackingMissed = asNumber(raw['tracking.missedCount'] ?? raw.missedCount, 0)
+  const trackingMaxCombo = asNumber(raw['tracking.maxCombo'] ?? raw.maxCombo, 0)
+  const trackingAvgReaction = asNumber(
+    raw['tracking.avgReactionTimeMs'] ?? raw['tracking.avgReactionTime'] ?? raw.avgReactionTime,
+    0
+  )
+  const trackingAvgThinking = asNumber(
+    raw['tracking.avgThinkingTimeMs'] ?? raw['tracking.avgThinkingTime'] ?? raw.avgThinkingTime,
+    0
+  )
+  const trackingTotalActions = asNumber(raw['tracking.totalActions'] ?? raw.totalActions, 0)
   const totalCount = trackingTotalActions > 0
     ? trackingTotalActions
     : Math.max(trackingCorrect + trackingWrong + trackingMissed, trackingCorrect + trackingWrong)
 
-  const accuracy = Number.isFinite(metrics.accuracy) && metrics.accuracy > 0
+  const accuracy = Number.isFinite(metrics.accuracy) && metrics.accuracy >= 0
     ? metrics.accuracy
     : (totalCount > 0 ? trackingCorrect / totalCount : 0)
 
@@ -309,6 +324,11 @@ function mapGameResult(raw: Record<string, unknown>): GameSession | null {
     totalActions: trackingTotalActions,
   }
 
+  const gameSpecific = parseJsonObject(raw.gameSpecific)
+  const modeFromSpecific = gameSpecific.mode === 'daily' || gameSpecific.mode === 'free'
+    ? gameSpecific.mode
+    : undefined
+
   const result: GameResult = {
     gameId,
     difficulty,
@@ -321,11 +341,11 @@ function mapGameResult(raw: Record<string, unknown>): GameSession | null {
     avgReactionTime: trackingAvgReaction,
     duration: asNumber(raw.durationSec, 0),
     timestamp: asDate(raw.timestamp),
-    mode: 'free',
+    mode: modeFromSpecific ?? 'free',
     grade: grade as GameResult['grade'],
     metrics,
     tracking,
-    gameSpecific: parseJsonObject(raw.gameSpecific),
+    gameSpecific,
     displayStats: parseJsonArray(raw.displayStats) as GameResult['displayStats'],
   }
 

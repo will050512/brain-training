@@ -408,16 +408,16 @@ onUnmounted(() => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲資訊 -->
-      <div class="game-info flex justify-center gap-6 mt-4 text-sm">
-        <div class="stat">
-          <span class="text-gray-500 dark:text-gray-400">配對：</span>
-          <span class="font-bold">{{ matchedPairs }} / {{ totalPairs }}</span>
+        <div class="game-info game-panel flex justify-center gap-6 mt-4 text-sm px-4 py-2">
+          <div class="stat">
+            <span class="text-[var(--color-text-muted)]">配對：</span>
+            <span class="font-bold">{{ matchedPairs }} / {{ totalPairs }}</span>
+          </div>
+          <div class="stat">
+            <span class="text-[var(--color-text-muted)]">步數：</span>
+            <span class="font-bold">{{ moves }}</span>
+          </div>
         </div>
-        <div class="stat">
-          <span class="text-gray-500 dark:text-gray-400">步數：</span>
-          <span class="font-bold">{{ moves }}</span>
-        </div>
-      </div>
 
       <!-- 預覽提示 -->
       <div
@@ -428,10 +428,10 @@ onUnmounted(() => {
       </div>
 
       <!-- 卡片網格 -->
-      <div
-        class="card-grid mt-4 sm:mt-6 grid gap-2 sm:gap-3 px-2"
-        :style="{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }"
-      >
+        <div
+          class="card-grid game-panel mt-4 sm:mt-6 grid gap-2 sm:gap-3 px-3 py-3"
+          :style="{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }"
+        >
         <button
           v-for="(card, index) in cards"
           :key="card.id"

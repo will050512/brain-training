@@ -121,6 +121,72 @@ export function calculateDimensionSampleCounts(
   return counts
 }
 
+// ===== 認知領域分數（PDF 專用） =====
+
+export type CognitiveDomain =
+  | 'memory'
+  | 'attention'
+  | 'processing'
+  | 'executive'
+  | 'language'
+
+export interface CognitiveDomainScores {
+  memory: number
+  attention: number
+  processing: number
+  executive: number
+  language: number
+}
+
+const DOMAIN_WEIGHTS: Record<CognitiveDomain, Partial<Record<CognitiveDimension, number>>> = {
+  memory: { memory: 1 },
+  attention: { attention: 1 },
+  processing: { reaction: 0.7, attention: 0.3 },
+  executive: { logic: 0.6, cognition: 0.4 },
+  language: { cognition: 0.7, coordination: 0.3 },
+}
+
+function clampScore(score: number): number {
+  if (!Number.isFinite(score)) return 0
+  return Math.max(0, Math.min(100, Math.round(score)))
+}
+
+/**
+ * 將六大認知維度映射為 PDF 使用的五大領域分數
+ * - 注意：此為過渡性映射，待有獨立語言/執行/處理速度量表後再調整。
+ */
+export function calculateCognitiveDomainScores(
+  scores: CognitiveScores,
+  sampleCounts?: DimensionSampleCounts
+): CognitiveDomainScores {
+  const computeDomain = (domain: CognitiveDomain): number => {
+    const weights = DOMAIN_WEIGHTS[domain]
+    let totalWeight = 0
+    let sum = 0
+
+    for (const [dimension, weight] of Object.entries(weights)) {
+      const dim = dimension as CognitiveDimension
+      const dimWeight = weight ?? 0
+      if (dimWeight <= 0) continue
+      if (sampleCounts && (sampleCounts[dim] || 0) === 0) continue
+      const value = scores[dim] ?? 0
+      totalWeight += dimWeight
+      sum += value * dimWeight
+    }
+
+    if (totalWeight === 0) return 0
+    return clampScore(sum / totalWeight)
+  }
+
+  return {
+    memory: computeDomain('memory'),
+    attention: computeDomain('attention'),
+    processing: computeDomain('processing'),
+    executive: computeDomain('executive'),
+    language: computeDomain('language'),
+  }
+}
+
 /**
  * 計算特定時間範圍的認知分數
  */

@@ -1,13 +1,12 @@
 <template>
-  <div class="game-wrapper h-[100dvh] bg-[var(--color-bg)] flex flex-col overflow-hidden">
+  <div class="game-wrapper page-ambient h-[100dvh] bg-[var(--color-bg)] flex flex-col overflow-hidden">
     <div
-      class="game-header bg-[var(--color-surface)] shadow-sm border-b border-[var(--color-border)] z-10 sticky top-0"
+      class="game-header bg-[var(--color-surface)]/95 backdrop-blur-sm shadow-md border-b border-[var(--color-border)] z-10 sticky top-0"
       :class="{ 'game-header-compact': isMobile, 'game-header-landscape': isLandscape }"
     >
       <div class="container mx-auto flex items-center justify-between px-2 sm:px-4 py-1.5 h-12 sm:h-14 gap-2">
-        <button @click="handleBack" class="btn btn-secondary btn-sm flex-shrink-0 !px-2 sm:!px-4 h-9 sm:h-10 flex items-center justify-center">
-          <span class="text-lg leading-none">←</span>
-          <span class="hidden sm:inline ml-1">返回</span>
+        <button @click="handleBack" class="btn btn-secondary btn-sm flex-shrink-0 !px-3 sm:!px-4 h-9 sm:h-10 flex items-center justify-center">
+          <span class="text-sm sm:text-base leading-none">返回</span>
         </button>
 
         <!-- 手機版：遊戲進行時顯示簡化標題 -->
@@ -136,59 +135,63 @@
 
     <div
       class="game-play-area flex-1 min-h-0 container mx-auto w-full"
-      :class="{ 'pt-9': isMobile && gameState === 'playing' }"
+      :class="{ 'pt-20': isMobile && gameState === 'playing' }"
       @mousedown="handlePlayAreaInteraction"
       @touchstart="handlePlayAreaInteraction"
     >
             <!-- 準備畫面 - 適應螢幕高度 -->
-        <div v-if="gameState === 'ready'" class="game-content-fit max-w-lg mx-auto text-center p-2 sm:p-4">
-        <div class="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-3 sm:p-4 shadow-md">
-          <div class="text-4xl sm:text-5xl lg:text-6xl mb-4 transform hover:scale-110 transition-transform">{{ currentGame?.icon }}</div>
-          <h2 class="text-lg sm:text-xl lg:text-2xl font-bold mb-4 text-[var(--color-text)]">{{ currentGame?.name }}</h2>
+        <div v-if="gameState === 'ready'" class="game-content-fit ready-screen-fit max-w-2xl lg:max-w-5xl mx-auto text-center lg:text-left p-2 sm:p-4 w-full">
+          <div class="ready-hero ready-hero-layout p-3 sm:p-4">
+            <div class="ready-hero-main">
+              <div class="text-4xl sm:text-5xl lg:text-6xl mb-4 transform hover:scale-110 transition-transform">{{ currentGame?.icon }}</div>
+              <h2 class="text-lg sm:text-xl lg:text-2xl font-bold mb-4 text-[var(--color-text)]">{{ currentGame?.name }}</h2>
 
-          <p class="text-sm sm:text-base text-[var(--color-text-secondary)] mb-4 sm:mb-6">
-            準備好了嗎？先快速看過玩法，再點擊下方按鈕開始。
-          </p>
+              <p class="text-sm sm:text-base text-[var(--color-text-secondary)] mb-4 sm:mb-6">
+                準備好了嗎？先快速看過玩法，再點擊下方按鈕開始。
+              </p>
 
-          <div class="flex items-center justify-center gap-2 mb-4">
-            <span
-              class="badge text-[10px] sm:text-xs"
-              :class="`difficulty-${gameStore.currentDifficulty}`"
-            >
-              {{ DIFFICULTIES[gameStore.currentDifficulty].name }}
-            </span>
-            <button
-              class="btn btn-secondary btn-sm"
-              @click="showDifficultyPanel = true"
-            >
-              調整難度
-            </button>
-          </div>
-
-          <div class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-3 mb-4 max-h-52 overflow-auto">
-            <div class="section-label text-[var(--color-text-secondary)] mb-2">遊戲說明</div>
-            <ul class="space-y-1 text-left text-sm sm:text-base text-[var(--color-text)] leading-snug">
-              <li v-if="!currentGame?.instructions || currentGame.instructions.length === 0" class="text-[var(--color-text-secondary)]">此遊戲未提供額外說明，請依畫面提示操作。</li>
-              <li v-for="(line, idx) in currentGame?.instructions" :key="idx" class="flex items-start gap-2">
-                <span class="text-[var(--color-text-secondary)] mt-0.5">{{ idx + 1 }}.</span>
-                <span class="flex-1">{{ line }}</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="space-y-2">
-            <div v-if="startError" class="p-3 rounded-lg border border-[var(--color-danger)]/30 bg-[var(--color-danger-bg)] text-[var(--color-danger)] text-sm text-left">
-              {{ startError }}
+              <div class="flex items-center justify-center lg:justify-start gap-2 mb-4">
+                <span
+                  class="badge text-[10px] sm:text-xs"
+                  :class="`difficulty-${gameStore.currentDifficulty}`"
+                >
+                  {{ DIFFICULTIES[gameStore.currentDifficulty].name }}
+                </span>
+                <button
+                  class="btn btn-secondary btn-sm"
+                  @click="showDifficultyPanel = true"
+                >
+                  調整難度
+                </button>
+              </div>
             </div>
-            <button @click="startGame" class="btn btn-primary btn-lg w-full text-base shadow-md active:scale-95 transition-transform">
-              開始遊戲
-            </button>
-            <button @click="goBackToList" class="btn btn-secondary w-full">
+
+            <div class="ready-hero-side">
+              <div class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-3 mb-4 max-h-52 lg:max-h-[320px] overflow-auto">
+                <div class="section-label text-[var(--color-text-secondary)] mb-2">遊戲說明</div>
+                <ul class="space-y-1 text-left text-sm sm:text-base text-[var(--color-text)] leading-snug">
+                  <li v-if="!currentGame?.instructions || currentGame.instructions.length === 0" class="text-[var(--color-text-secondary)]">此遊戲未提供額外說明，請依畫面提示操作。</li>
+                  <li v-for="(line, idx) in currentGame?.instructions" :key="idx" class="flex items-start gap-2">
+                    <span class="text-[var(--color-text-secondary)] mt-0.5">{{ idx + 1 }}.</span>
+                    <span class="flex-1">{{ line }}</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="space-y-2">
+                <div v-if="startError" class="p-3 rounded-lg border border-[var(--color-danger)]/30 bg-[var(--color-danger-bg)] text-[var(--color-danger)] text-sm text-left">
+                  {{ startError }}
+                </div>
+                <button @click="startGame" class="btn btn-primary btn-lg w-full text-base shadow-md active:scale-95 transition-transform">
+                  開始遊戲
+                </button>
+            <button @click="goBackToList" class="btn btn-secondary w-full hidden sm:flex">
               ← 返回
             </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 <!-- 遊戲進行中 - 填滿可用空間 -->
       <div v-else-if="gameState === 'playing'" class="game-content-full w-full h-full min-h-0 overflow-x-hidden overflow-y-auto">
         <component
@@ -226,7 +229,7 @@
 
       <!-- 結算畫面 - 適應螢幕高度，避免滾動 -->
       <div v-else-if="gameState === 'finished'" class="game-content-fit game-result-scroll max-w-sm sm:max-w-lg mx-auto text-center">
-        <div class="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-lg game-result-card">
+        <div class="game-result-card">
           <div class="game-result-body p-3 sm:p-6">
             <div class="text-4xl sm:text-5xl lg:text-6xl mb-2 sm:mb-4 animate-bounce-in">
               {{ getFinalEmoji(currentScore) }}

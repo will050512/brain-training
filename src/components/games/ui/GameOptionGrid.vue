@@ -157,21 +157,22 @@ const handleSelect = (option: NormalizedOption) => {
   transition: all var(--transition-fast);
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  box-shadow: var(--shadow-tactile-sm);
 }
 
 /* 樣式變體 - 實心 */
 .style-solid .option-button {
-  background: var(--color-bg-secondary);
+  background: var(--gradient-card);
   border: 2px solid var(--color-border);
-  color: var(--color-text-primary);
+  color: var(--color-text);
 }
 
 .style-solid .option-button:not(:disabled):hover {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: white;
+  background: var(--gradient-primary);
+  border-color: transparent;
+  color: var(--color-text-inverse);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .style-solid .option-button:not(:disabled):active {
@@ -181,14 +182,14 @@ const handleSelect = (option: NormalizedOption) => {
 
 /* 樣式變體 - 外框 */
 .style-outline .option-button {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.6);
   border: 2px solid var(--color-primary);
   color: var(--color-primary);
 }
 
 .style-outline .option-button:not(:disabled):hover {
-  background: var(--color-primary);
-  color: white;
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
 }
 
 /* 尺寸變體 */
@@ -210,9 +211,9 @@ const handleSelect = (option: NormalizedOption) => {
 }
 
 .option-selected {
-  background: var(--color-primary) !important;
-  border-color: var(--color-primary) !important;
-  color: white !important;
+  background: var(--gradient-primary) !important;
+  border-color: transparent !important;
+  color: var(--color-text-inverse) !important;
   transform: scale(0.98);
 }
 
@@ -283,6 +284,20 @@ const handleSelect = (option: NormalizedOption) => {
   .option-button {
     padding: 1.25rem;
     font-size: 1.375rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .option-button,
+  .style-solid .option-button:not(:disabled):hover,
+  .style-outline .option-button:not(:disabled):hover {
+    transition: none;
+    transform: none;
+  }
+
+  .option-correct,
+  .option-wrong {
+    animation: none;
   }
 }
 </style>

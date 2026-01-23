@@ -347,24 +347,24 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲資訊 -->
-      <div class="game-info text-center mt-4 px-4">
-        <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-          第 {{ currentRound + 1 }} / {{ totalRounds }} 回合
-        </div>
+        <div class="game-info game-panel text-center mt-4 px-4 py-3">
+          <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
+            第 {{ currentRound + 1 }} / {{ totalRounds }} 回合
+          </div>
         <div class="flex flex-wrap justify-center gap-3 sm:gap-4 mt-2 text-xs sm:text-sm">
-          <div>
-            <span class="text-gray-500 dark:text-gray-400">序列長度：</span>
-            <span class="font-bold text-[var(--color-score)]">{{ currentLength }}</span>
-          </div>
-          <div>
-            <span class="text-gray-500 dark:text-gray-400">連續正確：</span>
-            <span class="font-bold text-[var(--color-combo)]">{{ streak }}</span>
+            <div>
+              <span class="text-[var(--color-text-muted)]">序列長度：</span>
+              <span class="font-bold text-[var(--color-score)]">{{ currentLength }}</span>
+            </div>
+            <div>
+              <span class="text-[var(--color-text-muted)]">連續正確：</span>
+              <span class="font-bold text-[var(--color-combo)]">{{ streak }}</span>
+            </div>
           </div>
         </div>
-      </div>
 
       <!-- 顯示區域 -->
-      <div class="display-area mt-6 sm:mt-8 px-4">
+        <div class="display-area game-panel mt-6 sm:mt-8 px-4 py-4">
         <!-- 聆聽階段 -->
         <div
           v-if="gamePhase === 'listening'"
@@ -393,9 +393,9 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           v-else-if="gamePhase === 'input'"
           class="input-phase"
         >
-          <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center mb-3 sm:mb-4">
-            按順序點擊聲音
-          </div>
+            <div class="text-xs sm:text-sm text-[var(--color-text-muted)] text-center mb-3 sm:mb-4">
+              按順序點擊聲音
+            </div>
 
           <!-- 輸入進度 -->
           <div class="input-progress flex justify-center gap-1 sm:gap-2 mb-4 sm:mb-6 min-h-12 sm:min-h-14 flex-wrap">
@@ -445,7 +445,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           class="result-phase text-center"
         >
           <div class="sequence-compare">
-            <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">正確順序</div>
+            <div class="text-sm text-[var(--color-text-muted)] mb-2">正確順序</div>
             <div class="correct-sequence flex justify-center gap-2 mb-4 flex-wrap">
               <div
                 v-for="(sound, index) in sequence"
@@ -498,4 +498,3 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   box-shadow: var(--shadow-score-ring);
 }
 </style>
-

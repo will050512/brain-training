@@ -221,20 +221,52 @@ function isSessionSynced(odId: string, sessionId: string): boolean {
   return loadSyncedIds(odId).has(sessionId)
 }
 
-function ensureMetrics(result: GameResult): StandardizedMetrics {
-  return result.metrics ?? {
-    completion: result.totalCount > 0 ? result.correctCount / result.totalCount : 0,
-    accuracy: result.accuracy,
-    speed: 50,
-    efficiency: 50,
+function ensureTracking(result: GameResult): TrackingData {
+  const base: TrackingData = result.tracking ?? {
+    correctCount: result.correctCount || 0,
+    wrongCount: Math.max(0, (result.totalCount || 0) - (result.correctCount || 0)),
+  }
+  const correctCount = Number.isFinite(base.correctCount) ? base.correctCount : result.correctCount || 0
+  const wrongCount = Number.isFinite(base.wrongCount)
+    ? base.wrongCount
+    : Math.max(0, (result.totalCount || 0) - correctCount)
+  const totalActions = Number.isFinite(base.totalActions)
+    ? base.totalActions
+    : (Number.isFinite(result.totalCount)
+        ? result.totalCount
+        : correctCount + wrongCount + (base.missedCount || 0))
+  const safeTotalActions = totalActions ?? 0
+  const missedCount = Number.isFinite(base.missedCount)
+    ? base.missedCount
+    : Math.max(0, safeTotalActions - correctCount - wrongCount)
+
+  return {
+    correctCount,
+    wrongCount,
+    missedCount,
+    maxCombo: Number.isFinite(base.maxCombo) ? base.maxCombo : 0,
+    avgReactionTime: Number.isFinite(base.avgReactionTime) ? base.avgReactionTime : (result.avgReactionTime || 0),
+    avgThinkingTime: Number.isFinite(base.avgThinkingTime) ? base.avgThinkingTime : undefined,
+    totalActions: safeTotalActions,
   }
 }
 
-function ensureTracking(result: GameResult): TrackingData {
-  return result.tracking ?? {
-    correctCount: result.correctCount,
-    wrongCount: Math.max(0, result.totalCount - result.correctCount),
-    avgReactionTime: result.avgReactionTime,
+function ensureMetrics(result: GameResult, tracking: TrackingData): StandardizedMetrics {
+  const base: StandardizedMetrics = result.metrics ?? {
+    completion: 0,
+    accuracy: 0,
+    speed: 0,
+    efficiency: 0,
+  }
+  const totalCount = Number.isFinite(result.totalCount)
+    ? result.totalCount
+    : tracking.totalActions || (tracking.correctCount + tracking.wrongCount + (tracking.missedCount || 0))
+  const derivedAccuracy = totalCount > 0 ? tracking.correctCount / totalCount : 0
+  return {
+    completion: Number.isFinite(base.completion) ? base.completion : (totalCount > 0 ? tracking.correctCount / totalCount : 0),
+    accuracy: Number.isFinite(base.accuracy) ? base.accuracy : derivedAccuracy,
+    speed: Number.isFinite(base.speed) ? base.speed : 50,
+    efficiency: Number.isFinite(base.efficiency) ? base.efficiency : 50,
   }
 }
 
@@ -263,8 +295,8 @@ function collectDataIssues(session: GameSession, metrics: StandardizedMetrics): 
 
 function mapSessionToPayload(session: GameSession, bestScore?: number): SheetPayload {
   const { result } = session
-  const metrics = ensureMetrics(result)
   const tracking = ensureTracking(result)
+  const metrics = ensureMetrics(result, tracking)
   const score = clampScore0to100(result.score)
   const dataIssues = collectDataIssues(session, metrics)
 
@@ -273,6 +305,13 @@ function mapSessionToPayload(session: GameSession, bestScore?: number): SheetPay
     loadClientSourceForUser(session.odId) ||
     detectClientSource()
   const inferredAuthProvider = (result.gameSpecific as any)?.authProvider || 'local'
+  const baseGameSpecific = (result.gameSpecific && typeof result.gameSpecific === 'object')
+    ? result.gameSpecific
+    : {}
+  const gameSpecific = {
+    ...baseGameSpecific,
+    mode: baseGameSpecific.mode ?? result.mode ?? 'free',
+  }
 
   return {
     action: 'upsertGameResults',
@@ -298,7 +337,7 @@ function mapSessionToPayload(session: GameSession, bestScore?: number): SheetPay
       avgThinkingTimeMs: tracking.avgThinkingTime,
     },
     bestScore,
-    gameSpecific: result.gameSpecific,
+    gameSpecific,
     displayStats: result.displayStats,
     clientSource: inferredClientSource,
     authProvider: inferredAuthProvider,

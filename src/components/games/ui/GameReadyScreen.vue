@@ -148,6 +148,12 @@ onUnmounted(() => {
   min-height: 100%;
   padding: 2rem;
   text-align: center;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(500px 260px at 15% 10%, rgba(59, 130, 246, 0.16), transparent 60%),
+    radial-gradient(520px 260px at 90% 0%, rgba(245, 158, 11, 0.14), transparent 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6), transparent 40%);
 }
 
 /* 遊戲資訊 */
@@ -157,7 +163,24 @@ onUnmounted(() => {
   align-items: center;
   gap: 1rem;
   max-width: 400px;
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.35s ease-out;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-2xl);
+  padding: 1.5rem 1.75rem;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.game-info::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(300px 120px at 20% 0%, rgba(59, 130, 246, 0.08), transparent 60%),
+    radial-gradient(260px 120px at 80% 100%, rgba(22, 163, 74, 0.08), transparent 60%);
+  pointer-events: none;
 }
 
 @keyframes fadeIn {
@@ -169,6 +192,7 @@ onUnmounted(() => {
   font-size: 4rem;
   line-height: 1;
   margin-bottom: 0.5rem;
+  filter: drop-shadow(0 6px 14px rgba(15, 23, 42, 0.2));
 }
 
 .game-title {
@@ -218,26 +242,26 @@ onUnmounted(() => {
   gap: 0.75rem;
   padding: 1rem 2.5rem;
   margin-top: 1rem;
-  background: var(--color-primary);
+  background: var(--gradient-primary);
   color: white;
   border: none;
   border-radius: var(--radius-xl);
   font-size: 1.25rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all var(--transition-normal);
-  box-shadow: var(--shadow-md);
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-tactile-lg);
 }
 
 .start-button:hover {
-  background: var(--color-primary-dark);
+  filter: brightness(1.05);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .start-button:active {
   transform: translateY(0);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-tactile-pressed);
 }
 
 .start-button-icon {
@@ -260,7 +284,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.7);
+  background: transparent;
   z-index: 200;
 }
 
@@ -327,6 +351,20 @@ onUnmounted(() => {
   
   .countdown-number {
     font-size: 4rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-info,
+  .countdown-number {
+    animation: none;
+  }
+
+  .start-button,
+  .start-button:hover,
+  .start-button:active {
+    transition: none;
+    transform: none;
   }
 }
 </style>

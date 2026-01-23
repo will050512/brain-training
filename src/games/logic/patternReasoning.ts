@@ -70,6 +70,17 @@ export const COLORS = [
   '#319795', // 青
   '#D53F8C', // 粉紅
 ]
+// 遞進題型使用：同色系由淺到深，降低判斷歧義
+export const PROGRESSION_COLORS = [
+  '#EBF8FF',
+  '#BEE3F8',
+  '#90CDF4',
+  '#63B3ED',
+  '#4299E1',
+  '#3182CE',
+  '#2B6CB0',
+  '#2C5282',
+]
 export const SIZES: ('small' | 'medium' | 'large')[] = ['small', 'medium', 'large']
 export const ROTATIONS = [0, 45, 90, 135, 180, 225, 270, 315]
 
@@ -115,6 +126,18 @@ function shuffle<T>(arr: T[]): T[] {
     result[j] = temp!
   }
   return result
+}
+
+function getOptionSignature(option: PatternElement): string {
+  return `${option.shape}|${option.color}|${option.size}|${option.rotation}`
+}
+
+function isQuestionValid(question: PatternQuestion, optionCount: number): boolean {
+  if (question.options.length !== optionCount) return false
+  if (question.correctIndex < 0 || question.correctIndex >= question.options.length) return false
+
+  const signatures = question.options.map(getOptionSignature)
+  return new Set(signatures).size === signatures.length
 }
 
 /**
@@ -333,52 +356,51 @@ export function generateAnalogyQuestion(optionCount: number): PatternQuestion {
  */
 export function generateProgressionQuestion(optionCount: number): PatternQuestion {
   const shape = randomFrom(SHAPES)
-  const colorIndex = Math.floor(Math.random() * (COLORS.length - 3))
+  const size: 'small' | 'medium' | 'large' = 'medium'
+  const colorIndex = Math.floor(Math.random() * (PROGRESSION_COLORS.length - 3))
+  const sequenceColors = PROGRESSION_COLORS.slice(colorIndex, colorIndex + 3)
 
   const sequence: PatternElement[] = []
-  for (let i = 0; i < 3; i++) {
+  for (const color of sequenceColors) {
     sequence.push({
       shape,
-      color: COLORS[colorIndex + i]!,
-      size: SIZES[i]!,
+      color,
+      size,
       rotation: 0,
     })
   }
 
-  // 答案可能性較複雜，簡化為形狀一致
+  // 僅顏色遞進，避免多重解讀
   const answer: PatternElement = {
     shape,
-    color: COLORS[colorIndex + 3] || COLORS[colorIndex]!,
-    size: 'large',
+    color: PROGRESSION_COLORS[colorIndex + 3]!,
+    size,
     rotation: 0,
   }
 
   // 產生錯誤選項
-  const wrongOptions: PatternElement[] = []
-  const usedShapes = new Set([shape])
-
-  while (wrongOptions.length < optionCount - 1) {
-    const wrongShape = randomFrom(SHAPES)
-    if (!usedShapes.has(wrongShape)) {
-      usedShapes.add(wrongShape)
-      wrongOptions.push({
-        shape: wrongShape,
-        color: answer.color,
-        size: 'large',
-        rotation: 0,
-      })
-    }
-  }
+  const usedColors = new Set([...sequenceColors, answer.color])
+  const wrongColorPool = PROGRESSION_COLORS.filter(color => !usedColors.has(color))
+  const extraColors = COLORS.filter(color => !usedColors.has(color) && !wrongColorPool.includes(color))
+  const colorPool = shuffle([...wrongColorPool, ...extraColors]).slice(0, optionCount - 1)
+  const wrongOptions = colorPool.map(color => ({
+    shape,
+    color,
+    size,
+    rotation: 0,
+  }))
 
   const options = shuffle([answer, ...wrongOptions])
-  const correctIndex = options.findIndex(o => o.shape === answer.shape)
+  const correctIndex = options.findIndex(
+    o => o.shape === answer.shape && o.color === answer.color && o.size === answer.size
+  )
 
   return {
     type: 'progression',
     sequence,
     correctIndex,
     options,
-    instruction: '請選擇符合規律的下一個圖案',
+    instruction: '顏色依序變化，請選擇下一個圖案',
   }
 }
 
@@ -389,20 +411,31 @@ export function generateQuestion(
   type: PatternType,
   optionCount: number
 ): PatternQuestion {
-  switch (type) {
-    case 'rotation':
-      return generateRotationQuestion(optionCount)
-    case 'sequence':
-      return generateSequenceQuestion(optionCount)
-    case 'transform':
-      return generateTransformQuestion(optionCount)
-    case 'analogy':
-      return generateAnalogyQuestion(optionCount)
-    case 'progression':
-      return generateProgressionQuestion(optionCount)
-    default:
-      return generateSequenceQuestion(optionCount)
+  const buildQuestion = () => {
+    switch (type) {
+      case 'rotation':
+        return generateRotationQuestion(optionCount)
+      case 'sequence':
+        return generateSequenceQuestion(optionCount)
+      case 'transform':
+        return generateTransformQuestion(optionCount)
+      case 'analogy':
+        return generateAnalogyQuestion(optionCount)
+      case 'progression':
+        return generateProgressionQuestion(optionCount)
+      default:
+        return generateSequenceQuestion(optionCount)
+    }
   }
+
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const question = buildQuestion()
+    if (isQuestionValid(question, optionCount)) {
+      return question
+    }
+  }
+
+  return buildQuestion()
 }
 
 /**

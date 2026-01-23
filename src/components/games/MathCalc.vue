@@ -293,16 +293,16 @@ watch(currentQuestionIndex, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 題目區域 -->
-      <div class="question-area mt-6 sm:mt-8 text-center px-2">
-        <div class="question-number text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2">
-          第 {{ currentRound + 1 }} / {{ totalRounds }} 題
-        </div>
+        <div class="question-area game-panel mt-6 sm:mt-8 text-center px-3 sm:px-4 py-3">
+          <div class="question-number text-xs sm:text-sm text-[var(--color-text-muted)] mb-2">
+            第 {{ currentRound + 1 }} / {{ totalRounds }} 題
+          </div>
 
         <div
           v-if="currentQuestion"
-          class="question-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold py-4 sm:py-6 md:py-8 select-none break-words leading-tight"
-          :class="{ 'shake': feedbackData?.type === 'wrong' && feedbackData?.show }"
-        >
+            class="question-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold py-4 sm:py-6 md:py-8 select-none break-words leading-tight rounded-2xl bg-[var(--color-bg-soft)] border border-[var(--color-border)]"
+            :class="{ 'shake': feedbackData?.type === 'wrong' && feedbackData?.show }"
+          >
           {{ currentQuestion.num1 }} {{ currentQuestion.operation }} {{ currentQuestion.num2 }} = ?
         </div>
 
@@ -342,5 +342,10 @@ watch(currentQuestionIndex, () => {
   25% { transform: translateX(-10px); }
   75% { transform: translateX(10px); }
 }
-</style>
 
+@media (prefers-reduced-motion: reduce) {
+  .shake {
+    animation: none;
+  }
+}
+</style>

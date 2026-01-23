@@ -309,8 +309,8 @@ watch(() => [props.difficulty, props.subDifficulty], () => {
 
 <template>
   <div 
-    class="garden-walk-game w-full h-full flex flex-col overflow-hidden bg-[#F1F8E9] relative"
-  >
+      class="garden-walk-game game-root maze-shell w-full h-full flex flex-col overflow-hidden relative"
+    >
     <!-- 背景裝飾 -->
     <div class="absolute inset-0 pointer-events-none opacity-10 pattern-grid"></div>
 
@@ -428,7 +428,7 @@ watch(() => [props.difficulty, props.subDifficulty], () => {
 
       <!-- 3. 控制面板 -->
       <div 
-        class="controls-panel shrink-0 bg-[#D7CCC8] border-stone-300 p-3 flex items-center justify-center"
+        class="controls-panel shrink-0 bg-[var(--color-surface-alt)] border-stone-300 p-3 flex items-center justify-center"
         :class="[
           isLandscapeLayout ? 'w-40 border-l flex-col justify-center gap-4' : 'w-full border-t pb-safe'
         ]"
@@ -479,6 +479,13 @@ watch(() => [props.difficulty, props.subDifficulty], () => {
 .pattern-grid {
   background-image: radial-gradient(#A1887F 1px, transparent 1px);
   background-size: 20px 20px;
+}
+
+.maze-shell {
+  background:
+    radial-gradient(420px 220px at 10% 0%, rgba(56, 189, 248, 0.18), transparent 60%),
+    radial-gradient(420px 240px at 90% 10%, rgba(34, 197, 94, 0.18), transparent 60%),
+    var(--color-bg-soft);
 }
 
 .bg-wall {

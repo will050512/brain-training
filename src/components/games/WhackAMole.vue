@@ -348,7 +348,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲場地 -->
       <div
-        class="game-field grid gap-3 sm:gap-4 p-4 sm:p-6 bg-gradient-to-b from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 rounded-2xl mt-4"
+        class="game-field whack-board grid gap-3 sm:gap-4 p-4 sm:p-6 rounded-2xl mt-4"
         :class="gridClass"
       >
         <div
@@ -409,6 +409,30 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 <style scoped>
 .hole {
   min-height: 100px;
+  border-radius: 18px;
+  background: radial-gradient(circle at 50% 60%, rgba(15, 23, 42, 0.2), rgba(15, 23, 42, 0.05));
+  box-shadow: inset 0 10px 18px rgba(15, 23, 42, 0.18), 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+
+.whack-board {
+  background:
+    radial-gradient(240px 120px at 15% 20%, rgba(34, 197, 94, 0.35), transparent 60%),
+    radial-gradient(260px 140px at 85% 10%, rgba(16, 185, 129, 0.25), transparent 60%),
+    linear-gradient(180deg, #e6f9d8 0%, #c8f2c1 100%);
+  border: 1px solid rgba(22, 163, 74, 0.25);
+  box-shadow: 0 18px 30px rgba(22, 163, 74, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.whack-board::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.35) 1px, transparent 1px);
+  background-size: 18px 18px;
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .hole-img {
@@ -426,11 +450,16 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   height: clamp(48px, 12vw, 96px);
   transition: transform 0.15s ease, opacity 0.15s ease;
   pointer-events: none;
+  filter: drop-shadow(0 10px 16px rgba(15, 23, 42, 0.25));
 }
 
 .actor-img.hit {
   transform: scale(1.1);
   opacity: 0.6;
+}
+
+.actor-img.bomb {
+  animation: bomb-wiggle 0.6s ease-in-out infinite;
 }
 
 .pop-enter-active,
@@ -458,5 +487,16 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   opacity: 0;
   transform: translateY(10px);
 }
-</style>
 
+@keyframes bomb-wiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  40% { transform: rotate(-6deg) scale(1.05); }
+  70% { transform: rotate(6deg) scale(1.05); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .actor-img.bomb {
+    animation: none;
+  }
+}
+</style>

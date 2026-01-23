@@ -313,32 +313,32 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲資訊 -->
-      <div class="game-info text-center mt-4 px-4">
-        <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-          第 {{ currentRound + 1 }} / {{ totalRounds }} 回合
-        </div>
-        <div class="flex flex-wrap justify-center gap-3 sm:gap-4 mt-2 text-xs sm:text-sm">
-          <div>
-            <span class="text-gray-500 dark:text-gray-400">序列長度：</span>
-            <span class="font-bold text-blue-500">{{ currentLength }}</span>
+        <div class="game-info game-panel text-center mt-4 px-4 py-3">
+          <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
+            第 {{ currentRound + 1 }} / {{ totalRounds }} 回合
           </div>
-          <div>
-            <span class="text-gray-500 dark:text-gray-400">連續正確：</span>
-            <span class="font-bold text-orange-500">{{ streak }}</span>
+          <div class="flex flex-wrap justify-center gap-3 sm:gap-4 mt-2 text-xs sm:text-sm">
+            <div>
+              <span class="text-[var(--color-text-muted)]">序列長度：</span>
+              <span class="font-bold text-[var(--color-primary)]">{{ currentLength }}</span>
+            </div>
+            <div>
+              <span class="text-[var(--color-text-muted)]">連續正確：</span>
+              <span class="font-bold text-[var(--color-combo)]">{{ streak }}</span>
+            </div>
           </div>
         </div>
-      </div>
 
       <!-- 顯示區域 -->
-      <div class="display-area mt-6 sm:mt-8 px-4">
+        <div class="display-area game-panel mt-6 sm:mt-8 px-4 py-4">
         <!-- 顯示階段 -->
         <div
           v-if="showingPhase === 'showing'"
           class="showing-phase text-center"
         >
-          <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4">
-            記住手勢順序...
-          </div>
+            <div class="text-xs sm:text-sm text-[var(--color-text-muted)] mb-3 sm:mb-4">
+              記住手勢順序...
+            </div>
           <div
             class="gesture-display text-6xl sm:text-7xl md:text-8xl transition-all duration-200 min-h-24 sm:min-h-28 md:min-h-32 flex items-center justify-center"
             :class="{ 'opacity-0 scale-50': displayGesture === null, 'opacity-100 scale-110': displayGesture !== null }"
@@ -355,9 +355,9 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           v-else-if="showingPhase === 'input'"
           class="input-phase"
         >
-          <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center mb-3 sm:mb-4">
-            按順序點擊手勢
-          </div>
+            <div class="text-xs sm:text-sm text-[var(--color-text-muted)] text-center mb-3 sm:mb-4">
+              按順序點擊手勢
+            </div>
 
           <!-- 輸入進度 -->
           <div class="input-progress flex justify-center gap-1 sm:gap-2 mb-4 sm:mb-6 min-h-10 sm:min-h-12 flex-wrap">
@@ -397,7 +397,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           class="result-phase text-center"
         >
           <div class="sequence-compare">
-            <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">正確順序</div>
+              <div class="text-sm text-[var(--color-text-muted)] mb-2">正確順序</div>
             <div class="correct-sequence flex justify-center gap-2 mb-4">
               <div
                 v-for="(gesture, index) in roundState?.sequence"
@@ -407,7 +407,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
                 {{ gesture.icon }}
               </div>
             </div>
-            <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">你的順序</div>
+              <div class="text-sm text-[var(--color-text-muted)] mb-2">你的順序</div>
             <div class="user-sequence flex justify-center gap-2">
               <div
                 v-for="(gesture, index) in roundState?.userInput"
@@ -442,4 +442,3 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   transform: scale(0.9);
 }
 </style>
-

@@ -307,18 +307,18 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲資訊 -->
-      <div class="game-info text-center mt-4 px-4">
-        <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-          第 {{ currentRound + 1 }} / {{ totalRounds }} 回合
+        <div class="game-info game-panel text-center mt-4 px-4 py-3">
+          <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
+            第 {{ currentRound + 1 }} / {{ totalRounds }} 回合
+          </div>
+          <div class="text-xs sm:text-sm mt-1">
+            <span class="text-[var(--color-text-muted)]">序列長度：</span>
+            <span class="font-bold text-[var(--color-primary)]">{{ currentLength }}</span>
+          </div>
         </div>
-        <div class="text-xs sm:text-sm mt-1">
-          <span class="text-gray-500 dark:text-gray-400">序列長度：</span>
-          <span class="font-bold text-blue-500">{{ currentLength }}</span>
-        </div>
-      </div>
 
       <!-- 顯示區域 -->
-      <div class="display-area mt-4 sm:mt-6 px-2 sm:px-4 flex flex-col flex-grow">
+        <div class="display-area game-panel mt-4 sm:mt-6 px-3 sm:px-4 py-4 flex flex-col flex-grow">
         <!-- 顯示階段：顯示數字 -->
           <div
             v-if="showingPhase === 'showing'"
@@ -439,4 +439,3 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   transform: scale(0.95);
 }
 </style>
-

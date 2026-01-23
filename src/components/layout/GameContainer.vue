@@ -186,7 +186,7 @@ provide('gameContainer', {
         class="header-btn back-btn"
         @click="handleBack"
       >
-        ←
+        返回
       </button>
       
       <div class="header-title">
@@ -304,8 +304,10 @@ provide('gameContainer', {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100svh;
   min-height: 100dvh;
   height: 100vh;
+  height: 100svh;
   height: 100dvh;
   background: var(--color-bg);
   position: relative;
@@ -313,6 +315,9 @@ provide('gameContainer', {
   /* 確保在所有裝置上都填滿視窗 */
   width: 100vw;
   width: 100dvw;
+  box-sizing: border-box;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 /* 遊戲頭部 */
@@ -339,6 +344,13 @@ provide('gameContainer', {
   font-size: 1.25rem;
   cursor: pointer;
   transition: all var(--transition-fast);
+}
+
+.back-btn {
+  width: auto;
+  min-width: 44px;
+  padding: 0 12px;
+  font-size: 1rem;
 }
 
 .header-btn:hover {
@@ -377,6 +389,7 @@ provide('gameContainer', {
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  min-height: 0;
 }
 
 .game-content {
@@ -385,6 +398,8 @@ provide('gameContainer', {
   flex-direction: column;
   padding: var(--spacing-md);
   overflow: auto;
+  min-height: 0;
+  padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom));
 }
 
 /* 暫停遮罩 */
@@ -450,6 +465,7 @@ provide('gameContainer', {
 
 .is-landscape .game-content {
   padding: var(--spacing-sm);
+  padding-bottom: calc(var(--spacing-sm) + env(safe-area-inset-bottom));
 }
 
 /* 動畫 */

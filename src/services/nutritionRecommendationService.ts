@@ -1,6 +1,6 @@
 import type { CognitiveDimension, CognitiveScores } from '@/types/cognitive'
 import type { GameSession } from '@/types/game'
-import { calculateScoreHistory } from '@/services/scoreCalculator'
+import { calculateOverallCognitiveScores, calculateScoreHistory } from '@/services/scoreCalculator'
 import { getLatestMiniCogResult } from '@/services/db'
 import { getTrendSummary } from '@/services/declineDetectionService'
 import type { DeclineDetectionMode } from '@/stores/settingsStore'
@@ -60,18 +60,10 @@ export async function generateNutritionResultForUser(
 
   const scoreHistory = toNutritionScoreHistory(input.sessions)
 
-  const fallbackScores: CognitiveScores = {
-    reaction: 70,
-    logic: 70,
-    memory: 70,
-    cognition: 70,
-    coordination: 70,
-    attention: 70
-  }
-
+  const derivedScores = calculateOverallCognitiveScores(input.sessions)
   const latestFromHistory = scoreHistory.length > 0
-    ? (scoreHistory[scoreHistory.length - 1]?.scores ?? fallbackScores)
-    : fallbackScores
+    ? (scoreHistory[scoreHistory.length - 1]?.scores ?? derivedScores)
+    : derivedScores
 
   const cognitiveScores = input.cognitiveScores ?? latestFromHistory
 

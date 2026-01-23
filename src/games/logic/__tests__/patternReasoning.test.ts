@@ -102,6 +102,30 @@ describe('圖案推理遊戲邏輯', () => {
       expect(question.sequence.length).toBe(3)
       expect(question.options.length).toBe(4)
     })
+
+    it('遞進題目應保持形狀與大小一致，避免多重答案', () => {
+      const question = generateProgressionQuestion(5)
+      const shape = question.sequence[0]?.shape
+      const size = question.sequence[0]?.size
+
+      expect(shape).toBeDefined()
+      expect(size).toBeDefined()
+
+      question.sequence.forEach(item => {
+        expect(item.shape).toBe(shape)
+        expect(item.size).toBe(size)
+      })
+
+      question.options.forEach(option => {
+        expect(option.shape).toBe(shape)
+        expect(option.size).toBe(size)
+      })
+
+      const signatures = question.options.map(
+        option => `${option.shape}|${option.color}|${option.size}|${option.rotation}`
+      )
+      expect(new Set(signatures).size).toBe(question.options.length)
+    })
   })
 
   describe('generateQuestion', () => {

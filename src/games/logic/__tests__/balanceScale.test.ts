@@ -45,6 +45,16 @@ describe('天平秤重遊戲邏輯', () => {
         expect(round.rightWeight).toBeGreaterThan(round.leftWeight)
       }
     })
+
+    it('重量差應在難度設定範圍內', () => {
+      const config = DIFFICULTY_CONFIGS.easy
+      for (let i = 0; i < 10; i++) {
+        const round = generateRound(config)
+        const diff = Math.abs(round.leftWeight - round.rightWeight)
+        expect(diff).toBeGreaterThanOrEqual(config.minDiff)
+        expect(diff).toBeLessThanOrEqual(config.maxDiff)
+      }
+    })
   })
 
   describe('validateAnswer', () => {

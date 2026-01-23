@@ -294,27 +294,27 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 題目資訊 -->
-      <div class="round-info text-center mt-4">
-        <div class="text-sm text-gray-500 dark:text-gray-400">
+      <div class="round-info game-panel text-center mt-4 px-4 py-3">
+        <div class="text-sm text-[var(--color-text-muted)]">
           第 {{ currentRound + 1 }} / {{ totalRounds }} 回合
         </div>
         
         <!-- 模式提示 -->
         <div 
           v-if="isReverse"
-          class="mode-hint mt-2 inline-block px-3 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 rounded-full text-sm font-medium"
+          class="mode-hint mt-2 inline-block px-3 py-1 bg-[var(--color-warning-bg)] text-[var(--color-warning)] rounded-full text-sm font-medium"
         >
           ⚠️ 反向模式：選擇會輸的！
         </div>
         <div 
           v-else
-          class="mode-hint mt-2 inline-block px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium"
+          class="mode-hint mt-2 inline-block px-3 py-1 bg-[var(--color-primary-bg)] text-[var(--color-primary)] rounded-full text-sm font-medium"
         >
           正常模式：選擇會贏的！
         </div>
       </div>      <!-- 電腦出拳 -->
-      <div class="computer-gesture mt-8 text-center">
-        <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">電腦出：</div>
+      <div class="computer-gesture game-panel mt-6 text-center px-4 py-4">
+        <div class="text-sm text-[var(--color-text-muted)] mb-2">電腦出：</div>
         <div class="gesture-display text-8xl">
           <img
             v-if="getGestureImage(computerGesture)"
@@ -333,7 +333,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
       <!-- 結果顯示 -->
       <div 
         v-if="showResult && currentRoundResult"
-        class="result-display mt-6 text-center"
+        class="result-display game-panel mt-6 text-center px-4 py-4"
       >
                 <div class="player-choice text-4xl mb-2">
           你選：
@@ -362,7 +362,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         <button
           v-for="gesture in GESTURE_LIST"
           :key="gesture"
-          class="gesture-btn min-w-[80px] w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-blue-500 hover:text-white transition-all transform hover:scale-105 active:scale-95 flex flex-col items-center justify-center gap-1 p-2"
+          class="gesture-btn min-w-[80px] w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-primary)] hover:text-[var(--color-text-inverse)] transition-all transform hover:scale-105 active:scale-95 flex flex-col items-center justify-center gap-1 p-2 shadow-sm"
           @click="handleSelectGesture(gesture)"
         >
                     <img
@@ -417,7 +417,6 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   transform: scale(0.9);
 }
 </style>
-
 
 
 

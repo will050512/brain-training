@@ -350,7 +350,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 工具列 -->
-      <div class="toolbar flex justify-center gap-4 mt-4 px-4">
+        <div class="toolbar game-panel flex justify-center gap-4 mt-4 px-4 py-2">
         <button
           class="tool-btn min-h-[48px] px-4 py-2 rounded-lg bg-yellow-200 dark:bg-yellow-700 hover:bg-yellow-300 dark:hover:bg-yellow-600 transition-colors text-base sm:text-lg font-medium"
           @click="showHint"
@@ -360,9 +360,9 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
       </div>
 
       <!-- 遊戲資訊 -->
-      <div class="game-info text-center mt-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 px-4">
+        <div class="game-info game-panel text-center mt-4 text-xs sm:text-sm text-[var(--color-text-muted)] px-4 py-2">
         <div class="flex flex-wrap justify-center gap-2 sm:gap-4">
-          <span>下一個：<strong class="text-blue-600">{{ currentTarget }}</strong></span>
+            <span>下一個：<strong class="text-[var(--color-primary)]">{{ currentTarget }}</strong></span>
           <span class="hidden sm:inline">|</span>
           <span>已連接：{{ connectedNumbersCount }} / {{ config.count }}</span>
           <span class="hidden sm:inline">|</span>
@@ -373,7 +373,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
       <!-- 遊戲區域 -->
       <div
         ref="containerRef"
-        class="game-area relative mt-4 sm:mt-6 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden mx-4"
+          class="game-area game-panel relative mt-4 sm:mt-6 rounded-xl overflow-hidden mx-4"
         :style="{
           width: 'calc(100% - 2rem)',
           aspectRatio: `${config.canvasWidth}/${config.canvasHeight}`,
@@ -446,4 +446,3 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   max-width: 420px;
 }
 </style>
-

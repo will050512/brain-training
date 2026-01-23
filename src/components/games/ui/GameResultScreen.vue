@@ -187,6 +187,9 @@ const displayGradeMessage = computed(() => {
   padding: 2rem;
   text-align: center;
   animation: slideIn 0.4s ease-out;
+  background:
+    radial-gradient(520px 240px at 10% 10%, rgba(59, 130, 246, 0.12), transparent 60%),
+    radial-gradient(520px 240px at 90% 0%, rgba(245, 158, 11, 0.12), transparent 60%);
 }
 
 @keyframes slideIn {
@@ -235,6 +238,7 @@ const displayGradeMessage = computed(() => {
   font-weight: 900;
   margin: 0 auto 0.75rem;
   animation: gradeAppear 0.5s ease-out;
+  box-shadow: var(--shadow-lg);
 }
 
 @keyframes gradeAppear {
@@ -276,6 +280,7 @@ const displayGradeMessage = computed(() => {
   font-weight: 900;
   color: var(--color-primary);
   line-height: 1;
+  text-shadow: 0 6px 14px rgba(30, 58, 138, 0.25);
 }
 
 .high-score {
@@ -299,8 +304,10 @@ const displayGradeMessage = computed(() => {
   align-items: center;
   gap: 0.25rem;
   padding: 1rem;
-  background: var(--color-bg-secondary);
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .stat-icon {
@@ -337,11 +344,12 @@ const displayGradeMessage = computed(() => {
   cursor: pointer;
   transition: all var(--transition-fast);
   border: none;
+  box-shadow: var(--shadow-tactile-md);
 }
 
 .replay-button {
-  background: var(--color-primary);
-  color: white;
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
 }
 
 .replay-button:hover {
@@ -351,8 +359,8 @@ const displayGradeMessage = computed(() => {
 }
 
 .back-button {
-  background: var(--color-bg-secondary);
-  color: var(--color-text-primary);
+  background: var(--color-bg-soft);
+  color: var(--color-text);
   border: 1px solid var(--color-border);
 }
 
@@ -400,6 +408,19 @@ const displayGradeMessage = computed(() => {
   .action-button {
     flex: 1;
     justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-screen,
+  .grade,
+  .new-high-score {
+    animation: none;
+  }
+
+  .action-button {
+    transition: none;
+    transform: none;
   }
 }
 </style>

@@ -127,6 +127,11 @@ function getRandomItem(pool: WeightItem[]): WeightItem {
   return pool[index] ?? pool[0]!
 }
 
+function getRandomItemByWeight(pool: WeightItem[], weight: number): WeightItem {
+  const matches = pool.filter(item => item.weight === weight)
+  return getRandomItem(matches.length > 0 ? matches : pool)
+}
+
 /**
  * 產生一側的物品
  */
@@ -136,6 +141,73 @@ function generateSideItems(count: number, pool: WeightItem[]): WeightItem[] {
     items.push(getRandomItem(pool))
   }
   return items
+}
+
+function buildWeightCombos(maxItems: number, weights: number[]): Map<number, number[]> {
+  const combos = new Map<number, number[]>()
+  combos.set(0, [])
+
+  for (let count = 0; count < maxItems; count++) {
+    const entries = Array.from(combos.entries())
+    for (const [total, combo] of entries) {
+      for (const weight of weights) {
+        const nextTotal = total + weight
+        if (!combos.has(nextTotal)) {
+          combos.set(nextTotal, [...combo, weight])
+        }
+      }
+    }
+  }
+
+  combos.delete(0)
+  return combos
+}
+
+function pickTotals(
+  totals: number[],
+  minDiff: number,
+  maxDiff: number
+): [number, number] | null {
+  const candidates: Array<[number, number]> = []
+  for (let i = 0; i < totals.length; i++) {
+    for (let j = i + 1; j < totals.length; j++) {
+      const left = totals[i]!
+      const right = totals[j]!
+      const diff = Math.abs(left - right)
+      if (diff >= minDiff && diff <= maxDiff) {
+        candidates.push([left, right])
+      }
+    }
+  }
+
+  if (candidates.length === 0 && maxDiff >= 1) {
+    for (let i = 0; i < totals.length; i++) {
+      for (let j = i + 1; j < totals.length; j++) {
+        const left = totals[i]!
+        const right = totals[j]!
+        const diff = Math.abs(left - right)
+        if (diff > 0 && diff <= maxDiff) {
+          candidates.push([left, right])
+        }
+      }
+    }
+  }
+
+  if (candidates.length === 0) {
+    for (let i = 0; i < totals.length; i++) {
+      for (let j = i + 1; j < totals.length; j++) {
+        const left = totals[i]!
+        const right = totals[j]!
+        if (left !== right) {
+          candidates.push([left, right])
+        }
+      }
+    }
+  }
+
+  if (candidates.length === 0) return null
+  const pick = candidates[Math.floor(Math.random() * candidates.length)]!
+  return Math.random() > 0.5 ? pick : [pick[1], pick[0]]
 }
 
 /**
@@ -153,6 +225,9 @@ export function generateRound(config: BalanceScaleConfig): RoundData {
   const minDiff = Math.max(1, config.minDiff)
   const maxDiff = Math.max(minDiff, config.maxDiff)
   const pool = getWeightPool(config)
+  const weightValues = Array.from(new Set(pool.map(item => item.weight)))
+  const combos = buildWeightCombos(maxItems, weightValues)
+  const totals = Array.from(combos.keys())
 
   let leftItems: WeightItem[] = []
   let rightItems: WeightItem[] = []
@@ -177,10 +252,23 @@ export function generateRound(config: BalanceScaleConfig): RoundData {
     }
   }
 
-  if (leftWeight === rightWeight) {
-    const extraItem = getRandomItem(pool)
-    leftItems = [...leftItems, extraItem]
-    leftWeight = calculateWeight(leftItems)
+  const finalDiff = Math.abs(leftWeight - rightWeight)
+  if (leftWeight === rightWeight || finalDiff < minDiff || finalDiff > maxDiff) {
+    const pickedTotals = pickTotals(totals, minDiff, maxDiff)
+    if (pickedTotals) {
+      const [leftTotal, rightTotal] = pickedTotals
+      const leftCombo = combos.get(leftTotal) ?? []
+      const rightCombo = combos.get(rightTotal) ?? []
+
+      leftItems = leftCombo.map(weight => getRandomItemByWeight(pool, weight))
+      rightItems = rightCombo.map(weight => getRandomItemByWeight(pool, weight))
+      leftWeight = leftTotal
+      rightWeight = rightTotal
+    } else {
+      const extraItem = getRandomItem(pool)
+      leftItems = [...leftItems, extraItem]
+      leftWeight = calculateWeight(leftItems)
+    }
   }
 
   return {

@@ -144,7 +144,9 @@ const armRotation = computed(() => {
   return calculateArmRotation(
     currentRoundData.value.leftWeight,
     currentRoundData.value.rightWeight,
-    config.value.showTilt
+    config.value.showTilt,
+    config.value.tiltStrength,
+    config.value.maxTilt
   )
 })
 
@@ -318,17 +320,17 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <template v-else-if="phase === 'playing' || phase === 'paused'">
 
       <!-- 題目資訊 -->
-      <div class="question-info text-center mt-4 px-4">
-        <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-          第 {{ currentRound + 1 }} / {{ totalRounds }} 題
-        </div>
+        <div class="question-info game-panel text-center mt-4 px-4 py-3">
+          <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
+            第 {{ currentRound + 1 }} / {{ totalRounds }} 題
+          </div>
         <div class="text-base sm:text-lg font-medium mt-2">
           哪一邊比較重？
         </div>
       </div>
 
       <!-- 天平 -->
-      <div class="scale-container relative mt-4 sm:mt-6 px-4" v-if="currentRoundData">
+        <div class="scale-container game-panel relative mt-4 sm:mt-6 px-4 py-4" v-if="currentRoundData">
         <img class="scale-bg" :src="scaleImg" alt="" aria-hidden="true" />
         <!-- 天平支架 -->
         <div class="scale-stand">
@@ -344,11 +346,14 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         >
           <!-- 左盤 -->
           <div
-            class="scale-pan left cursor-pointer hover:ring-4 hover:ring-blue-300 transition-all min-h-[120px] sm:min-h-[140px]"
+            class="scale-pan left transition-all min-h-[120px] sm:min-h-[140px]"
             :class="{
+              'cursor-pointer hover:ring-4 hover:ring-blue-300': isPlaying && !showResult,
+              'pointer-events-none': showResult || !isPlaying,
               'ring-4 ring-green-400': showResult && currentRoundData.leftWeight > currentRoundData.rightWeight,
               'ring-4 ring-red-400': showResult && currentRoundData.leftWeight < currentRoundData.rightWeight && selectedSide === 'left'
             }"
+            :aria-disabled="showResult || !isPlaying"
             @click="handleSelectSide('left')"
           >
             <div class="pan-items">
@@ -374,11 +379,14 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
           <!-- 右盤 -->
           <div
-            class="scale-pan right cursor-pointer hover:ring-4 hover:ring-blue-300 transition-all min-h-[120px] sm:min-h-[140px]"
+            class="scale-pan right transition-all min-h-[120px] sm:min-h-[140px]"
             :class="{
+              'cursor-pointer hover:ring-4 hover:ring-blue-300': isPlaying && !showResult,
+              'pointer-events-none': showResult || !isPlaying,
               'ring-4 ring-green-400': showResult && currentRoundData.rightWeight > currentRoundData.leftWeight,
               'ring-4 ring-red-400': showResult && currentRoundData.rightWeight < currentRoundData.leftWeight && selectedSide === 'right'
             }"
+            :aria-disabled="showResult || !isPlaying"
             @click="handleSelectSide('right')"
           >
             <div class="pan-items">
@@ -417,8 +425,8 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
       <!-- 重量提示（簡單模式） -->
       <div
         v-if="config.showWeightHint && currentRoundData"
-        class="weight-hint text-center mt-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 px-4"
-      >
+          class="weight-hint text-center mt-4 text-xs sm:text-sm text-[var(--color-text-muted)] px-4"
+        >
         <div class="flex flex-wrap justify-center gap-2 sm:gap-4">
           <span>左邊: {{ currentRoundData.leftWeight }} 重量單位</span>
           <span class="hidden sm:inline">|</span>
@@ -444,6 +452,10 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   align-items: center;
   justify-content: center;
   perspective: 1000px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-sm);
 }
 
 .scale-bg {
@@ -491,7 +503,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   position: relative;
   width: min(400px, 100%);
   height: 12px;
-  background: linear-gradient(to bottom, #D4AF37, #B8860B);
+  background: linear-gradient(to bottom, var(--color-accent-warm), #B8860B);
   border-radius: 6px;
   display: flex;
   justify-content: space-between;
@@ -521,7 +533,8 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 .pan-items {
   min-height: 80px;
   padding: 12px;
-  background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+  background: var(--color-surface);
+  border: 2px solid var(--color-border-light);
   border-radius: 50%;
   width: 120px;
   display: flex;
@@ -529,7 +542,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   justify-content: center;
   align-items: center;
   gap: 4px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .weight-item {
@@ -550,8 +563,8 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   right: -2px;
   min-width: 18px;
   padding: 0 4px;
-  background: #1f2937;
-  color: #fff;
+  background: var(--color-text);
+  color: var(--color-text-inverse);
   font-size: 10px;
   line-height: 16px;
   border-radius: 999px;
@@ -598,4 +611,3 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   
 }
 </style>
-

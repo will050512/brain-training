@@ -722,7 +722,7 @@ import { useUserStore, useGameStore } from '@/stores'
 import { useResponsive } from '@/composables/useResponsive'
 import { COGNITIVE_DIMENSIONS, emptyCognitiveScores, type CognitiveDimensionInfo } from '@/types/cognitive'
 import { DIFFICULTIES } from '@/types/game'
-import { calculateCognitiveIndex, generateTrainingSuggestions } from '@/services/scoreCalculator'
+import { calculateCognitiveDomainScores, calculateCognitiveIndex, generateTrainingSuggestions } from '@/services/scoreCalculator'
 import { getLatestMiniCogResult, getUserMiniCogResults } from '@/services/db'
 import { type MiniCogResult, getRiskLevelDescription, calculateMiniCogTotal } from '@/services/miniCogService'
 import type { ReportUserInfo } from '@/services/pdfService'
@@ -1020,13 +1020,10 @@ async function downloadReport() {
         }
      }
 
-     const cognitiveScoreData = {
-       memory: gameStore.cognitiveScores.memory || 0,
-       attention: gameStore.cognitiveScores.attention || 0,
-       processing: gameStore.cognitiveScores.cognition || 0,
-       executive: gameStore.cognitiveScores.logic || 0,
-       language: gameStore.cognitiveScores.coordination || 0
-     }
+     const cognitiveScoreData = calculateCognitiveDomainScores(
+       gameStore.cognitiveScores,
+       gameStore.dimensionSampleCounts
+     )
      
      const trendData = gameStore.scoreHistory.slice(-20).map((h) => {
         const dims = Object.values(h.scores).filter(v => v > 0)

@@ -373,7 +373,7 @@ watch(phase, () => {
 </script>
 
 <template>
-  <div class="rhythm-game-root w-full max-w-2xl mx-auto p-4 select-none">
+  <div class="rhythm-game-root game-root w-full max-w-2xl mx-auto p-4 select-none">
     <GameReadyScreen
       v-if="phase === 'ready'"
       title="節奏拍拍樂"
@@ -385,19 +385,19 @@ watch(phase, () => {
     />
 
     <template v-else-if="phase === 'playing' || phase === 'paused'">
-      <div class="flex justify-between items-center mb-6 bg-white dark:bg-gray-800 p-3 rounded-xl shadow-sm">
-        <div class="text-sm font-bold text-gray-500">
+      <div class="game-panel flex justify-between items-center mb-6 p-3 rounded-xl">
+        <div class="text-sm font-bold text-[var(--color-text-muted)]">
           回合 {{ currentRound + 1 }}/{{ config.totalRounds }}
         </div>
-        <div class="text-xl font-bold text-blue-600">
+        <div class="text-xl font-bold text-[var(--color-primary)]">
           {{ score }} 分
         </div>
-        <div class="text-sm font-medium px-2 py-1 rounded bg-gray-100 dark:bg-gray-700">
+        <div class="text-sm font-medium px-2 py-1 rounded bg-[var(--color-bg-soft)]">
           {{ currentPattern?.name }}
         </div>
       </div>
 
-      <div class="game-board relative bg-gray-50 dark:bg-gray-900 rounded-2xl p-6 sm:p-10 shadow-inner border-2 border-gray-200 dark:border-gray-700 min-h-[200px] flex flex-col justify-center overflow-hidden">
+      <div class="game-board game-panel relative rounded-2xl p-6 sm:p-10 min-h-[200px] flex flex-col justify-center overflow-hidden">
         
         <div class="absolute top-4 left-0 w-full text-center z-10 transition-colors duration-300"
              :class="gamePhase === 'input' ? 'text-green-600 font-bold' : 'text-gray-400'">
@@ -488,5 +488,25 @@ watch(phase, () => {
 }
 .beat-note {
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.game-board {
+  background:
+    radial-gradient(240px 120px at 15% 0%, rgba(59, 130, 246, 0.12), transparent 60%),
+    radial-gradient(240px 120px at 90% 10%, rgba(14, 165, 233, 0.12), transparent 60%),
+    var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-lg);
+}
+
+.tap-button {
+  box-shadow: 0 14px 26px rgba(30, 58, 138, 0.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tap-button,
+  .tap-button .group-active\:scale-90 {
+    transition: none;
+  }
 }
 </style>

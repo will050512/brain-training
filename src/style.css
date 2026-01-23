@@ -9,6 +9,33 @@
 :root {
   --font-sans: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
   --font-display: 'Noto Serif TC', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', serif;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 28px;
+  --min-touch-target: 44px;
+  --layout-padding: 1rem;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-full: 9999px;
+
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
   /* 語義化顏色（主題感知）- Blue/Green with Warm Accents */
   --color-bg: #F8FAFC;
   --color-bg-soft: #F1F5F9;
@@ -162,18 +189,6 @@
   --shadow-glow: 0 0 15px rgba(245, 158, 11, 0.2);
   --shadow-top: 0 -6px 16px rgba(15, 23, 42, 0.08);
 
-  /* 通用互動效果 */
-  .hover-lift {
-    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
-  }
-  .hover-lift:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-card-hover);
-  }
-  .hover-lift:active {
-    transform: translateY(-1px);
-  }
-
   --shadow-score-ring: 0 0 0 8px rgba(30, 58, 138, 0.3);
   --shadow-score-dot: 0 0 0 0 rgba(30, 58, 138, 0.45);
   
@@ -183,6 +198,18 @@
   --gradient-card: linear-gradient(145deg, #FFFFFF 0%, #F1F5F9 100%);
   --gradient-accent: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
   --gradient-dark: linear-gradient(135deg, #0B1220 0%, #111827 100%);
+}
+
+/* 通用互動效果 */
+.hover-lift {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+}
+.hover-lift:active {
+  transform: translateY(-1px);
 }
 
 /* 深色模式變數 */
@@ -1987,6 +2014,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100svh;
   min-height: 100dvh;
   background: var(--color-bg);
 }
@@ -1998,8 +2026,10 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
     align-items: center;
     justify-content: center;
     padding: var(--spacing-md);
+    padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom));
     overflow-x: hidden;
     overflow-y: auto;
+    min-height: 0;
   }
 
 /* 遊戲內容自適應容器 */
@@ -2011,8 +2041,11 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
     align-items: center;
     width: 100%;
     max-width: 100%;
+    max-height: 100%;
     overflow-x: hidden;
     overflow-y: auto;
+    min-height: 0;
+    padding-bottom: var(--spacing-sm);
   }
 
   /* ===== Page Structure Helpers ===== */
@@ -2226,6 +2259,60 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   opacity: 1;
 }
 
+.ready-hero {
+  position: relative;
+  overflow: hidden;
+  background: var(--gradient-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+}
+
+.ready-screen-fit {
+  justify-content: center;
+}
+
+.ready-hero-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+.ready-hero-main,
+.ready-hero-side {
+  width: 100%;
+}
+
+.ready-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(320px 160px at 15% 0%, rgba(59, 130, 246, 0.14), transparent 60%),
+    radial-gradient(320px 160px at 90% 100%, rgba(34, 197, 94, 0.12), transparent 60%);
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.ready-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 1024px) {
+  .ready-screen-fit {
+    justify-content: flex-start;
+  }
+
+  .ready-hero-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    align-items: start;
+    gap: var(--spacing-lg);
+  }
+}
+
 /* 結算畫面：允許內容捲動，避免按鈕被裁切 */
 .game-content-fit.game-result-scroll {
   justify-content: flex-start;
@@ -2239,6 +2326,23 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   max-height: 100%;
   display: flex;
   flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.game-result-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(360px 160px at 15% 0%, rgba(59, 130, 246, 0.12), transparent 60%),
+    radial-gradient(360px 160px at 90% 100%, rgba(245, 158, 11, 0.12), transparent 60%);
+  pointer-events: none;
+  opacity: 0.8;
 }
 
 .game-result-body {
@@ -2246,6 +2350,8 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   min-height: 0;
   overflow: auto;
   padding-bottom: var(--spacing-sm);
+  position: relative;
+  z-index: 1;
 }
 
 .game-result-actions {
@@ -2255,6 +2361,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   padding-top: var(--spacing-sm);
   padding-bottom: calc(var(--spacing-sm) + env(safe-area-inset-bottom));
   border-top: 1px solid var(--color-border);
+  z-index: 1;
 }
 
   .game-content-full {
@@ -2263,11 +2370,37 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
     height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    justify-content: flex-start;
+    align-items: stretch;
     overflow-x: hidden;
     overflow-y: auto;
+    padding-top: var(--spacing-sm);
+    padding-bottom: var(--spacing-md);
   }
+
+@keyframes bounce-in {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-bounce-in {
+    animation: none;
+  }
+}
 
 /* 手機豎屏模式 (Portrait) */
 @media (orientation: portrait) and (max-width: 768px) {
@@ -2501,6 +2634,50 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 }
 
 /* ===== 全域橫屏/豎屏響應式佈局系統 ===== */
+
+/* 遊戲共用外觀 */
+.game-root {
+  position: relative;
+  border-radius: var(--radius-2xl);
+  background:
+    radial-gradient(520px 260px at 10% 0%, rgba(59, 130, 246, 0.08), transparent 60%),
+    radial-gradient(520px 260px at 100% 10%, rgba(245, 158, 11, 0.08), transparent 60%);
+}
+
+.game-root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.4), transparent 35%);
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.game-root > * {
+  position: relative;
+  z-index: 1;
+}
+
+.game-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-md);
+}
+
+.game-panel-soft {
+  background: var(--gradient-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-root {
+    background: var(--color-bg);
+  }
+}
 
 /* 手機橫屏模式全域優化 (max-height: 500px) */
 @media (orientation: landscape) and (max-height: 500px) {
