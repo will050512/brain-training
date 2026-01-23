@@ -14,9 +14,11 @@ const props = withDefaults(defineProps<{
   history: ScoreHistory[]
   showWarningLines?: boolean  // 是否顯示警示線
   professionalMode?: boolean  // 專業模式使用更嚴格的閾值
+  chartType?: 'line' | 'bar'
 }>(), {
   showWarningLines: true,
-  professionalMode: false
+  professionalMode: false,
+  chartType: 'line'
 })
 
 const chartRef = ref<HTMLElement | null>(null)
@@ -72,47 +74,70 @@ function updateChart(): void {
     return `${date.getMonth() + 1}/${date.getDate()}`
   })
 
-  // 建立每個維度的數據系列
-  const series: echarts.LineSeriesOption[] = dimensions.map(dim => ({
-    name: COGNITIVE_DIMENSIONS[dim].name,
-    type: 'line',
-    smooth: true,
-    symbol: 'circle',
-    symbolSize: 6,
-    data: props.history.map(h => h.scores[dim]),
-    lineStyle: {
-      width: 2,
-      color: COGNITIVE_DIMENSIONS[dim].color,
-    },
-    itemStyle: {
-      color: COGNITIVE_DIMENSIONS[dim].color,
-    },
-    emphasis: {
-      focus: 'series',
-    },
-  }))
-
-  // 添加平均分數線
-  const avgLineColor = effectiveTheme.value === 'dark' ? '#60a5fa' : '#1e40af'
-  series.push({
-    name: '平均',
-    type: 'line',
-    smooth: true,
-    symbol: 'diamond',
-    symbolSize: 8,
-    data: props.history.map(h => {
-      const values = Object.values(h.scores) as number[]
-      return Math.round(values.reduce((a: number, b: number) => a + b, 0) / values.length)
-    }),
-    lineStyle: {
-      width: 3,
-      color: avgLineColor,
-      type: 'solid',
-    },
-    itemStyle: {
-      color: avgLineColor,
-    },
+  const averageScores = props.history.map(h => {
+    const values = Object.values(h.scores) as number[]
+    return Math.round(values.reduce((a: number, b: number) => a + b, 0) / values.length)
   })
+
+  // 建立每個維度的數據系列
+  const series: Array<echarts.LineSeriesOption | echarts.BarSeriesOption> = []
+
+  if (props.chartType === 'bar') {
+    series.push({
+      name: '平均',
+      type: 'bar',
+      barWidth: 18,
+      data: averageScores.map(score => ({
+        value: score,
+        itemStyle: {
+          color: score >= 80 ? theme.referenceLine.excellent : (score >= 60 ? theme.referenceLine.good : theme.referenceLine.warning),
+        },
+      })),
+      emphasis: {
+        focus: 'series',
+      },
+    })
+  } else {
+    dimensions.forEach(dim => {
+      series.push({
+        name: COGNITIVE_DIMENSIONS[dim].name,
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 6,
+        data: props.history.map(h => h.scores[dim]),
+        lineStyle: {
+          width: 2,
+          color: COGNITIVE_DIMENSIONS[dim].color,
+        },
+        itemStyle: {
+          color: COGNITIVE_DIMENSIONS[dim].color,
+        },
+        emphasis: {
+          focus: 'series',
+        },
+      })
+    })
+
+    // 添加平均分數線
+    const avgLineColor = effectiveTheme.value === 'dark' ? '#60a5fa' : '#1e40af'
+    series.push({
+      name: '平均',
+      type: 'line',
+      smooth: true,
+      symbol: 'diamond',
+      symbolSize: 8,
+      data: averageScores,
+      lineStyle: {
+        width: 3,
+        color: avgLineColor,
+        type: 'solid',
+      },
+      itemStyle: {
+        color: avgLineColor,
+      },
+    })
+  }
 
   const option: echarts.EChartsOption = {
     tooltip: {
@@ -139,7 +164,7 @@ function updateChart(): void {
         return html
       },
     },
-    legend: {
+    legend: props.chartType === 'bar' ? undefined : {
       data: [...dimensions.map(d => COGNITIVE_DIMENSIONS[d].name), '平均'],
       bottom: 0,
       type: 'scroll',
@@ -151,13 +176,13 @@ function updateChart(): void {
     grid: {
       left: '3%',
       right: '4%',
-      bottom: '15%',
+      bottom: props.chartType === 'bar' ? '10%' : '15%',
       top: '10%',
       containLabel: true,
     },
     xAxis: {
       type: 'category',
-      boundaryGap: false,
+      boundaryGap: props.chartType === 'bar',
       data: xAxisData,
       axisLabel: {
         fontSize: 12,
@@ -192,7 +217,7 @@ function updateChart(): void {
     },
     series,
     // 添加警示區域標記
-    ...(props.showWarningLines ? {
+    ...(props.showWarningLines && props.chartType !== 'bar' ? {
       visualMap: {
         show: false,
         pieces: [
@@ -200,7 +225,7 @@ function updateChart(): void {
           { min: 50, max: 70, color: 'rgba(251, 191, 36, 0.1)' }, // 注意區
           { min: 70, max: 100, color: 'rgba(34, 197, 94, 0.1)' }  // 正常區
         ],
-        seriesIndex: [series.length - 1], // 只應用於平均線
+        seriesIndex: [series.length - 1], // 只應用於平均線/柱
       }
     } : {}),
   }
@@ -254,14 +279,9 @@ function updateChart(): void {
     }
     
     // 添加下降趨勢檢測標記
-    if (props.history.length >= 3) {
-      const avgScores = props.history.map(h => {
-        const values = Object.values(h.scores) as number[]
-        return values.reduce((a: number, b: number) => a + b, 0) / values.length
-      })
-      
+    if (props.chartType !== 'bar' && props.history.length >= 3) {
       // 計算最近趨勢（最後3筆資料）
-      const recentScores = avgScores.slice(-3)
+      const recentScores = averageScores.slice(-3)
       const firstRecent = recentScores[0]
       const lastRecent = recentScores[recentScores.length - 1]
       

@@ -206,7 +206,7 @@
             </div>
 
             <!-- 語音提示 -->
-            <div class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="settingsStore.enableVoicePrompts = !settingsStore.enableVoicePrompts">
+            <div v-if="false" class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="settingsStore.enableVoicePrompts = !settingsStore.enableVoicePrompts">
               <div class="flex-1 pr-4">
                 <div class="text-base font-medium text-[var(--color-text)]">語音提示</div>
                 <div class="text-xs text-[var(--color-text-muted)] mt-0.5">提供語音引導（若支援）</div>

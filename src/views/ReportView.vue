@@ -26,19 +26,19 @@
         </div>
 
         <!-- User Card: Compact -->
-        <section class="p-3 rounded-xl bg-[var(--gradient-primary)] text-[var(--color-text-inverse)] shadow-md relative overflow-hidden">
-          <div class="absolute right-0 top-0 w-32 h-32 bg-[var(--color-surface)]/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+        <section class="p-3 rounded-xl bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] shadow-sm relative overflow-hidden">
+          <div class="absolute right-0 top-0 w-32 h-32 bg-[var(--color-primary)]/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
           <div class="relative z-10 flex items-center gap-3">
-             <div class="w-12 h-12 rounded-full bg-[var(--color-surface)]/20 backdrop-blur-sm flex items-center justify-center border border-[var(--color-border-inverse)] shadow-inner text-xl">
+             <div class="w-12 h-12 rounded-full bg-[var(--color-surface-alt)] flex items-center justify-center border border-[var(--color-border)] shadow-inner text-xl">
                👤
              </div>
              <div class="flex-1 min-w-0">
                <h2 class="text-lg font-bold truncate leading-tight">{{ userStore.currentUser?.name || '使用者' }}</h2>
-               <p class="text-xs opacity-90 font-medium">{{ userStore.userAge || '?' }} 歲 • {{ userStore.currentUser?.educationYears || 0 }}年教育</p>
+               <p class="text-xs text-[var(--color-text-secondary)] font-medium">{{ userStore.userAge || '?' }} 歲 • {{ userStore.currentUser?.educationYears || 0 }}年教育</p>
              </div>
              <div class="text-right">
-               <div class="text-2xl font-bold leading-none">{{ cognitiveIndex }}</div>
-               <div class="text-[10px] opacity-80 font-medium uppercase tracking-wider">綜合指數</div>
+               <div class="text-2xl font-bold leading-none" :class="getScoreClass(cognitiveIndex)">{{ cognitiveIndex }}</div>
+               <div class="text-[10px] text-[var(--color-text-muted)] font-medium uppercase tracking-wider">綜合指數</div>
              </div>
           </div>
         </section>
@@ -99,7 +99,7 @@
               <span>📈</span> 歷史趨勢
             </h3>
             <div class="h-40 -ml-2">
-              <TrendChart ref="trendChartRef" :history="gameStore.scoreHistory" :showWarningLines="true" :professionalMode="false" />
+              <TrendChart ref="trendChartRef" :history="gameStore.scoreHistory" chartType="bar" :showWarningLines="true" :professionalMode="false" />
             </div>
          </section>
 
@@ -384,14 +384,14 @@
 
           <!-- User Info Section -->
           <section id="user-info" class="scroll-mt-24 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] shadow-sm p-8 relative overflow-hidden">
-             <div class="absolute top-0 right-0 w-96 h-96 bg-[var(--color-primary-bg)]/20 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+             <div class="absolute top-0 right-0 w-96 h-96 bg-[var(--color-primary)]/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
              <div class="relative z-10 flex items-center gap-8">
-                <div class="w-24 h-24 rounded-full bg-[var(--gradient-primary)] text-[var(--color-text-inverse)] flex items-center justify-center text-5xl shadow-xl ring-4 ring-[var(--color-surface)]">👤</div>
+                <div class="w-24 h-24 rounded-full bg-[var(--color-surface-alt)] text-[var(--color-text)] flex items-center justify-center text-5xl shadow-xl ring-4 ring-[var(--color-surface)] border border-[var(--color-border)]">👤</div>
                 <div class="flex-1">
-                   <h1 class="text-3xl font-bold text-[var(--color-text)] mb-2">{{ userStore.currentUser?.name }}</h1>
-                   <div class="flex gap-3 text-sm text-[var(--color-text-secondary)]">
-                      <span class="px-3 py-1 rounded-full bg-[var(--color-bg-soft)] border border-[var(--color-border)]">{{ userStore.userAge }} 歲</span>
-                      <span class="px-3 py-1 rounded-full bg-[var(--color-bg-soft)] border border-[var(--color-border)]">教育程度：{{ userStore.currentUser?.educationYears || 0 }} 年</span>
+                   <h1 class="text-3xl font-bold text-[var(--color-text)] mb-2">{{ userStore.currentUser?.name || '使用者' }}</h1>
+                   <div class="flex gap-3 text-sm text-[var(--color-text)]">
+                      <span class="px-3 py-1 rounded-full bg-[var(--color-surface-alt)] border border-[var(--color-border)]">{{ userStore.userAge || '?' }} 歲</span>
+                      <span class="px-3 py-1 rounded-full bg-[var(--color-surface-alt)] border border-[var(--color-border)]">教育程度：{{ userStore.currentUser?.educationYears || 0 }} 年</span>
                    </div>
                 </div>
                 <div class="text-right pl-8 border-l border-[var(--color-border)]">
@@ -457,7 +457,7 @@
                 <h3 class="text-lg font-bold flex items-center gap-2 text-[var(--color-text)]">📈 歷史趨勢</h3>
                 <span class="text-xs bg-[var(--color-surface-alt)] px-3 py-1 rounded-full text-[var(--color-text-secondary)] font-medium">近 30 天</span>
              </div>
-             <div class="h-72 w-full"><TrendChart ref="trendChartRef" :history="gameStore.scoreHistory" :showWarningLines="true" :professionalMode="false" /></div>
+             <div class="h-72 w-full"><TrendChart ref="trendChartRef" :history="gameStore.scoreHistory" chartType="bar" :showWarningLines="true" :professionalMode="false" /></div>
           </section>
 
           <!-- Statistics -->
