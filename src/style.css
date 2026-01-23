@@ -7,12 +7,15 @@
 
 /* CSS 變數定義 - 淺色模式（預設） */
 :root {
+  --font-sans: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  --font-display: 'Noto Serif TC', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', serif;
   /* 語義化顏色（主題感知）- Blue/Green with Warm Accents */
   --color-bg: #F8FAFC;
   --color-bg-soft: #F1F5F9;
   --color-bg-muted: #E2E8F0;
   --color-surface: #FFFFFF;
   --color-surface-elevated: #FFFFFF;
+  --color-surface-soft: #F6F8FB;
   --color-surface-alt: #F1F5F9;
   
   --color-text: #0F172A;
@@ -190,6 +193,7 @@
   --color-bg-muted: #1E293B;
   --color-surface: #121B2E;
   --color-surface-elevated: #1F2A44;
+  --color-surface-soft: #182339;
   --color-surface-alt: #1E293B;
   --color-text: #F8FAFC;
   --color-text-secondary: #E2E8F0;
@@ -364,7 +368,7 @@ html {
 
 body {
   margin: 0;
-  font-family: 'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+  font-family: var(--font-sans);
   line-height: 1.6;
   color: var(--color-text);
   background-color: var(--color-bg);
@@ -472,6 +476,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   gap: var(--spacing-xs);
   position: relative;
   overflow: hidden;
+  touch-action: manipulation;
 }
 
 .btn::before {
@@ -878,14 +883,18 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 
 /* 標題樣式 */
 .title-lg {
-  font-size: var(--font-size-3xl);
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.title-md {
-  font-size: var(--font-size-2xl);
-  font-weight: 600;
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+    font-family: var(--font-display);
+    letter-spacing: 0.02em;
+    color: var(--color-primary);
+  }
+  
+  .title-md {
+    font-size: var(--font-size-2xl);
+    font-weight: 600;
+    font-family: var(--font-display);
+    letter-spacing: 0.015em;
   color: var(--color-primary);
 }
 
@@ -1516,10 +1525,59 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 }
 
 .dark .app-page {
-  background-image:
-    radial-gradient(1200px 600px at 10% -10%, rgba(96, 165, 250, 0.16), transparent 60%),
-    radial-gradient(900px 540px at 110% 0%, rgba(34, 197, 94, 0.1), transparent 55%);
-}
+    background-image:
+      radial-gradient(1200px 600px at 10% -10%, rgba(96, 165, 250, 0.16), transparent 60%),
+      radial-gradient(900px 540px at 110% 0%, rgba(34, 197, 94, 0.1), transparent 55%);
+  }
+
+.page-ambient {
+    position: relative;
+    isolation: isolate;
+    background-color: var(--color-bg);
+    background-image:
+      radial-gradient(900px 500px at 10% -10%, rgba(59, 130, 246, 0.12), transparent 60%),
+      radial-gradient(700px 420px at 110% 10%, rgba(245, 158, 11, 0.12), transparent 55%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.6), transparent 35%);
+  }
+
+.dark .page-ambient {
+    background-image:
+      radial-gradient(900px 500px at 10% -10%, rgba(59, 130, 246, 0.18), transparent 60%),
+      radial-gradient(700px 420px at 110% 10%, rgba(16, 185, 129, 0.18), transparent 55%),
+      linear-gradient(180deg, rgba(11, 18, 32, 0.85), transparent 35%);
+  }
+
+.page-ambient::before,
+.page-ambient::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.75;
+  }
+
+.page-ambient::before {
+    width: 220px;
+    height: 220px;
+    right: -60px;
+    top: 80px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.18), transparent 70%);
+    filter: blur(4px);
+  }
+
+.page-ambient::after {
+    width: 260px;
+    height: 260px;
+    left: -80px;
+    bottom: -40px;
+    background: radial-gradient(circle, rgba(22, 163, 74, 0.16), transparent 70%);
+    filter: blur(6px);
+  }
+
+.page-ambient > * {
+    position: relative;
+    z-index: 1;
+  }
 
 /* APP 頁面頭部 - 固定高度 */
 .app-header {
@@ -1537,11 +1595,13 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 }
 
 .app-header-title {
-  font-size: var(--font-size-lg);
-  font-weight: 600;
-  color: var(--color-text);
-  margin: 0;
-  flex: 1;
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    font-family: var(--font-display);
+    letter-spacing: 0.02em;
+    color: var(--color-text);
+    margin: 0;
+    flex: 1;
   text-align: center;
 }
 

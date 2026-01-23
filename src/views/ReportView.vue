@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[var(--color-bg)] font-sans text-[var(--color-text)] selection:bg-[var(--color-primary)] selection:text-[var(--color-text-inverse)]">
+  <div class="min-h-screen page-ambient font-sans text-[var(--color-text)] selection:bg-[var(--color-primary)] selection:text-[var(--color-text-inverse)]">
     
     <!-- Mobile View -->
     <div v-if="isMobile" class="flex flex-col min-h-screen pb-safe">

@@ -16,6 +16,7 @@ export function usePWA() {
   const isOfflineReady = ref(false)
   const needRefresh = ref(false)
   const isUpdating = ref(false)
+  let hasReloaded = false
   
   let updateSW: ((reloadPage?: boolean) => Promise<void>) | undefined
   let registration: ServiceWorkerRegistration | undefined
@@ -41,7 +42,7 @@ export function usePWA() {
     if (updateSW) {
       isUpdating.value = true
       try {
-        await updateSW(true)
+        await updateSW(false)
       } catch (error) {
         console.error('[PWA] 應用更新失敗:', error)
         isUpdating.value = false
@@ -119,6 +120,12 @@ export function usePWA() {
 
   // 監聽 Service Worker 控制器變化
   function handleControllerChange() {
+    if (hasReloaded) return
+    if (!isUpdating.value) {
+      console.log('[PWA] Service Worker 控制器已變更，等待使用者更新')
+      return
+    }
+    hasReloaded = true
     console.log('[PWA] Service Worker 控制器已變更，重新載入頁面')
     window.location.reload()
   }

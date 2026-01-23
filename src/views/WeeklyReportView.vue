@@ -291,7 +291,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="app-page">
+  <div class="app-page page-ambient">
     <!-- APP 頭部 -->
     <header class="app-header shadow-sm bg-[var(--color-surface-elevated)]">
       <div class="app-header-action">

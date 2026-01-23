@@ -1,5 +1,5 @@
 <template>
-  <div class="app-page">
+  <div class="app-page page-ambient">
     <!-- Header -->
     <header class="app-header">
       <router-link to="/" class="btn btn-icon btn-ghost text-[var(--color-text-muted)] hover:text-[var(--color-primary)]">

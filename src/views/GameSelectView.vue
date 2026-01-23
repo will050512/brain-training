@@ -1,22 +1,5 @@
 <template>
-  <div class="app-page">
-    <!-- APP 頭部 -->
-    <header class="app-header">
-      <router-link
-        to="/"
-        class="text-2xl text-[var(--color-text)] hover:text-[var(--color-primary)] transition-colors"
-      >
-        ←
-      </router-link>
-      <h1 class="text-lg font-bold text-[var(--color-text)] tracking-wide">選擇遊戲</h1>
-      <router-link
-        to="/report"
-        class="text-xl text-[var(--color-text)] hover:text-[var(--color-primary)] transition-colors"
-      >
-        📊
-      </router-link>
-    </header>
-
+  <div class="app-page page-ambient">
     <!-- 認知維度篩選標籤（固定在頂部） -->
     <div class="flex-shrink-0 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
       <div class="flex gap-2 px-3 py-2 sm:px-4 sm:py-3 overflow-x-auto scrollbar-hide md:flex-wrap md:justify-center md:overflow-visible">

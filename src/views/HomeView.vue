@@ -1,5 +1,5 @@
 <template>
-  <div class="app-page">
+  <div class="app-page page-ambient">
     <!-- 首次使用歡迎彈窗 -->
     <WelcomeModal 
       v-if="showWelcome" 
@@ -39,34 +39,18 @@
       @update:modelValue="handleGuidedTourToggle"
     />
 
-    <!-- APP 頭部 -->
-    <header class="app-header shadow-sm bg-[var(--color-surface-elevated)]">
-      <div class="app-header-action">
-        <router-link to="/settings" class="text-3xl text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">⚙️</router-link>
-      </div>
-      <div class="flex items-center gap-3">
-        <img src="@/assets/logo.svg" alt="愛護腦" class="w-10 h-10" />
-        <h1 class="text-xl font-bold text-[var(--color-text)] tracking-wide">愛護腦</h1>
-      </div>
-      <div class="app-header-action text-right">
-        <button v-if="userStore.isLoggedIn" @click="handleLogout" class="text-base font-medium text-[var(--color-text-secondary)] px-3 py-1 rounded-full border border-[var(--color-border)] hover:bg-[var(--color-bg-soft)]">
-          切換
-        </button>
-      </div>
-    </header>
-
     <!-- 可滾動內容區 -->
     <div class="app-content-scroll bg-[var(--color-bg)]">
       <div class="container-desktop px-4 py-4 sm:py-6">
       <div class="space-y-5">
 
       <!-- 使用者狀態（精簡版） -->
-      <div v-if="userStore.isLoggedIn" class="mb-5 bg-[var(--color-surface-elevated)] rounded-2xl shadow-sm border border-[var(--color-border-light)] overflow-hidden">
-        <div class="flex items-center gap-4 p-4">
-          <div class="w-14 h-14 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center text-3xl border-2 border-white shadow-inner shrink-0">
-            👤
-          </div>
-          <div class="flex-1 min-w-0">
+        <div v-if="userStore.isLoggedIn" class="mb-5 bg-[var(--color-surface-elevated)] rounded-2xl shadow-sm border border-[var(--color-border-light)] overflow-hidden">
+          <div class="flex items-start gap-4 p-4">
+            <div class="w-14 h-14 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center text-3xl border-2 border-white shadow-inner shrink-0">
+              👤
+            </div>
+            <div class="flex-1 min-w-0">
             <div class="flex flex-wrap items-center gap-2">
               <p class="text-lg font-bold text-[var(--color-text)] truncate">{{ userStore.currentUser?.name }}</p>
               <button
@@ -84,10 +68,19 @@
                   {{ copiedTransferCode ? '已複製' : '點我複製' }}
                 </span>
               </button>
+              </div>
+              <p class="text-sm text-[var(--color-text-secondary)] mt-1">{{ userStore.userAge }} 歲 · 保持大腦活躍中</p>
+              <div class="flex flex-wrap items-center gap-2 mt-3">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm min-h-[44px] px-3"
+                  @click="handleLogout"
+                >
+                  切換帳號
+                </button>
+              </div>
             </div>
-            <p class="text-sm text-[var(--color-text-secondary)] mt-1">{{ userStore.userAge }} 歲 · 保持大腦活躍中</p>
           </div>
-        </div>
         
         <!-- 同步狀態列 -->
         <div class="bg-[var(--color-bg-soft)] px-4 py-2 flex items-center justify-between text-sm border-t border-[var(--color-border-light)]">
@@ -104,7 +97,7 @@
       </div>
 
       <!-- 使用說明與導覽 -->
-      <div v-if="userStore.isLoggedIn" class="mb-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
+      <div v-if="userStore.isLoggedIn && !guidedTourDismissed" class="mb-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
         <div class="flex flex-wrap items-start justify-between gap-4">
           <div class="min-w-[180px]">
             <div class="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)]/10 px-3 py-1 text-xs font-semibold text-[var(--color-primary)]">
@@ -503,13 +496,13 @@
 
 
       </div>
-    </div>
-    </div>
 
-    <!-- 版本資訊 -->
-    <footer class="flex-shrink-0 py-2 text-center text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)]">
-      愛護腦 Al MindCare © 2026
-    </footer>
+      <!-- 版本資訊 -->
+      <footer class="mt-6 py-3 text-center text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)] pb-[calc(env(safe-area-inset-bottom)+5rem)]">
+        愛護腦 Al MindCare © 2026
+      </footer>
+    </div>
+    </div>
   </div>
 </template>
 
@@ -620,6 +613,7 @@ const activityFilter = ref<'daily' | 'all'>('daily')
 const trainingReminder = ref<{ shouldRemind: boolean; daysMissed: number; message: string } | null>(null)
 const assessmentReminder = ref<{ needsAssessment: boolean; daysSinceLastAssessment: number; message: string } | null>(null)
 const showGuidedTour = ref(false)
+const guidedTourDismissed = ref(false)
 const GUIDED_TOUR_DISMISSED_KEY = 'brain-training-guided-tour-dismissed'
 
 // 認知趨勢資料
@@ -721,6 +715,7 @@ function hasDismissedGuidedTour(): boolean {
 function markGuidedTourDismissed(): void {
   try {
     localStorage.setItem(GUIDED_TOUR_DISMISSED_KEY, Date.now().toString())
+    guidedTourDismissed.value = true
   } catch {
     // ignore
   }
@@ -737,9 +732,6 @@ function dismissGuidedTour(): void {
 
 function handleGuidedTourToggle(value: boolean): void {
   showGuidedTour.value = value
-  if (!value) {
-    markGuidedTourDismissed()
-  }
 }
 
 // 載入認知趨勢
@@ -911,6 +903,7 @@ onMounted(async () => {
   
   // 載入額外資料
   if (userStore.isLoggedIn) {
+    guidedTourDismissed.value = hasDismissedGuidedTour()
     await Promise.all([
       loadCognitiveTrend(),
       loadDailyProgress()
@@ -943,7 +936,7 @@ onMounted(async () => {
       }
     }
 
-    if (!hasDismissedGuidedTour()) {
+    if (!guidedTourDismissed.value) {
       showGuidedTour.value = true
     }
     

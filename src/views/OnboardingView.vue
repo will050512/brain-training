@@ -176,7 +176,7 @@ function startTraining(): void {
 </script>
 
 <template>
-  <div class="app-page">
+  <div class="app-page page-ambient">
     <!-- Header: Progress & Title -->
     <header class="app-header flex-col items-stretch gap-2 !h-auto py-4 border-b-0 shadow-none bg-transparent">
       <div class="flex items-center justify-between px-1">

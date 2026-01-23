@@ -1,12 +1,5 @@
 <template>
-  <div class="app-page">
-    <!-- APP 頭部 -->
-    <header class="app-header">
-      <router-link to="/" class="text-2xl">←</router-link>
-      <h1 class="text-lg font-bold text-[var(--color-text)]">設定</h1>
-      <div class="w-8"></div>
-    </header>
-
+  <div class="app-page page-ambient">
     <!-- 可滾動內容區 -->
     <div class="app-content-scroll">
       <div class="p-3 sm:p-4 max-w-3xl mx-auto flex flex-col gap-3">

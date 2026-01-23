@@ -202,7 +202,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="page-shell section-stack pb-safe-offset">
+  <div class="app-page page-ambient">
+    <div class="app-content-scroll">
+      <div class="page-shell section-stack pb-safe-offset">
     <header class="flex items-center gap-3 min-h-[44px]">
       <button class="btn btn-ghost btn-circle" @click="router.back()">
         <span class="text-xl">←</span>
@@ -518,6 +520,8 @@ onMounted(() => {
         <p class="mt-1">🏥 如有任何健康疑慮，請諮詢專業醫療人員。</p>
       </div>
     </template>
+      </div>
+    </div>
   </div>
 </template>
 

@@ -1,6 +1,6 @@
 <template>
   <div 
-    class="min-h-screen bg-[var(--color-bg)] flex flex-col transition-colors duration-300 font-sans h-screen overflow-hidden"
+    class="min-h-screen page-ambient flex flex-col transition-colors duration-300 font-sans h-screen overflow-hidden"
   >
     <!-- Header: Clean & Minimal -->
     <header class="bg-[var(--color-surface)]/90 backdrop-blur-md border-b border-[var(--color-border)] shrink-0 z-30 safe-area-top">

@@ -329,15 +329,7 @@ watch(
 </script>
 
 <template>
-  <div class="app-page">
-    <header class="app-header">
-      <button class="btn btn-ghost btn-icon" @click="router.push('/')">
-        <span class="text-xl">←</span>
-      </button>
-      <h1 class="app-header-title">📅 每日訓練</h1>
-      <div class="w-10"></div>
-    </header>
-
+  <div class="app-page page-ambient">
     <main class="app-content-scroll bg-[var(--color-bg-soft)]">
       <div class="container-desktop p-3 pb-24 max-w-lg mx-auto">
         <!-- 載入中 -->
@@ -541,4 +533,3 @@ watch(
     </main>
   </div>
 </template>
-
