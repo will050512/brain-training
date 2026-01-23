@@ -29,6 +29,8 @@ type UserSheetPayload = {
   birthday: string
   educationYears: number
   gender: User['gender']
+  transferCode?: string
+  transferCodeUpdatedAt?: string
   clientSource?: string
   authProvider?: User['authProvider']
   createdAt: string
@@ -74,25 +76,13 @@ function isBrowserOnline(): boolean {
   }
 }
 
-function isBehaviorTrackingEnabled(): boolean {
-  try {
-    const settingsStore = useSettingsStore()
-    return settingsStore.enableBehaviorTracking
-  } catch {
-    return true
-  }
-}
-
 async function isAllowed(odId: string): Promise<boolean> {
-  if (!isBehaviorTrackingEnabled()) {
-    console.info('[Sync] Skipped: behavior tracking disabled.')
-    return false
-  }
   try {
     const consent = await getDataConsent(odId)
-    return !!consent?.analyticsConsent
+    if (!consent) return true
+    return !!(consent.essentialConsent || consent.analyticsConsent)
   } catch {
-    return false
+    return true
   }
 }
 
@@ -123,6 +113,8 @@ function mapUser(user: User): UserSheetPayload {
     birthday: user.birthday,
     educationYears: user.educationYears ?? 0,
     gender: user.gender ?? 'unknown',
+    transferCode: user.transferCode,
+    transferCodeUpdatedAt: user.transferCodeUpdatedAt ? new Date(user.transferCodeUpdatedAt).toISOString() : '',
     authProvider: user.authProvider ?? 'local',
     clientSource: user.clientSource || loadClientSourceForUser(user.id) || detectClientSource(),
     createdAt: created.toISOString(),
@@ -166,7 +158,7 @@ async function postToSheet(payload: UserSheetPayload): Promise<boolean> {
 
 /**
  * 同步使用者基本資料到 Google Sheet（上傳/更新）
- * - 受 analyticsConsent 控制
+ * - 受 essentialConsent / analyticsConsent 控制
  * - 透過 updatedAt 做去重，避免重複寫入
  */
 export async function syncUserProfileToSheet(user: User | null | undefined): Promise<void> {

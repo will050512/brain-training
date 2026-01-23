@@ -57,6 +57,11 @@ function isBehaviorTrackingEnabled(): boolean {
   }
 }
 
+function isBasicSyncAllowed(consent?: DataConsentOptions): boolean {
+  if (!consent) return true
+  return !!(consent.essentialConsent || consent.analyticsConsent)
+}
+
 function toIso(value: unknown): string {
   if (value instanceof Date) return value.toISOString()
   if (typeof value === 'string' || typeof value === 'number') {
@@ -143,6 +148,8 @@ function buildUserPayload(user: User) {
     birthday: user.birthday,
     educationYears: user.educationYears ?? 0,
     gender: user.gender ?? 'unknown',
+    transferCode: user.transferCode ?? '',
+    transferCodeUpdatedAt: user.transferCodeUpdatedAt ? toIso(user.transferCodeUpdatedAt) : '',
     authProvider: user.authProvider ?? 'local',
     clientSource: user.clientSource || loadClientSourceForUser(user.id) || detectClientSource(),
     createdAt: created.toISOString(),
@@ -174,6 +181,8 @@ function buildUserStatsPayload(stats: UserStats) {
     totalPlayTime: stats.totalPlayTime,
     averageScore: stats.averageScore,
     bestScores: stats.bestScores,
+    gamePlayCounts: stats.gamePlayCounts ?? {},
+    favoriteGameId: stats.favoriteGameId ?? '',
     lastPlayedAt: stats.lastPlayedAt ? toIso(stats.lastPlayedAt) : '',
     streak: stats.streak,
     updatedAt: new Date().toISOString(),
@@ -368,13 +377,9 @@ function shouldThrottleFullSync(odId: string): boolean {
 
 export async function syncMiniCogResultToSheet(result: MiniCogResult): Promise<void> {
   try {
-    if (!isBehaviorTrackingEnabled()) {
-      console.info('[Sync] Skipped: behavior tracking disabled.')
-      return
-    }
     if (!isBrowserOnline()) return
     const consent = await getDataConsent(result.odId)
-    if (!consent?.analyticsConsent) return
+    if (!isBasicSyncAllowed(consent)) return
     const allowClockImage = !!consent?.behaviorTrackingConsent
     const items = filterSyncItems(
       'upsertMiniCogResults',
@@ -389,13 +394,9 @@ export async function syncMiniCogResultToSheet(result: MiniCogResult): Promise<v
 
 export async function syncUserSettingsToSheet(settings: UserSettings): Promise<void> {
   try {
-    if (!isBehaviorTrackingEnabled()) {
-      console.info('[Sync] Skipped: behavior tracking disabled.')
-      return
-    }
     if (!isBrowserOnline()) return
     const consent = await getDataConsent(settings.odId)
-    if (!consent?.analyticsConsent) return
+    if (!isBasicSyncAllowed(consent)) return
     const items = filterSyncItems(
       'upsertUserSettings',
       [buildUserSettingsPayload(settings)],
@@ -410,13 +411,9 @@ export async function syncUserSettingsToSheet(settings: UserSettings): Promise<v
 
 export async function syncUserStatsToSheet(stats: UserStats): Promise<void> {
   try {
-    if (!isBehaviorTrackingEnabled()) {
-      console.info('[Sync] Skipped: behavior tracking disabled.')
-      return
-    }
     if (!isBrowserOnline()) return
     const consent = await getDataConsent(stats.odId)
-    if (!consent?.analyticsConsent) return
+    if (!isBasicSyncAllowed(consent)) return
     const items = filterSyncItems(
       'upsertUserStats',
       [buildUserStatsPayload(stats)],
@@ -431,13 +428,9 @@ export async function syncUserStatsToSheet(stats: UserStats): Promise<void> {
 
 export async function syncDailyTrainingSessionToSheet(session: DailyTrainingSession): Promise<void> {
   try {
-    if (!isBehaviorTrackingEnabled()) {
-      console.info('[Sync] Skipped: behavior tracking disabled.')
-      return
-    }
     if (!isBrowserOnline()) return
     const consent = await getDataConsent(session.odId)
-    if (!consent?.analyticsConsent) return
+    if (!isBasicSyncAllowed(consent)) return
     const items = filterSyncItems(
       'upsertDailyTrainingSessions',
       [buildDailyTrainingSessionPayload(session)],
@@ -451,13 +444,9 @@ export async function syncDailyTrainingSessionToSheet(session: DailyTrainingSess
 
 export async function syncBaselineAssessmentToSheet(assessment: BaselineAssessment): Promise<void> {
   try {
-    if (!isBehaviorTrackingEnabled()) {
-      console.info('[Sync] Skipped: behavior tracking disabled.')
-      return
-    }
     if (!isBrowserOnline()) return
     const consent = await getDataConsent(assessment.odId)
-    if (!consent?.analyticsConsent) return
+    if (!isBasicSyncAllowed(consent)) return
     const items = filterSyncItems(
       'upsertBaselineAssessments',
       [buildBaselineAssessmentPayload(assessment)],
@@ -471,13 +460,9 @@ export async function syncBaselineAssessmentToSheet(assessment: BaselineAssessme
 
 export async function syncDeclineAlertToSheet(alert: DeclineAlert): Promise<void> {
   try {
-    if (!isBehaviorTrackingEnabled()) {
-      console.info('[Sync] Skipped: behavior tracking disabled.')
-      return
-    }
     if (!isBrowserOnline()) return
     const consent = await getDataConsent(alert.odId)
-    if (!consent?.analyticsConsent) return
+    if (!isBasicSyncAllowed(consent)) return
     const items = filterSyncItems(
       'upsertDeclineAlerts',
       [buildDeclineAlertPayload(alert)],
@@ -491,13 +476,9 @@ export async function syncDeclineAlertToSheet(alert: DeclineAlert): Promise<void
 
 export async function syncNutritionRecommendationToSheet(rec: NutritionRecommendationRecord): Promise<void> {
   try {
-    if (!isBehaviorTrackingEnabled()) {
-      console.info('[Sync] Skipped: behavior tracking disabled.')
-      return
-    }
     if (!isBrowserOnline()) return
     const consent = await getDataConsent(rec.odId)
-    if (!consent?.analyticsConsent) return
+    if (!isBasicSyncAllowed(consent)) return
     const items = filterSyncItems(
       'upsertNutritionRecommendations',
       [buildNutritionRecommendationPayload(rec)],
@@ -520,7 +501,7 @@ export async function syncBehaviorLogsToSheet(logs: BehaviorLog[]): Promise<void
     const odId = logs[0]?.odId
     if (!odId) return
     const consent = await getDataConsent(odId)
-    if (!consent?.analyticsConsent) return
+    if (!consent) return
     if (!consent.behaviorTrackingConsent || !consent.detailedBehaviorConsent) return
     const payloads = logs
       .filter(log => log.odId === odId && !log.synced)
@@ -541,10 +522,6 @@ export async function backfillAllUserDataToSheet(
   options?: { force?: boolean }
 ): Promise<void> {
   try {
-    if (!isBehaviorTrackingEnabled()) {
-      console.info('[Sync] Skipped: behavior tracking disabled.')
-      return
-    }
     if (!isBrowserOnline()) return
     if (!options?.force && shouldThrottleFullSync(odId)) return
 
@@ -558,7 +535,7 @@ export async function backfillAllUserDataToSheet(
       await postInBatchesWithCache('upsertDataConsent', items, 1)
     }
 
-    if (!consent?.analyticsConsent) return
+    if (!isBasicSyncAllowed(consent)) return
 
     const user = await getUser(odId)
     if (user) {

@@ -963,6 +963,82 @@ export async function purgeUserData(odId: string): Promise<{
   }
 }
 
+/**
+ * 完整刪除使用者本機資料（涵蓋所有資料表）
+ */
+export async function purgeUserDataById(odId: string): Promise<{
+  deletedCounts: Record<string, number | boolean>
+}> {
+  const db = await getDB()
+  const deletedCounts: Record<string, number | boolean> = {}
+
+  const user = await db.get('users', odId)
+  if (user) {
+    await db.delete('users', odId)
+    deletedCounts.user = true
+  } else {
+    deletedCounts.user = false
+  }
+
+  const deleteByIndex = async <T>(
+    storeName: keyof BrainTrainingDB,
+    indexName: string,
+    countKey: string
+  ): Promise<void> => {
+    const items = await db.getAllFromIndex(storeName, indexName, odId)
+    const tx = db.transaction(storeName, 'readwrite')
+    await Promise.all(items.map(item => tx.store.delete((item as T & { id: string }).id)))
+    await tx.done
+    deletedCounts[countKey] = items.length
+  }
+
+  try {
+    await db.delete('userSettings', odId)
+    deletedCounts.userSettings = true
+  } catch {
+    deletedCounts.userSettings = false
+  }
+
+  try {
+    await db.delete('userStats', odId)
+    deletedCounts.userStats = true
+  } catch {
+    deletedCounts.userStats = false
+  }
+
+  try {
+    await db.delete('dataConsent', odId)
+    deletedCounts.dataConsent = true
+  } catch {
+    deletedCounts.dataConsent = false
+  }
+
+  await deleteByIndex<GameSession>('gameSessions', 'by-odId', 'gameSessions')
+  await deleteByIndex<MiniCogResult>('miniCogResults', 'by-odId', 'miniCogResults')
+  await deleteByIndex<DailyTrainingSession>('dailyTrainingSessions', 'by-odId', 'dailyTrainingSessions')
+  await deleteByIndex<BaselineAssessment>('baselineAssessments', 'by-odId', 'baselineAssessments')
+  await deleteByIndex<DeclineAlert>('declineAlerts', 'by-odId', 'declineAlerts')
+  await deleteByIndex<DifficultyHistory>('difficultyHistory', 'by-odId', 'difficultyHistory')
+  await deleteByIndex<BehaviorLog>('behaviorLogs', 'by-odId', 'behaviorLogs')
+  await deleteByIndex<NutritionRecommendationRecord>('nutritionRecommendations', 'by-odId', 'nutritionRecommendations')
+
+  try {
+    const pending = await db.getAll('pendingSyncQueue')
+    const pendingToDelete = pending.filter(item => {
+      const data = item.data as Record<string, unknown>
+      return data?.odId === odId || data?.userId === odId
+    })
+    const tx = db.transaction('pendingSyncQueue', 'readwrite')
+    await Promise.all(pendingToDelete.map(item => tx.store.delete(item.id)))
+    await tx.done
+    deletedCounts.pendingSyncQueue = pendingToDelete.length
+  } catch {
+    deletedCounts.pendingSyncQueue = 0
+  }
+
+  return { deletedCounts }
+}
+
 // 需要導入 DataConsentOptions 類型
 import { CURRENT_CONSENT_VERSION, type DataConsentOptions as DataConsentType } from '@/types/user'
 

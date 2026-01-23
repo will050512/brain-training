@@ -105,9 +105,12 @@ export const CONSENT_DESCRIPTIONS = {
 export interface User {
   id: string
   name: string
-  birthday: string  // YYYY-MM-DD 格式
+  birthday: string  // YYYY-MM-DD 格式（僅填年/月時，日預設為 01）
   educationYears: number  // 教育年數（0=不識字, 1-6=國小, 7-9=國中, 10-12=高中, 13+=大專以上）
   gender: 'male' | 'female' | 'other' | 'unknown'
+  /** 跨裝置登入碼（6位大寫英數） */
+  transferCode?: string
+  transferCodeUpdatedAt?: Date
   /** 使用者來源（例：app-android / app-ios / pwa / web） */
   clientSource?: string
   /** 外部認證來源（例：firebase） */
@@ -145,6 +148,8 @@ odId: string
   totalPlayTime: number  // 秒
   averageScore: number
   bestScores: Record<string, number>  // gameId -> 最高分
+  gamePlayCounts: Record<string, number> // gameId -> 遊玩次數
+  favoriteGameId: string | null
   lastPlayedAt: Date | null
   streak: number  // 連續天數
 }
@@ -156,6 +161,8 @@ odId,
   totalPlayTime: 0,
   averageScore: 0,
   bestScores: {},
+  gamePlayCounts: {},
+  favoriteGameId: null,
   lastPlayedAt: null,
   streak: 0,
 })

@@ -61,7 +61,24 @@
             👤
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-lg font-bold text-[var(--color-text)] truncate">{{ userStore.currentUser?.name }}</p>
+            <div class="flex flex-wrap items-center gap-2">
+              <p class="text-lg font-bold text-[var(--color-text)] truncate">{{ userStore.currentUser?.name }}</p>
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-semibold text-[var(--color-text-secondary)] shadow-sm hover:bg-[var(--color-bg-soft)] min-h-[44px]"
+                :disabled="!transferCodeLabel"
+                @click="handleCopyTransferCode"
+                aria-label="複製登入碼"
+              >
+                <span class="uppercase tracking-wider text-[11px]">登入碼</span>
+                <span class="font-mono text-[15px] font-bold text-[var(--color-text)] tracking-[0.12em]">
+                  {{ transferCodeLabel || '------' }}
+                </span>
+                <span class="text-[11px] text-[var(--color-text-muted)] whitespace-nowrap">
+                  {{ copiedTransferCode ? '已複製' : '點我複製' }}
+                </span>
+              </button>
+            </div>
             <p class="text-sm text-[var(--color-text-secondary)] mt-1">{{ userStore.userAge }} 歲 · 保持大腦活躍中</p>
           </div>
         </div>
@@ -445,6 +462,7 @@ import { getOverallDeclineSummary } from '@/services/declineDetectionService'
 import { getTodayTrainingStatus } from '@/services/dailyTrainingService'
 import { getGameSessionsByDate, getLatestMiniCogResult } from '@/services/db'
 import { useNotification } from '@/composables/useNotification'
+import { formatTransferCode } from '@/services/userTransferCode'
 import type { GameSession } from '@/types/game'
 import {
   getTotalGamesPlayed,
@@ -485,6 +503,27 @@ const syncStatusText = computed(() => {
       return '等待同步'
   }
 })
+
+const copiedTransferCode = ref(false)
+
+const transferCodeLabel = computed(() => {
+  const user = userStore.currentUser
+  if (!user) return ''
+  return formatTransferCode(userStore.getTransferCode(user))
+})
+
+async function handleCopyTransferCode(): Promise<void> {
+  if (!transferCodeLabel.value) return
+  try {
+    await navigator.clipboard.writeText(transferCodeLabel.value)
+    copiedTransferCode.value = true
+    setTimeout(() => {
+      copiedTransferCode.value = false
+    }, 1500)
+  } catch {
+    copiedTransferCode.value = false
+  }
+}
 
 // 認知維度列表
 const cognitiveDimensions = Object.values(COGNITIVE_DIMENSIONS) as CognitiveDimensionInfo[]

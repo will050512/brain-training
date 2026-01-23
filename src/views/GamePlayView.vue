@@ -137,6 +137,8 @@
     <div
       class="game-play-area flex-1 min-h-0 container mx-auto w-full"
       :class="{ 'pt-9': isMobile && gameState === 'playing' }"
+      @mousedown="handlePlayAreaInteraction"
+      @touchstart="handlePlayAreaInteraction"
     >
             <!-- 準備畫面 - 適應螢幕高度 -->
         <div v-if="gameState === 'ready'" class="game-content-fit max-w-lg mx-auto text-center p-2 sm:p-4">
@@ -430,6 +432,8 @@ import DifficultyAdjustPanel from '@/components/ui/DifficultyAdjustPanel.vue'
 import type { CognitiveDimension } from '@/types/cognitive'
 import { isLegacyGameResult, normalizeToLegacyGameResult } from '@/services/gameResultAdapter'
 import { scoreNormalizer } from '@/services/scoreNormalizer'
+import { BehaviorCollector } from '@/services/behaviorAnalysisService'
+import { generateId } from '@/services/db'
 
 // 認知維度中文名稱對應
 const dimensionLabels: Record<CognitiveDimension, string> = {
@@ -485,6 +489,10 @@ const gameStatus = ref<GameStatusUpdate>({
   showCombo: false,
   showProgress: false
 })
+
+const currentSessionId = ref<string | null>(null)
+const behaviorCollector = ref<BehaviorCollector | null>(null)
+let lastTouchAt = 0
 
 // 每日訓練相關
 const showCompletionModal = ref(false)
@@ -703,6 +711,7 @@ function startGame(): void {
   gameState.value = 'playing'
   autoStartOverride.value = true
   gameComponentKey.value++
+  startBehaviorSession()
 }
 
 // 暫停遊戲
@@ -734,6 +743,9 @@ function handleGameStart(): void {
   timerInterval = setInterval(() => {
     elapsedTime.value++
   }, 1000)
+  if (!behaviorCollector.value) {
+    startBehaviorSession()
+  }
 }
 
 // 結束遊戲
@@ -742,6 +754,9 @@ function quitGame(): void {
     clearInterval(timerInterval)
     timerInterval = null
   }
+  finalizeBehaviorLogs().catch(() => {
+    // ignore
+  })
   router.push(isFromDailyTraining.value ? '/daily-challenge' : '/games')
 }
 
@@ -861,10 +876,11 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
 
     // 記錄遊戲結果（失敗不阻擋結算流程）
     try {
-      await gameStore.recordGameResult(finalizedResult, gameMode)
+      await gameStore.recordGameResult(finalizedResult, gameMode, currentSessionId.value ?? undefined)
     } catch (error) {
       console.error('recordGameResult failed:', error)
     }
+    await finalizeBehaviorLogs()
 
     // 如果是每日訓練，標記完成並更新狀態（失敗不阻擋「繼續下一個」）
     if (isFromDailyTraining.value) {
@@ -918,6 +934,9 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
     console.error('處理遊戲結束時發生錯誤:', error)
     // 確保狀態為 finished 以顯示結果畫面（即使部分邏輯失敗）
     gameState.value = 'finished'
+    finalizeBehaviorLogs().catch(() => {
+      // ignore
+    })
   }
 }
 
@@ -943,6 +962,7 @@ function playAgain(): void {
   }
   autoStartOverride.value = true
   gameComponentKey.value++
+  startBehaviorSession()
 }
 
 // 繼續下一個訓練遊戲
@@ -1066,6 +1086,9 @@ function resetToReadyState(): void {
   startError.value = null
   showDifficultyPanel.value = false
   gameComponentKey.value++
+  finalizeBehaviorLogs().catch(() => {
+    // ignore
+  })
 }
 
 watch(routeGameId, (newId) => {
@@ -1115,6 +1138,9 @@ onUnmounted(() => {
   if (timerInterval) {
     clearInterval(timerInterval)
   }
+  finalizeBehaviorLogs().catch(() => {
+    // ignore
+  })
   window.removeEventListener('resize', checkOrientation)
   window.removeEventListener('orientationchange', checkOrientation)
 })
@@ -1142,6 +1168,59 @@ onMounted(() => {
     nextTick(() => startGame())
   }
 })
+
+function startBehaviorSession(): void {
+  const odId = userStore.currentUser?.id
+  const gameId = resolvedGameId.value
+  if (!odId || !gameId) return
+  const sessionId = generateId()
+  currentSessionId.value = sessionId
+  behaviorCollector.value = new BehaviorCollector(odId, gameId, sessionId)
+}
+
+async function finalizeBehaviorLogs(): Promise<void> {
+  if (!behaviorCollector.value) return
+  try {
+    await behaviorCollector.value.saveAll()
+  } catch (error) {
+    console.error('saveAll behavior logs failed', error)
+  } finally {
+    behaviorCollector.value = null
+    currentSessionId.value = null
+  }
+}
+
+function handlePlayAreaInteraction(event: MouseEvent | TouchEvent): void {
+  if (gameState.value !== 'playing') return
+  if (!behaviorCollector.value) return
+
+  const now = Date.now()
+  if (event.type.startsWith('touch')) {
+    lastTouchAt = now
+  } else if (now - lastTouchAt < 500) {
+    return
+  }
+
+  const point = (() => {
+    if (event instanceof TouchEvent) {
+      const touch = event.touches[0] || event.changedTouches[0]
+      return touch ? { x: touch.clientX, y: touch.clientY } : null
+    }
+    return { x: event.clientX, y: event.clientY }
+  })()
+
+  if (!point) return
+
+  behaviorCollector.value.recordClick({
+    targetX: point.x,
+    targetY: point.y,
+    clickX: point.x,
+    clickY: point.y,
+    distance: 0,
+    targetSize: 0,
+    isHit: false,
+  })
+}
 </script>
 
 <style scoped>

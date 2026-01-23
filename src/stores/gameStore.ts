@@ -151,7 +151,7 @@ export const useGameStore = defineStore('game', () => {
   /**
    * 記錄遊戲結果
    */
-  async function recordGameResult(result: GameResult, mode?: GameMode): Promise<GameSession> {
+  async function recordGameResult(result: GameResult, mode?: GameMode, sessionId?: string): Promise<GameSession> {
     const userStore = useUserStore()
     if (!userStore.currentUser) {
       throw new Error('使用者未登入')
@@ -165,7 +165,7 @@ export const useGameStore = defineStore('game', () => {
     const cognitiveScores = calculateCognitiveScoresFromResult(normalizedResult.gameId, normalizedResult)
 
     const session: GameSession = {
-      id: generateId(),
+      id: sessionId || generateId(),
       odId,
       gameId: normalizedResult.gameId,
       difficulty: normalizedResult.difficulty,

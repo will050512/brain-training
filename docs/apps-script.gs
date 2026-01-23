@@ -76,6 +76,8 @@ var CONFIG = {
       'birthday',
       'educationYears',
       'gender',
+      'transferCode',
+      'transferCodeUpdatedAt',
       'clientSource',
       'authProvider',
       'createdAt',
@@ -99,6 +101,8 @@ var CONFIG = {
       'totalPlayTime',
       'averageScore',
       'bestScores',
+      'gamePlayCounts',
+      'favoriteGameId',
       'lastPlayedAt',
       'streak',
       'updatedAt',
@@ -195,7 +199,7 @@ var CONFIG = {
 
 function jsonOutput_(obj) {
   var out = ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON)
-  if (CONFIG.ENABLE_CORS) {
+  if (CONFIG.ENABLE_CORS && typeof out.setHeader === 'function') {
     return out
       .setHeader('Access-Control-Allow-Origin', '*')
       .setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
@@ -207,7 +211,7 @@ function jsonOutput_(obj) {
 function jsonpOutput_(callback, obj) {
   var payload = callback + '(' + JSON.stringify(obj) + ')'
   var out = ContentService.createTextOutput(payload).setMimeType(ContentService.MimeType.JAVASCRIPT)
-  if (CONFIG.ENABLE_CORS) {
+  if (CONFIG.ENABLE_CORS && typeof out.setHeader === 'function') {
     return out
       .setHeader('Access-Control-Allow-Origin', '*')
       .setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
@@ -218,7 +222,7 @@ function jsonpOutput_(callback, obj) {
 
 function doOptions(e) {
   var out = ContentService.createTextOutput('')
-  if (CONFIG.ENABLE_CORS) {
+  if (CONFIG.ENABLE_CORS && typeof out.setHeader === 'function') {
     return out
       .setMimeType(ContentService.MimeType.TEXT)
       .setHeader('Access-Control-Allow-Origin', '*')
@@ -237,6 +241,16 @@ function asNumber_(v, fallback) {
 function asString_(v, fallback) {
   if (fallback === undefined) fallback = ''
   return typeof v === 'string' ? v : (v == null ? fallback : String(v))
+}
+
+function normalizeTransferCode_(value) {
+  return asString_(value, '').replace(/[\s-]/g, '').toUpperCase()
+}
+
+function isValidTransferCode_(value) {
+  var normalized = normalizeTransferCode_(value)
+  if (normalized.length !== 6) return false
+  return /^[A-HJ-NP-Z2-9]{6}$/.test(normalized)
 }
 
 function asBoolean_(v, fallback) {
@@ -310,6 +324,16 @@ function getOrCreateSheet_(name, headers) {
     sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#f3f3f3')
   }
   return sheet
+}
+
+function findHeaderIndex_(headers, key) {
+  var target = String(key || '').toLowerCase().replace(/[\s_-]/g, '')
+  if (!target) return -1
+  for (var i = 0; i < headers.length; i++) {
+    var normalized = String(headers[i] || '').trim().toLowerCase().replace(/[\s_-]/g, '')
+    if (normalized === target) return i
+  }
+  return -1
 }
 
 function ensureHeaders_(sheet, headers) {
@@ -540,6 +564,8 @@ function flattenUserRow_(item) {
     asString_(item.birthday),
     asNumber_(item.educationYears, ''),
     asString_(item.gender, 'unknown'),
+    normalizeTransferCode_(item.transferCode),
+    item.transferCodeUpdatedAt ? asISO_(item.transferCodeUpdatedAt) : '',
     asString_(item.clientSource, ''),
     asString_(item.authProvider, ''),
     asISO_(item.createdAt),
@@ -586,6 +612,8 @@ function flattenUserStatsRow_(item) {
     asNumber_(item.totalPlayTime, 0),
     asNumber_(item.averageScore, 0),
     safeJsonStringifyObject_(item.bestScores),
+    safeJsonStringifyObject_(item.gamePlayCounts),
+    asString_(item.favoriteGameId, ''),
     item.lastPlayedAt ? asISO_(item.lastPlayedAt) : '',
     asNumber_(item.streak, 0),
     asISO_(item.updatedAt),
@@ -765,92 +793,94 @@ function doPost(e) {
   var lock = LockService.getScriptLock()
   try {
     lock.waitLock(CONFIG.LOCK_TIMEOUT_MS)
+    var requestId = Utilities.getUuid()
+    var serverTime = new Date().toISOString()
 
     if (!e || !e.postData || !e.postData.contents) {
-      return jsonOutput_({ ok: false, error: 'No post data received' })
+      return jsonOutput_({ ok: false, error: 'No post data received', requestId: requestId, serverTime: serverTime })
     }
 
     var data
     try {
       data = JSON.parse(e.postData.contents)
     } catch (err) {
-      return jsonOutput_({ ok: false, error: 'Invalid JSON: ' + String(err) })
+      return jsonOutput_({ ok: false, error: 'Invalid JSON: ' + String(err), requestId: requestId, serverTime: serverTime })
     }
 
     var action = (data && data.action) || 'upsertGameResults'
     if (action === 'upsertUsers') {
       var itemsU = Array.isArray(data.items) ? data.items : [data]
-      return jsonOutput_(Object.assign({ action: action }, upsertUsers_(itemsU)))
+      return jsonOutput_(Object.assign({ action: action, requestId: requestId, serverTime: serverTime }, upsertUsers_(itemsU)))
     }
     if (action === 'upsertUserSettings') {
       var itemsS = Array.isArray(data.items) ? data.items : [data]
       return jsonOutput_(Object.assign(
-        { action: action },
+        { action: action, requestId: requestId, serverTime: serverTime },
         upsertByKey_(CONFIG.SHEETS.USER_SETTINGS, CONFIG.HEADERS.USER_SETTINGS.slice(), 'odId', itemsS, validateUserSettings_, flattenUserSettingsRow_)
       ))
     }
     if (action === 'upsertUserStats') {
       var itemsSt = Array.isArray(data.items) ? data.items : [data]
       return jsonOutput_(Object.assign(
-        { action: action },
+        { action: action, requestId: requestId, serverTime: serverTime },
         upsertByKey_(CONFIG.SHEETS.USER_STATS, CONFIG.HEADERS.USER_STATS.slice(), 'odId', itemsSt, validateUserStats_, flattenUserStatsRow_)
       ))
     }
     if (action === 'upsertDataConsent') {
       var itemsC = Array.isArray(data.items) ? data.items : [data]
       return jsonOutput_(Object.assign(
-        { action: action },
+        { action: action, requestId: requestId, serverTime: serverTime },
         upsertByKey_(CONFIG.SHEETS.DATA_CONSENT, CONFIG.HEADERS.DATA_CONSENT.slice(), 'odId', itemsC, validateDataConsent_, flattenDataConsentRow_)
       ))
     }
     if (action === 'upsertMiniCogResults') {
       var itemsM = Array.isArray(data.items) ? data.items : [data]
       return jsonOutput_(Object.assign(
-        { action: action },
+        { action: action, requestId: requestId, serverTime: serverTime },
         upsertByKey_(CONFIG.SHEETS.MINI_COG_RESULTS, CONFIG.HEADERS.MINI_COG_RESULTS.slice(), 'id', itemsM, validateMiniCogResult_, flattenMiniCogResultRow_)
       ))
     }
     if (action === 'upsertDailyTrainingSessions') {
       var itemsD = Array.isArray(data.items) ? data.items : [data]
       return jsonOutput_(Object.assign(
-        { action: action },
+        { action: action, requestId: requestId, serverTime: serverTime },
         upsertByKey_(CONFIG.SHEETS.DAILY_TRAINING_SESSIONS, CONFIG.HEADERS.DAILY_TRAINING_SESSIONS.slice(), 'id', itemsD, validateDailyTrainingSession_, flattenDailyTrainingSessionRow_)
       ))
     }
     if (action === 'upsertBaselineAssessments') {
       var itemsB = Array.isArray(data.items) ? data.items : [data]
       return jsonOutput_(Object.assign(
-        { action: action },
+        { action: action, requestId: requestId, serverTime: serverTime },
         upsertByKey_(CONFIG.SHEETS.BASELINE_ASSESSMENTS, CONFIG.HEADERS.BASELINE_ASSESSMENTS.slice(), 'id', itemsB, validateBaselineAssessment_, flattenBaselineAssessmentRow_)
       ))
     }
     if (action === 'upsertDeclineAlerts') {
       var itemsA = Array.isArray(data.items) ? data.items : [data]
       return jsonOutput_(Object.assign(
-        { action: action },
+        { action: action, requestId: requestId, serverTime: serverTime },
         upsertByKey_(CONFIG.SHEETS.DECLINE_ALERTS, CONFIG.HEADERS.DECLINE_ALERTS.slice(), 'id', itemsA, validateDeclineAlert_, flattenDeclineAlertRow_)
       ))
     }
     if (action === 'upsertNutritionRecommendations') {
       var itemsN = Array.isArray(data.items) ? data.items : [data]
       return jsonOutput_(Object.assign(
-        { action: action },
+        { action: action, requestId: requestId, serverTime: serverTime },
         upsertByKey_(CONFIG.SHEETS.NUTRITION_RECOMMENDATIONS, CONFIG.HEADERS.NUTRITION_RECOMMENDATIONS.slice(), 'id', itemsN, validateNutritionRecommendation_, flattenNutritionRecommendationRow_)
       ))
     }
     if (action === 'upsertBehaviorLogs') {
       var itemsL = Array.isArray(data.items) ? data.items : [data]
       return jsonOutput_(Object.assign(
-        { action: action },
+        { action: action, requestId: requestId, serverTime: serverTime },
         upsertByKey_(CONFIG.SHEETS.BEHAVIOR_LOGS, CONFIG.HEADERS.BEHAVIOR_LOGS.slice(), 'id', itemsL, validateBehaviorLog_, flattenBehaviorLogRow_)
       ))
     }
     if (action === 'upsertGameResults') {
       var itemsG = Array.isArray(data.items) ? data.items : [data]
-      return jsonOutput_(Object.assign({ action: action }, upsertGameResults_(itemsG)))
+      return jsonOutput_(Object.assign({ action: action, requestId: requestId, serverTime: serverTime }, upsertGameResults_(itemsG)))
     }
 
-    return jsonOutput_({ ok: false, error: 'Unknown action: ' + action })
+    return jsonOutput_({ ok: false, error: 'Unknown action: ' + action, requestId: requestId, serverTime: serverTime })
   } catch (error) {
     return jsonOutput_({ ok: false, error: String(error && error.stack ? error.stack : error) })
   } finally {
@@ -875,6 +905,76 @@ function doGet(e) {
       return callback ? jsonpOutput_(callback, outPing) : jsonOutput_(outPing)
     }
 
+    if (action === 'getUserByTransferCode') {
+      var code = normalizeTransferCode_(params.code || '')
+      if (!code) {
+        var outErrCode = { ok: false, action: action, error: 'missing code' }
+        return callback ? jsonpOutput_(callback, outErrCode) : jsonOutput_(outErrCode)
+      }
+
+      var headersU0 = CONFIG.HEADERS.USERS.slice()
+      var sheetU0 = getOrCreateSheet_(CONFIG.SHEETS.USERS, headersU0)
+      ensureHeaders_(sheetU0, headersU0)
+
+      var headerRow = sheetU0.getRange(1, 1, 1, Math.max(1, sheetU0.getLastColumn())).getValues()[0] || []
+      var codeIdx = findHeaderIndex_(headerRow, 'transferCode')
+      if (codeIdx < 0) codeIdx = headersU0.indexOf('transferCode')
+      var updatedIdx = findHeaderIndex_(headerRow, 'updatedAt')
+      if (updatedIdx < 0) updatedIdx = headersU0.indexOf('updatedAt')
+
+      var lastRow0 = sheetU0.getLastRow()
+      if (lastRow0 < 2) {
+        var outEmpty0 = { ok: true, action: action, user: null }
+        return callback ? jsonpOutput_(callback, outEmpty0) : jsonOutput_(outEmpty0)
+      }
+
+      var rowWidth = Math.max(headersU0.length, sheetU0.getLastColumn(), 1)
+      var rows0 = sheetU0.getRange(2, 1, lastRow0 - 1, rowWidth).getValues()
+      var bestRow = null
+      var bestUpdated = 0
+      for (var r0 = 0; r0 < rows0.length; r0++) {
+        var rowVals0 = rows0[r0]
+        var match = false
+        if (codeIdx >= 0) {
+          var rowCode = normalizeTransferCode_(rowVals0[codeIdx])
+          match = rowCode && rowCode === code
+        } else {
+          for (var c0 = 0; c0 < rowVals0.length; c0++) {
+            var candidate = normalizeTransferCode_(rowVals0[c0])
+            if (candidate && candidate === code && isValidTransferCode_(candidate)) {
+              match = true
+              break
+            }
+          }
+        }
+        if (!match) continue
+        var updatedAtVal = updatedIdx >= 0 ? String(rowVals0[updatedIdx] || '') : ''
+        var updatedTime = updatedAtVal ? new Date(updatedAtVal).getTime() : 0
+        if (!bestRow || updatedTime >= bestUpdated) {
+          bestRow = rowVals0
+          bestUpdated = updatedTime
+        }
+      }
+
+      if (!bestRow) {
+        var outNullCode = { ok: true, action: action, user: null }
+        return callback ? jsonpOutput_(callback, outNullCode) : jsonOutput_(outNullCode)
+      }
+
+      var user0 = {}
+      if (headerRow.length > 0) {
+        for (var c0 = 0; c0 < headerRow.length; c0++) {
+          var key0 = String(headerRow[c0] || '').trim()
+          if (!key0) continue
+          user0[key0] = bestRow[c0]
+        }
+      } else {
+        for (var c0b = 0; c0b < headersU0.length; c0b++) user0[headersU0[c0b]] = bestRow[c0b]
+      }
+      var outUser0 = { ok: true, action: action, user: user0 }
+      return callback ? jsonpOutput_(callback, outUser0) : jsonOutput_(outUser0)
+    }
+
     if (action === 'getUser') {
       var userId = params.userId || ''
       if (!userId) {
@@ -886,7 +986,10 @@ function doGet(e) {
       var sheetU = getOrCreateSheet_(CONFIG.SHEETS.USERS, headersU)
       ensureHeaders_(sheetU, headersU)
 
-      var userIdCol = headersU.indexOf('userId') + 1
+      var headerRowU = sheetU.getRange(1, 1, 1, Math.max(1, sheetU.getLastColumn())).getValues()[0] || []
+      var userIdIdx = findHeaderIndex_(headerRowU, 'userId')
+      if (userIdIdx < 0) userIdIdx = headersU.indexOf('userId')
+      var userIdCol = userIdIdx >= 0 ? userIdIdx + 1 : 1
       var rowByUserId = buildKeyRowMapFromCol_(sheetU, userIdCol, false)
       var row = rowByUserId[userId]
 
@@ -895,9 +998,18 @@ function doGet(e) {
         return callback ? jsonpOutput_(callback, outNull) : jsonOutput_(outNull)
       }
 
-      var values = sheetU.getRange(row, 1, 1, headersU.length).getValues()[0]
+      var rowWidthU = Math.max(headersU.length, sheetU.getLastColumn(), 1)
+      var values = sheetU.getRange(row, 1, 1, rowWidthU).getValues()[0]
       var user = {}
-      for (var i = 0; i < headersU.length; i++) user[headersU[i]] = values[i]
+      if (headerRowU.length > 0) {
+        for (var i = 0; i < headerRowU.length; i++) {
+          var keyU = String(headerRowU[i] || '').trim()
+          if (!keyU) continue
+          user[keyU] = values[i]
+        }
+      } else {
+        for (var i0 = 0; i0 < headersU.length; i0++) user[headersU[i0]] = values[i0]
+      }
       var outUser = { ok: true, action: action, user: user }
       return callback ? jsonpOutput_(callback, outUser) : jsonOutput_(outUser)
     }
@@ -916,16 +1028,28 @@ function doGet(e) {
         : (action === 'getUserStats' ? CONFIG.HEADERS.USER_STATS.slice() : CONFIG.HEADERS.DATA_CONSENT.slice())
       var sheet0 = getOrCreateSheet_(sheetName, headers0)
       ensureHeaders_(sheet0, headers0)
-      var keyCol = headers0.indexOf('odId') + 1
+      var headerRow0 = sheet0.getRange(1, 1, 1, Math.max(1, sheet0.getLastColumn())).getValues()[0] || []
+      var keyIdx0 = findHeaderIndex_(headerRow0, 'odId')
+      if (keyIdx0 < 0) keyIdx0 = headers0.indexOf('odId')
+      var keyCol = keyIdx0 >= 0 ? keyIdx0 + 1 : 1
       var rowByKey = buildKeyRowMapFromCol_(sheet0, keyCol, false)
       var row0 = rowByKey[odId]
       if (!row0 || row0 < 2) {
         var outNull0 = { ok: true, action: action, item: null }
         return callback ? jsonpOutput_(callback, outNull0) : jsonOutput_(outNull0)
       }
-      var values0 = sheet0.getRange(row0, 1, 1, headers0.length).getValues()[0]
+      var rowWidth0 = Math.max(headers0.length, sheet0.getLastColumn(), 1)
+      var values0 = sheet0.getRange(row0, 1, 1, rowWidth0).getValues()[0]
       var item0 = {}
-      for (var j = 0; j < headers0.length; j++) item0[headers0[j]] = values0[j]
+      if (headerRow0.length > 0) {
+        for (var j = 0; j < headerRow0.length; j++) {
+          var key0 = String(headerRow0[j] || '').trim()
+          if (!key0) continue
+          item0[key0] = values0[j]
+        }
+      } else {
+        for (var j0 = 0; j0 < headers0.length; j0++) item0[headers0[j0]] = values0[j0]
+      }
       var outItem0 = { ok: true, action: action, item: item0 }
       return callback ? jsonpOutput_(callback, outItem0) : jsonOutput_(outItem0)
     }
@@ -952,10 +1076,14 @@ function doGet(e) {
       }
 
       var endRow = Math.min(lastRow, cursor + limit - 1)
-      var rows = sheetG.getRange(cursor, 1, endRow - cursor + 1, headersG.length).getValues()
+      var headerRowG = sheetG.getRange(1, 1, 1, Math.max(1, sheetG.getLastColumn())).getValues()[0] || []
+      var rowWidthG = Math.max(headersG.length, sheetG.getLastColumn(), 1)
+      var rows = sheetG.getRange(cursor, 1, endRow - cursor + 1, rowWidthG).getValues()
 
-      var userIdIdx = headersG.indexOf('userId')
-      var tsIdx = headersG.indexOf('timestamp')
+      var userIdIdx = findHeaderIndex_(headerRowG, 'userId')
+      if (userIdIdx < 0) userIdIdx = headersG.indexOf('userId')
+      var tsIdx = findHeaderIndex_(headerRowG, 'timestamp')
+      if (tsIdx < 0) tsIdx = headersG.indexOf('timestamp')
       var items = []
 
       for (var r = 0; r < rows.length; r++) {
@@ -965,7 +1093,15 @@ function doGet(e) {
         if (since && ts && ts < since) continue
 
         var item = {}
-        for (var c = 0; c < headersG.length; c++) item[headersG[c]] = rowVals[c]
+        if (headerRowG.length > 0) {
+          for (var c = 0; c < headerRowG.length; c++) {
+            var keyG = String(headerRowG[c] || '').trim()
+            if (!keyG) continue
+            item[keyG] = rowVals[c]
+          }
+        } else {
+          for (var c0g = 0; c0g < headersG.length; c0g++) item[headersG[c0g]] = rowVals[c0g]
+        }
         items.push(item)
       }
 
@@ -1015,10 +1151,19 @@ function doGet(e) {
       }
 
       var endRow2 = Math.min(lastRow2, cursor2 + limit2 - 1)
-      var rows2 = sheet2.getRange(cursor2, 1, endRow2 - cursor2 + 1, headers2.length).getValues()
+      var headerRow2 = sheet2.getRange(1, 1, 1, Math.max(1, sheet2.getLastColumn())).getValues()[0] || []
+      var rowWidth2 = Math.max(headers2.length, sheet2.getLastColumn(), 1)
+      var rows2 = sheet2.getRange(cursor2, 1, endRow2 - cursor2 + 1, rowWidth2).getValues()
 
-      var userIdIdx2 = headers2.indexOf(config.key)
-      var tsIdx2 = headers2.indexOf('completedAt')
+      var userIdIdx2 = findHeaderIndex_(headerRow2, config.key)
+      if (userIdIdx2 < 0) userIdIdx2 = headers2.indexOf(config.key)
+      var tsIdx2 = findHeaderIndex_(headerRow2, 'completedAt')
+      if (tsIdx2 < 0) tsIdx2 = findHeaderIndex_(headerRow2, 'timestamp')
+      if (tsIdx2 < 0) tsIdx2 = findHeaderIndex_(headerRow2, 'assessedAt')
+      if (tsIdx2 < 0) tsIdx2 = findHeaderIndex_(headerRow2, 'detectedAt')
+      if (tsIdx2 < 0) tsIdx2 = findHeaderIndex_(headerRow2, 'recommendedAt')
+      if (tsIdx2 < 0) tsIdx2 = findHeaderIndex_(headerRow2, 'startedAt')
+      if (tsIdx2 < 0) tsIdx2 = headers2.indexOf('completedAt')
       if (tsIdx2 < 0) tsIdx2 = headers2.indexOf('timestamp')
       if (tsIdx2 < 0) tsIdx2 = headers2.indexOf('assessedAt')
       if (tsIdx2 < 0) tsIdx2 = headers2.indexOf('detectedAt')
@@ -1032,7 +1177,15 @@ function doGet(e) {
         var ts2 = tsIdx2 >= 0 ? asString_(rowVals2[tsIdx2]) : ''
         if (since2 && ts2 && ts2 < since2) continue
         var item2 = {}
-        for (var c2 = 0; c2 < headers2.length; c2++) item2[headers2[c2]] = rowVals2[c2]
+        if (headerRow2.length > 0) {
+          for (var c2 = 0; c2 < headerRow2.length; c2++) {
+            var key2 = String(headerRow2[c2] || '').trim()
+            if (!key2) continue
+            item2[key2] = rowVals2[c2]
+          }
+        } else {
+          for (var c2b = 0; c2b < headers2.length; c2b++) item2[headers2[c2b]] = rowVals2[c2b]
+        }
         items2.push(item2)
       }
 

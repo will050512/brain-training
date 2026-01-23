@@ -113,26 +113,13 @@ function isBrowserOnline(): boolean {
   }
 }
 
-function isBehaviorTrackingEnabled(): boolean {
-  try {
-    const settingsStore = useSettingsStore()
-    return settingsStore.enableBehaviorTracking
-  } catch {
-    return true
-  }
-}
-
 async function isSheetSyncAllowed(odId: string): Promise<boolean> {
-  // 以「分析數據收集同意」作為遠端同步的開關，避免未同意就上傳造成信任問題。
-  if (!isBehaviorTrackingEnabled()) {
-    console.info('[Sync] Skipped: behavior tracking disabled.')
-    return false
-  }
   try {
     const consent = await getDataConsent(odId)
-    return !!consent?.analyticsConsent
+    if (!consent) return true
+    return !!(consent.essentialConsent || consent.analyticsConsent)
   } catch {
-    return false
+    return true
   }
 }
 

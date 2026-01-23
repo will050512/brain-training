@@ -4,11 +4,13 @@
  */
 
 import { getDB, type BehaviorLog } from './db'
-import type { GameSession } from '@/types'
+import type { GameSession, User, UserStats } from '@/types'
+import { defaultUserStats } from '@/types/user'
+import { generateTransferCode, isValidTransferCode, normalizeTransferCode } from '@/services/userTransferCode'
 
 // 遷移版本記錄 key
 const MIGRATION_VERSION_KEY = 'brain-training-migration-version'
-const CURRENT_MIGRATION_VERSION = 1
+const CURRENT_MIGRATION_VERSION = 2
 
 /**
  * 遷移紀錄
@@ -65,6 +67,16 @@ export async function runMigrations(): Promise<{
       migrationsRun.push('gameSessionResults')
     } catch (error) {
       errors.push(`gameSessionResults: ${(error as Error).message}`)
+    }
+  }
+
+  // Migration 2: 使用者檔案與統計補齊
+  if (currentVersion < 2) {
+    try {
+      await migrateUserProfilesAndStats()
+      migrationsRun.push('userProfilesAndStats')
+    } catch (error) {
+      errors.push(`userProfilesAndStats: ${(error as Error).message}`)
     }
   }
 
@@ -146,6 +158,100 @@ async function migrateGameSessionResults(): Promise<void> {
     await tx.done
     
     console.log(`[Migration] Updated ${sessionsToUpdate.length} game sessions`)
+  }
+}
+
+/**
+ * Migration 2: 補齊 transferCode、gamePlayCounts、favoriteGameId
+ */
+async function migrateUserProfilesAndStats(): Promise<void> {
+  const db = await getDB()
+  const users = await db.getAll('users')
+  const sessions = await db.getAll('gameSessions')
+
+  const sessionCounts = new Map<string, Record<string, number>>()
+  for (const session of sessions) {
+    const odId = session.odId
+    if (!odId) continue
+    const counts = sessionCounts.get(odId) ?? {}
+    counts[session.gameId] = (counts[session.gameId] || 0) + 1
+    sessionCounts.set(odId, counts)
+  }
+
+  const existingCodes = new Set(
+    users
+      .map(user => normalizeTransferCode(user.transferCode || ''))
+      .filter(Boolean)
+  )
+
+  const usersToUpdate: User[] = []
+  const statsToUpdate: UserStats[] = []
+
+  for (const user of users) {
+    let updatedUser = { ...user }
+    let userChanged = false
+
+    const normalizedCode = normalizeTransferCode(updatedUser.transferCode || '')
+    if (!normalizedCode || !isValidTransferCode(normalizedCode)) {
+      let newCode = generateTransferCode()
+      let guard = 0
+      while (existingCodes.has(newCode) && guard < 20) {
+        newCode = generateTransferCode()
+        guard++
+      }
+      existingCodes.add(newCode)
+      updatedUser.transferCode = newCode
+      updatedUser.transferCodeUpdatedAt = new Date()
+      userChanged = true
+    } else if (normalizedCode !== updatedUser.transferCode) {
+      updatedUser.transferCode = normalizedCode
+      userChanged = true
+    }
+
+    if (userChanged) {
+      usersToUpdate.push(updatedUser)
+    }
+
+    const stats = (await db.get('userStats', user.id)) ?? defaultUserStats(user.id)
+    let statsChanged = false
+    const counts = sessionCounts.get(user.id) ?? {}
+
+    if (!stats.gamePlayCounts || Object.keys(stats.gamePlayCounts).length === 0) {
+      stats.gamePlayCounts = counts
+      statsChanged = true
+    }
+
+    if (stats.favoriteGameId == null) {
+      let favorite: string | null = null
+      let bestCount = -1
+      for (const gameId of Object.keys(counts)) {
+        const count = counts[gameId] || 0
+        if (count > bestCount) {
+          bestCount = count
+          favorite = gameId
+        }
+      }
+      if (favorite) {
+        stats.favoriteGameId = favorite
+        statsChanged = true
+      }
+    }
+
+    if (statsChanged) {
+      statsToUpdate.push(stats)
+    }
+  }
+
+  if (usersToUpdate.length > 0) {
+    const txUsers = db.transaction('users', 'readwrite')
+    await Promise.all(usersToUpdate.map(u => txUsers.store.put(u)))
+    await txUsers.done
+  }
+
+  if (statsToUpdate.length > 0) {
+    const txStats = db.transaction('userStats', 'readwrite')
+    await Promise.all(statsToUpdate.map(s => txStats.store.put(s)))
+    await txStats.done
   }
 }
 

@@ -533,7 +533,6 @@ const syncStatusClass = computed(() => {
 
 const canManualSync = computed(() => {
   if (!userStore.isLoggedIn) return false
-  if (!settingsStore.enableBehaviorTracking) return false
   if (syncStatus.value.consent !== 'allowed') return false
   if (!syncStatus.value.online) return false
   return settingsStore.syncUiStatus !== 'syncing'
@@ -572,7 +571,11 @@ async function refreshConsentStatus(): Promise<void> {
   if (!odId) return
   try {
     const consent = await getDataConsent(odId)
-    syncStatus.value.consent = consent?.analyticsConsent ? 'allowed' : 'blocked'
+    if (!consent) {
+      syncStatus.value.consent = 'allowed'
+    } else {
+      syncStatus.value.consent = (consent.essentialConsent || consent.analyticsConsent) ? 'allowed' : 'blocked'
+    }
     consentState.value = consent || {
       ...defaultDataConsent(odId),
       essentialConsent: true,
@@ -603,7 +606,7 @@ async function toggleCloudBackup(): Promise<void> {
   }
   consentState.value = next
   await saveDataConsent(next)
-  syncStatus.value.consent = next.analyticsConsent ? 'allowed' : 'blocked'
+  syncStatus.value.consent = next.essentialConsent || next.analyticsConsent ? 'allowed' : 'blocked'
 }
 
 async function toggleUsageAnalytics(): Promise<void> {
@@ -656,6 +659,8 @@ async function confirmClearData(): Promise<void> {
       totalPlayTime: 0,
       averageScore: 0,
       bestScores: {},
+      gamePlayCounts: {},
+      favoriteGameId: null,
       lastPlayedAt: null,
       streak: 0,
     })
@@ -673,12 +678,8 @@ function handleStatusRefresh(): void {
 async function handleManualSync(): Promise<void> {
   const odId = userStore.currentUser?.id
   if (!odId) return
-  if (!settingsStore.enableBehaviorTracking) {
-    console.info('[Sync] Skipped: behavior tracking disabled.')
-    return
-  }
   if (syncStatus.value.consent !== 'allowed') {
-    settingsStore.setSyncUiStatus('error', '需同意分析資料收集')
+    settingsStore.setSyncUiStatus('error', '需同意必要功能')
     return
   }
   if (!syncStatus.value.online) {

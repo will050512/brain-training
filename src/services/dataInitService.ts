@@ -1,11 +1,13 @@
 import { ref, readonly } from 'vue'
-import { useUserStore } from '@/stores/userStore'
 import { useGameStore } from '@/stores/gameStore'
+import { useUserStore } from '@/stores/userStore'
 import { getSyncService, type SyncStatus } from '@/services/offlineSyncService'
-import { getTodayTrainingSession, saveDailyTrainingSession } from '@/services/db'
+import { getTodayTrainingSession, saveDailyTrainingSession, getLatestBaselineAssessment, getLatestMiniCogResult } from '@/services/db'
 import { syncDailyTrainingSessionToSheet } from '@/services/userDataSheetSyncService'
 import { backfillUserSessionsToSheet } from '@/services/googleSheetSyncService'
 import { backfillAllUserDataToSheet } from '@/services/userDataSheetSyncService'
+import { restoreAllUserDataFromSheet } from '@/services/sheetRestoreService'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 export type DataSyncStatus = SyncStatus | 'pending'
 
@@ -61,23 +63,66 @@ class DataInitService {
     this.isInitialized = true
   }
 
-  async initUserData(odId: string) {
-    const userStore = useUserStore()
+  async initUserData(odId: string, options?: { forceRestore?: boolean }) {
     const gameStore = useGameStore()
+    const settingsStore = useSettingsStore()
 
     this.setSyncStatus('syncing')
     try {
-      // Parallel loading
+      settingsStore.setAssessmentUser(odId)
+      await restoreAllUserDataFromSheet(odId, { force: options?.forceRestore })
       await Promise.all([
         gameStore.loadUserSessions(odId),
         this.loadDailyTraining(odId),
+      ])
+      await this.syncAssessmentStatus(odId, settingsStore)
+      await Promise.all([
         backfillUserSessionsToSheet(odId),
-        backfillAllUserDataToSheet(odId)
+        backfillAllUserDataToSheet(odId),
       ])
       this.setSyncStatus('idle')
     } catch (error) {
       console.error('Failed to init user data:', error)
       this.setSyncStatus('error')
+    }
+  }
+
+  private async syncAssessmentStatus(odId: string, settingsStore: ReturnType<typeof useSettingsStore>) {
+    try {
+      const baseline = await getLatestBaselineAssessment(odId)
+      if (baseline) {
+        const suggestedDifficulty = baseline.overallLevel === 'advanced'
+          ? 'hard'
+          : baseline.overallLevel === 'intermediate'
+            ? 'medium'
+            : 'easy'
+        settingsStore.setAssessmentResult({
+          suggestedDifficulty,
+          completedAt: baseline.assessedAt,
+          scores: {
+            reaction: baseline.cognitiveScores.reaction || 0,
+            memory: baseline.cognitiveScores.memory || 0,
+            logic: baseline.cognitiveScores.logic || 0,
+          },
+        })
+        return
+      }
+
+      const miniCog = await getLatestMiniCogResult(odId)
+      if (miniCog) {
+        const suggestedDifficulty = miniCog.totalScore >= 4 ? 'hard' : miniCog.totalScore <= 2 ? 'easy' : 'medium'
+        settingsStore.setAssessmentResult({
+          suggestedDifficulty,
+          completedAt: miniCog.completedAt,
+          scores: {
+            reaction: miniCog.totalScore * 20,
+            memory: miniCog.wordRecall.score * 33,
+            logic: miniCog.clockDrawing.score * 50,
+          },
+        })
+      }
+    } catch (error) {
+      console.error('Failed to sync assessment status:', error)
     }
   }
 

@@ -456,7 +456,8 @@ export async function analyzeBehavior(sessionId: string): Promise<BehaviorAnalys
  * 分析點擊精準度
  */
 function analyzeClickAccuracy(data: ClickAccuracyData[]): BehaviorAnalysis['clickAccuracy'] {
-  if (data.length === 0) {
+  const validData = data.filter(d => Number.isFinite(d.distance) && d.targetSize > 0)
+  if (validData.length === 0) {
     return {
       averageDistance: 0,
       hitRate: 1,
@@ -464,10 +465,10 @@ function analyzeClickAccuracy(data: ClickAccuracyData[]): BehaviorAnalysis['clic
     }
   }
   
-  const distances = data.map(d => d.distance)
+  const distances = validData.map(d => d.distance)
   const averageDistance = distances.reduce((a, b) => a + b, 0) / distances.length
-  const hits = data.filter(d => d.isHit).length
-  const hitRate = hits / data.length
+  const hits = validData.filter(d => d.isHit).length
+  const hitRate = hits / validData.length
   
   let precision: 'high' | 'medium' | 'low'
   if (hitRate >= 0.9 && averageDistance < 20) {
