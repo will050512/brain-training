@@ -3,6 +3,7 @@
  */
 
 import type { CognitiveScores } from './cognitive'
+import { parseBirthdayToDate } from '@/utils/birthday'
 
 // ===== 資料同意相關 =====
 
@@ -196,12 +197,13 @@ export function generateUserId(name: string, birthday: string): string {
 
 // 計算年齡
 export function calculateAge(birthday: string): number {
-  const birthDate = new Date(birthday)
+  const birthDate = parseBirthdayToDate(birthday)
+  if (!birthDate) return 0
   const today = new Date()
   let age = today.getFullYear() - birthDate.getFullYear()
   const monthDiff = today.getMonth() - birthDate.getMonth()
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
     age--
   }
-  return age
+  return age < 0 ? 0 : age
 }

@@ -87,6 +87,26 @@ class DataInitService {
     }
   }
 
+  async refreshUserDataFromSheet(odId: string, options?: { forceRestore?: boolean }) {
+    if (!odId) return
+    const gameStore = useGameStore()
+    const settingsStore = useSettingsStore()
+    this.setSyncStatus('syncing')
+    try {
+      settingsStore.setAssessmentUser(odId)
+      await restoreAllUserDataFromSheet(odId, { force: options?.forceRestore })
+      await Promise.all([
+        gameStore.loadUserSessions(odId),
+        this.loadDailyTraining(odId),
+      ])
+      await this.syncAssessmentStatus(odId, settingsStore)
+      this.setSyncStatus('idle')
+    } catch (error) {
+      console.error('Failed to refresh user data:', error)
+      this.setSyncStatus('error')
+    }
+  }
+
   private async syncAssessmentStatus(odId: string, settingsStore: ReturnType<typeof useSettingsStore>) {
     try {
       const baseline = await getLatestBaselineAssessment(odId)

@@ -1505,6 +1505,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 .app-page {
   height: 100vh;
   height: 100dvh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1523,7 +1524,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 /* APP 頁面頭部 - 固定高度 */
 .app-header {
   flex-shrink: 0;
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: calc(var(--spacing-sm) + env(safe-area-inset-top)) var(--spacing-md) var(--spacing-sm);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   display: flex;
@@ -1564,6 +1565,14 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   padding-bottom: max(var(--spacing-md), env(safe-area-inset-bottom));
+  overscroll-behavior-y: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-padding-top: calc(var(--spacing-lg) + env(safe-area-inset-top));
+  touch-action: pan-y;
+}
+.app-content-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 /* 內容區域不需要滾動時使用（內容自適應） */
@@ -1739,7 +1748,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 @media (orientation: landscape) and (max-height: 500px) {
   .app-header {
     min-height: 48px;
-    padding: var(--spacing-xs) var(--spacing-md);
+    padding: calc(var(--spacing-xs) + env(safe-area-inset-top)) var(--spacing-md) var(--spacing-xs);
   }
 
   .app-footer {

@@ -154,6 +154,12 @@ class OfflineSyncService {
   async sync(): Promise<SyncResult> {
     if (!isBehaviorTrackingEnabled()) {
       console.info('[OfflineSync] Sync skipped by user preference.')
+      try {
+        const settingsStore = useSettingsStore()
+        settingsStore.setSyncUiStatus('idle')
+      } catch {
+        // ignore ui status update
+      }
       return {
         success: true,
         syncedCount: 0,

@@ -192,11 +192,13 @@ watch(() => userStore.currentUser, (newUser) => {
   }
 }, { immediate: false })
 
-function handleOnline(): void {
-  if (!userStore.currentUser?.id) return
-  backfillUserSessionsToSheet(userStore.currentUser.id)
+async function handleOnline(): Promise<void> {
+  const odId = userStore.currentUser?.id
+  if (!odId) return
+  await dataInitService.refreshUserDataFromSheet(odId)
+  backfillUserSessionsToSheet(odId)
   syncUserProfileToSheet(userStore.currentUser)
-  backfillAllUserDataToSheet(userStore.currentUser.id)
+  backfillAllUserDataToSheet(odId)
 }
 
 onMounted(async () => {
@@ -222,6 +224,7 @@ onMounted(async () => {
   // 初始化數據同步服務
   dataInitService.initialize()
   window.addEventListener('online', handleOnline)
+  window.addEventListener('focus', handleOnline)
 
   // 檢查提醒（延遲執行以免影響首屏載入）
   setTimeout(() => {
@@ -247,6 +250,7 @@ onMounted(async () => {
 onUnmounted(() => {
   dataInitService.destroy()
   window.removeEventListener('online', handleOnline)
+  window.removeEventListener('focus', handleOnline)
 })
 </script>
 

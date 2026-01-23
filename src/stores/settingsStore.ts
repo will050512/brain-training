@@ -104,6 +104,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const hasWindow = typeof window !== 'undefined'
   let systemThemeQuery: MediaQueryList | null = null
   let systemThemeListener: ((event: MediaQueryListEvent) => void) | null = null
+  let syncStatusTimer: ReturnType<typeof setTimeout> | null = null
   // 狀態（全域設定，不依賴使用者）
   const soundEnabled = ref(false)      // 音效預設關閉
   const musicEnabled = ref(false)      // 音樂預設關閉
@@ -445,6 +446,10 @@ export const useSettingsStore = defineStore('settings', () => {
 
   function setSyncUiStatus(status: SyncUiStatus, errorMessage?: string | null): void {
     syncUiStatus.value = status
+    if (syncStatusTimer) {
+      clearTimeout(syncStatusTimer)
+      syncStatusTimer = null
+    }
     if (status === 'success') {
       lastManualSyncAt.value = new Date().toISOString()
       lastManualSyncError.value = null
@@ -452,6 +457,15 @@ export const useSettingsStore = defineStore('settings', () => {
       lastManualSyncError.value = errorMessage || 'sync failed'
     } else {
       lastManualSyncError.value = null
+    }
+
+    if (status === 'syncing') {
+      syncStatusTimer = setTimeout(() => {
+        if (syncUiStatus.value === 'syncing') {
+          syncUiStatus.value = 'idle'
+        }
+        syncStatusTimer = null
+      }, 15000)
     }
   }
 

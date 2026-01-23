@@ -27,9 +27,10 @@ import {
 import { calculateCognitiveScoresFromResult } from '@/services/scoreCalculator'
 import { getGradeFromScore } from '@/types/game'
 import { getSheetEndpoint } from '@/services/sheetConfig'
+import { normalizeBirthdayInput } from '@/utils/birthday'
 
 const SHEET_ENDPOINT = getSheetEndpoint()
-const RESTORE_THROTTLE_MS = 12 * 60 * 60 * 1000
+const RESTORE_THROTTLE_MS = 5 * 60 * 1000
 const RESTORE_KEY_PREFIX = 'sheetRestoreAt:'
 
 type RestoreOptions = {
@@ -110,6 +111,16 @@ function parseJsonObject(value: unknown): Record<string, unknown> {
     }
   }
   return {}
+}
+
+function parseJsonNumberMap(value: unknown): Record<string, number> {
+  const raw = parseJsonObject(value)
+  const output: Record<string, number> = {}
+  for (const key of Object.keys(raw)) {
+    const n = Number(raw[key])
+    if (Number.isFinite(n)) output[key] = n
+  }
+  return output
 }
 
 function parseJsonArray(value: unknown): unknown[] {
@@ -202,7 +213,7 @@ function mapUserProfile(raw: Record<string, unknown>): User {
   return {
     id: asString(raw.userId),
     name: asString(raw.name),
-    birthday: asString(raw.birthday),
+    birthday: normalizeBirthdayInput(asString(raw.birthday)),
     educationYears: asNumber(raw.educationYears, 0),
     gender: (asString(raw.gender) as User['gender']) || 'unknown',
     transferCode: asString(raw.transferCode || ''),
@@ -233,8 +244,8 @@ function mapUserStats(raw: Record<string, unknown>, odId: string): UserStats {
     totalGamesPlayed: asNumber(raw.totalGamesPlayed, 0),
     totalPlayTime: asNumber(raw.totalPlayTime, 0),
     averageScore: asNumber(raw.averageScore, 0),
-    bestScores: parseJsonObject(raw.bestScores),
-    gamePlayCounts: parseJsonObject(raw.gamePlayCounts),
+    bestScores: parseJsonNumberMap(raw.bestScores),
+    gamePlayCounts: parseJsonNumberMap(raw.gamePlayCounts),
     favoriteGameId: asString(raw.favoriteGameId, '') || null,
     lastPlayedAt: raw.lastPlayedAt ? asDate(raw.lastPlayedAt) : null,
     streak: asNumber(raw.streak, 0),

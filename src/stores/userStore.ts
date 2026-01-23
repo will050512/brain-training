@@ -11,6 +11,7 @@ import {
   defaultUserStats,
   calculateAge 
 } from '@/types/user'
+import { normalizeBirthdayInput } from '@/utils/birthday'
 import {
   saveUser,
   getUser,
@@ -51,15 +52,6 @@ function normalizeStats(stats: UserStats): UserStats {
   }
 }
 
-function normalizeBirthdayInput(input: string): string {
-  const trimmed = input.trim()
-  if (!trimmed) return ''
-  if (/^\d{4}-\d{2}$/.test(trimmed)) {
-    return `${trimmed}-01`
-  }
-  return trimmed
-}
-
 function normalizeName(name: string): string {
   return name.trim().toLowerCase()
 }
@@ -92,11 +84,12 @@ async function findUserByNameAndMonthYear(name: string, birthday: string): Promi
   })
 
   if (matches.length === 0) return null
-  return matches.sort((a, b) => {
+  const [mostRecent] = matches.sort((a, b) => {
     const aTime = new Date(a.lastActiveAt ?? a.updatedAt ?? a.createdAt ?? 0).getTime()
     const bTime = new Date(b.lastActiveAt ?? b.updatedAt ?? b.createdAt ?? 0).getTime()
     return bTime - aTime
-  })[0]
+  })
+  return mostRecent ?? null
 }
 
 async function createUniqueTransferCode(): Promise<string> {

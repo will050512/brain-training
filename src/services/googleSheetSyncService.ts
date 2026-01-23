@@ -10,8 +10,9 @@ const SHEET_ENDPOINT = getSheetEndpoint()
 const BACKFILL_THROTTLE_MS = 24 * 60 * 60 * 1000
 const BACKFILL_KEY_PREFIX = 'sheetBackfillAt:'
 const SYNCED_IDS_KEY_PREFIX = 'sheetSyncedSessionIds:'
+const SESSION_HASH_KEY_PREFIX = 'sheetSessionHash:'
 const MAX_SYNCED_IDS = 5000
-const SHEET_SYNC_PROTOCOL_VERSION = 2
+const SHEET_SYNC_PROTOCOL_VERSION = 3
 const SHEET_SCHEMA_VERSION = 1
 const SHEET_SCORING_VERSION = 2
 const SYNC_PROTOCOL_KEY_PREFIX = 'sheetSyncProtocol:'
@@ -145,6 +146,49 @@ function saveSyncedIds(odId: string, ids: Set<string>): void {
   }
 }
 
+function stableStringify(value: unknown): string {
+  const seen = new WeakSet<object>()
+  const serialize = (val: unknown): unknown => {
+    if (val === null || typeof val !== 'object') return val
+    if (seen.has(val as object)) return null
+    seen.add(val as object)
+    if (Array.isArray(val)) {
+      return val.map(item => serialize(item))
+    }
+    const obj = val as Record<string, unknown>
+    const out: Record<string, unknown> = {}
+    for (const key of Object.keys(obj).sort()) {
+      out[key] = serialize(obj[key])
+    }
+    return out
+  }
+  try {
+    return JSON.stringify(serialize(value))
+  } catch {
+    return ''
+  }
+}
+
+function buildSessionHashKey(odId: string, sessionId: string): string {
+  return `${SESSION_HASH_KEY_PREFIX}${odId}:${sessionId}`
+}
+
+function loadSessionHash(odId: string, sessionId: string): string | null {
+  try {
+    return localStorage.getItem(buildSessionHashKey(odId, sessionId))
+  } catch {
+    return null
+  }
+}
+
+function saveSessionHash(odId: string, sessionId: string, hash: string): void {
+  try {
+    localStorage.setItem(buildSessionHashKey(odId, sessionId), hash)
+  } catch {
+    // ignore
+  }
+}
+
 function ensureSyncProtocolVersion(odId: string): void {
   // 當同步協議/Apps Script 升級時，避免沿用舊的「已同步 sessionId」而導致資料無法被修正（例如早期上傳造成 score>100 或空 gameId）。
   try {
@@ -153,6 +197,12 @@ function ensureSyncProtocolVersion(odId: string): void {
     if (current === SHEET_SYNC_PROTOCOL_VERSION) return
     localStorage.setItem(key, String(SHEET_SYNC_PROTOCOL_VERSION))
     localStorage.removeItem(`${SYNCED_IDS_KEY_PREFIX}${odId}`)
+    for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+      const k = localStorage.key(i)
+      if (k && k.startsWith(SESSION_HASH_KEY_PREFIX)) {
+        localStorage.removeItem(k)
+      }
+    }
     localStorage.removeItem(`${BACKFILL_KEY_PREFIX}${odId}`)
   } catch {
     // ignore
@@ -255,15 +305,27 @@ function mapSessionToPayload(session: GameSession, bestScore?: number): SheetPay
   }
 }
 
+function shouldSyncSession(odId: string, sessionId: string, payload: SheetPayload): boolean {
+  if (!sessionId) return false
+  const hash = stableStringify(payload)
+  if (!hash) return true
+  const previous = loadSessionHash(odId, sessionId)
+  return previous !== hash
+}
+
 async function postToSheet(payload: SheetPayload | { action: 'upsertGameResults'; protocolVersion?: number; items: SheetPayload[] }): Promise<boolean> {
   try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 12000)
     // Apps Script Web App 通常無法自訂 CORS header，若用 application/json 會觸發 preflight 而導致瀏覽器直接擋下。
     // 因此使用 no-cors + 不指定 Content-Type，讓請求能送達（回應為 opaque，無法讀取內容）。
     const res = await fetch(SHEET_ENDPOINT, {
       method: 'POST',
       mode: 'no-cors',
       body: JSON.stringify(payload),
+      signal: controller.signal,
     })
+    clearTimeout(timeoutId)
 
     // no-cors 會回 opaque response，無法檢查 status；只要 fetch 沒丟錯就視為已送達。
     if ((res as any)?.type === 'opaque') return true
@@ -282,7 +344,6 @@ export async function syncSessionToSheet(session: GameSession, bestScore?: numbe
   if (!isBrowserOnline()) return
   ensureSyncProtocolVersion(session.odId)
   if (!(await isSheetSyncAllowed(session.odId))) return
-  if (isSessionSynced(session.odId, session.id)) return
   try {
     const settingsStore = useSettingsStore()
     settingsStore.setSyncUiStatus('syncing')
@@ -291,9 +352,12 @@ export async function syncSessionToSheet(session: GameSession, bestScore?: numbe
   }
   updateSessionSyncStatus(session.odId, { lastAttemptAt: new Date().toISOString() })
   const payload = mapSessionToPayload(session, bestScore)
+  if (!shouldSyncSession(session.odId, session.id, payload)) return
   const ok = await postToSheet(payload)
   if (ok) {
     markSessionSynced(session.odId, session.id)
+    const hash = stableStringify(payload)
+    if (hash) saveSessionHash(session.odId, session.id, hash)
     updateSessionSyncStatus(session.odId, {
       lastSuccessAt: new Date().toISOString(),
       lastErrorAt: null,
@@ -346,8 +410,8 @@ export async function backfillUserSessionsToSheet(odId: string): Promise<void> {
 
     const sessions = await getUserGameSessions(odId)
     const items = sessions
-      .filter(s => !isSessionSynced(odId, s.id))
       .map(session => mapSessionToPayload(session))
+      .filter(item => shouldSyncSession(odId, item.sessionId, item))
 
     // 優先批次回填（需 Apps Script 支援 { items: [...] }）
     const batchSize = 50
@@ -356,7 +420,11 @@ export async function backfillUserSessionsToSheet(odId: string): Promise<void> {
       updateSessionSyncStatus(odId, { lastAttemptAt: new Date().toISOString() })
       const ok = await postToSheet({ action: 'upsertGameResults', protocolVersion: SHEET_SYNC_PROTOCOL_VERSION, items: batch })
       if (ok) {
-        for (const item of batch) markSessionSynced(odId, item.sessionId)
+        for (const item of batch) {
+          markSessionSynced(odId, item.sessionId)
+          const hash = stableStringify(item)
+          if (hash) saveSessionHash(odId, item.sessionId, hash)
+        }
         updateSessionSyncStatus(odId, {
           lastSuccessAt: new Date().toISOString(),
           lastErrorAt: null,

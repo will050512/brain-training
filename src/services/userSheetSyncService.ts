@@ -3,6 +3,7 @@ import { getDataConsent } from '@/services/db'
 import { detectClientSource, loadClientSourceForUser } from '@/services/clientSource'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { getSheetEndpoint } from '@/services/sheetConfig'
+import { normalizeTransferCode } from '@/services/userTransferCode'
 
 const SHEET_ENDPOINT = getSheetEndpoint()
 const USER_SYNC_KEY_PREFIX = 'sheetSyncedUser:'
@@ -113,7 +114,7 @@ function mapUser(user: User): UserSheetPayload {
     birthday: user.birthday,
     educationYears: user.educationYears ?? 0,
     gender: user.gender ?? 'unknown',
-    transferCode: user.transferCode,
+    transferCode: normalizeTransferCode(user.transferCode || ''),
     transferCodeUpdatedAt: user.transferCodeUpdatedAt ? new Date(user.transferCodeUpdatedAt).toISOString() : '',
     authProvider: user.authProvider ?? 'local',
     clientSource: user.clientSource || loadClientSourceForUser(user.id) || detectClientSource(),
@@ -132,11 +133,15 @@ async function postToSheet(payload: UserSheetPayload): Promise<boolean> {
     } catch {
       // ignore ui status update
     }
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 12000)
     await fetch(SHEET_ENDPOINT, {
       method: 'POST',
       mode: 'no-cors',
       body: JSON.stringify(payload),
+      signal: controller.signal,
     })
+    clearTimeout(timeoutId)
     try {
       const settingsStore = useSettingsStore()
       settingsStore.setSyncUiStatus('success')

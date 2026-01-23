@@ -1,5 +1,6 @@
 import type { User, UserSettings, UserStats, DataConsentOptions } from '@/types'
 import type { MiniCogResult } from '@/services/miniCogService'
+import { normalizeTransferCode } from '@/services/userTransferCode'
 import {
   getUser,
   getUserSettings,
@@ -25,6 +26,8 @@ import { getSheetEndpoint } from '@/services/sheetConfig'
 const SHEET_ENDPOINT = getSheetEndpoint()
 const FULL_SYNC_KEY_PREFIX = 'sheetFullSyncAt:'
 const FULL_SYNC_ITEM_KEY_PREFIX = 'sheetFullSyncItem:'
+const FULL_SYNC_VERSION_KEY_PREFIX = 'sheetFullSyncVersion:'
+const FULL_SYNC_VERSION = 2
 const FULL_SYNC_THROTTLE_MS = 24 * 60 * 60 * 1000
 const SCHEMA_VERSION = 1
 
@@ -148,7 +151,7 @@ function buildUserPayload(user: User) {
     birthday: user.birthday,
     educationYears: user.educationYears ?? 0,
     gender: user.gender ?? 'unknown',
-    transferCode: user.transferCode ?? '',
+    transferCode: normalizeTransferCode(user.transferCode || ''),
     transferCodeUpdatedAt: user.transferCodeUpdatedAt ? toIso(user.transferCodeUpdatedAt) : '',
     authProvider: user.authProvider ?? 'local',
     clientSource: user.clientSource || loadClientSourceForUser(user.id) || detectClientSource(),
@@ -312,11 +315,15 @@ async function postToSheet(payload: { action: SheetAction; items: unknown[] }): 
     } catch {
       // ignore ui status update
     }
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 12000)
     await fetch(SHEET_ENDPOINT, {
       method: 'POST',
       mode: 'no-cors',
       body: JSON.stringify(payload),
+      signal: controller.signal,
     })
+    clearTimeout(timeoutId)
     try {
       const settingsStore = useSettingsStore()
       settingsStore.setSyncUiStatus('success')
@@ -373,6 +380,24 @@ function shouldThrottleFullSync(odId: string): boolean {
     // ignore throttling issues
   }
   return false
+}
+
+function ensureFullSyncVersion(odId: string): void {
+  try {
+    const versionKey = `${FULL_SYNC_VERSION_KEY_PREFIX}${odId}`
+    const current = Number(localStorage.getItem(versionKey) || 0)
+    if (current === FULL_SYNC_VERSION) return
+    localStorage.setItem(versionKey, String(FULL_SYNC_VERSION))
+    localStorage.removeItem(`${FULL_SYNC_KEY_PREFIX}${odId}`)
+    for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+      const key = localStorage.key(i)
+      if (key && key.startsWith(FULL_SYNC_ITEM_KEY_PREFIX)) {
+        localStorage.removeItem(key)
+      }
+    }
+  } catch {
+    // ignore localStorage errors
+  }
 }
 
 export async function syncMiniCogResultToSheet(result: MiniCogResult): Promise<void> {
@@ -523,6 +548,7 @@ export async function backfillAllUserDataToSheet(
 ): Promise<void> {
   try {
     if (!isBrowserOnline()) return
+    ensureFullSyncVersion(odId)
     if (!options?.force && shouldThrottleFullSync(odId)) return
 
     const consent = await getDataConsent(odId)

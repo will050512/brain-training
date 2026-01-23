@@ -33,6 +33,12 @@
       @close="showHistoryModal = false"
     />
 
+    <!-- 教學導覽 -->
+    <GuidedTourModal
+      :model-value="showGuidedTour"
+      @update:modelValue="handleGuidedTourToggle"
+    />
+
     <!-- APP 頭部 -->
     <header class="app-header shadow-sm bg-[var(--color-surface-elevated)]">
       <div class="app-header-action">
@@ -94,6 +100,66 @@
           <router-link to="/settings" class="text-[var(--color-primary)] text-xs font-bold px-2 py-1 rounded hover:bg-[var(--color-surface)] transition-colors">
             設定同步
           </router-link>
+        </div>
+      </div>
+
+      <!-- 使用說明與導覽 -->
+      <div v-if="userStore.isLoggedIn" class="mb-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="min-w-[180px]">
+            <div class="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)]/10 px-3 py-1 text-xs font-semibold text-[var(--color-primary)]">
+              新手導覽
+            </div>
+            <h2 class="text-lg font-bold text-[var(--color-text)] mt-2">使用說明</h2>
+            <p class="text-sm text-[var(--color-text-secondary)] mt-1">
+              依序完成這幾步，操作更安心。
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              class="btn btn-secondary min-h-[44px] px-4"
+              @click="dismissGuidedTour"
+            >
+              不再提示
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary min-h-[44px] px-5"
+              @click="openGuidedTour"
+            >
+              開啟教學
+            </button>
+          </div>
+        </div>
+        <div class="mt-4 grid gap-3">
+          <div class="flex items-start gap-3 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-bg-soft)] p-3">
+            <div class="h-10 w-10 rounded-full bg-[var(--color-primary)]/15 text-[var(--color-primary)] flex items-center justify-center text-lg font-bold">
+              1
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-[var(--color-text)]">先完成能力評估</p>
+              <p class="text-sm text-[var(--color-text-secondary)] mt-1">系統會自動調整適合的難度。</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-bg-soft)] p-3">
+            <div class="h-10 w-10 rounded-full bg-[var(--color-accent-warm)]/20 text-[var(--color-accent-warm)] flex items-center justify-center text-lg font-bold">
+              2
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-[var(--color-text)]">每天做今日訓練</p>
+              <p class="text-sm text-[var(--color-text-secondary)] mt-1">累積成就與認知趨勢。</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-bg-soft)] p-3">
+            <div class="h-10 w-10 rounded-full bg-[var(--color-accent-teal)]/20 text-[var(--color-accent-teal)] flex items-center justify-center text-lg font-bold">
+              3
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-[var(--color-text)]">記好登入碼</p>
+              <p class="text-sm text-[var(--color-text-secondary)] mt-1">換設備也能還原完整資料。</p>
+            </div>
+          </div>
         </div>
       </div>
       <div v-if="trainingReminder || assessmentReminder?.needsAssessment" class="space-y-3">
@@ -458,6 +524,7 @@ import CircularProgress from '@/components/ui/CircularProgress.vue'
 import WeekCalendar from '@/components/ui/WeekCalendar.vue'
 import TrainingGoalSettings from '@/components/ui/TrainingGoalSettings.vue'
 import TrainingHistoryModal from '@/components/ui/TrainingHistoryModal.vue'
+import GuidedTourModal from '@/components/ui/GuidedTourModal.vue'
 import { getOverallDeclineSummary } from '@/services/declineDetectionService'
 import { getTodayTrainingStatus } from '@/services/dailyTrainingService'
 import { getGameSessionsByDate, getLatestMiniCogResult } from '@/services/db'
@@ -552,6 +619,8 @@ const activityFilter = ref<'daily' | 'all'>('daily')
 // 提醒訊息
 const trainingReminder = ref<{ shouldRemind: boolean; daysMissed: number; message: string } | null>(null)
 const assessmentReminder = ref<{ needsAssessment: boolean; daysSinceLastAssessment: number; message: string } | null>(null)
+const showGuidedTour = ref(false)
+const GUIDED_TOUR_DISMISSED_KEY = 'brain-training-guided-tour-dismissed'
 
 // 認知趨勢資料
 const cognitiveTrend = ref<{
@@ -639,6 +708,38 @@ function handleLogout(): void {
   userStore.logout()
   localStorage.removeItem('brain-training-current-user')
   router.push('/login')
+}
+
+function hasDismissedGuidedTour(): boolean {
+  try {
+    return Boolean(localStorage.getItem(GUIDED_TOUR_DISMISSED_KEY))
+  } catch {
+    return false
+  }
+}
+
+function markGuidedTourDismissed(): void {
+  try {
+    localStorage.setItem(GUIDED_TOUR_DISMISSED_KEY, Date.now().toString())
+  } catch {
+    // ignore
+  }
+}
+
+function openGuidedTour(): void {
+  showGuidedTour.value = true
+}
+
+function dismissGuidedTour(): void {
+  showGuidedTour.value = false
+  markGuidedTourDismissed()
+}
+
+function handleGuidedTourToggle(value: boolean): void {
+  showGuidedTour.value = value
+  if (!value) {
+    markGuidedTourDismissed()
+  }
 }
 
 // 載入認知趨勢
@@ -840,6 +941,10 @@ onMounted(async () => {
         daysSinceLastAssessment: assessment.daysSinceAssessment,
         message: assessment.message
       }
+    }
+
+    if (!hasDismissedGuidedTour()) {
+      showGuidedTour.value = true
     }
     
     // 嘗試請求通知權限（僅在支援的環境）

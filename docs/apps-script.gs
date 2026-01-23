@@ -238,6 +238,14 @@ function asNumber_(v, fallback) {
   return isFinite(n) ? n : fallback
 }
 
+function clampNumber_(v, min, max, fallback) {
+  var n = Number(v)
+  if (!isFinite(n)) return fallback
+  if (min != null && n < min) n = min
+  if (max != null && n > max) n = max
+  return n
+}
+
 function asString_(v, fallback) {
   if (fallback === undefined) fallback = ''
   return typeof v === 'string' ? v : (v == null ? fallback : String(v))
@@ -396,24 +404,24 @@ function flattenGameResultRow_(item) {
     asString_(item.sessionId),
     asString_(item.gameId),
     asString_(item.difficulty, 'easy'),
-    asNumber_(item.subDifficulty, 1),
+    clampNumber_(item.subDifficulty, 1, 3, 1),
     asISO_(item.timestamp),
-    asNumber_(item.durationSec, 0),
+    clampNumber_(item.durationSec, 0, null, 0),
     score,
     grade,
 
-    metrics.completion != null ? metrics.completion : '',
-    metrics.accuracy != null ? metrics.accuracy : '',
-    metrics.speed != null ? metrics.speed : '',
-    metrics.efficiency != null ? metrics.efficiency : '',
+    metrics.completion != null ? clampNumber_(metrics.completion, 0, 1, '') : '',
+    metrics.accuracy != null ? clampNumber_(metrics.accuracy, 0, 1, '') : '',
+    metrics.speed != null ? clampNumber_(metrics.speed, 0, 100, '') : '',
+    metrics.efficiency != null ? clampNumber_(metrics.efficiency, 0, 100, '') : '',
 
-    tracking.correctCount != null ? tracking.correctCount : 0,
-    tracking.wrongCount != null ? tracking.wrongCount : 0,
-    tracking.missedCount != null ? tracking.missedCount : 0,
-    tracking.maxCombo != null ? tracking.maxCombo : 0,
-    tracking.avgReactionTimeMs != null ? tracking.avgReactionTimeMs : 0,
-    tracking.avgThinkingTimeMs != null ? tracking.avgThinkingTimeMs : 0,
-    tracking.totalActions != null ? tracking.totalActions : 0,
+    tracking.correctCount != null ? clampNumber_(tracking.correctCount, 0, null, 0) : 0,
+    tracking.wrongCount != null ? clampNumber_(tracking.wrongCount, 0, null, 0) : 0,
+    tracking.missedCount != null ? clampNumber_(tracking.missedCount, 0, null, 0) : 0,
+    tracking.maxCombo != null ? clampNumber_(tracking.maxCombo, 0, null, 0) : 0,
+    tracking.avgReactionTimeMs != null ? clampNumber_(tracking.avgReactionTimeMs, 0, null, 0) : 0,
+    tracking.avgThinkingTimeMs != null ? clampNumber_(tracking.avgThinkingTimeMs, 0, null, 0) : 0,
+    tracking.totalActions != null ? clampNumber_(tracking.totalActions, 0, null, 0) : 0,
 
     item.bestScore != null ? item.bestScore : '',
     gameSpecific,
@@ -562,7 +570,7 @@ function flattenUserRow_(item) {
     asString_(item.userId),
     asString_(item.name),
     asString_(item.birthday),
-    asNumber_(item.educationYears, ''),
+    clampNumber_(item.educationYears, 0, 30, ''),
     asString_(item.gender, 'unknown'),
     normalizeTransferCode_(item.transferCode),
     item.transferCodeUpdatedAt ? asISO_(item.transferCodeUpdatedAt) : '',
@@ -591,8 +599,8 @@ function flattenUserSettingsRow_(item) {
     asString_(item.odId),
     asBoolean_(item.soundEnabled, false),
     asBoolean_(item.musicEnabled, false),
-    asNumber_(item.soundVolume, 0),
-    asNumber_(item.musicVolume, 0),
+    clampNumber_(item.soundVolume, 0, 1, 0),
+    clampNumber_(item.musicVolume, 0, 1, 0),
     asBoolean_(item.hasSeenWelcome, false),
     asISO_(item.updatedAt),
     asNumber_(item.schemaVersion, ''),
@@ -608,14 +616,14 @@ function validateUserStats_(item) {
 function flattenUserStatsRow_(item) {
   return [
     asString_(item.odId),
-    asNumber_(item.totalGamesPlayed, 0),
-    asNumber_(item.totalPlayTime, 0),
-    asNumber_(item.averageScore, 0),
+    clampNumber_(item.totalGamesPlayed, 0, null, 0),
+    clampNumber_(item.totalPlayTime, 0, null, 0),
+    clampNumber_(item.averageScore, 0, 100, 0),
     safeJsonStringifyObject_(item.bestScores),
     safeJsonStringifyObject_(item.gamePlayCounts),
     asString_(item.favoriteGameId, ''),
     item.lastPlayedAt ? asISO_(item.lastPlayedAt) : '',
-    asNumber_(item.streak, 0),
+    clampNumber_(item.streak, 0, null, 0),
     asISO_(item.updatedAt),
     asNumber_(item.schemaVersion, ''),
   ]
@@ -652,12 +660,12 @@ function flattenMiniCogResultRow_(item) {
   return [
     asString_(item.id),
     asString_(item.odId),
-    asNumber_(item.totalScore, 0),
-    asNumber_(item.wordRecallScore, 0),
-    asNumber_(item.clockDrawingScore, 0),
-    asNumber_(item.clockSelfAssessmentScore, 0),
+    clampNumber_(item.totalScore, 0, 5, 0),
+    clampNumber_(item.wordRecallScore, 0, 3, 0),
+    clampNumber_(item.clockDrawingScore, 0, 3, 0),
+    clampNumber_(item.clockSelfAssessmentScore, 0, 3, 0),
     asBoolean_(item.atRisk, false),
-    asNumber_(item.duration, 0),
+    clampNumber_(item.duration, 0, null, 0),
     asISO_(item.completedAt),
     asString_(item.wordSetLocale, ''),
     safeJsonStringifyArray_(item.wordsUsed),
@@ -683,7 +691,7 @@ function flattenDailyTrainingSessionRow_(item) {
     asBoolean_(item.interrupted, false),
     asISO_(item.startedAt),
     item.completedAt ? asISO_(item.completedAt) : '',
-    asNumber_(item.totalDuration, 0),
+    clampNumber_(item.totalDuration, 0, null, 0),
     asNumber_(item.schemaVersion, ''),
   ]
 }

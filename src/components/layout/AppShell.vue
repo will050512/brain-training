@@ -134,6 +134,7 @@ const headerClass = computed(() => {
   flex-direction: column;
   height: 100vh;
   height: 100dvh;
+  min-height: 100svh;
   overflow: hidden;
   background: var(--color-bg);
   /* 確保在所有裝置上都填滿視窗 */
@@ -288,6 +289,14 @@ const headerClass = computed(() => {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-padding-top: calc(var(--spacing-lg) + env(safe-area-inset-top));
+  touch-action: pan-y;
+}
+.content-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .content-fit {

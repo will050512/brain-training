@@ -9,7 +9,8 @@ export function isValidTransferCode(input: string): boolean {
   const normalized = normalizeTransferCode(input)
   if (normalized.length !== CODE_LENGTH) return false
   for (let i = 0; i < normalized.length; i++) {
-    if (!CODE_CHARS.includes(normalized[i])) return false
+    const ch = normalized.charAt(i)
+    if (!CODE_CHARS.includes(ch)) return false
   }
   return true
 }

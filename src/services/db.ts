@@ -980,14 +980,23 @@ export async function purgeUserDataById(odId: string): Promise<{
     deletedCounts.user = false
   }
 
-  const deleteByIndex = async <T>(
-    storeName: keyof BrainTrainingDB,
-    indexName: string,
+  type StoreWithOdId =
+    | 'gameSessions'
+    | 'miniCogResults'
+    | 'dailyTrainingSessions'
+    | 'baselineAssessments'
+    | 'declineAlerts'
+    | 'difficultyHistory'
+    | 'behaviorLogs'
+    | 'nutritionRecommendations'
+
+  const deleteByIndex = async (
+    storeName: StoreWithOdId,
     countKey: string
   ): Promise<void> => {
-    const items = await db.getAllFromIndex(storeName, indexName, odId)
+    const items = await db.getAllFromIndex(storeName, 'by-odId', odId)
     const tx = db.transaction(storeName, 'readwrite')
-    await Promise.all(items.map(item => tx.store.delete((item as T & { id: string }).id)))
+    await Promise.all(items.map(item => tx.store.delete(item.id)))
     await tx.done
     deletedCounts[countKey] = items.length
   }
@@ -1013,14 +1022,14 @@ export async function purgeUserDataById(odId: string): Promise<{
     deletedCounts.dataConsent = false
   }
 
-  await deleteByIndex<GameSession>('gameSessions', 'by-odId', 'gameSessions')
-  await deleteByIndex<MiniCogResult>('miniCogResults', 'by-odId', 'miniCogResults')
-  await deleteByIndex<DailyTrainingSession>('dailyTrainingSessions', 'by-odId', 'dailyTrainingSessions')
-  await deleteByIndex<BaselineAssessment>('baselineAssessments', 'by-odId', 'baselineAssessments')
-  await deleteByIndex<DeclineAlert>('declineAlerts', 'by-odId', 'declineAlerts')
-  await deleteByIndex<DifficultyHistory>('difficultyHistory', 'by-odId', 'difficultyHistory')
-  await deleteByIndex<BehaviorLog>('behaviorLogs', 'by-odId', 'behaviorLogs')
-  await deleteByIndex<NutritionRecommendationRecord>('nutritionRecommendations', 'by-odId', 'nutritionRecommendations')
+  await deleteByIndex('gameSessions', 'gameSessions')
+  await deleteByIndex('miniCogResults', 'miniCogResults')
+  await deleteByIndex('dailyTrainingSessions', 'dailyTrainingSessions')
+  await deleteByIndex('baselineAssessments', 'baselineAssessments')
+  await deleteByIndex('declineAlerts', 'declineAlerts')
+  await deleteByIndex('difficultyHistory', 'difficultyHistory')
+  await deleteByIndex('behaviorLogs', 'behaviorLogs')
+  await deleteByIndex('nutritionRecommendations', 'nutritionRecommendations')
 
   try {
     const pending = await db.getAll('pendingSyncQueue')

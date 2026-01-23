@@ -58,7 +58,7 @@
 - `profileVersion`（用於未來擴充）
 
 ### Apps Script 對接（已建置）
-- Web App URL：`https://script.google.com/macros/s/AKfycbzp5jH9yiBfxR9KyP6aDJ_mHnQnaJsFkNklCrC2YLTm9nFM1xndqXY8hbPhu7Fppwct/exec`
+- Web App URL：`https://script.google.com/macros/s/AKfycbx9z4UYHSLUWXhHMbq6qtmMdmfmqI-6VGkF_UY4EdF9yuYYq_DVFwE6od6XTemA0dgw/exec`
 - 瀏覽器端 `fetch` 注意：Apps Script Web App 通常無法設定 CORS header；若用 `Content-Type: application/json` 會觸發 preflight 導致請求被瀏覽器擋下。
   - 本專案已改用 `mode: 'no-cors'` 並直接送出 JSON 字串（`text/plain`），確保請求可送達。
 - 建議以 `POST` 傳送 JSON（字串），範例：

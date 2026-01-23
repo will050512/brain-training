@@ -227,6 +227,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useUserStore, useGameStore } from '@/stores'
 import type { User } from '@/types'
 import { formatTransferCode, normalizeTransferCode } from '@/services/userTransferCode'
+import { normalizeBirthdayInput } from '@/utils/birthday'
 
 const router = useRouter()
 const route = useRoute()
@@ -260,15 +261,6 @@ const isFormValid = computed(() => {
          form.value.gender !== 'unknown'
 })
 
-function normalizeBirthdayInput(input: string): string {
-  const trimmed = input.trim()
-  if (!trimmed) return ''
-  if (/^\d{4}-\d{2}$/.test(trimmed)) {
-    return `${trimmed}-01`
-  }
-  return trimmed
-}
-
 // 格式化年月
 function formatBirthMonth(dateStr: string): string {
   if (!dateStr) return ''
@@ -291,9 +283,14 @@ async function handleSubmit(): Promise<void> {
   error.value = null
 
   try {
+    const normalizedBirthday = normalizeBirthdayInput(form.value.birthMonth)
+    if (!normalizedBirthday) {
+      error.value = '出生年月格式不正確，請重新選擇'
+      return
+    }
     const success = await userStore.login(
       form.value.name, 
-      normalizeBirthdayInput(form.value.birthMonth),
+      normalizedBirthday,
       Number(form.value.educationYears),
       form.value.gender
     )
