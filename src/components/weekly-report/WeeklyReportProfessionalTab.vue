@@ -1,9 +1,14 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import SectionTitle from '@/components/common/SectionTitle.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import type { ProfessionalAssessment } from '@/services/professionalScoreCalculator'
 import {
   getInterpretationDescription,
   getRecommendedAction
 } from '@/services/professionalScoreCalculator'
+import WeeklyReportScorePanel from '@/components/weekly-report/ui/WeeklyReportScorePanel.vue'
 
 interface Props {
   assessment: ProfessionalAssessment | null
@@ -28,113 +33,79 @@ function getInterpretationColor(interpretation: string): string {
       return 'var(--color-text-muted)'
   }
 }
+
+const mmseItems = computed(() => {
+  if (!props.assessment) return []
+  return [
+    { label: '定向力', value: props.assessment.mmse.orientation, max: 10 },
+    { label: '登錄', value: props.assessment.mmse.registration, max: 3 },
+    { label: '注意力', value: props.assessment.mmse.attention, max: 5 },
+    { label: '回憶', value: props.assessment.mmse.recall, max: 3 },
+    { label: '語言', value: props.assessment.mmse.language, max: 8 },
+    { label: '視覺', value: props.assessment.mmse.visuospatial, max: 1 }
+  ]
+})
+
+const mocaItems = computed(() => {
+  if (!props.assessment) return []
+  return [
+    { label: '視/執行', value: props.assessment.moca.visuospatialExecutive, max: 5 },
+    { label: '命名', value: props.assessment.moca.naming, max: 3 },
+    { label: '注意力', value: props.assessment.moca.attention, max: 6 },
+    { label: '語言', value: props.assessment.moca.language, max: 3 },
+    { label: '抽象', value: props.assessment.moca.abstraction, max: 2 },
+    { label: '回憶', value: props.assessment.moca.delayedRecall, max: 5 },
+    { label: '定向', value: props.assessment.moca.orientation, max: 6 }
+  ]
+})
+
+const mmseColor = computed(() => {
+  if (!props.assessment) return 'var(--color-text-muted)'
+  return getInterpretationColor(props.assessment.mmse.interpretation)
+})
+
+const mocaColor = computed(() => {
+  if (!props.assessment) return 'var(--color-text-muted)'
+  return getInterpretationColor(props.assessment.moca.interpretation)
+})
+
+const mmseLabel = computed(() => {
+  if (!props.assessment) return ''
+  return getInterpretationDescription('mmse', props.assessment.mmse.interpretation)
+})
+
+const mocaLabel = computed(() => {
+  if (!props.assessment) return ''
+  return getInterpretationDescription('moca', props.assessment.moca.interpretation)
+})
 </script>
 
 <template>
   <div class="space-y-6 animate-fade-in">
     <template v-if="props.assessment">
-      <section class="bg-[var(--color-surface-elevated)] rounded-3xl p-5 shadow-sm border border-[var(--color-border-light)] overflow-hidden">
-        <div class="flex items-start justify-between mb-4">
-          <div>
-            <h2 class="text-lg font-bold text-[var(--color-text)]">MMSE 估算分數</h2>
-            <p class="text-xs text-[var(--color-text-secondary)] mt-1">簡易智能狀態測驗</p>
-          </div>
-          <div
-            class="text-sm font-bold px-3 py-1 rounded-full border"
-            :style="{
-              color: getInterpretationColor(props.assessment.mmse.interpretation),
-              borderColor: getInterpretationColor(props.assessment.mmse.interpretation),
-              backgroundColor: 'var(--color-bg-soft)'
-            }"
-          >
-            {{ getInterpretationDescription('mmse', props.assessment.mmse.interpretation) }}
-          </div>
-        </div>
+      <WeeklyReportScorePanel
+        title="MMSE 估算分數"
+        subtitle="簡易智能狀態測驗"
+        :interpretation-label="mmseLabel"
+        :interpretation-color="mmseColor"
+        :total="props.assessment.mmse.total"
+        :total-max="30"
+        :items="mmseItems"
+      />
 
-        <div class="flex flex-col sm:flex-row gap-6 items-center">
-          <div
-            class="w-32 h-32 rounded-full border-8 flex flex-col items-center justify-center shrink-0"
-            :style="{ borderColor: getInterpretationColor(props.assessment.mmse.interpretation) }"
-          >
-            <span class="text-4xl font-black text-[var(--color-text)]">{{ props.assessment.mmse.total }}</span>
-            <span class="text-xs text-[var(--color-text-secondary)] font-medium">/ 30</span>
-          </div>
-
-          <div class="w-full grid grid-cols-2 gap-3">
-            <div
-              v-for="(val, key) in {
-                '定向力': [props.assessment.mmse.orientation, 10],
-                '登錄': [props.assessment.mmse.registration, 3],
-                '注意力': [props.assessment.mmse.attention, 5],
-                '回憶': [props.assessment.mmse.recall, 3],
-                '語言': [props.assessment.mmse.language, 8],
-                '視覺': [props.assessment.mmse.visuospatial, 1]
-              }"
-              :key="key"
-              class="p-2 bg-[var(--color-bg-soft)] rounded-xl flex justify-between items-center"
-            >
-              <span class="text-xs font-medium text-[var(--color-text-secondary)]">{{ key }}</span>
-              <span class="text-sm font-bold text-[var(--color-text)]">
-                {{ val[0] }}<span class="text-[var(--color-text-muted)] text-xs">/{{ val[1] }}</span>
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="bg-[var(--color-surface-elevated)] rounded-3xl p-5 shadow-sm border border-[var(--color-border-light)] overflow-hidden">
-        <div class="flex items-start justify-between mb-4">
-          <div>
-            <h2 class="text-lg font-bold text-[var(--color-text)]">MoCA 估算分數</h2>
-            <p class="text-xs text-[var(--color-text-secondary)] mt-1">蒙特利爾認知評估</p>
-          </div>
-          <div
-            class="text-sm font-bold px-3 py-1 rounded-full border"
-            :style="{
-              color: getInterpretationColor(props.assessment.moca.interpretation),
-              borderColor: getInterpretationColor(props.assessment.moca.interpretation),
-              backgroundColor: 'var(--color-bg-soft)'
-            }"
-          >
-            {{ getInterpretationDescription('moca', props.assessment.moca.interpretation) }}
-          </div>
-        </div>
-
-        <div class="flex flex-col sm:flex-row gap-6 items-center">
-          <div
-            class="w-32 h-32 rounded-full border-8 flex flex-col items-center justify-center shrink-0"
-            :style="{ borderColor: getInterpretationColor(props.assessment.moca.interpretation) }"
-          >
-            <span class="text-4xl font-black text-[var(--color-text)]">{{ props.assessment.moca.total }}</span>
-            <span class="text-xs text-[var(--color-text-secondary)] font-medium">/ 30</span>
-          </div>
-
-          <div class="w-full grid grid-cols-2 gap-3">
-            <div
-              v-for="(val, key) in {
-                '視/執行': [props.assessment.moca.visuospatialExecutive, 5],
-                '命名': [props.assessment.moca.naming, 3],
-                '注意力': [props.assessment.moca.attention, 6],
-                '語言': [props.assessment.moca.language, 3],
-                '抽象': [props.assessment.moca.abstraction, 2],
-                '回憶': [props.assessment.moca.delayedRecall, 5],
-                '定向': [props.assessment.moca.orientation, 6]
-              }"
-              :key="key"
-              class="p-2 bg-[var(--color-bg-soft)] rounded-xl flex justify-between items-center"
-            >
-              <span class="text-xs font-medium text-[var(--color-text-secondary)] truncate mr-2">{{ key }}</span>
-              <span class="text-sm font-bold text-[var(--color-text)] shrink-0">
-                {{ val[0] }}<span class="text-[var(--color-text-muted)] text-xs">/{{ val[1] }}</span>
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
+      <WeeklyReportScorePanel
+        title="MoCA 估算分數"
+        subtitle="蒙特利爾認知評估"
+        :interpretation-label="mocaLabel"
+        :interpretation-color="mocaColor"
+        :total="props.assessment.moca.total"
+        :total-max="30"
+        :items="mocaItems"
+      />
 
       <section class="bg-[var(--color-surface-elevated)] rounded-3xl p-5 shadow-sm border border-[var(--color-border-light)]">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold text-[var(--color-text)]">CASI 估算分數</h2>
+        <div class="flex items-center justify-between">
+          <SectionTitle title="CASI 估算分數" spacing="sm" :show-accent="false" />
         </div>
         <div class="flex flex-col items-center justify-center py-4">
           <div
@@ -142,7 +113,7 @@ function getInterpretationColor(interpretation: string): string {
             :style="{ borderColor: getInterpretationColor(props.assessment.casi.interpretation) }"
           >
             <span class="text-5xl font-black text-[var(--color-text)]">{{ props.assessment.casi.total }}</span>
-            <span class="text-sm text-[var(--color-text-secondary)] font-medium">/ 100</span>
+            <SubtleLabel text="/ 100" tone="secondary" />
           </div>
           <div
             class="text-lg font-bold"
@@ -154,9 +125,11 @@ function getInterpretationColor(interpretation: string): string {
       </section>
 
       <section class="bg-[var(--color-primary-bg)] rounded-2xl p-5 border border-[var(--color-primary)]/20">
-        <h2 class="text-lg font-bold text-[var(--color-text)] mb-2 flex items-center gap-2">
-          <span>💡</span> 綜合建議
-        </h2>
+        <SectionTitle title="綜合建議" spacing="sm" :show-accent="false">
+          <template #prefix>
+            <span>💡</span>
+          </template>
+        </SectionTitle>
         <p class="text-[var(--color-text)] leading-relaxed">
           {{ getRecommendedAction(props.assessment) }}
         </p>
@@ -166,11 +139,15 @@ function getInterpretationColor(interpretation: string): string {
     <div v-else class="flex flex-col items-center justify-center py-16 text-center">
       <div class="text-6xl mb-4 opacity-50">📊</div>
       <h3 class="text-xl font-bold text-[var(--color-text)] mb-2">資料不足</h3>
-      <p class="text-[var(--color-text-secondary)] mb-6 max-w-xs">
-        需要至少完成 5 次遊戲才能生成專業評估，目前已完成 {{ props.sessionsCount }} 次
-      </p>
-      <router-link to="/games" class="btn btn-primary px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all">
-        開始訓練 →
+      <SubtleLabel
+        :text="`需要至少完成 5 次遊戲才能生成專業評估，目前已完成 ${props.sessionsCount} 次`"
+        tone="secondary"
+        class="mb-6 max-w-xs block"
+      />
+      <router-link to="/games" custom v-slot="{ navigate }">
+        <BaseButton size="md" class="px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all" @click="navigate">
+          開始訓練 →
+        </BaseButton>
       </router-link>
     </div>
   </div>

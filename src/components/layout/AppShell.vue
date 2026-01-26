@@ -295,6 +295,9 @@ const headerClass = computed(() => {
   scroll-padding-top: calc(var(--spacing-lg) + env(safe-area-inset-top));
   touch-action: pan-y;
 }
+.has-bottom-nav .content-scroll {
+  padding-bottom: calc(64px + var(--spacing-md) + env(safe-area-inset-bottom, 0px));
+}
 .content-scroll::-webkit-scrollbar {
   display: none;
 }

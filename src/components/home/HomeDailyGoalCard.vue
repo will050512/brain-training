@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import SectionTitle from '@/components/common/SectionTitle.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import CircularProgress from '@/components/ui/CircularProgress.vue'
 
 interface WeeklyProgress {
@@ -27,10 +29,7 @@ const emit = defineEmits<{
 
 <template>
   <div class="mb-6">
-    <h2 class="text-lg font-bold text-[var(--color-text)] px-1 mb-3 flex items-center gap-2">
-      <span class="w-1.5 h-6 rounded-full bg-[var(--color-primary)]"></span>
-      今日訓練
-    </h2>
+    <SectionTitle title="今日訓練" spacing="sm" class="px-1" />
     <div class="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-light)] rounded-2xl p-4 sm:p-5 text-[var(--color-text-inverse)] shadow-lg relative overflow-hidden group">
       <div class="absolute -right-10 -top-10 w-40 h-40 bg-[var(--color-surface)]/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -69,7 +68,7 @@ const emit = defineEmits<{
               <span class="text-4xl font-black tracking-tight">{{ props.weeklyProgress.completedDays }}</span>
               <span class="text-base opacity-80 font-medium mx-1">/</span>
               <span class="text-xl opacity-90 font-bold">{{ props.weeklyTrainingGoal }}</span>
-              <span class="block text-sm opacity-80 mt-1 font-medium">天達標</span>
+              <SubtleLabel text="天達標" class="block opacity-80 mt-1 font-medium text-[var(--color-text-inverse)]" />
             </div>
           </CircularProgress>
         </div>
@@ -79,14 +78,14 @@ const emit = defineEmits<{
             <span class="text-3xl filter drop-shadow-md">⏱️</span>
             <div class="min-w-0 flex-1 text-[var(--color-text-inverse)]">
               <p class="text-2xl font-bold truncate leading-none">{{ props.weeklyProgress.totalMinutes }}</p>
-              <p class="text-xs sm:text-sm opacity-80 mt-1">本週訓練分鐘</p>
+              <SubtleLabel text="本週訓練分鐘" class="opacity-80 mt-1 text-[var(--color-text-inverse)]" />
             </div>
           </div>
           <div class="flex items-center gap-4 bg-[var(--color-surface)]/10 rounded-2xl p-3 backdrop-blur-sm border border-[var(--color-surface)]/10">
             <span class="text-3xl filter drop-shadow-md">🎮</span>
             <div class="min-w-0 flex-1 text-[var(--color-text-inverse)]">
               <p class="text-2xl font-bold truncate leading-none">{{ props.weeklyProgress.totalSessions }}</p>
-              <p class="text-xs sm:text-sm opacity-80 mt-1">遊戲次數</p>
+              <SubtleLabel text="遊戲次數" class="opacity-80 mt-1 text-[var(--color-text-inverse)]" />
             </div>
           </div>
         </div>

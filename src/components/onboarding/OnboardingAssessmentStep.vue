@@ -1,3 +1,15 @@
+<script setup lang="ts">
+import type { CognitiveDimension } from '@/types/cognitive'
+import BaseButton from '@/components/ui/BaseButton.vue'
+
+defineProps<{
+  assessmentGames: Array<{ id: string; dimension: CognitiveDimension; name: string; icon: string; description: string }>
+  currentAssessmentGame: number
+  currentGame: { id: string; dimension: CognitiveDimension; name: string; icon: string; description: string } | null
+  onStart: () => void
+}>()
+</script>
+
 <template>
   <div class="card p-6 text-center flex flex-col items-center shadow-md">
     <p class="text-sm mb-6" style="color: var(--color-text-muted)">
@@ -25,23 +37,14 @@
         {{ currentGame.description }}
       </p>
 
-      <button
+      <BaseButton
+        size="lg"
+        full-width
+        class="max-w-xs shadow-lg hover-lift"
         @click="onStart"
-        class="btn btn-primary btn-lg w-full max-w-xs shadow-lg hover-lift"
       >
         開始測試
-      </button>
+      </BaseButton>
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import type { CognitiveDimension } from '@/types/cognitive'
-
-defineProps<{
-  assessmentGames: Array<{ id: string; dimension: CognitiveDimension; name: string; icon: string; description: string }>
-  currentAssessmentGame: number
-  currentGame: { id: string; dimension: CognitiveDimension; name: string; icon: string; description: string } | null
-  onStart: () => void
-}>()
-</script>

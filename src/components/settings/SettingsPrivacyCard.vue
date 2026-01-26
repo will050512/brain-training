@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import { useSettingsStore } from '@/stores'
 import type { DataConsentOptions } from '@/types/user'
 
@@ -24,7 +25,7 @@ const settingsStore = useSettingsStore()
       <div class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="props.toggleCloudBackup()">
         <div class="flex-1 pr-4">
           <div class="text-base font-medium text-[var(--color-text)]">雲端備份</div>
-          <div class="text-xs text-[var(--color-text-muted)] mt-0.5">允許將資料備份到雲端</div>
+          <SubtleLabel text="允許將資料備份到雲端" tone="muted" class="mt-0.5 block" />
         </div>
         <button
           class="toggle-switch flex-shrink-0"
@@ -37,7 +38,7 @@ const settingsStore = useSettingsStore()
       <div class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="props.toggleUsageAnalytics()">
         <div class="flex-1 pr-4">
           <div class="text-base font-medium text-[var(--color-text)]">使用分析（本機）</div>
-          <div class="text-xs text-[var(--color-text-muted)] mt-0.5">啟用行為記錄以產生洞察</div>
+          <SubtleLabel text="啟用行為記錄以產生洞察" tone="muted" class="mt-0.5 block" />
         </div>
         <button
           class="toggle-switch flex-shrink-0"
@@ -47,8 +48,12 @@ const settingsStore = useSettingsStore()
         </button>
       </div>
 
-      <div class="text-xs text-[var(--color-text-muted)] bg-[var(--color-bg-muted)] p-3 rounded-lg leading-relaxed">
-        資料預設儲存在您的裝置上。雲端備份為選用功能，需要 Google 帳戶授權。我們重視您的隱私，不會在未經許可的情況下分享您的資料。
+      <div class="bg-[var(--color-bg-muted)] p-3 rounded-lg">
+        <SubtleLabel
+          text="資料預設儲存在您的裝置上。雲端備份為選用功能，需要 Google 帳戶授權。我們重視您的隱私，不會在未經許可的情況下分享您的資料。"
+          tone="muted"
+          class="leading-relaxed block"
+        />
       </div>
     </div>
   </div>

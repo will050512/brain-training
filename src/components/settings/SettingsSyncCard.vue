@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import BaseButton from '@/components/ui/BaseButton.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import SyncStatusIndicator from '@/components/common/SyncStatusIndicator.vue'
 
 interface SyncStatusEntry {
@@ -37,48 +39,56 @@ const props = defineProps<Props>()
 
     <div class="bg-[var(--color-bg-soft)] rounded-lg p-3 mb-3">
       <div class="flex items-center justify-between mb-2 pb-2 border-b border-[var(--color-border-light)]">
-        <span class="text-sm font-medium text-[var(--color-text-secondary)]">同步狀態</span>
+        <SubtleLabel text="同步狀態" tone="secondary" weight="bold" />
         <span class="text-sm font-bold" :class="props.syncStatusClass">{{ props.syncStatusLabel }}</span>
       </div>
 
-      <div class="space-y-2 text-xs text-[var(--color-text-muted)]">
+      <div class="space-y-2">
         <div class="flex justify-between">
-          <span>手動同步</span>
+          <SubtleLabel text="手動同步" tone="muted" />
           <SyncStatusIndicator />
         </div>
         <div class="flex justify-between">
-          <span>上次同步</span>
+          <SubtleLabel text="上次同步" tone="muted" />
           <span class="font-mono text-[var(--color-text)]">{{ props.formatSyncTime(props.syncStatus.session.lastSuccessAt) }}</span>
         </div>
         <div class="flex justify-between">
-          <span>遊戲記錄上傳</span>
+          <SubtleLabel text="遊戲記錄上傳" tone="muted" />
           <span class="font-mono text-[var(--color-text)]">{{ props.formatSyncTime(props.syncStatus.session.lastSuccessAt) }}</span>
         </div>
         <div class="flex justify-between">
-          <span>個人資料上傳</span>
+          <SubtleLabel text="個人資料上傳" tone="muted" />
           <span class="font-mono text-[var(--color-text)]">{{ props.formatSyncTime(props.syncStatus.user.lastSuccessAt) }}</span>
         </div>
       </div>
     </div>
 
-    <div v-if="props.lastManualSyncError" class="text-xs text-[var(--color-danger)] mb-2 bg-[var(--color-danger-bg)] p-2 rounded">
-      ⚠️ 同步失敗：{{ props.lastManualSyncError }}
+    <div v-if="props.lastManualSyncError" class="mb-2 bg-[var(--color-danger-bg)] p-2 rounded">
+      <SubtleLabel :text="`⚠️ 同步失敗：${props.lastManualSyncError}`" class="text-[var(--color-danger)]" />
     </div>
-    <div v-if="props.syncStatus.session.lastErrorAt || props.syncStatus.user.lastErrorAt" class="text-xs text-[var(--color-danger)] mb-2 bg-[var(--color-danger-bg)] p-2 rounded">
-      ⚠️ 最近同步失敗：{{ props.formatSyncTime(props.syncStatus.session.lastErrorAt || props.syncStatus.user.lastErrorAt) }}
+    <div v-if="props.syncStatus.session.lastErrorAt || props.syncStatus.user.lastErrorAt" class="mb-2 bg-[var(--color-danger-bg)] p-2 rounded">
+      <SubtleLabel
+        :text="`⚠️ 最近同步失敗：${props.formatSyncTime(props.syncStatus.session.lastErrorAt || props.syncStatus.user.lastErrorAt)}`"
+        class="text-[var(--color-danger)]"
+      />
     </div>
 
-    <button
+    <BaseButton
       type="button"
-      class="btn btn-secondary w-full py-3 text-sm font-medium flex items-center justify-center gap-2"
+      variant="secondary"
+      size="md"
+      full-width
+      class="py-3 text-sm font-medium flex items-center justify-center gap-2"
       :disabled="!props.canManualSync"
       @click="props.handleManualSync"
     >
       <span>🔄</span> 立即同步
-    </button>
+    </BaseButton>
 
-    <p class="text-xs text-[var(--color-text-muted)] mt-2 text-center">
-      需開啟「雲端備份」且在連線狀態下才能同步
-    </p>
+    <SubtleLabel
+      text="需開啟「雲端備份」且在連線狀態下才能同步"
+      tone="muted"
+      class="mt-2 text-center block"
+    />
   </div>
 </template>

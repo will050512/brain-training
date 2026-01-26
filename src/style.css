@@ -904,6 +904,11 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   color: var(--color-text-muted);
 }
 
+/* 小字體在長者介面提升可讀性 */
+.text-xs {
+  font-size: calc(var(--font-size-base) * 0.85);
+}
+
 /* 標題樣式 */
 .title-lg {
     font-size: var(--font-size-3xl);
@@ -1874,6 +1879,17 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
     width: 100%;
   }
 
+  .layout-fullscreen .app-page {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100svh;
+  }
+
+  .layout-fullscreen .app-content-scroll {
+    height: 100%;
+    overflow-y: auto;
+  }
+
   .app-grid-2 {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -2122,7 +2138,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 }
 
 .section-label {
-  font-size: 0.875rem;
+  font-size: calc(var(--font-size-base) * 0.95);
   font-weight: 600;
   color: var(--color-text-muted);
   letter-spacing: 0.02em;

@@ -26,13 +26,13 @@
         <div class="flex justify-center mb-2">
           <span
             v-if="primaryDimension(game)"
-            class="badge truncate max-w-full px-2 py-0.5 text-xs font-bold"
+            class="badge truncate max-w-full px-2 py-0.5"
             :style="{
               backgroundColor: getDimensionColor(primaryDimension(game)!) + '15',
               color: getDimensionColor(primaryDimension(game)!)
             }"
           >
-            {{ getDimensionShortName(primaryDimension(game)!) }}
+            <SubtleLabel :text="getDimensionShortName(primaryDimension(game)!)" />
           </span>
         </div>
 
@@ -53,6 +53,7 @@
 </template>
 
 <script setup lang="ts">
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import type { CognitiveDimension } from '@/types/cognitive'
 import type { GameDefinition } from '@/types/game'
 

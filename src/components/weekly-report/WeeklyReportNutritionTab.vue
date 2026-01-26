@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import SectionTitle from '@/components/common/SectionTitle.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import type { PersonalizedNutritionResult } from '@/services/nutritionPlaceholder'
 
 interface Props {
@@ -44,15 +46,19 @@ const mediumPriorityRecommendations = computed(() => {
     <template v-else-if="props.nutritionResult">
       <div class="bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/30 p-4 rounded-xl flex gap-3 items-start">
         <span class="text-xl shrink-0">⚠️</span>
-        <p class="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-          以下營養建議僅供參考，不構成醫療診斷。開始任何補充計畫前請諮詢專業醫療人員。
-        </p>
+        <SubtleLabel
+          text="以下營養建議僅供參考，不構成醫療診斷。開始任何補充計畫前請諮詢專業醫療人員。"
+          tone="secondary"
+          class="leading-relaxed"
+        />
       </div>
 
       <section v-if="highPriorityRecommendations.length > 0">
-        <h2 class="text-lg font-bold text-[var(--color-text)] mb-4 flex items-center gap-2">
-          <span class="text-xl">🔴</span> 重點關注
-        </h2>
+        <SectionTitle title="重點關注">
+          <template #prefix>
+            <span class="text-xl">🔴</span>
+          </template>
+        </SectionTitle>
         <div class="space-y-4">
           <div
             v-for="rec in highPriorityRecommendations"
@@ -63,9 +69,9 @@ const mediumPriorityRecommendations = computed(() => {
               <span class="font-bold text-lg text-[var(--color-text)]">{{ rec.supplement.name }}</span>
               <span
                 v-if="rec.supplement.isPartnerProduct"
-                class="text-xs font-bold px-2 py-0.5 bg-[var(--color-warning)] text-white rounded-full"
+                class="px-2 py-0.5 bg-[var(--color-warning)] text-white rounded-full"
               >
-                合作
+                <SubtleLabel text="合作" size="xs" class="text-white" />
               </span>
             </div>
             <p class="text-sm text-[var(--color-text-secondary)] mb-3 leading-relaxed">{{ rec.reason }}</p>
@@ -74,23 +80,21 @@ const mediumPriorityRecommendations = computed(() => {
               <span
                 v-for="(benefit, i) in rec.supplement.benefits.slice(0, 2)"
                 :key="i"
-                class="text-xs px-2 py-1 bg-[var(--color-surface)] rounded text-[var(--color-text-secondary)] border border-[var(--color-border)]"
+                class="px-2 py-1 bg-[var(--color-surface)] rounded border border-[var(--color-border)]"
               >
-                {{ benefit }}
+                <SubtleLabel :text="benefit" tone="secondary" />
               </span>
             </div>
 
             <div class="flex items-center justify-between mt-2 pt-2 border-t border-[var(--color-danger)]/10">
-              <span class="text-xs font-medium text-[var(--color-text-muted)]">
-                建議劑量：{{ rec.supplement.dosageRange }}
-              </span>
+              <SubtleLabel :text="`建議劑量：${rec.supplement.dosageRange}`" tone="muted" />
               <a
                 v-if="rec.supplement.isPartnerProduct && rec.supplement.partnerUrl"
                 :href="rec.supplement.partnerUrl"
                 target="_blank"
-                class="text-xs font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1"
+                class="text-[var(--color-primary)] hover:underline flex items-center gap-1"
               >
-                了解更多 →
+                <SubtleLabel text="了解更多 →" class="text-[var(--color-primary)]" />
               </a>
             </div>
           </div>
@@ -98,9 +102,11 @@ const mediumPriorityRecommendations = computed(() => {
       </section>
 
       <section v-if="mediumPriorityRecommendations.length > 0">
-        <h2 class="text-lg font-bold text-[var(--color-text)] mb-4 flex items-center gap-2">
-          <span class="text-xl">🟡</span> 建議考慮
-        </h2>
+        <SectionTitle title="建議考慮">
+          <template #prefix>
+            <span class="text-xl">🟡</span>
+          </template>
+        </SectionTitle>
         <div class="space-y-4">
           <div
             v-for="rec in mediumPriorityRecommendations"
@@ -109,9 +115,7 @@ const mediumPriorityRecommendations = computed(() => {
           >
             <h3 class="font-bold text-[var(--color-text)] mb-2">{{ rec.supplement.name }}</h3>
             <p class="text-sm text-[var(--color-text-secondary)] mb-2 leading-relaxed">{{ rec.reason }}</p>
-            <div class="text-xs text-[var(--color-text-muted)]">
-              建議劑量：{{ rec.supplement.dosageRange }}
-            </div>
+            <SubtleLabel :text="`建議劑量：${rec.supplement.dosageRange}`" tone="muted" />
           </div>
         </div>
       </section>
@@ -120,9 +124,11 @@ const mediumPriorityRecommendations = computed(() => {
         v-if="props.nutritionResult.cognitiveBasedAdvice.length > 0"
         class="bg-[var(--color-surface-elevated)] p-5 rounded-2xl border border-[var(--color-border-light)]"
       >
-        <h2 class="text-lg font-bold text-[var(--color-text)] mb-3 flex items-center gap-2">
-          <span>🧠</span> 認知評估建議
-        </h2>
+        <SectionTitle title="認知評估建議" spacing="sm" :show-accent="false">
+          <template #prefix>
+            <span>🧠</span>
+          </template>
+        </SectionTitle>
         <ul class="space-y-2 list-disc list-inside text-sm text-[var(--color-text-secondary)]">
           <li
             v-for="(advice, i) in props.nutritionResult.cognitiveBasedAdvice"
@@ -135,9 +141,11 @@ const mediumPriorityRecommendations = computed(() => {
       </section>
 
       <section class="bg-[var(--color-success)]/5 p-5 rounded-2xl border border-[var(--color-success)]/20">
-        <h2 class="text-lg font-bold text-[var(--color-text)] mb-3 flex items-center gap-2">
-          <span>💡</span> 一般保健建議
-        </h2>
+        <SectionTitle title="一般保健建議" spacing="sm" :show-accent="false">
+          <template #prefix>
+            <span>💡</span>
+          </template>
+        </SectionTitle>
         <ul class="space-y-2 list-disc list-inside text-sm text-[var(--color-text-secondary)]">
           <li
             v-for="(advice, i) in props.nutritionResult.generalAdvice"

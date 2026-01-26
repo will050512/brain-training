@@ -10,12 +10,12 @@
         </p>
 
         <div class="flex items-center justify-center lg:justify-start gap-2 mb-4">
-          <span class="badge text-[10px] sm:text-xs" :class="`difficulty-${difficulty}`">
-            {{ DIFFICULTIES[difficulty].name }}
+          <span class="badge" :class="`difficulty-${difficulty}`">
+            <SubtleLabel :text="DIFFICULTIES[difficulty].name" size="xs" />
           </span>
-          <button class="btn btn-secondary btn-sm" @click="onOpenDifficulty">
+          <BaseButton variant="secondary" size="sm" @click="onOpenDifficulty">
             調整難度
-          </button>
+          </BaseButton>
         </div>
       </div>
 
@@ -35,12 +35,12 @@
           <div v-if="startError" class="p-3 rounded-lg border border-[var(--color-danger)]/30 bg-[var(--color-danger-bg)] text-[var(--color-danger)] text-sm text-left">
             {{ startError }}
           </div>
-          <button @click="onStart" class="btn btn-primary btn-lg w-full text-base shadow-md active:scale-95 transition-transform">
+          <BaseButton size="lg" full-width class="text-base shadow-md active:scale-95 transition-transform" @click="onStart">
             開始遊戲
-          </button>
-          <button @click="onBack" class="btn btn-secondary w-full hidden sm:flex">
+          </BaseButton>
+          <BaseButton variant="secondary" size="md" full-width class="hidden sm:flex" @click="onBack">
             ← 返回
-          </button>
+          </BaseButton>
         </div>
       </div>
     </div>
@@ -48,6 +48,8 @@
 </template>
 
 <script setup lang="ts">
+import BaseButton from '@/components/ui/BaseButton.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import type { GameDefinition, Difficulty } from '@/types/game'
 import { DIFFICULTIES } from '@/types/game'
 

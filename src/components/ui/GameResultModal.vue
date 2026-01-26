@@ -4,6 +4,8 @@
  * 顯示遊戲完成後的詳細結果、與上次比較、改善建議
  */
 import { ref, computed, onMounted } from 'vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import type { GameResult } from '@/types/game'
 import type { CognitiveDimension } from '@/types/cognitive'
 import { gameRegistry } from '@/core/gameRegistry'
@@ -203,10 +205,12 @@ onMounted(() => {
           <div>
             <p class="text-sm text-[var(--color-text-muted)]">分數</p>
             <p class="text-2xl font-bold text-blue-500 dark:text-blue-400">{{ result.score }}</p>
-            <p v-if="scoreChange !== null" class="text-xs mt-1"
-               :class="scoreChange > 0 ? 'text-green-500' : scoreChange < 0 ? 'text-red-500' : 'text-[var(--color-text-muted)]'">
-              {{ scoreChange > 0 ? '+' : '' }}{{ scoreChange }}
-            </p>
+            <SubtleLabel
+              v-if="scoreChange !== null"
+              :text="`${scoreChange > 0 ? '+' : ''}${scoreChange}`"
+              class="mt-1"
+              :class="scoreChange > 0 ? 'text-green-500' : scoreChange < 0 ? 'text-red-500' : 'text-[var(--color-text-muted)]'"
+            />
           </div>
           
           <!-- 正確率 -->
@@ -255,13 +259,16 @@ onMounted(() => {
           <span class="text-xl">⚠️</span>
           <div>
             <p class="text-sm font-semibold text-yellow-700 dark:text-yellow-300">注意：偵測到表現下降</p>
-            <p class="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
-              {{ dimensionNames[declineWarning.dimension] }} 較基準下降 
-              {{ Math.abs(Math.round(declineWarning.changePercent)) }}%
-            </p>
-            <p class="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
-              建議持續練習並保持規律作息
-            </p>
+            <SubtleLabel
+              :text="`${dimensionNames[declineWarning.dimension]} 較基準下降 ${Math.abs(Math.round(declineWarning.changePercent))}%`"
+              class="text-yellow-600 dark:text-yellow-400 mt-1 block"
+              size="xs"
+            />
+            <SubtleLabel
+              text="建議持續練習並保持規律作息"
+              class="text-yellow-600 dark:text-yellow-400 mt-1 block"
+              size="xs"
+            />
           </div>
         </div>
       </div>
@@ -280,7 +287,7 @@ onMounted(() => {
           </div>
           <div>
             <p class="text-[var(--color-text-muted)]">遊玩時間</p>
-            <p class="font-bold text-xs text-[var(--color-text)]">{{ formatDate(previousResult.timestamp) }}</p>
+            <SubtleLabel :text="formatDate(previousResult.timestamp)" tone="muted" class="font-bold text-[var(--color-text)]" />
           </div>
         </div>
       </div>
@@ -297,20 +304,21 @@ onMounted(() => {
 
       <!-- 操作按鈕 -->
       <div class="p-6 flex gap-3">
-        <button
+        <BaseButton
+          size="md"
+          class="flex-1 py-3 px-4 shadow-lg"
           @click="emit('playAgain')"
-          class="flex-1 py-3 px-4 bg-[var(--color-primary)] text-white rounded-xl font-semibold
-                 hover:opacity-90 active:scale-95 transition-all shadow-lg"
         >
           🔄 再玩一次
-        </button>
-        <button
+        </BaseButton>
+        <BaseButton
+          variant="secondary"
+          size="md"
+          class="flex-1 py-3 px-4 border border-[var(--color-border)]"
           @click="emit('nextGame')"
-          class="flex-1 py-3 px-4 bg-[var(--color-surface-alt)] text-[var(--color-text)] rounded-xl font-semibold
-                 hover:bg-[var(--color-border)] active:scale-95 transition-all border border-[var(--color-border)]"
         >
           ➡️ 下一個遊戲
-        </button>
+        </BaseButton>
       </div>
     </div>
   </div>

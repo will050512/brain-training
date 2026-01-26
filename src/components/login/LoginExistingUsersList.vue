@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import BaseButton from '@/components/ui/BaseButton.vue'
+import SectionTitle from '@/components/common/SectionTitle.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import type { User } from '@/types'
 
 interface Props {
@@ -18,7 +21,7 @@ const emit = defineEmits<{
 
 <template>
   <div v-if="props.existingUsers.length > 0" class="pt-6 border-t border-[var(--color-border-light)]">
-    <h3 class="text-sm font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-4 text-center">快速切換帳號</h3>
+    <SectionTitle title="快速切換帳號" as="h3" size="sm" spacing="sm" :show-accent="false" class="justify-center text-center" />
     <div class="grid gap-3">
       <div
         v-for="user in props.existingUsers"
@@ -35,25 +38,29 @@ const emit = defineEmits<{
           </div>
           <div class="flex-1 text-left">
             <div class="font-bold text-[var(--color-text)]">{{ user.name }}</div>
-            <div class="text-xs text-[var(--color-text-muted)]">生日: {{ props.formatBirthday(user.birthday) }}</div>
-            <div class="text-[10px] text-[var(--color-text-muted)]">登入碼: {{ props.getTransferCodePreview(user) }}</div>
+            <SubtleLabel :text="`生日: ${props.formatBirthday(user.birthday)}`" tone="muted" class="block" />
+            <SubtleLabel :text="`登入碼: ${props.getTransferCodePreview(user)}`" size="xs" tone="muted" class="block" />
           </div>
         </button>
         <div class="flex items-center gap-2 ml-2">
-          <button
+          <BaseButton
             type="button"
-            class="btn btn-ghost btn-sm !px-2 !py-2 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] min-h-[44px]"
+            variant="ghost"
+            size="sm"
+            class="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"
             @click="emit('copy-code', user)"
           >
             複製碼
-          </button>
-          <button
+          </BaseButton>
+          <BaseButton
             type="button"
-            class="btn btn-ghost btn-sm !px-2 !py-2 text-xs text-[var(--color-danger)] hover:text-[var(--color-danger)] min-h-[44px]"
+            variant="ghost"
+            size="sm"
+            class="text-[var(--color-danger)] hover:text-[var(--color-danger)]"
             @click="emit('delete-user', user.id)"
           >
             刪除
-          </button>
+          </BaseButton>
         </div>
       </div>
     </div>

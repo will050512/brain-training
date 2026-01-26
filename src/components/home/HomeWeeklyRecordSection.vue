@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SectionTitle from '@/components/common/SectionTitle.vue'
 import WeekCalendar from '@/components/ui/WeekCalendar.vue'
 
 type ActivityFilter = 'daily' | 'all'
@@ -33,10 +34,7 @@ const handleWeekChange = (startDate: string, endDate: string): void => {
 
 <template>
   <div class="mb-6">
-    <h2 class="text-lg font-bold text-[var(--color-text)] px-1 mb-3 flex items-center gap-2">
-      <span class="w-1.5 h-6 rounded-full bg-[var(--color-primary)]"></span>
-      本週紀錄
-    </h2>
+    <SectionTitle title="本週紀錄" spacing="sm" class="px-1" />
     <div class="flex items-center justify-between text-sm text-[var(--color-text-secondary)] mb-3 px-1">
       <span>顯示</span>
       <div class="inline-flex items-center gap-1 rounded-full bg-[var(--color-surface-elevated)] p-1 border border-[var(--color-border)] shadow-sm">

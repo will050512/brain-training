@@ -6,6 +6,7 @@
 import { ref, computed, provide, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useResponsive } from '@/composables/useResponsive'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import GameStatusBar from '@/components/games/ui/GameStatusBar.vue'
 import GameFeedback from '@/components/games/ui/GameFeedback.vue'
 import GameReadyScreen from '@/components/games/ui/GameReadyScreen.vue'
@@ -277,20 +278,21 @@ provide('gameContainer', {
           <div class="pause-icon">⏸️</div>
           <h2 class="pause-title">遊戲暫停</h2>
           <div class="pause-actions">
-            <button 
-              type="button" 
-              class="btn btn-primary btn-lg"
+            <BaseButton 
+              type="button"
+              size="lg"
               @click="handleResume"
             >
               繼續遊戲
-            </button>
-            <button 
-              type="button" 
-              class="btn btn-danger btn-lg"
+            </BaseButton>
+            <BaseButton 
+              type="button"
+              variant="danger"
+              size="lg"
               @click="handleQuit"
             >
               結束遊戲
-            </button>
+            </BaseButton>
           </div>
           <p class="pause-hint">按 ESC 鍵繼續</p>
         </div>

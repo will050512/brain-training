@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 
 type GuidedStep = {
   title: string
@@ -86,30 +88,31 @@ function prev(): void {
       <div class="modal-content max-w-lg overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="tour-title">
         <div class="bg-[var(--color-primary)]/10 px-5 py-4 flex items-start justify-between gap-3">
           <div>
-            <p class="text-xs font-semibold text-[var(--color-primary)]">
-              新手導覽 · 步驟 {{ currentIndex + 1 }} / {{ total }}
-            </p>
+            <SubtleLabel
+              :text="`新手導覽 · 步驟 ${currentIndex + 1} / ${total}`"
+              class="text-[var(--color-primary)]"
+              weight="bold"
+            />
             <h2 id="tour-title" class="text-xl font-bold text-[var(--color-text)] mt-1">
               {{ current.title }}
             </h2>
           </div>
-          <button
-            type="button"
-            class="btn btn-ghost btn-sm text-[var(--color-text-muted)] min-h-[44px]"
+          <BaseButton
+            variant="ghost"
+            size="sm"
+            class="text-[var(--color-text-muted)] min-h-[44px]"
             @click="close"
             aria-label="關閉教學"
           >
             ✕
-          </button>
+          </BaseButton>
         </div>
 
         <div class="px-5 py-4">
           <p class="text-base text-[var(--color-text-secondary)] leading-relaxed">
             {{ current.body }}
           </p>
-          <p v-if="current.hint" class="text-sm text-[var(--color-text-muted)] mt-3">
-            {{ current.hint }}
-          </p>
+          <SubtleLabel v-if="current.hint" :text="current.hint" tone="muted" class="mt-3 block" />
 
           <div class="mt-4 flex items-center gap-2">
             <span
@@ -121,29 +124,34 @@ function prev(): void {
           </div>
 
           <div class="mt-6 flex flex-wrap items-center justify-between gap-2">
-            <button
+            <BaseButton
               type="button"
-              class="btn btn-secondary min-h-[44px] px-4"
+              variant="secondary"
+              size="sm"
+              class="min-h-[44px] px-4"
               :disabled="isFirst"
               @click="prev"
             >
               上一步
-            </button>
+            </BaseButton>
             <div class="flex items-center gap-2">
-              <button
+              <BaseButton
                 type="button"
-                class="btn btn-ghost min-h-[44px] px-4 text-[var(--color-text-secondary)]"
+                variant="ghost"
+                size="sm"
+                class="min-h-[44px] px-4 text-[var(--color-text-secondary)]"
                 @click="close"
               >
                 稍後再看
-              </button>
-              <button
+              </BaseButton>
+              <BaseButton
                 type="button"
-                class="btn btn-primary min-h-[44px] px-5"
+                size="sm"
+                class="min-h-[44px] px-5"
                 @click="next"
               >
                 {{ isLast ? '完成' : '下一步' }}
-              </button>
+              </BaseButton>
             </div>
           </div>
         </div>

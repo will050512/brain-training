@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import { useSettingsStore } from '@/stores'
 import { FONT_SIZE_LABELS, type FontSize } from '@/stores/settingsStore'
 
@@ -18,7 +19,9 @@ const fontSizeOptions = (Object.entries(FONT_SIZE_LABELS) as Array<[FontSize, st
     </div>
 
     <div class="mb-4">
-      <div class="text-sm font-medium text-[var(--color-text-secondary)] mb-2 px-1">字體大小</div>
+      <div class="mb-2 px-1">
+        <SubtleLabel text="字體大小" tone="secondary" weight="bold" />
+      </div>
       <div class="grid grid-cols-4 gap-2">
         <button
           v-for="option in fontSizeOptions"
@@ -31,7 +34,7 @@ const fontSizeOptions = (Object.entries(FONT_SIZE_LABELS) as Array<[FontSize, st
           @click="settingsStore.setFontSize(option.value)"
         >
           <span class="font-bold" :style="{ fontSize: option.value === 'small' ? '0.75rem' : option.value === 'large' ? '1.125rem' : option.value === 'xlarge' ? '1.25rem' : '0.875rem' }">A</span>
-          <span class="text-[10px] sm:text-xs mt-1 opacity-80">{{ option.label }}</span>
+          <SubtleLabel :text="option.label" size="xs" tone="muted" class="mt-1 opacity-80" />
         </button>
       </div>
     </div>
@@ -40,7 +43,7 @@ const fontSizeOptions = (Object.entries(FONT_SIZE_LABELS) as Array<[FontSize, st
       <div class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="settingsStore.highContrast = !settingsStore.highContrast">
         <div class="flex-1 pr-4">
           <div class="text-base font-medium text-[var(--color-text)]">高對比模式</div>
-          <div class="text-xs text-[var(--color-text-muted)] mt-0.5">提升文字與背景對比度</div>
+          <SubtleLabel text="提升文字與背景對比度" tone="muted" class="mt-0.5 block" />
         </div>
         <button
           class="toggle-switch flex-shrink-0"
@@ -54,7 +57,7 @@ const fontSizeOptions = (Object.entries(FONT_SIZE_LABELS) as Array<[FontSize, st
       <div class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="settingsStore.reduceMotion = !settingsStore.reduceMotion">
         <div class="flex-1 pr-4">
           <div class="text-base font-medium text-[var(--color-text)]">減少動畫</div>
-          <div class="text-xs text-[var(--color-text-muted)] mt-0.5">降低動態效果，減少視覺干擾</div>
+          <SubtleLabel text="降低動態效果，減少視覺干擾" tone="muted" class="mt-0.5 block" />
         </div>
         <button
           class="toggle-switch flex-shrink-0"

@@ -8,46 +8,22 @@
     </div>
 
     <div class="grid gap-4 sm:grid-cols-2 shrink-0">
-      <button
-        class="card text-left p-5 relative group transition-all duration-300 border border-[var(--color-primary)]/20 hover:border-[var(--color-primary)] active:scale-[0.98] bg-[var(--color-surface)] shadow-sm min-h-[140px]"
+      <AssessmentSelectOptionCard
+        icon="⏱️"
+        title="Mini-Cog™ 快篩"
+        description="透過詞語記憶與畫鐘測驗，快速篩檢認知功能狀態。"
+        meta-label="⚡ 3 分鐘"
+        recommended
+        meta-variant="primary"
         @click="onStartMiniCog"
-      >
-        <div class="absolute -top-2 -right-2 z-10">
-          <span class="bg-[var(--color-primary)] text-[var(--color-text-inverse)] text-xs font-bold px-2 py-1 rounded-lg shadow-sm animate-pulse">
-            推薦
-          </span>
-        </div>
-        <div class="flex items-start gap-4">
-          <div class="text-4xl bg-[var(--color-primary-bg)] w-14 h-14 flex items-center justify-center rounded-xl shrink-0">⏱️</div>
-          <div class="flex-1 min-w-0">
-            <h3 class="text-lg font-bold text-[var(--color-text)] leading-tight mb-1">Mini-Cog™ 快篩</h3>
-            <div class="flex items-center gap-1.5 text-xs font-medium text-[var(--color-primary)] mt-2">
-              <span class="bg-[var(--color-primary-bg)] px-2 py-1 rounded text-sm">⚡ 3 分鐘</span>
-            </div>
-          </div>
-        </div>
-        <p class="text-sm text-[var(--color-text-secondary)] mt-4 leading-relaxed line-clamp-2">
-          透過詞語記憶與畫鐘測驗，快速篩檢認知功能狀態。
-        </p>
-      </button>
-
-      <button
-        class="card text-left p-5 group transition-all duration-300 border border-[var(--color-border)] hover:border-[var(--color-primary)]/50 active:scale-[0.98] bg-[var(--color-surface)] shadow-sm min-h-[140px]"
+      />
+      <AssessmentSelectOptionCard
+        icon="📋"
+        title="完整能力評估"
+        description="全面測試反應、記憶與邏輯能力，提供詳細雷達圖分析。"
+        meta-label="🎯 5 分鐘"
         @click="onStartFullAssessment"
-      >
-        <div class="flex items-start gap-4">
-          <div class="text-4xl bg-[var(--color-bg-muted)] w-14 h-14 flex items-center justify-center rounded-xl shrink-0">📋</div>
-          <div class="flex-1 min-w-0">
-            <h3 class="text-lg font-bold text-[var(--color-text)] leading-tight mb-1">完整能力評估</h3>
-            <div class="flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-muted)] mt-2">
-              <span class="bg-[var(--color-bg-muted)] px-2 py-1 rounded text-sm">🎯 5 分鐘</span>
-            </div>
-          </div>
-        </div>
-        <p class="text-sm text-[var(--color-text-secondary)] mt-4 leading-relaxed line-clamp-2">
-          全面測試反應、記憶與邏輯能力，提供詳細雷達圖分析。
-        </p>
-      </button>
+      />
     </div>
 
     <div class="flex items-center gap-3 shrink-0 bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] mt-2">
@@ -77,18 +53,23 @@
             <p class="text-sm text-[var(--color-text-secondary)] opacity-80">{{ formatRecentMiniCogDate }}</p>
           </div>
         </div>
-        <button
-          class="btn btn-sm btn-outline border-[var(--color-success)] text-[var(--color-success)] hover:bg-[var(--color-success)] hover:text-white h-12 min-h-[48px] px-5 text-base"
+        <BaseButton
+          variant="outline"
+          size="md"
+          class="border-[var(--color-success)] text-[var(--color-success)] hover:bg-[var(--color-success)] hover:text-white px-5 text-base"
           @click="onViewMiniCogHistory"
         >
           查看
-        </button>
+        </BaseButton>
       </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
+import BaseButton from '@/components/ui/BaseButton.vue'
+import AssessmentSelectOptionCard from '@/components/assessment/ui/AssessmentSelectOptionCard.vue'
+
 const props = defineProps<{
   selectedLanguage: 'zh-TW' | 'zh-CN' | 'en'
   hasRecentMiniCog: boolean

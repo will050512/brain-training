@@ -11,8 +11,8 @@
         ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)]'
         : 'border-transparent hover:border-[var(--color-border)]'"
     >
-      <div v-if="assessmentChoice === 'mini-cog'" class="absolute top-0 right-0 bg-[var(--color-primary)] text-[var(--color-text-inverse)] text-xs px-2 py-1 rounded-bl-lg font-bold">
-        已選擇
+      <div v-if="assessmentChoice === 'mini-cog'" class="absolute top-0 right-0 bg-[var(--color-primary)] text-[var(--color-text-inverse)] px-2 py-1 rounded-bl-lg font-bold">
+        <SubtleLabel text="已選擇" size="xs" class="text-[var(--color-text-inverse)]" />
       </div>
       <div class="flex items-start gap-4">
         <span class="text-3xl mt-1">🧠</span>
@@ -53,6 +53,8 @@
 </template>
 
 <script setup lang="ts">
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
+
 defineProps<{
   assessmentChoice: 'mini-cog' | 'quick'
   onSelect: (value: 'mini-cog' | 'quick') => void

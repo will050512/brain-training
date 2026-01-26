@@ -12,42 +12,27 @@
       </div>
 
       <div class="space-y-4 mb-8 flex-1">
-        <div class="flex items-center gap-5 p-4 rounded-xl bg-[var(--color-bg-soft)] border border-[var(--color-border)]/50">
-          <span class="text-3xl bg-white rounded-xl w-12 h-12 flex items-center justify-center shadow-sm shrink-0">⚡</span>
-          <div>
-            <div class="font-bold text-[var(--color-text)] text-lg">反應力</div>
-            <div class="text-sm text-[var(--color-text-muted)] mt-1">快速選擇看到的顏色</div>
-          </div>
-        </div>
-        <div class="flex items-center gap-5 p-4 rounded-xl bg-[var(--color-bg-soft)] border border-[var(--color-border)]/50">
-          <span class="text-3xl bg-white rounded-xl w-12 h-12 flex items-center justify-center shadow-sm shrink-0">🧠</span>
-          <div>
-            <div class="font-bold text-[var(--color-text)] text-lg">記憶力</div>
-            <div class="text-sm text-[var(--color-text-muted)] mt-1">記住數字序列並輸入</div>
-          </div>
-        </div>
-        <div class="flex items-center gap-5 p-4 rounded-xl bg-[var(--color-bg-soft)] border border-[var(--color-border)]/50">
-          <span class="text-3xl bg-white rounded-xl w-12 h-12 flex items-center justify-center shadow-sm shrink-0">🧩</span>
-          <div>
-            <div class="font-bold text-[var(--color-text)] text-lg">邏輯力</div>
-            <div class="text-sm text-[var(--color-text-muted)] mt-1">簡單的數學計算</div>
-          </div>
-        </div>
+        <AssessmentInfoRow icon="⚡" title="反應力" description="快速選擇看到的顏色" />
+        <AssessmentInfoRow icon="🧠" title="記憶力" description="記住數字序列並輸入" />
+        <AssessmentInfoRow icon="🧩" title="邏輯力" description="簡單的數學計算" />
       </div>
 
       <div class="space-y-4 shrink-0">
-        <button @click="onStart" class="btn btn-primary btn-lg w-full text-xl font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all min-h-[60px]">
+        <BaseButton size="lg" full-width class="text-xl font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all" @click="onStart">
           開始測試
-        </button>
-        <button @click="onBack" class="btn btn-ghost w-full min-h-[50px] text-[var(--color-text-muted)] text-base">
+        </BaseButton>
+        <BaseButton variant="ghost" size="md" full-width class="text-[var(--color-text-muted)] text-base" @click="onBack">
           稍後再說
-        </button>
+        </BaseButton>
       </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
+import BaseButton from '@/components/ui/BaseButton.vue'
+import AssessmentInfoRow from '@/components/assessment/ui/AssessmentInfoRow.vue'
+
 defineProps<{
   onStart: () => void
   onBack: () => void

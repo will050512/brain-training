@@ -697,21 +697,25 @@ export function adjustSettingsForSubDifficulty<T extends object>(
     // 調整數值型設定
     for (const key of Object.keys(adjusted)) {
       const value = adjusted[key]
-        if (typeof value === 'number') {
-          // 對於時間類設定，反向調整
-          if (
-            key.includes('time') ||
-            key.includes('Time') ||
-            key.includes('duration') ||
-            key.includes('interval') ||
-            key.includes('leadIn')
-          ) {
-            adjusted[key] = Math.round(value / modifier)
-          } else {
-            adjusted[key] = Math.round(value * modifier)
-          }
+      if (typeof value === 'number') {
+        const isTimeSetting = (
+          key.includes('time') ||
+          key.includes('Time') ||
+          key.includes('duration') ||
+          key.includes('interval') ||
+          key.includes('leadIn')
+        )
+        const isProbability = value > 0 && value < 1
+
+        if (isTimeSetting) {
+          adjusted[key] = Math.round(value / modifier)
+        } else if (isProbability) {
+          adjusted[key] = Math.min(1, Math.max(0, Number((value * modifier).toFixed(3))))
+        } else {
+          adjusted[key] = Math.round(value * modifier)
         }
       }
+    }
     
     return adjusted as T
   }
@@ -721,7 +725,11 @@ export function adjustSettingsForSubDifficulty<T extends object>(
   
   for (const [key, multiplier] of Object.entries(mods)) {
     if (key in adjusted && typeof adjusted[key] === 'number') {
-      adjusted[key] = Math.round((adjusted[key] as number) * multiplier)
+      const value = adjusted[key] as number
+      const isProbability = value > 0 && value < 1
+      adjusted[key] = isProbability
+        ? Math.min(1, Math.max(0, Number((value * multiplier).toFixed(3))))
+        : Math.round(value * multiplier)
     }
   }
   

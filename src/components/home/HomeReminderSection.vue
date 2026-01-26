@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import BaseButton from '@/components/ui/BaseButton.vue'
+import SectionTitle from '@/components/common/SectionTitle.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
+
 interface TrainingReminder {
   shouldRemind: boolean
   message: string
@@ -26,7 +30,7 @@ const emit = defineEmits<{
 
 <template>
   <div v-if="props.trainingReminder || props.assessmentReminder?.needsAssessment" class="space-y-3">
-    <h2 class="text-sm font-semibold text-[var(--color-text-muted)]">提醒與通知</h2>
+    <SectionTitle title="提醒與通知" size="sm" spacing="sm" :show-accent="false" class="px-1" />
 
     <div v-if="props.trainingReminder?.shouldRemind">
       <div class="alert alert--info">
@@ -36,7 +40,7 @@ const emit = defineEmits<{
             <path d="M13.7 21a2 2 0 01-3.4 0"></path>
           </svg>
         </span>
-        <p class="alert__content text-sm">{{ props.trainingReminder.message }}</p>
+        <SubtleLabel :text="props.trainingReminder.message" tone="secondary" class="alert__content text-sm" />
         <button
           class="alert__action text-xl"
           @click="emit('dismiss-training')"
@@ -56,17 +60,18 @@ const emit = defineEmits<{
           </svg>
         </span>
         <div class="alert__content">
-          <p class="text-sm font-medium">
-            {{ props.assessmentReminder.message }}
-          </p>
-          <router-link
-            to="/assessment"
-            class="inline-block mt-2 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
-            :class="props.assessmentReminder.daysSinceLastAssessment >= 60
-              ? 'bg-[var(--color-danger)] text-[var(--color-text-inverse)] hover:opacity-90'
-              : 'bg-[var(--color-warning)] text-[var(--color-text-inverse)] hover:opacity-90'"
-          >
-            前往評估
+          <p class="text-sm font-medium">{{ props.assessmentReminder.message }}</p>
+          <router-link to="/assessment" custom v-slot="{ navigate }">
+            <BaseButton
+              size="sm"
+              class="mt-2 px-3 py-1.5 rounded-lg font-medium transition-colors text-[var(--color-text-inverse)]"
+              :class="props.assessmentReminder.daysSinceLastAssessment >= 60
+                ? 'bg-[var(--color-danger)] hover:opacity-90'
+                : 'bg-[var(--color-warning)] hover:opacity-90'"
+              @click="navigate"
+            >
+              前往評估
+            </BaseButton>
           </router-link>
         </div>
         <button

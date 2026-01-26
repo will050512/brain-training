@@ -5,7 +5,7 @@
       <div class="text-center mb-6">
         <img src="/logo.png" alt="愛護腦" class="w-24 h-24 mx-auto mb-4 drop-shadow-lg" />
         <h2 class="text-2xl font-bold text-[var(--color-text)]">歡迎使用愛護腦！</h2>
-        <p class="text-sm text-[var(--color-text-muted)] mt-2">一起用溫和的節奏養成每日訓練</p>
+        <SubtleLabel text="一起用溫和的節奏養成每日訓練" tone="muted" class="mt-2 block" />
       </div>
 
       <!-- 說明文字 -->
@@ -26,28 +26,32 @@
           <span class="text-3xl">🔊</span>
           <div>
             <p class="font-medium text-[var(--color-text)]">是否開啟音效？</p>
-            <p class="text-sm text-[var(--color-text-muted)]">
-              音效可以增加遊戲趣味性，<br>
-              您可以隨時在設定中調整。
-            </p>
+            <SubtleLabel
+              text="音效可以增加遊戲趣味性，\n您可以隨時在設定中調整。"
+              tone="muted"
+              class="whitespace-pre-line block"
+            />
           </div>
         </div>
       </div>
 
       <!-- 按鈕 -->
       <div class="flex gap-3">
-        <button 
-          @click="$emit('close')" 
-          class="btn btn-secondary flex-1 text-base"
+        <BaseButton
+          variant="secondary"
+          size="md"
+          class="flex-1 text-base"
+          @click="$emit('close')"
         >
           保持靜音
-        </button>
-        <button 
-          @click="$emit('enable-sound')" 
-          class="btn btn-primary flex-1 shadow-lg text-base"
+        </BaseButton>
+        <BaseButton
+          size="md"
+          class="flex-1 shadow-lg text-base"
+          @click="$emit('enable-sound')"
         >
           開啟音效 🔊
-        </button>
+        </BaseButton>
       </div>
 
       <!-- 特色說明 -->
@@ -56,27 +60,27 @@
         <div class="grid grid-cols-3 gap-4 text-center text-sm">
           <div class="p-2 rounded-lg hover:bg-[var(--color-surface-alt)] transition-colors">
             <span class="text-2xl">⚡</span>
-            <p class="text-[var(--color-text-secondary)]">反應力</p>
+            <SubtleLabel text="反應力" tone="secondary" />
           </div>
           <div class="p-2 rounded-lg hover:bg-[var(--color-surface-alt)] transition-colors">
             <span class="text-2xl">🧩</span>
-            <p class="text-[var(--color-text-secondary)]">邏輯力</p>
+            <SubtleLabel text="邏輯力" tone="secondary" />
           </div>
           <div class="p-2 rounded-lg hover:bg-[var(--color-surface-alt)] transition-colors">
             <span class="text-2xl">🧠</span>
-            <p class="text-[var(--color-text-secondary)]">記憶力</p>
+            <SubtleLabel text="記憶力" tone="secondary" />
           </div>
           <div class="p-2 rounded-lg hover:bg-[var(--color-surface-alt)] transition-colors">
             <span class="text-2xl">💡</span>
-            <p class="text-[var(--color-text-secondary)]">認知力</p>
+            <SubtleLabel text="認知力" tone="secondary" />
           </div>
           <div class="p-2 rounded-lg hover:bg-[var(--color-surface-alt)] transition-colors">
             <span class="text-2xl">🎯</span>
-            <p class="text-[var(--color-text-secondary)]">協調力</p>
+            <SubtleLabel text="協調力" tone="secondary" />
           </div>
           <div class="p-2 rounded-lg hover:bg-[var(--color-surface-alt)] transition-colors">
             <span class="text-2xl">👁️</span>
-            <p class="text-[var(--color-text-secondary)]">注意力</p>
+            <SubtleLabel text="注意力" tone="secondary" />
           </div>
         </div>
       </div>
@@ -85,6 +89,9 @@
 </template>
 
 <script setup lang="ts">
+import BaseButton from '@/components/ui/BaseButton.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
+
 defineEmits<{
   close: []
   'enable-sound': []

@@ -354,7 +354,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         <div
           v-for="(hole, index) in holes"
           :key="index"
-          class="hole relative aspect-square flex items-center justify-center cursor-pointer select-none min-h-[100px] sm:min-h-[120px] md:min-h-[140px] lg:min-h-[160px]"
+          class="hole relative aspect-square flex items-center justify-center cursor-pointer select-none min-h-[120px] sm:min-h-[140px] md:min-h-[160px] lg:min-h-[180px]"
           @click="handleHoleClick(index)"
         >
           <img class="hole-img" :src="holeImg" alt="" aria-hidden="true" />
@@ -362,9 +362,8 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           <Transition name="pop">
             <img
               v-if="hole.active && hole.type === 'mole'"
-              class="actor-img"
+              class="actor-img mole"
               :class="{
-                'animate-pulse': !hole.hit,
                 'hit': hole.hit
               }"
               :src="hole.hit ? moleHitImg : moleImg"
@@ -446,15 +445,19 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
 .actor-img {
   position: absolute;
-  width: clamp(48px, 12vw, 96px);
-  height: clamp(48px, 12vw, 96px);
+  width: clamp(64px, 14vw, 120px);
+  height: clamp(64px, 14vw, 120px);
   transition: transform 0.15s ease, opacity 0.15s ease;
   pointer-events: none;
   filter: drop-shadow(0 10px 16px rgba(15, 23, 42, 0.25));
 }
 
+.actor-img.mole {
+  animation: mole-bob 0.6s ease-in-out infinite;
+}
+
 .actor-img.hit {
-  transform: scale(1.1);
+  transform: scale(1.15);
   opacity: 0.6;
 }
 
@@ -468,7 +471,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 }
 
 .pop-enter-from {
-  transform: scale(0) translateY(20px);
+  transform: scale(0.4) translateY(24px);
   opacity: 0;
 }
 
@@ -494,8 +497,16 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   70% { transform: rotate(6deg) scale(1.05); }
 }
 
+@keyframes mole-bob {
+  0%, 100% { transform: translateY(6px) scale(1); }
+  50% { transform: translateY(-6px) scale(1.08); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .actor-img.bomb {
+    animation: none;
+  }
+  .actor-img.mole {
     animation: none;
   }
 }

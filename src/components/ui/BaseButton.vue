@@ -7,6 +7,7 @@ import { computed } from 'vue'
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
 type ButtonSize = 'sm' | 'md' | 'lg' | 'xl'
+type ButtonType = 'button' | 'submit' | 'reset'
 
 interface Props {
   variant?: ButtonVariant
@@ -15,6 +16,7 @@ interface Props {
   disabled?: boolean
   fullWidth?: boolean
   icon?: string
+  type?: ButtonType
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -22,7 +24,8 @@ const props = withDefaults(defineProps<Props>(), {
   size: 'md',
   loading: false,
   disabled: false,
-  fullWidth: false
+  fullWidth: false,
+  type: 'button'
 })
 
 defineEmits<{
@@ -40,10 +43,10 @@ const baseClasses = computed(() => {
   
   // Size classes (Touch target >= 44px ensured)
   const sizeClasses = {
-    sm: 'px-3 py-1.5 text-sm min-h-[44px] min-w-[44px]',
-    md: 'px-5 py-2.5 text-base min-h-[48px]',
-    lg: 'px-7 py-3.5 text-lg min-h-[56px]',
-    xl: 'px-9 py-4.5 text-xl min-h-[64px]'
+    sm: 'px-3 py-1.5 text-[length:calc(var(--font-size-base)*0.95)] min-h-[44px] min-w-[44px]',
+    md: 'px-5 py-2.5 text-[length:var(--font-size-base)] min-h-[48px]',
+    lg: 'px-7 py-3.5 text-[length:var(--font-size-lg)] min-h-[56px]',
+    xl: 'px-9 py-4.5 text-[length:var(--font-size-xl)] min-h-[64px]'
   }
   classes.push(sizeClasses[props.size])
   
@@ -98,6 +101,7 @@ const isDisabled = computed(() => props.disabled || props.loading)
   <button
     :class="baseClasses"
     :disabled="isDisabled"
+    :type="props.type"
     @click="$emit('click', $event)"
   >
     <!-- Loading spinner -->

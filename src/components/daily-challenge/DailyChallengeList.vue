@@ -42,8 +42,8 @@
           <div class="flex flex-col min-w-0">
             <div class="font-bold text-base text-[var(--color-text)] truncate mb-0.5 group-hover:text-[var(--color-primary)] transition-colors">{{ game.game.name }}</div>
             <div class="flex flex-wrap items-center gap-1.5">
-              <span class="px-1.5 py-0.5 rounded text-[10px] font-medium border" :class="getDifficultyClass(game.difficulty)">
-                {{ getDifficultyText(game.difficulty) }}
+              <span class="px-1.5 py-0.5 rounded border" :class="getDifficultyClass(game.difficulty)">
+                <SubtleLabel :text="getDifficultyText(game.difficulty)" size="xs" />
               </span>
               <div class="flex gap-0.5 ml-0.5">
                 <span
@@ -76,6 +76,7 @@
 </template>
 
 <script setup lang="ts">
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import type { CognitiveDimension } from '@/types/cognitive'
 import type { TrainingGameItem } from '@/services/dailyTrainingService'
 

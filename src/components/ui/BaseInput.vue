@@ -33,7 +33,7 @@ const emit = defineEmits<{
 
 const inputClasses = computed(() => {
   const classes = [
-    'w-full rounded-xl',
+    'w-full rounded-xl min-h-[var(--min-touch-target)]',
     'bg-[var(--color-surface)]',
     'border-2',
     'text-[var(--color-text)]',
@@ -45,9 +45,9 @@ const inputClasses = computed(() => {
   
   // Size classes
   const sizeClasses = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2.5 text-base',
-    lg: 'px-5 py-3 text-lg'
+    sm: 'px-3 py-2 text-[length:calc(var(--font-size-base)*0.95)]',
+    md: 'px-4 py-2.5 text-[length:var(--font-size-base)]',
+    lg: 'px-5 py-3 text-[length:var(--font-size-lg)]'
   }
   classes.push(sizeClasses[props.size])
   
@@ -75,7 +75,7 @@ function handleInput(event: Event) {
 <template>
   <div class="w-full">
     <!-- Label -->
-    <label v-if="label" class="block mb-2 text-sm font-medium text-[var(--color-text)]">
+    <label v-if="label" class="block mb-2 text-[length:var(--font-size-base)] font-medium text-[var(--color-text)]">
       {{ label }}
     </label>
     
@@ -103,12 +103,12 @@ function handleInput(event: Event) {
     </div>
     
     <!-- Error message -->
-    <p v-if="error" class="mt-1.5 text-sm text-red-500 dark:text-red-400">
+    <p v-if="error" class="mt-1.5 text-[length:calc(var(--font-size-base)*0.95)] text-red-500 dark:text-red-400">
       {{ error }}
     </p>
     
     <!-- Hint -->
-    <p v-else-if="hint" class="mt-1.5 text-sm text-[var(--color-text-muted)]">
+    <p v-else-if="hint" class="mt-1.5 text-[length:calc(var(--font-size-base)*0.95)] text-[var(--color-text-muted)]">
       {{ hint }}
     </p>
   </div>

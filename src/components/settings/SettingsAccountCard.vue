@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import BaseButton from '@/components/ui/BaseButton.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
+
 interface Props {
   userName: string
   userAgeLabel: string
@@ -23,22 +26,28 @@ const props = defineProps<Props>()
       </div>
       <div class="flex-1 min-w-0">
         <div class="font-bold text-lg text-[var(--color-text)] truncate">{{ props.userName }}</div>
-        <div class="text-xs text-[var(--color-text-muted)] flex items-center gap-2">
+        <div class="flex items-center gap-2">
           <span class="bg-[var(--color-surface)] px-1.5 py-0.5 rounded border border-[var(--color-border)]">{{ props.userAgeLabel }}</span>
           <span class="bg-[var(--color-surface)] px-1.5 py-0.5 rounded border border-[var(--color-border)]">{{ props.authProviderLabel }}</span>
         </div>
-        <div v-if="props.birthdayLabel" class="text-xs text-[var(--color-text-muted)] mt-1">
-          生日: {{ props.birthdayLabel }}
-        </div>
+        <SubtleLabel
+          v-if="props.birthdayLabel"
+          :text="`生日: ${props.birthdayLabel}`"
+          tone="muted"
+          class="mt-1 block"
+        />
       </div>
     </div>
 
-    <button
+    <BaseButton
       type="button"
-      class="btn btn-outline w-full py-2.5 text-sm font-medium border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-bg-muted)]"
+      variant="outline"
+      size="md"
+      full-width
+      class="py-2.5 text-sm font-medium border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-bg-muted)]"
       @click="props.onLogout"
     >
       登出 / 切換帳號
-    </button>
+    </BaseButton>
   </div>
 </template>

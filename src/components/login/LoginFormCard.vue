@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import BaseButton from '@/components/ui/BaseButton.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import type { CalendarSystem, LoginFormState } from '@/types/login'
 
 interface Props {
@@ -31,8 +33,8 @@ const handleSubmit = (): void => {
 <template>
   <form @submit.prevent="handleSubmit" class="card shadow-lg p-6 space-y-5 border-none">
     <div class="space-y-2">
-      <label for="name" class="block text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
-        姓名
+      <label for="name" class="block">
+        <SubtleLabel text="姓名" tone="secondary" weight="bold" caps />
       </label>
       <input
         id="name"
@@ -47,26 +49,30 @@ const handleSubmit = (): void => {
     </div>
 
     <div class="space-y-2">
-      <label class="block text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
-        出生年月
+      <label class="block">
+        <SubtleLabel text="出生年月" tone="secondary" weight="bold" caps />
       </label>
       <div class="flex items-center gap-2">
-        <button
+        <BaseButton
           type="button"
-          class="btn btn-sm min-h-[36px] px-3"
-          :class="props.calendarSystem === 'ad' ? 'btn-primary' : 'btn-secondary bg-[var(--color-bg-soft)]'"
+          size="sm"
+          :variant="props.calendarSystem === 'ad' ? 'primary' : 'secondary'"
+          class="px-3"
+          :class="props.calendarSystem === 'ad' ? '' : 'bg-[var(--color-bg-soft)]'"
           @click="emit('update:calendarSystem', 'ad')"
         >
           西元
-        </button>
-        <button
+        </BaseButton>
+        <BaseButton
           type="button"
-          class="btn btn-sm min-h-[36px] px-3"
-          :class="props.calendarSystem === 'roc' ? 'btn-primary' : 'btn-secondary bg-[var(--color-bg-soft)]'"
+          size="sm"
+          :variant="props.calendarSystem === 'roc' ? 'primary' : 'secondary'"
+          class="px-3"
+          :class="props.calendarSystem === 'roc' ? '' : 'bg-[var(--color-bg-soft)]'"
           @click="emit('update:calendarSystem', 'roc')"
         >
           民國
-        </button>
+        </BaseButton>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <input
@@ -96,8 +102,8 @@ const handleSubmit = (): void => {
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
       <div class="space-y-2">
-        <label for="education" class="block text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
-          教育程度
+        <label for="education" class="block">
+          <SubtleLabel text="教育程度" tone="secondary" weight="bold" caps />
         </label>
         <div class="relative">
           <select
@@ -123,8 +129,8 @@ const handleSubmit = (): void => {
       </div>
 
       <div class="space-y-2">
-        <label for="gender" class="block text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
-          生理性別
+        <label for="gender" class="block">
+          <SubtleLabel text="生理性別" tone="secondary" weight="bold" caps />
         </label>
         <div class="relative">
           <select
@@ -151,9 +157,11 @@ const handleSubmit = (): void => {
       <p>{{ props.error }}</p>
     </div>
 
-    <button
+    <BaseButton
       type="submit"
-      class="btn btn-primary w-full py-4 text-lg font-bold tracking-wide shadow-lg shadow-blue-900/20 active:scale-[0.98] transition-all touch-manipulation"
+      size="lg"
+      full-width
+      class="py-4 text-lg font-bold tracking-wide shadow-lg shadow-blue-900/20 active:scale-[0.98] transition-all touch-manipulation"
       :disabled="props.isLoading || !props.isFormValid"
     >
       <span v-if="props.isLoading" class="flex items-center justify-center gap-2">
@@ -164,6 +172,6 @@ const handleSubmit = (): void => {
         處理中...
       </span>
       <span v-else>開始訓練</span>
-    </button>
+    </BaseButton>
   </form>
 </template>

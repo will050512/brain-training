@@ -17,17 +17,17 @@
 
         <div class="mb-3 sm:mb-4 grid grid-cols-2 gap-2 sm:gap-3 text-left">
           <div class="bg-[var(--color-primary-bg)] p-2 sm:p-3 rounded-lg border border-[var(--color-border)] flex flex-col justify-center">
-            <div class="text-xs text-[var(--color-text-secondary)] font-medium mb-0.5">等級評定</div>
+            <SubtleLabel text="等級評定" tone="secondary" weight="bold" class="mb-0.5" />
             <div class="text-xl sm:text-2xl font-bold text-[var(--color-score)]">{{ unifiedGameResult?.grade || 'N/A' }}</div>
           </div>
           <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 rounded-lg border border-[var(--color-border)] flex flex-col justify-center">
-            <div class="text-xs text-[var(--color-text-secondary)] font-medium mb-0.5">遊戲時長</div>
+            <SubtleLabel text="遊戲時長" tone="secondary" weight="bold" class="mb-0.5" />
             <div class="text-xl sm:text-2xl font-bold text-[var(--color-progress)]">{{ formatTime(gameResult?.duration || 0) }}</div>
           </div>
         </div>
 
         <div v-if="unifiedGameResult?.displayStats && unifiedGameResult.displayStats.length > 0" class="mb-4 sm:mb-6 lg:mb-8">
-          <div class="text-xs sm:text-sm font-bold text-[var(--color-text-secondary)] mb-2 text-center">📊 詳細統計</div>
+          <SubtleLabel text="📊 詳細統計" tone="secondary" weight="bold" class="mb-2 text-center block" />
           <div class="grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4 text-left">
             <div
               v-for="(stat, index) in unifiedGameResult.displayStats"
@@ -39,9 +39,10 @@
             >
               <div v-if="stat.icon" class="text-xl sm:text-2xl flex-shrink-0">{{ stat.icon }}</div>
               <div class="flex-1 min-w-0">
-                <div class="text-xs text-[var(--color-text-secondary)] truncate">{{ stat.label }}</div>
+                <SubtleLabel :text="stat.label" tone="secondary" class="truncate block" />
                 <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)] truncate">
-                  {{ typeof stat.value === 'number' ? stat.value : stat.value }}<span v-if="stat.unit" class="text-xs ml-0.5">{{ stat.unit }}</span>
+                  {{ typeof stat.value === 'number' ? stat.value : stat.value }}
+                  <SubtleLabel v-if="stat.unit" :text="stat.unit" size="xs" tone="muted" class="ml-0.5" />
                 </div>
               </div>
             </div>
@@ -52,9 +53,7 @@
           <span class="text-[var(--color-text)]">最佳成績</span>
           <div class="text-right">
             <span class="font-bold text-[var(--color-score)] block">{{ bestScore }} 分</span>
-            <div v-if="currentScore > bestScore" class="text-xs text-[var(--color-record)] font-bold">
-              🎉 新紀錄！
-            </div>
+            <SubtleLabel v-if="currentScore > bestScore" text="🎉 新紀錄！" size="xs" class="text-[var(--color-record)] font-bold block" />
           </div>
         </div>
 
@@ -72,10 +71,10 @@
             </div>
             <div class="flex-1 min-w-0">
               <h4 class="font-bold text-sm sm:text-base mb-1" :class="difficultyFeedbackStyle.textClass">難度調整通知</h4>
-              <p class="text-xs sm:text-sm mb-2 break-words" :class="difficultyFeedbackStyle.subTextClass">{{ difficultyReasonText }}</p>
+              <SubtleLabel :text="difficultyReasonText" size="sm" class="mb-2 break-words block" :class="difficultyFeedbackStyle.subTextClass" />
 
               <div
-                class="text-xs sm:text-sm p-1.5 sm:p-2 rounded-lg bg-white/60 dark:bg-black/20"
+                class="p-1.5 sm:p-2 rounded-lg bg-white/60 dark:bg-black/20"
                 :class="difficultyFeedbackStyle.subTextClass"
               >
                 <div class="flex flex-wrap items-center gap-1 sm:gap-2">
@@ -100,12 +99,8 @@
               class="recommended-game-card"
             >
               <span class="text-2xl sm:text-3xl mb-1 sm:mb-2">{{ game.icon }}</span>
-              <span class="text-xs sm:text-sm font-bold text-[var(--color-text)] truncate w-full px-1">
-                {{ game.name }}
-              </span>
-              <span class="text-[10px] sm:text-xs text-[var(--color-accent-purple)] font-medium">
-                {{ getGameDimensionLabel(game.id) }}
-              </span>
+              <SubtleLabel :text="game.name" tone="secondary" weight="bold" class="truncate w-full px-1" />
+              <SubtleLabel :text="getGameDimensionLabel(game.id)" size="xs" class="text-[var(--color-accent-purple)] font-medium" />
             </button>
           </div>
         </div>
@@ -114,57 +109,72 @@
       <div class="game-result-actions px-3 sm:px-6">
         <template v-if="isFromDailyTraining">
           <div class="flex flex-col gap-3">
-            <button
+            <BaseButton
               v-if="nextTrainingAvailable"
+              size="xl"
+              full-width
+              class="shadow-lg"
               @click="onContinueToNextGame"
-              class="btn btn-primary btn-xl w-full shadow-lg"
             >
               ➡️ 下一個遊戲
-            </button>
+            </BaseButton>
             <router-link
               v-else-if="dailyQueueCount > 0"
               to="/report"
-              class="btn btn-primary btn-xl w-full shadow-lg"
+              custom
+              v-slot="{ navigate }"
             >
-              📊 查看報告
+              <BaseButton size="xl" full-width class="shadow-lg" @click="navigate">
+                📊 查看報告
+              </BaseButton>
             </router-link>
             <router-link
               v-else
               to="/daily-challenge"
-              class="btn btn-primary btn-xl w-full shadow-lg"
+              custom
+              v-slot="{ navigate }"
             >
-              🏠 返回每日訓練
+              <BaseButton size="xl" full-width class="shadow-lg" @click="navigate">
+                🏠 返回每日訓練
+              </BaseButton>
             </router-link>
 
-            <button @click="onPlayAgain" class="btn btn-secondary btn-lg w-full">
+            <BaseButton variant="secondary" size="lg" full-width @click="onPlayAgain">
               🔄 再玩一次
-            </button>
+            </BaseButton>
           </div>
-          <div v-if="dailyQueueCount > 0" class="mt-2 text-xs sm:text-sm text-[var(--color-text-secondary)]">
-            訓練進度：{{ trainingIndex + 1 }} / {{ dailyQueueCount }}
-          </div>
+          <SubtleLabel
+            v-if="dailyQueueCount > 0"
+            :text="`訓練進度：${trainingIndex + 1} / ${dailyQueueCount}`"
+            tone="secondary"
+            class="mt-2 block"
+          />
         </template>
 
         <template v-else>
           <div class="flex flex-col gap-3">
-            <button
+            <BaseButton
               v-if="recommendedGames.length > 0 && recommendedGames[0]"
+              size="xl"
+              full-width
+              class="py-3 sm:py-4 text-base sm:text-lg shadow-md flex items-center justify-center gap-2"
               @click="recommendedGames[0] && onStartRecommendedGame(recommendedGames[0])"
-              class="btn btn-primary btn-xl py-3 sm:py-4 text-base sm:text-lg w-full shadow-md flex items-center justify-center gap-2"
             >
               <span>➡️</span>
               <div class="text-left leading-tight">
-                <div class="text-xs opacity-80 font-normal">下一個挑戰</div>
+                <SubtleLabel text="下一個挑戰" size="xs" class="opacity-80 font-normal" />
                 <div>{{ recommendedGames[0]?.name }}</div>
               </div>
-            </button>
+            </BaseButton>
 
             <div class="grid grid-cols-2 gap-3">
-              <button @click="onPlayAgain" class="btn btn-secondary btn-lg w-full py-3">
+              <BaseButton variant="secondary" size="lg" full-width class="py-3" @click="onPlayAgain">
                 🔄 再玩一次
-              </button>
-              <router-link to="/games" class="btn btn-secondary btn-lg w-full py-3 flex items-center justify-center">
-                🎮 更多遊戲
+              </BaseButton>
+              <router-link to="/games" custom v-slot="{ navigate }">
+                <BaseButton variant="secondary" size="lg" full-width class="py-3 flex items-center justify-center" @click="navigate">
+                  🎮 更多遊戲
+                </BaseButton>
               </router-link>
             </div>
           </div>
@@ -175,6 +185,8 @@
 </template>
 
 <script setup lang="ts">
+import BaseButton from '@/components/ui/BaseButton.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import type { GameDefinition, GameResult, UnifiedGameResult, Difficulty, SubDifficulty } from '@/types/game'
 import type { DifficultyAdjustment } from '@/services/adaptiveDifficultyService'
 

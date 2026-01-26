@@ -4,18 +4,20 @@
       <div class="text-4xl sm:text-5xl mb-4">⏸️</div>
       <h2 class="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-[var(--color-text)]">遊戲暫停</h2>
       <div class="flex flex-col sm:flex-row gap-3">
-        <button @click="onResume" class="btn btn-primary btn-lg flex-1">
+        <BaseButton size="lg" class="flex-1" @click="onResume">
           繼續遊戲
-        </button>
-        <button @click="onQuit" class="btn btn-danger btn-lg flex-1">
+        </BaseButton>
+        <BaseButton variant="danger" size="lg" class="flex-1" @click="onQuit">
           結束遊戲
-        </button>
+        </BaseButton>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import BaseButton from '@/components/ui/BaseButton.vue'
+
 defineProps<{
   onResume: () => void
   onQuit: () => void

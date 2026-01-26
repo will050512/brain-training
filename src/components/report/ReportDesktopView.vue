@@ -2,7 +2,9 @@
   <div class="page-shell page-shell-wide grid grid-cols-[280px_1fr] gap-8 items-start min-h-screen">
     <aside class="sticky top-8 flex flex-col gap-4 h-[calc(100vh-4rem)]">
       <nav class="flex-1 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] shadow-sm p-3 overflow-y-auto no-scrollbar flex flex-col gap-1">
-        <div class="px-3 py-2 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">報告章節</div>
+        <div class="px-3 py-2">
+          <SubtleLabel text="報告章節" weight="bold" caps />
+        </div>
         <a
           v-for="section in reportSections"
           :key="section.id"
@@ -18,15 +20,29 @@
 
       <div class="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] shadow-md p-5">
         <div class="text-center mb-4">
-          <div class="text-xs text-[var(--color-text-muted)] mb-1">報告日期</div>
+          <SubtleLabel text="報告日期" class="mb-1" />
           <div class="font-bold text-[var(--color-text)]">{{ formatDate(new Date()) }}</div>
         </div>
-        <button @click="onDownloadReport" :disabled="isGenerating" class="btn btn-primary w-full flex items-center justify-center gap-2 py-2.5 shadow-lg hover:-translate-y-0.5 transition-transform">
+        <BaseButton
+          size="md"
+          full-width
+          class="py-2.5 shadow-lg hover:-translate-y-0.5 transition-transform"
+          :disabled="isGenerating"
+          @click="onDownloadReport"
+        >
           <span class="text-lg">{{ isGenerating ? '⏳' : '📥' }}</span>
           <span>{{ isGenerating ? '生成中...' : '下載完整報告' }}</span>
-        </button>
-        <router-link to="/weekly-report" class="btn btn-secondary w-full text-center block mt-3 py-2 text-sm">
-          📅 查看週報
+        </BaseButton>
+        <router-link to="/weekly-report" custom v-slot="{ navigate }">
+          <BaseButton
+            variant="secondary"
+            size="md"
+            full-width
+            class="mt-3 py-2 text-sm"
+            @click="navigate"
+          >
+            📅 查看週報
+          </BaseButton>
         </router-link>
       </div>
     </aside>
@@ -35,7 +51,14 @@
       <div class="flex items-start gap-3 p-4 rounded-xl bg-[var(--color-warning-bg)] border border-[var(--color-warning)]/30">
         <span class="text-xl">⚠️</span>
         <div>
-          <h4 class="font-bold text-[var(--color-warning-text)] text-sm mb-1">醫療免責聲明</h4>
+          <SectionTitle
+            title="醫療免責聲明"
+            as="h4"
+            size="sm"
+            spacing="none"
+            :show-accent="false"
+            class="mb-1 text-[var(--color-warning-text)]"
+          />
           <p class="text-sm text-[var(--color-text-secondary)] leading-relaxed">本報告數據基於遊戲表現估算，僅供自我健康管理參考，不可作為正式醫療診斷依據。</p>
         </div>
       </div>
@@ -55,7 +78,7 @@
             </div>
           </div>
           <div class="text-right pl-8 border-l border-[var(--color-border)]">
-            <div class="text-xs text-[var(--color-text-muted)] font-bold uppercase tracking-wider mb-1">綜合認知指數</div>
+            <SubtleLabel text="綜合認知指數" weight="bold" caps class="mb-1" />
             <div class="text-5xl font-bold tracking-tight" :class="getScoreClass(cognitiveIndex)">{{ cognitiveIndex }}</div>
             <div v-if="normativeComparison" class="mt-2">
               <span class="badge py-1 px-3" :class="normativeComparison.statusClass">{{ normativeComparison.statusText }}</span>
@@ -66,27 +89,46 @@
 
       <section v-if="normativeData" id="normative" class="scroll-mt-24">
         <div class="p-6 rounded-2xl bg-[var(--gradient-card)] border border-[var(--color-border)] shadow-sm">
-          <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-[var(--color-text)]">📊 台灣常模參考</h3>
+          <SectionTitle title="台灣常模參考" spacing="sm" :show-accent="false">
+            <template #prefix>
+              <span>📊</span>
+            </template>
+          </SectionTitle>
           <div class="grid grid-cols-3 gap-4">
             <div class="bg-[var(--color-surface)]/90 backdrop-blur p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
-              <div class="text-xs font-bold text-[var(--color-text-muted)] uppercase mb-2">MMSE 切截點</div>
-              <div class="text-3xl font-bold text-[var(--color-score)]">{{ normativeData.mmse.cutoff || '-' }} <span class="text-sm font-normal text-[var(--color-text-muted)]">分</span></div>
-              <div class="mt-2 text-[10px] inline-block px-2 py-1 rounded bg-[var(--color-bg-soft)] text-[var(--color-text-secondary)]">{{ getAgeGroupLabel() }}</div>
+              <SubtleLabel text="MMSE 切截點" weight="bold" caps class="mb-2" />
+              <div class="text-3xl font-bold text-[var(--color-score)]">
+                {{ normativeData.mmse.cutoff || '-' }}
+                <SubtleLabel text="分" size="sm" class="text-sm font-normal" />
+              </div>
+              <div class="mt-2 inline-block px-2 py-1 rounded bg-[var(--color-bg-soft)]">
+                <SubtleLabel :text="getAgeGroupLabel()" size="xs" tone="secondary" />
+              </div>
             </div>
             <div class="bg-[var(--color-surface)]/90 backdrop-blur p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
-              <div class="text-xs font-bold text-[var(--color-text-muted)] uppercase mb-2">MoCA 切截點</div>
-              <div class="text-3xl font-bold text-[var(--color-progress)]">{{ normativeData.moca.cutoff || '-' }} <span class="text-sm font-normal text-[var(--color-text-muted)]">分</span></div>
+              <SubtleLabel text="MoCA 切截點" weight="bold" caps class="mb-2" />
+              <div class="text-3xl font-bold text-[var(--color-progress)]">
+                {{ normativeData.moca.cutoff || '-' }}
+                <SubtleLabel text="分" size="sm" class="text-sm font-normal" />
+              </div>
             </div>
             <div class="bg-[var(--color-surface)]/90 backdrop-blur p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
-              <div class="text-xs font-bold text-[var(--color-text-muted)] uppercase mb-2">CASI 切截點</div>
-              <div class="text-3xl font-bold text-[var(--color-score-good)]">{{ normativeData.casi.cutoff || '-' }} <span class="text-sm font-normal text-[var(--color-text-muted)]">分</span></div>
+              <SubtleLabel text="CASI 切截點" weight="bold" caps class="mb-2" />
+              <div class="text-3xl font-bold text-[var(--color-score-good)]">
+                {{ normativeData.casi.cutoff || '-' }}
+                <SubtleLabel text="分" size="sm" class="text-sm font-normal" />
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       <section id="cognitive-analysis" class="scroll-mt-24 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] shadow-sm p-6">
-        <h3 class="text-lg font-bold mb-6 flex items-center gap-2 text-[var(--color-text)]">🧠 認知能力分析</h3>
+        <SectionTitle title="認知能力分析" :show-accent="false">
+          <template #prefix>
+            <span>🧠</span>
+          </template>
+        </SectionTitle>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           <div class="h-80 w-full"><RadarChart ref="radarChartRef" :scores="cognitiveScores" :previousScores="previousScores" /></div>
           <div class="space-y-3">
@@ -111,39 +153,49 @@
 
       <section id="trends" class="scroll-mt-24 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] shadow-sm p-6">
         <div class="flex justify-between items-center mb-6">
-          <h3 class="text-lg font-bold flex items-center gap-2 text-[var(--color-text)]">📈 歷史趨勢</h3>
-          <span class="text-xs bg-[var(--color-surface-alt)] px-3 py-1 rounded-full text-[var(--color-text-secondary)] font-medium">近 30 天</span>
+          <SectionTitle title="歷史趨勢" spacing="sm" :show-accent="false">
+            <template #prefix>
+              <span>📈</span>
+            </template>
+          </SectionTitle>
+          <span class="bg-[var(--color-surface-alt)] px-3 py-1 rounded-full">
+            <SubtleLabel text="近 30 天" tone="secondary" />
+          </span>
         </div>
         <div class="h-72 w-full"><TrendChart ref="trendChartRef" :history="scoreHistory" chartType="bar" :showWarningLines="true" :professionalMode="false" /></div>
       </section>
 
       <section id="statistics" class="scroll-mt-24 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] shadow-sm p-6">
-        <h3 class="text-lg font-bold mb-6 text-[var(--color-text)]">📋 訓練統計</h3>
+        <SectionTitle title="訓練統計" :show-accent="false">
+          <template #prefix>
+            <span>📋</span>
+          </template>
+        </SectionTitle>
         <div class="grid grid-cols-2 gap-6">
           <div class="bg-[var(--color-bg-soft)] rounded-xl p-5 border border-[var(--color-border)]">
             <div class="flex items-center gap-3 mb-4 pb-3 border-b border-[var(--color-border-light)]">
               <span class="text-2xl">📅</span>
               <div>
-                <div class="font-bold text-[var(--color-text)]">每日訓練</div>
-                <div class="text-xs text-[var(--color-text-muted)] uppercase tracking-wider">Daily Challenge</div>
+                <SectionTitle title="每日訓練" as="h4" size="sm" spacing="none" :show-accent="false" />
+                <SubtleLabel text="Daily Challenge" weight="bold" caps />
               </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div class="bg-[var(--color-surface)] p-3 rounded-lg border border-[var(--color-border)] text-center">
                 <div class="text-2xl font-bold text-[var(--color-score)]">{{ dailyStats.totalGames }}</div>
-                <div class="text-xs text-[var(--color-text-muted)]">總次數</div>
+                <SubtleLabel text="總次數" />
               </div>
               <div class="bg-[var(--color-surface)] p-3 rounded-lg border border-[var(--color-border)] text-center">
                 <div class="text-2xl font-bold text-[var(--color-score-good)]">{{ dailyStats.averageScore }}</div>
-                <div class="text-xs text-[var(--color-text-muted)]">平均分數</div>
+                <SubtleLabel text="平均分數" />
               </div>
               <div class="bg-[var(--color-surface)] p-3 rounded-lg border border-[var(--color-border)] text-center">
                 <div class="text-2xl font-bold text-[var(--color-progress)]">{{ formatPlayTime(dailyStats.totalPlayTime) }}</div>
-                <div class="text-xs text-[var(--color-text-muted)]">總時長</div>
+                <SubtleLabel text="總時長" />
               </div>
               <div class="bg-[var(--color-surface)] p-3 rounded-lg border border-[var(--color-border)] text-center">
                 <div class="text-2xl font-bold text-[var(--color-combo)]">{{ userStreak }}</div>
-                <div class="text-xs text-[var(--color-text-muted)]">連續天數</div>
+                <SubtleLabel text="連續天數" />
               </div>
             </div>
           </div>
@@ -151,26 +203,26 @@
             <div class="flex items-center gap-3 mb-4 pb-3 border-b border-[var(--color-border-light)]">
               <span class="text-2xl">🎮</span>
               <div>
-                <div class="font-bold text-[var(--color-text)]">自由遊戲</div>
-                <div class="text-xs text-[var(--color-text-muted)] uppercase tracking-wider">Free Play</div>
+                <SectionTitle title="自由遊戲" as="h4" size="sm" spacing="none" :show-accent="false" />
+                <SubtleLabel text="Free Play" weight="bold" caps />
               </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div class="bg-[var(--color-surface)] p-3 rounded-lg border border-[var(--color-border)] text-center">
                 <div class="text-2xl font-bold text-[var(--color-score)]">{{ freeStats.totalGames }}</div>
-                <div class="text-xs text-[var(--color-text-muted)]">總次數</div>
+                <SubtleLabel text="總次數" />
               </div>
               <div class="bg-[var(--color-surface)] p-3 rounded-lg border border-[var(--color-border)] text-center">
                 <div class="text-2xl font-bold text-[var(--color-score-good)]">{{ freeStats.averageScore }}</div>
-                <div class="text-xs text-[var(--color-text-muted)]">平均分數</div>
+                <SubtleLabel text="平均分數" />
               </div>
               <div class="bg-[var(--color-surface)] p-3 rounded-lg border border-[var(--color-border)] text-center">
                 <div class="text-2xl font-bold text-[var(--color-progress)]">{{ formatPlayTime(freeStats.totalPlayTime) }}</div>
-                <div class="text-xs text-[var(--color-text-muted)]">總時長</div>
+                <SubtleLabel text="總時長" />
               </div>
               <div class="bg-[var(--color-surface)] p-3 rounded-lg border border-[var(--color-border)] text-center">
                 <div class="text-2xl font-bold text-[var(--color-combo)]">{{ userStreak }}</div>
-                <div class="text-xs text-[var(--color-text-muted)]">連續天數</div>
+                <SubtleLabel text="連續天數" />
               </div>
             </div>
           </div>
@@ -181,15 +233,19 @@
         <div class="absolute top-0 right-0 w-80 h-80 bg-[var(--color-primary-bg)]/30 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
         <div class="relative z-10">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-bold flex items-center gap-2 text-[var(--color-text)]">🧪 Mini-Cog™ 篩檢</h3>
-            <span v-if="latestMiniCogResult" class="px-3 py-1 rounded-full bg-[var(--color-bg-soft)] border border-[var(--color-border)] text-xs text-[var(--color-text-secondary)]">
-              檢測日期：{{ formatDateTime(latestMiniCogResult.completedAt) }}
+            <SectionTitle title="Mini-Cog™ 篩檢" spacing="sm" :show-accent="false">
+              <template #prefix>
+                <span>🧪</span>
+              </template>
+            </SectionTitle>
+            <span v-if="latestMiniCogResult" class="px-3 py-1 rounded-full bg-[var(--color-bg-soft)] border border-[var(--color-border)]">
+              <SubtleLabel :text="`檢測日期：${formatDateTime(latestMiniCogResult.completedAt)}`" tone="secondary" />
             </span>
           </div>
           <div v-if="latestMiniCogResult" class="flex items-start gap-8">
             <div class="flex flex-col items-center justify-center p-6 bg-[var(--gradient-card)] rounded-full w-48 h-48 border-[6px] shrink-0 shadow-lg" :class="getMiniCogBorderClass(latestMiniCogResult.totalScore)">
               <div class="text-6xl font-bold mb-1 leading-none" :class="getMiniCogScoreClass(latestMiniCogResult.totalScore)">{{ latestMiniCogResult.totalScore }}</div>
-              <div class="text-sm text-[var(--color-text-muted)] font-medium">總分 / 5</div>
+              <SubtleLabel text="總分 / 5" size="sm" />
             </div>
             <div class="flex-1 space-y-4">
               <div class="p-5 rounded-xl border-l-[6px] bg-[var(--color-surface)] shadow-sm" :class="getMiniCogInterpretationClass(latestMiniCogResult)">
@@ -199,8 +255,11 @@
               <div class="grid grid-cols-2 gap-4">
                 <div class="p-4 bg-[var(--color-surface-alt)] rounded-xl border border-[var(--color-border)]">
                   <div class="flex justify-between items-center mb-2">
-                    <span class="text-xs font-bold text-[var(--color-text-secondary)] uppercase">詞語回憶</span>
-                    <span class="font-bold text-xl text-[var(--color-score)]">{{ latestMiniCogResult.wordRecall.score }}<span class="text-sm text-[var(--color-text-muted)]">/3</span></span>
+                    <SubtleLabel text="詞語回憶" tone="secondary" weight="bold" caps />
+                    <span class="font-bold text-xl text-[var(--color-score)]">
+                      {{ latestMiniCogResult.wordRecall.score }}
+                      <SubtleLabel text="/3" size="sm" class="text-sm font-normal" />
+                    </span>
                   </div>
                   <div class="h-2 bg-[var(--color-bg-muted)] rounded-full overflow-hidden">
                     <div class="h-full bg-[var(--color-score)]" :style="{ width: `${(latestMiniCogResult.wordRecall.score / 3) * 100}%` }"></div>
@@ -208,8 +267,11 @@
                 </div>
                 <div class="p-4 bg-[var(--color-surface-alt)] rounded-xl border border-[var(--color-border)]">
                   <div class="flex justify-between items-center mb-2">
-                    <span class="text-xs font-bold text-[var(--color-text-secondary)] uppercase">時鐘繪圖</span>
-                    <span class="font-bold text-xl text-[var(--color-score)]">{{ latestMiniCogResult.clockDrawing.score }}<span class="text-sm text-[var(--color-text-muted)]">/2</span></span>
+                    <SubtleLabel text="時鐘繪圖" tone="secondary" weight="bold" caps />
+                    <span class="font-bold text-xl text-[var(--color-score)]">
+                      {{ latestMiniCogResult.clockDrawing.score }}
+                      <SubtleLabel text="/2" size="sm" class="text-sm font-normal" />
+                    </span>
                   </div>
                   <div class="h-2 bg-[var(--color-bg-muted)] rounded-full overflow-hidden">
                     <div class="h-full bg-[var(--color-score)]" :style="{ width: `${(latestMiniCogResult.clockDrawing.score / 2) * 100}%` }"></div>
@@ -221,7 +283,11 @@
           <div v-else class="text-center py-12 bg-[var(--color-bg-soft)] rounded-xl border-2 border-dashed border-[var(--color-border)]">
             <span class="text-4xl block mb-4">📋</span>
             <p class="mb-6 text-[var(--color-text-secondary)]">目前尚無 Mini-Cog 評估記錄</p>
-            <router-link to="/assessment" class="btn btn-primary px-8 py-2.5 shadow-md">立即開始評估</router-link>
+            <router-link to="/assessment" custom v-slot="{ navigate }">
+              <BaseButton size="md" class="px-8 py-2.5 shadow-md" @click="navigate">
+                立即開始評估
+              </BaseButton>
+            </router-link>
           </div>
           <div v-if="miniCogHistory.length > 1" class="mt-6 pt-4 border-t border-[var(--color-border)]">
             <button @click="onToggleMiniCogHistory" class="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
@@ -231,7 +297,7 @@
             <Transition name="expand">
               <div v-if="showMiniCogHistory" class="grid grid-cols-2 gap-3 mt-3">
                 <div v-for="record in miniCogHistory.slice(1, 7)" :key="record.id" class="flex justify-between p-3 bg-[var(--color-bg-soft)] rounded-lg text-sm border border-[var(--color-border-light)]">
-                  <span class="text-[var(--color-text-muted)]">{{ formatDateTime(record.completedAt) }}</span>
+                  <SubtleLabel :text="formatDateTime(record.completedAt)" />
                   <span class="font-bold" :class="getMiniCogScoreClass(record.totalScore)">{{ record.totalScore }} 分</span>
                 </div>
               </div>
@@ -241,13 +307,23 @@
       </section>
 
       <section id="correlation" class="scroll-mt-24 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] shadow-sm p-6">
-        <h3 class="text-lg font-bold mb-2 flex items-center gap-2 text-[var(--color-text)]">📐 關聯分析</h3>
-        <p class="text-sm text-[var(--color-text-muted)] mb-6">Mini-Cog 篩檢與遊戲訓練表現對照</p>
+        <SectionTitle title="關聯分析" spacing="sm" :show-accent="false">
+          <template #prefix>
+            <span>📐</span>
+          </template>
+        </SectionTitle>
+        <p class="mb-6">
+          <SubtleLabel text="Mini-Cog 篩檢與遊戲訓練表現對照" size="sm" />
+        </p>
         <MiniCogCorrelationChart :mini-cog-results="miniCogHistory" :game-sessions="recentSessions" />
       </section>
 
       <section id="games" class="scroll-mt-24 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] shadow-sm p-6">
-        <h3 class="text-lg font-bold mb-6 text-[var(--color-text)]">🎮 各遊戲表現</h3>
+        <SectionTitle title="各遊戲表現" :show-accent="false">
+          <template #prefix>
+            <span>🎮</span>
+          </template>
+        </SectionTitle>
         <div class="grid grid-cols-3 gap-4">
           <div v-for="game in allGames" :key="game.id" class="p-4 bg-[var(--color-surface-alt)] rounded-xl hover:bg-[var(--color-bg-soft)] transition-all border border-transparent hover:border-[var(--color-border)] group">
             <div class="flex items-center gap-3 mb-3">
@@ -256,11 +332,11 @@
             </div>
             <div class="space-y-2 text-sm">
               <div class="flex justify-between border-b border-[var(--color-border-light)] pb-2 mb-2">
-                <span class="text-[var(--color-text-muted)] text-xs">最佳</span>
+                <SubtleLabel text="最佳" />
                 <span class="font-bold text-[var(--color-text)]">{{ getBestScore(game.id) || '-' }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-[var(--color-text-muted)] text-xs">平均</span>
+                <SubtleLabel text="平均" />
                 <span class="text-[var(--color-text)]">{{ getAverageScore(game.id) || '-' }}</span>
               </div>
             </div>
@@ -269,7 +345,11 @@
       </section>
 
       <section id="suggestions" class="scroll-mt-24 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] shadow-sm p-6">
-        <h3 class="text-lg font-bold mb-6 flex items-center gap-2 text-[var(--color-text)]">💡 智能建議</h3>
+        <SectionTitle title="智能建議" :show-accent="false">
+          <template #prefix>
+            <span>💡</span>
+          </template>
+        </SectionTitle>
         <div class="grid grid-cols-2 gap-4">
           <div
             v-for="(suggestion, index) in trainingSuggestions"
@@ -286,14 +366,20 @@
             </div>
             <p class="text-sm text-[var(--color-text-secondary)] leading-relaxed mb-3">{{ suggestion.message }}</p>
             <div class="flex flex-wrap gap-2">
-              <span v-for="g in suggestion.suggestedGames" :key="g" class="text-xs px-2 py-1 bg-[var(--color-surface)] rounded border border-[var(--color-border)] text-[var(--color-text-muted)]">{{ g }}</span>
+              <span v-for="g in suggestion.suggestedGames" :key="g" class="px-2 py-1 bg-[var(--color-surface)] rounded border border-[var(--color-border)]">
+                <SubtleLabel :text="g" />
+              </span>
             </div>
           </div>
         </div>
       </section>
 
       <section id="nutrition" class="scroll-mt-24 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] shadow-sm p-6">
-        <h3 class="text-lg font-bold mb-6 flex items-center gap-2 text-[var(--color-text)]">🥗 個人化營養建議</h3>
+        <SectionTitle title="個人化營養建議" :show-accent="false">
+          <template #prefix>
+            <span>🥗</span>
+          </template>
+        </SectionTitle>
 
         <div v-if="!nutritionUnlocked" class="text-center py-10">
           <div class="text-4xl mb-3">🔒</div>
@@ -309,14 +395,22 @@
               <span class="text-xl">⚠️</span>
               <div class="flex-1">
                 <p class="text-sm text-[var(--color-text)]">以下建議僅供參考，不構成醫療診斷。</p>
-                <button @click="onToggleNutritionDisclaimer" class="text-xs text-[var(--color-warning)] underline mt-1">{{ showNutritionDisclaimer ? '收起' : '完整免責聲明' }}</button>
-                <div v-if="showNutritionDisclaimer" class="mt-2 pt-2 border-t border-[var(--color-warning)]/30 text-xs text-[var(--color-text-secondary)] whitespace-pre-wrap">{{ NUTRITION_DISCLAIMER }}</div>
+                <button @click="onToggleNutritionDisclaimer" class="text-[var(--color-warning)] underline mt-1">
+                  <SubtleLabel :text="showNutritionDisclaimer ? '收起' : '完整免責聲明'" class="text-[var(--color-warning)]" />
+                </button>
+                <div v-if="showNutritionDisclaimer" class="mt-2 pt-2 border-t border-[var(--color-warning)]/30">
+                  <SubtleLabel :text="NUTRITION_DISCLAIMER" tone="secondary" class="block whitespace-pre-wrap" />
+                </div>
               </div>
             </div>
           </div>
 
           <div v-if="nutritionResult.recommendations.filter(r => r.priority === 'high').length > 0" class="mb-6">
-            <h4 class="text-sm font-bold text-[var(--color-danger)] uppercase tracking-wider mb-3 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-[var(--color-danger)]"></span> 重點關注</h4>
+            <SectionTitle title="重點關注" as="h4" size="sm" spacing="sm" :show-accent="false" class="uppercase tracking-wider text-[var(--color-danger)]">
+              <template #prefix>
+                <span class="w-2 h-2 rounded-full bg-[var(--color-danger)]"></span>
+              </template>
+            </SectionTitle>
             <div class="grid grid-cols-2 gap-4">
               <div v-for="rec in nutritionResult.recommendations.filter(r => r.priority === 'high')" :key="rec.id" class="p-4 rounded-xl bg-[var(--color-danger-bg)] border-l-4 border-[var(--color-danger)]">
                 <div class="flex items-center gap-2 mb-2">
@@ -324,40 +418,53 @@
                   <span v-if="rec.supplement.isPartnerProduct" class="badge badge--warning">合作</span>
                 </div>
                 <p class="text-sm text-[var(--color-text-secondary)] mb-2">{{ rec.reason }}</p>
-                <div class="text-xs bg-[var(--color-surface)]/50 p-2 rounded inline-block">建議劑量：{{ rec.supplement.dosageRange }}</div>
+                <div class="bg-[var(--color-surface)]/50 p-2 rounded inline-block">
+                  <SubtleLabel text="建議劑量：" tone="secondary" class="mr-1" />
+                  <SubtleLabel :text="rec.supplement.dosageRange" tone="secondary" weight="bold" />
+                </div>
               </div>
             </div>
           </div>
 
           <div class="bg-[var(--color-success-bg)] p-5 rounded-xl border border-[var(--color-success)]/30">
-            <h4 class="text-sm font-bold text-[var(--color-success)] uppercase tracking-wider mb-3">一般建議</h4>
+            <SectionTitle title="一般建議" as="h4" size="sm" spacing="sm" :show-accent="false" class="uppercase tracking-wider text-[var(--color-success)]" />
             <ul class="grid grid-cols-2 gap-3">
               <li v-for="(advice, i) in nutritionResult.generalAdvice" :key="i" class="text-sm text-[var(--color-text-secondary)] flex gap-2"><span class="text-[var(--color-success)] font-bold">✓</span> {{ advice }}</li>
             </ul>
           </div>
         </div>
 
-        <div v-else class="text-center py-8 text-[var(--color-text-muted)]">載入中...</div>
+        <div v-else class="text-center py-8">
+          <SubtleLabel text="載入中..." />
+        </div>
       </section>
 
       <section id="recent" class="scroll-mt-24 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] shadow-sm p-6">
-        <h3 class="text-lg font-bold mb-4 text-[var(--color-text)]">🕐 最近遊戲記錄</h3>
+        <SectionTitle title="最近遊戲記錄" spacing="sm" :show-accent="false">
+          <template #prefix>
+            <span>🕐</span>
+          </template>
+        </SectionTitle>
         <div v-if="recentSessions.length > 0" class="space-y-3">
           <div v-for="session in recentSessions.slice(0, 5)" :key="session.id" class="flex items-center justify-between p-4 bg-[var(--color-surface-alt)] rounded-xl border border-transparent hover:border-[var(--color-border)] transition-colors">
             <div class="flex items-center gap-4">
               <span class="text-2xl">{{ getGameIcon(session.gameId) }}</span>
               <div>
                 <div class="font-bold text-[var(--color-text)]">{{ getGameName(session.gameId) }}</div>
-                <div class="text-xs text-[var(--color-text-muted)]">{{ formatDateTime(session.createdAt) }}</div>
+                <SubtleLabel :text="formatDateTime(session.createdAt)" />
               </div>
             </div>
             <div class="text-right">
               <div class="font-bold text-lg" :class="getScoreClass(session.result.score)">{{ session.result.score }} 分</div>
-              <span class="badge badge--neutral text-xs">{{ DIFFICULTIES[session.difficulty]?.name }}</span>
+              <span class="badge badge--neutral">
+                <SubtleLabel :text="DIFFICULTIES[session.difficulty]?.name" size="xs" />
+              </span>
             </div>
           </div>
         </div>
-        <div v-else class="text-center py-8 text-[var(--color-text-muted)]">尚無近期記錄</div>
+        <div v-else class="text-center py-8">
+          <SubtleLabel text="尚無近期記錄" />
+        </div>
       </section>
     </main>
   </div>
@@ -370,6 +477,9 @@ import type { GameDefinition, GameSession } from '@/types/game'
 import type { ScoreHistory, TrainingSuggestion } from '@/services/scoreCalculator'
 import type { MiniCogResult } from '@/services/miniCogService'
 import type { PersonalizedNutritionResult } from '@/services/nutritionPlaceholder'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import SectionTitle from '@/components/common/SectionTitle.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import RadarChart from '@/components/charts/RadarChart.vue'
 import TrendChart from '@/components/charts/TrendChart.vue'
 import MiniCogCorrelationChart from '@/components/charts/MiniCogCorrelationChart.vue'

@@ -98,15 +98,17 @@
 
                 <!-- Options (Fixed Bottom - LARGE BUTTONS) -->
                 <div class="grid grid-cols-2 gap-4 shrink-0 mt-auto">
-                  <button
+                  <BaseButton
                     v-for="option in currentQuestion.options"
                     :key="option"
-                    @click="submitAnswer(option)"
-                    class="btn btn-secondary text-2xl md:text-3xl font-bold border-2 border-transparent hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-bg)] hover:text-[var(--color-primary)] transition-all active:scale-95 py-6 min-h-[80px] md:min-h-[100px] rounded-2xl shadow-sm"
+                    variant="secondary"
+                    size="lg"
+                    class="text-2xl md:text-3xl font-bold border-2 border-transparent hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-bg)] hover:text-[var(--color-primary)] transition-all active:scale-95 py-6 min-h-[80px] md:min-h-[100px] rounded-2xl shadow-sm"
                     :disabled="isSubmitting"
+                    @click="submitAnswer(option)"
                   >
                     {{ option }}
-                  </button>
+                  </BaseButton>
                 </div>
               </div>
             </template>
@@ -143,13 +145,15 @@
                       ref="memoryInputRef"
                       autocomplete="off"
                     />
-                    <button
-                      @click="submitAnswer(memoryInput)"
-                      class="btn btn-primary btn-lg w-full shadow-lg py-5 min-h-[70px] text-2xl font-bold rounded-2xl"
+                    <BaseButton
+                      size="lg"
+                      full-width
+                      class="shadow-lg py-5 min-h-[70px] text-2xl font-bold rounded-2xl"
                       :disabled="!memoryInput || isSubmitting"
+                      @click="submitAnswer(memoryInput)"
                     >
                       確認答案
-                    </button>
+                    </BaseButton>
                   </div>
                 </div>
                 <!-- Spacer -->
@@ -177,15 +181,17 @@
 
                 <!-- Options (LARGE BUTTONS) -->
                 <div class="grid grid-cols-2 gap-4 shrink-0 mt-auto">
-                  <button
+                  <BaseButton
                     v-for="option in currentQuestion.options"
                     :key="option"
-                    @click="submitAnswer(option)"
-                    class="btn btn-secondary text-3xl md:text-4xl font-bold border-2 border-transparent hover:border-[var(--color-accent-purple)] hover:text-[var(--color-accent-purple)] active:scale-95 py-6 min-h-[80px] md:min-h-[100px] rounded-2xl shadow-sm"
+                    variant="secondary"
+                    size="lg"
+                    class="text-3xl md:text-4xl font-bold border-2 border-transparent hover:border-[var(--color-accent-purple)] hover:text-[var(--color-accent-purple)] active:scale-95 py-6 min-h-[80px] md:min-h-[100px] rounded-2xl shadow-sm"
                     :disabled="isSubmitting"
+                    @click="submitAnswer(option)"
                   >
                     {{ option }}
-                  </button>
+                  </BaseButton>
                 </div>
               </div>
             </template>
@@ -217,6 +223,7 @@ import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useSettingsStore, useUserStore } from '@/stores'
 import { DIFFICULTIES } from '@/types/game'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import MiniCogFlow from '@/components/assessment/MiniCogFlow.vue'
 import AssessmentHeader from '@/components/assessment/AssessmentHeader.vue'
 import AssessmentSelectStage from '@/components/assessment/AssessmentSelectStage.vue'

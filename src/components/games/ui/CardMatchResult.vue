@@ -4,6 +4,8 @@
  * 針對卡片配對遊戲的特殊統計數據進行展示
  */
 import { computed } from 'vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 
 interface Props {
   /** 遊戲結果 */
@@ -92,7 +94,7 @@ const getResultEmoji = (score: number) => {
         <div class="text-5xl font-bold leading-none" :class="getScoreColor(result.score)">
           {{ result.score }}
         </div>
-        <div class="text-sm text-[var(--color-text-secondary)] mt-1">分</div>
+        <SubtleLabel text="分" tone="secondary" class="mt-1 block" />
       </div>
 
       <!-- 新紀錄提示 -->
@@ -105,13 +107,13 @@ const getResultEmoji = (score: number) => {
     <div class="stats-grid grid grid-cols-2 gap-4 mb-6">
       <!-- 正確率 -->
       <div class="stat-card bg-[var(--color-surface-alt)] p-4 rounded-lg">
-        <div class="text-xs text-[var(--color-text-secondary)] mb-1">正確率</div>
+        <SubtleLabel text="正確率" tone="secondary" class="mb-1 block" />
         <div class="text-2xl font-bold text-[var(--color-text)]">{{ Math.round(result.accuracy * 100) }}%</div>
       </div>
 
       <!-- 配對效率 -->
       <div class="stat-card bg-[var(--color-surface-alt)] p-4 rounded-lg">
-        <div class="text-xs text-[var(--color-text-secondary)] mb-1">配對效率</div>
+        <SubtleLabel text="配對效率" tone="secondary" class="mb-1 block" />
         <div class="flex items-center gap-2">
           <span class="text-2xl font-bold" :class="efficiencyGrade.color">{{ efficiencyGrade.grade }}</span>
           <span class="text-sm text-[var(--color-text-secondary)]">{{ Math.round(pairingEfficiency) }}%</span>
@@ -120,25 +122,25 @@ const getResultEmoji = (score: number) => {
 
       <!-- 移動次數 -->
       <div class="stat-card bg-[var(--color-surface-alt)] p-4 rounded-lg">
-        <div class="text-xs text-[var(--color-text-secondary)] mb-1">移動次數</div>
+        <SubtleLabel text="移動次數" tone="secondary" class="mb-1 block" />
         <div class="text-2xl font-bold text-[var(--color-text)]">{{ result.moves }}</div>
       </div>
 
       <!-- 遊戲時長 -->
       <div class="stat-card bg-[var(--color-surface-alt)] p-4 rounded-lg">
-        <div class="text-xs text-[var(--color-text-secondary)] mb-1">遊戲時長</div>
+        <SubtleLabel text="遊戲時長" tone="secondary" class="mb-1 block" />
         <div class="text-2xl font-bold text-[var(--color-text)]">{{ formatTime(result.duration) }}</div>
       </div>
 
       <!-- 平均反應時間 -->
       <div class="stat-card bg-[var(--color-surface-alt)] p-4 rounded-lg">
-        <div class="text-xs text-[var(--color-text-secondary)] mb-1">平均反應</div>
+        <SubtleLabel text="平均反應" tone="secondary" class="mb-1 block" />
         <div class="text-2xl font-bold text-[var(--color-text)]">{{ result.avgReactionTime }}ms</div>
       </div>
 
       <!-- 最高連擊 -->
       <div v-if="result.maxCombo > 1" class="stat-card bg-[var(--color-surface-alt)] p-4 rounded-lg">
-        <div class="text-xs text-[var(--color-text-secondary)] mb-1">最高連擊</div>
+        <SubtleLabel text="最高連擊" tone="secondary" class="mb-1 block" />
         <div class="text-2xl font-bold text-orange-500">{{ result.maxCombo }} 🔥</div>
       </div>
     </div>
@@ -159,9 +161,7 @@ const getResultEmoji = (score: number) => {
         <span class="text-[var(--color-text)] font-medium">最佳成績</span>
         <div class="text-right">
           <span class="font-bold text-blue-600 dark:text-blue-400 block">{{ bestScore }} 分</span>
-          <div v-if="result.score > bestScore" class="text-xs text-green-600 dark:text-green-400 font-bold">
-            🎉 打破紀錄！
-          </div>
+          <SubtleLabel v-if="result.score > bestScore" text="🎉 打破紀錄！" size="xs" class="text-green-600 dark:text-green-400 font-bold block" />
         </div>
       </div>
     </div>
@@ -187,31 +187,33 @@ const getResultEmoji = (score: number) => {
             {{ difficultyAdjustment.reason === 'accuracy-high' ? '表現優異，難度提升！' :
                difficultyAdjustment.reason === 'accuracy-low' ? '正在適應新難度' : '難度保持穩定' }}
           </p>
-          <div class="text-xs bg-white/60 dark:bg-black/20 p-2 rounded">
-            {{ difficultyAdjustment.currentDifficulty }} → {{ difficultyAdjustment.newDifficulty }}
-          </div>
+          <SubtleLabel
+            :text="`${difficultyAdjustment.currentDifficulty} → ${difficultyAdjustment.newDifficulty}`"
+            size="xs"
+            class="bg-white/60 dark:bg-black/20 p-2 rounded block"
+          />
         </div>
       </div>
     </div>
 
     <!-- 操作按鈕 -->
     <div class="action-buttons flex flex-col gap-3">
-      <button @click="emit('replay')" class="btn btn-primary btn-lg w-full">
+      <BaseButton size="lg" full-width @click="emit('replay')">
         🔄 再玩一次
-      </button>
+      </BaseButton>
 
       <div class="grid grid-cols-2 gap-3">
-        <button @click="emit('next-game', 'instant-memory')" class="btn btn-secondary">
+        <BaseButton variant="secondary" size="sm" @click="emit('next-game', 'instant-memory')">
           🎯 瞬間記憶
-        </button>
-        <button @click="emit('next-game', 'poker-memory')" class="btn btn-secondary">
+        </BaseButton>
+        <BaseButton variant="secondary" size="sm" @click="emit('next-game', 'poker-memory')">
           🃏 撲克記憶
-        </button>
+        </BaseButton>
       </div>
 
-      <button @click="emit('back')" class="btn btn-outline btn-lg w-full">
+      <BaseButton variant="outline" size="lg" full-width @click="emit('back')">
         ← 返回遊戲列表
-      </button>
+      </BaseButton>
     </div>
   </div>
 </template>

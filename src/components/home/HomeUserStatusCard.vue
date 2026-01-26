@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import BaseButton from '@/components/ui/BaseButton.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
+
 interface Props {
   userName: string
   userAge: number | string | null
@@ -33,24 +36,24 @@ const emit = defineEmits<{
             aria-label="複製登入碼"
             @click="emit('copy-transfer-code')"
           >
-            <span class="uppercase tracking-wider text-[11px]">登入碼</span>
+            <SubtleLabel text="登入碼" size="xs" caps />
             <span class="font-mono text-[15px] font-bold text-[var(--color-text)] tracking-[0.12em]">
               {{ props.transferCodeLabel || '------' }}
             </span>
-            <span class="text-[11px] text-[var(--color-text-muted)] whitespace-nowrap">
-              {{ props.copiedTransferCode ? '已複製' : '點我複製' }}
-            </span>
+            <SubtleLabel :text="props.copiedTransferCode ? '已複製' : '點我複製'" size="xs" tone="muted" class="whitespace-nowrap" />
           </button>
         </div>
-        <p class="text-sm text-[var(--color-text-secondary)] mt-1">{{ props.userAge }} 歲 · 保持大腦活躍中</p>
+        <SubtleLabel :text="`${props.userAge} 歲 · 保持大腦活躍中`" tone="secondary" class="mt-1 block" />
         <div class="flex flex-wrap items-center gap-2 mt-3">
-          <button
+          <BaseButton
             type="button"
-            class="btn btn-secondary btn-sm min-h-[44px] px-3"
+            variant="secondary"
+            size="sm"
+            class="min-h-[44px] px-3"
             @click="emit('logout')"
           >
             切換帳號
-          </button>
+          </BaseButton>
         </div>
       </div>
     </div>
@@ -62,11 +65,15 @@ const emit = defineEmits<{
         </span>
         <span class="font-medium">{{ props.syncStatusText }}</span>
       </div>
-      <router-link
-        to="/settings"
-        class="text-[var(--color-primary)] text-xs font-bold px-2 py-1 rounded hover:bg-[var(--color-surface)] transition-colors"
-      >
-        設定同步
+      <router-link to="/settings" custom v-slot="{ navigate }">
+        <BaseButton
+          variant="ghost"
+          size="sm"
+          class="text-[var(--color-primary)] hover:bg-[var(--color-surface)]"
+          @click="navigate"
+        >
+          設定同步
+        </BaseButton>
       </router-link>
     </div>
   </div>

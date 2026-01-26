@@ -12,7 +12,7 @@
             ? 'border-[var(--color-primary)] bg-[var(--color-primary-bg)] text-[var(--color-primary-dark)]'
             : 'border-[var(--color-border)] text-[var(--color-text-secondary)]'"
         >
-          {{ duration }}<span class="text-xs ml-0.5">分</span>
+          {{ duration }}<SubtleLabel text="分" size="xs" class="ml-0.5" />
         </button>
       </div>
     </div>
@@ -28,7 +28,7 @@
             : 'border-[var(--color-border)]'"
         >
           <p class="font-bold mb-1" :class="selectedMode === 'general' ? 'text-[var(--color-primary-dark)]' : 'text-[var(--color-text-secondary)]'">🌱 一般模式</p>
-          <p class="text-xs opacity-80" style="color: var(--color-text-muted)">30天趨勢，15%閾值</p>
+          <SubtleLabel text="30天趨勢，15%閾值" size="xs" class="opacity-80" style="color: var(--color-text-muted)" />
         </button>
         <button
           @click="onModeSelect('professional')"
@@ -38,7 +38,7 @@
             : 'border-[var(--color-border)]'"
         >
           <p class="font-bold mb-1" :class="selectedMode === 'professional' ? 'text-[var(--color-primary-dark)]' : 'text-[var(--color-text-secondary)]'">⚕️ 專業模式</p>
-          <p class="text-xs opacity-80" style="color: var(--color-text-muted)">7天趨勢，7%閾值</p>
+          <SubtleLabel text="7天趨勢，7%閾值" size="xs" class="opacity-80" style="color: var(--color-text-muted)" />
         </button>
       </div>
     </div>
@@ -46,7 +46,7 @@
     <div class="flex items-center justify-between py-2 border-t" style="border-color: var(--color-border-light)">
       <div>
         <p class="font-bold" style="color: var(--color-text)">行為偵測</p>
-        <p class="text-xs mt-1" style="color: var(--color-text-muted)">追蹤點擊模式與反應時間</p>
+        <SubtleLabel text="追蹤點擊模式與反應時間" size="xs" class="mt-1" style="color: var(--color-text-muted)" />
       </div>
       <button
         @click="onToggleBehavior"
@@ -64,6 +64,8 @@
 </template>
 
 <script setup lang="ts">
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
+
 defineProps<{
   selectedDuration: 10 | 15 | 20 | 30
   selectedMode: 'general' | 'professional'

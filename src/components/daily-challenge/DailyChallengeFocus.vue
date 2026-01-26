@@ -10,7 +10,7 @@
         :style="{ color: coveredDimensions.has(dim) ? dimensionColors[dim] : undefined }"
       >
         <span class="text-2xl mb-1 filter drop-shadow-sm">{{ dimensionIcons[dim] }}</span>
-        <span class="text-[10px] font-bold text-[var(--color-text-secondary)] mt-0.5">{{ dimensionNames[dim] }}</span>
+        <SubtleLabel :text="dimensionNames[dim]" size="xs" tone="secondary" weight="bold" class="mt-0.5" />
         <div v-if="coveredDimensions.has(dim)" class="absolute -top-1 -right-1 w-4 h-4 bg-[var(--color-success)] text-[var(--color-text-inverse)] rounded-full flex items-center justify-center shadow-sm border-2 border-[var(--color-surface)] animate-fade-in">
           <svg viewBox="0 0 24 24" width="8" height="8" fill="none" stroke="currentColor" stroke-width="4">
             <polyline points="20 6 9 17 4 12"></polyline>
@@ -22,6 +22,7 @@
 </template>
 
 <script setup lang="ts">
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import type { CognitiveDimension } from '@/types/cognitive'
 
 defineProps<{

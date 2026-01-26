@@ -1,6 +1,6 @@
 <template>
   <section class="flex-1 flex flex-col w-full animate-fade-in p-4 md:p-6 overflow-y-auto">
-    <div class="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center shadow-lg my-auto">
+    <BaseCard class="w-full text-center shadow-lg my-auto" variant="elevated" padding="lg">
       <div class="mb-4 inline-block p-4 rounded-full bg-[var(--color-success-bg)] text-4xl shadow-sm">
         🎉
       </div>
@@ -10,22 +10,23 @@
       <div class="bg-[var(--color-bg-soft)] rounded-2xl p-5 mb-5 border border-[var(--color-border)] relative overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-1.5 bg-[var(--color-primary)]/20"></div>
         <div class="text-5xl font-black text-[var(--color-primary)] mb-1 tracking-tighter">
-          {{ result?.totalScore }}<span class="text-2xl text-[var(--color-text-muted)] font-medium">/5</span>
+          {{ result?.totalScore }}
+          <SubtleLabel text="/5" size="sm" tone="muted" class="text-2xl font-medium" />
         </div>
-        <div class="text-sm font-bold text-[var(--color-text-secondary)] uppercase tracking-wide">總分</div>
+        <SubtleLabel text="總分" tone="secondary" weight="bold" caps />
 
         <div class="grid grid-cols-2 gap-px bg-[var(--color-border)] mt-5 rounded-xl overflow-hidden border border-[var(--color-border)]">
           <div class="bg-[var(--color-surface)] p-4">
             <div class="text-xl font-bold text-[var(--color-text)]">
               {{ result?.wordRecall.score }} / 3
             </div>
-            <div class="text-xs text-[var(--color-text-muted)] mt-1">詞語回憶</div>
+            <SubtleLabel text="詞語回憶" tone="muted" class="mt-1 block" />
           </div>
           <div class="bg-[var(--color-surface)] p-4">
             <div class="text-xl font-bold text-[var(--color-text)]">
               {{ result?.clockDrawing.score }} / 2
             </div>
-            <div class="text-xs text-[var(--color-text-muted)] mt-1">時鐘繪圖</div>
+            <SubtleLabel text="時鐘繪圖" tone="muted" class="mt-1 block" />
           </div>
         </div>
       </div>
@@ -39,19 +40,22 @@
       </div>
 
       <div class="space-y-4">
-        <button @click="onStartDailyTraining" class="btn btn-primary btn-lg w-full shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all min-h-[60px] text-xl font-bold">
+        <BaseButton size="lg" full-width class="text-xl font-bold shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all" @click="onStartDailyTraining">
           開始今日訓練
-        </button>
-        <button @click="onViewReport" class="btn btn-ghost w-full text-base min-h-[50px]">
+        </BaseButton>
+        <BaseButton variant="ghost" size="md" full-width class="text-base" @click="onViewReport">
           查看詳細報告
-        </button>
+        </BaseButton>
       </div>
-    </div>
+    </BaseCard>
   </section>
 </template>
 
 <script setup lang="ts">
 import type { MiniCogResult } from '@/services/miniCogService'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseCard from '@/components/ui/BaseCard.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 
 defineProps<{
   result: MiniCogResult | null

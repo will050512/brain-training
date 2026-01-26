@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import { useSettingsStore } from '@/stores'
 
 const settingsStore = useSettingsStore()
@@ -49,12 +50,15 @@ const settingsStore = useSettingsStore()
       </button>
     </div>
 
-    <p
+    <div
       v-if="!settingsStore.orientationSupported"
-      class="text-xs text-[var(--color-warning)] bg-[var(--color-warning-bg)] p-2 rounded-lg mt-3 flex items-start gap-2"
+      class="bg-[var(--color-warning-bg)] p-2 rounded-lg mt-3 flex items-start gap-2"
     >
       <span class="mt-0.5">⚠️</span>
-      <span>您的裝置不支援自動旋轉鎖定，請使用系統設定調整。</span>
-    </p>
+      <SubtleLabel
+        text="您的裝置不支援自動旋轉鎖定，請使用系統設定調整。"
+        class="text-[var(--color-warning)]"
+      />
+    </div>
   </div>
 </template>

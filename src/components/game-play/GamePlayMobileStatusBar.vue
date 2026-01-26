@@ -1,6 +1,6 @@
 <template>
   <div class="fixed top-12 left-0 right-0 z-20 bg-[var(--color-surface)]/95 backdrop-blur-sm border-b border-[var(--color-border)] px-2 py-1">
-    <div class="flex items-center justify-between gap-2 text-xs">
+    <div class="flex items-center justify-between gap-2 text-sm">
       <div class="flex items-center gap-3 flex-1 min-w-0">
         <div
           v-if="gameStatus.showTimer !== false"

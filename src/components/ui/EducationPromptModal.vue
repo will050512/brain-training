@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 
 type Props = {
   modelValue: boolean
@@ -52,18 +54,21 @@ function handleSave(): void {
 
         <div class="space-y-3">
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <button
+            <BaseButton
               v-for="years in presets"
               :key="years"
               type="button"
-              class="btn btn-secondary btn-sm"
+              variant="secondary"
+              size="sm"
               @click="inputValue = String(years)"
             >
               {{ years }} 年
-            </button>
+            </BaseButton>
           </div>
 
-          <label class="text-sm text-[var(--color-text-muted)]">學歷年數</label>
+          <label class="text-sm text-[var(--color-text-muted)]">
+            <SubtleLabel text="學歷年數" tone="muted" />
+          </label>
           <input
             v-model="inputValue"
             type="number"
@@ -73,15 +78,17 @@ function handleSave(): void {
             class="input w-full"
             placeholder="例如 12"
           />
-          <p v-if="!isValid && inputValue !== ''" class="text-xs text-red-600">
-            請輸入 1 到 30 之間的數字。
-          </p>
+          <SubtleLabel
+            v-if="!isValid && inputValue !== ''"
+            text="請輸入 1 到 30 之間的數字。"
+            class="text-red-600"
+          />
         </div>
 
         <div class="mt-5">
-          <button class="btn btn-primary w-full" :disabled="!isValid" @click="handleSave">
+          <BaseButton full-width :disabled="!isValid" @click="handleSave">
             確認
-          </button>
+          </BaseButton>
         </div>
       </div>
     </div>

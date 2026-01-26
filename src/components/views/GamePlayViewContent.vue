@@ -104,6 +104,7 @@ import { type GameResult, type GameState, type GameDefinition, type GameStatusUp
 import { calculateDifficultyAdjustment, applyDifficultyAdjustment, getFullDifficultyLabel, getSuggestedDifficulty, type DifficultyAdjustment } from '@/services/adaptiveDifficultyService'
 import { markGameCompleted, updatePlannedGameDifficulties } from '@/services/dailyTrainingService'
 import TrainingCompleteModal from '@/components/ui/TrainingCompleteModal.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import DifficultyAdjustPanel from '@/components/ui/DifficultyAdjustPanel.vue'
 import GamePlayHeader from '@/components/game-play/GamePlayHeader.vue'
 import GamePlayMobileStatusBar from '@/components/game-play/GamePlayMobileStatusBar.vue'
@@ -293,17 +294,15 @@ const GameLoadingComponent = {
 
 // 遊戲載入錯誤元件
 const GameErrorComponent = {
+  components: { BaseButton },
   template: `
     <div class="flex flex-col items-center justify-center py-12 text-center">
       <div class="text-6xl mb-4">😵</div>
         <h3 class="text-xl font-bold text-[var(--color-danger)] mb-2">遊戲載入失敗</h3>
       <p class="text-[var(--color-text-secondary)] mb-4">抱歉，遊戲元件無法載入，請稍後再試。</p>
-      <button 
-        class="btn btn-primary"
-        @click="$emit('retry')"
-      >
+      <BaseButton @click="$emit('retry')">
         重新載入
-      </button>
+      </BaseButton>
     </div>
   `,
   emits: ['retry']

@@ -14,7 +14,7 @@
       <div class="grid grid-cols-3 gap-4">
         <div v-for="result in assessmentResults" :key="result.dimension" class="text-center p-2 rounded-lg bg-[var(--color-bg-soft)]">
           <p class="text-2xl font-bold text-[var(--color-primary)]">{{ result.score }}</p>
-          <p class="text-xs font-medium mt-1 capitalize opacity-70" style="color: var(--color-text)">{{ result.dimension }}</p>
+          <SubtleLabel :text="result.dimension" size="xs" class="mt-1 capitalize opacity-70" style="color: var(--color-text)" />
         </div>
       </div>
     </div>
@@ -22,6 +22,7 @@
 </template>
 
 <script setup lang="ts">
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import type { CognitiveDimension } from '@/types/cognitive'
 
 defineProps<{

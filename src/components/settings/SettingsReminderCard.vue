@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import { useSettingsStore } from '@/stores'
 
 const settingsStore = useSettingsStore()
@@ -14,7 +15,7 @@ const settingsStore = useSettingsStore()
     <div class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="settingsStore.assessmentReminderEnabled = !settingsStore.assessmentReminderEnabled">
       <div class="flex-1 pr-4">
         <div class="text-base font-medium text-[var(--color-text)]">每月評估提醒</div>
-        <div class="text-xs text-[var(--color-text-muted)] mt-0.5">距離上次評估超過 30 天提醒</div>
+        <SubtleLabel text="距離上次評估超過 30 天提醒" tone="muted" class="mt-0.5 block" />
       </div>
       <button
         class="toggle-switch flex-shrink-0"

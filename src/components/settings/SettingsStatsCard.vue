@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
+
 interface Props {
   totalGamesPlayed: number
   averageScore: number
@@ -19,19 +21,19 @@ const props = defineProps<Props>()
     <div class="grid grid-cols-4 gap-2">
       <div class="flex flex-col items-center p-2 bg-[var(--color-bg-soft)] rounded-lg">
         <span class="text-lg font-bold text-[var(--color-primary)]">{{ props.totalGamesPlayed }}</span>
-        <span class="text-[10px] text-[var(--color-text-muted)]">次數</span>
+        <SubtleLabel text="次數" size="xs" tone="muted" />
       </div>
       <div class="flex flex-col items-center p-2 bg-[var(--color-bg-soft)] rounded-lg">
         <span class="text-lg font-bold text-[var(--color-score-good)]">{{ Math.round(props.averageScore) }}</span>
-        <span class="text-[10px] text-[var(--color-text-muted)]">均分</span>
+        <SubtleLabel text="均分" size="xs" tone="muted" />
       </div>
       <div class="flex flex-col items-center p-2 bg-[var(--color-bg-soft)] rounded-lg">
         <span class="text-lg font-bold text-[var(--color-combo)]">{{ props.streak }}</span>
-        <span class="text-[10px] text-[var(--color-text-muted)]">連勝</span>
+        <SubtleLabel text="連勝" size="xs" tone="muted" />
       </div>
       <div class="flex flex-col items-center p-2 bg-[var(--color-bg-soft)] rounded-lg">
         <span class="text-sm font-bold text-[var(--color-progress)] mt-1">{{ props.totalPlayTimeLabel }}</span>
-        <span class="text-[10px] text-[var(--color-text-muted)]">時長</span>
+        <SubtleLabel text="時長" size="xs" tone="muted" />
       </div>
     </div>
   </div>

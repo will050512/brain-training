@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { CognitiveDimension } from '@/types/cognitive'
+import SectionTitle from '@/components/common/SectionTitle.vue'
+import SubtleLabel from '@/components/common/SubtleLabel.vue'
 
 type TopDimension = {
   dimension: CognitiveDimension
@@ -33,10 +35,7 @@ const props = defineProps<Props>()
 
 <template>
   <div class="mb-6">
-    <h2 class="text-lg font-bold text-[var(--color-text)] px-1 mb-3 flex items-center gap-2">
-      <span class="w-1.5 h-6 rounded-full bg-[var(--color-primary)]"></span>
-      趨勢摘要
-    </h2>
+    <SectionTitle title="趨勢摘要" spacing="sm" class="px-1" />
     <div class="bg-[var(--color-surface-elevated)] rounded-2xl p-4 shadow-sm border border-[var(--color-border-light)]">
       <div class="flex items-center justify-between mb-4">
         <h3 class="font-bold text-lg text-[var(--color-text)] flex items-center gap-2">
@@ -67,7 +66,7 @@ const props = defineProps<Props>()
       <template v-else-if="props.cognitiveTrend">
         <div v-if="props.hasDeclineWarning" class="mb-4 p-3 bg-[var(--color-warning-bg)] border border-[var(--color-warning)]/30 rounded-xl flex items-start gap-3">
           <span class="text-2xl shrink-0">⚠️</span>
-          <span class="text-sm font-medium text-[var(--color-text)] pt-1">偵測到部分能力有變化，建議保持每日訓練習慣。</span>
+          <SubtleLabel text="偵測到部分能力有變化，建議保持每日訓練習慣。" class="pt-1" />
         </div>
 
         <div class="grid grid-cols-3 gap-3">
@@ -78,7 +77,7 @@ const props = defineProps<Props>()
           >
             <span class="text-2xl mb-1 block filter drop-shadow-sm">{{ dim.icon }}</span>
             <p class="text-lg font-black" :class="dim.trendClass">{{ dim.score }}</p>
-            <p class="text-xs font-medium text-[var(--color-text-secondary)] mt-0.5">{{ dim.name }}</p>
+            <SubtleLabel :text="dim.name" tone="secondary" class="mt-0.5" />
           </div>
         </div>
       </template>
