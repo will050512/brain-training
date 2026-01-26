@@ -226,6 +226,7 @@ const toggleCollapse = () => {
   flex-direction: column;
   min-width: 0;
   height: 100%; /* 繼承父層高度 */
+  min-height: 0; /* 允許子層滾動容器正確收縮 */
   position: relative;
   /* 手機版為了避開 Fixed Header 的 padding */
   padding-top: 56px; 
@@ -250,13 +251,14 @@ const toggleCollapse = () => {
   flex: 1;
   overflow-y: auto; /* 啟用垂直捲動 */
   overflow-x: hidden;
-  padding: 1rem;
+  padding: var(--layout-padding);
   scroll-behavior: smooth;
+  min-height: 0; /* 修正部分瀏覽器無法捲動的情況 */
 }
 
 @media (min-width: 1024px) {
   .main-content {
-    padding: 2rem;
+    padding: calc(var(--layout-padding) * 1.5);
   }
 }
 

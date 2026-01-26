@@ -1,7 +1,7 @@
 /**
  * 節拍模仿遊戲邏輯模組 (3回合精華版)
  * 更新重點：
- * 1. 總回合數統一為 3 回合 (Total Rounds = 3)
+ * 1. 依難度提供不同回合數 (Easy < Medium < Hard)
  * 2. 新增更有趣、具備音樂性的節奏譜面 (Fun Patterns)
  * 3. 保持 1000ms 起始緩衝 (Start Buffer)
  */
@@ -86,7 +86,7 @@ export interface RatingCounts {
 
 export const DIFFICULTY_CONFIGS: Record<Difficulty, RhythmMimicConfig> = {
   easy: {
-    totalRounds: 3, // 改為 3 回合
+    totalRounds: 3,
     tolerance: 350,
     playCount: 2,
     waitTime: 1500,
@@ -94,7 +94,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, RhythmMimicConfig> = {
     replayLimit: 3,
   },
   medium: {
-    totalRounds: 3, // 改為 3 回合
+    totalRounds: 4,
     tolerance: 250,
     playCount: 2,
     waitTime: 1200,
@@ -102,7 +102,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, RhythmMimicConfig> = {
     replayLimit: 2,
   },
   hard: {
-    totalRounds: 3, // 改為 3 回合
+    totalRounds: 5,
     tolerance: 150,
     playCount: 1,
     waitTime: 1000,
@@ -116,6 +116,18 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, RhythmMimicConfig> = {
  */
 export const RHYTHM_PATTERNS: RhythmPattern[] = [
   // === 簡單模式 (規律、口號感) ===
+  {
+    id: 'simple_4',
+    name: '簡單四拍',
+    bpm: 60,
+    difficulty: 'easy',
+    beats: [
+      { time: 0, type: 'tap' },
+      { time: 1000, type: 'tap' },
+      { time: 2000, type: 'tap' },
+      { time: 3000, type: 'tap' },
+    ],
+  },
   {
     id: 'one_two_three_four',
     name: '做體操 1-2-3-4',
@@ -417,10 +429,10 @@ export function evaluateRound(
 
 /** 計算節奏總長度 */
 export function getPatternDuration(pattern: RhythmPattern): number {
-  if (pattern.beats.length === 0) return 2000
+  if (pattern.beats.length === 0) return 0
   const lastBeat = pattern.beats[pattern.beats.length - 1]!
-  // 保持結尾也有 1000ms 的留白，讓視覺更平衡
-  return lastBeat.time + 1000 
+  // 保持結尾也有 500ms 的留白，讓視覺更平衡
+  return lastBeat.time + 500 
 }
 
 export function calculateScore(roundResults: RoundSummary[]): number {

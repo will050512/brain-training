@@ -313,8 +313,8 @@ export const useSettingsStore = defineStore('settings', () => {
   // 應用字體大小到根元素
   function applyFontSize(): void {
     const size = FONT_SIZE_MAP[fontSize.value]
-    document.documentElement.style.setProperty('--font-size-base', `${size}px`)
-    document.documentElement.style.fontSize = `${size}px`
+    const textScale = Math.max(0.85, Math.min(1.6, size / 16))
+    document.documentElement.style.setProperty('--text-scale', `${textScale}`)
   }
 
   // 應用無障礙設定

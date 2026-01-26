@@ -41,3 +41,32 @@ export function parseBirthdayToDate(input: string): Date | null {
   if (Number.isNaN(date.getTime())) return null
   return date
 }
+
+export function formatBirthdayToRoc(input: string): string {
+  if (!input) return ''
+  const toRocYear = (adYear: number): number => Math.max(1, adYear - 1911)
+
+  if (/^\d{4}-\d{2}$/.test(input)) {
+    const year = Number(input.slice(0, 4))
+    const month = Number(input.slice(5, 7))
+    if (Number.isFinite(year) && Number.isFinite(month)) {
+      return `民國${toRocYear(year)}年${month}月`
+    }
+    return input.replace('-', '/')
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+    const year = Number(input.slice(0, 4))
+    const month = Number(input.slice(5, 7))
+    if (Number.isFinite(year) && Number.isFinite(month)) {
+      return `民國${toRocYear(year)}年${month}月`
+    }
+    return input.slice(0, 7).replace('-', '/')
+  }
+
+  const date = new Date(input)
+  if (!Number.isNaN(date.valueOf())) {
+    return `民國${toRocYear(date.getFullYear())}年${date.getMonth() + 1}月`
+  }
+  return input
+}

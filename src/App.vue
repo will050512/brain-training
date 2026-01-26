@@ -7,6 +7,7 @@ import { useTheme } from '@/composables/useTheme'
 import { useResponsive } from '@/composables/useResponsive'
 import { useNotification } from '@/composables/useNotification'
 import { useToast } from '@/composables/useToast'
+import { useUiScale } from '@/composables/useUiScale'
 import { backfillUserSessionsToSheet } from '@/services/googleSheetSyncService'
 import { syncUserProfileToSheet } from '@/services/userSheetSyncService'
 import { backfillAllUserDataToSheet } from '@/services/userDataSheetSyncService'
@@ -28,6 +29,7 @@ const route = useRoute()
 const { isMobile, isTablet, isDesktop } = useResponsive()
 const { checkTrainingReminder, checkAssessmentReminder } = useNotification()
 const toast = useToast()
+useUiScale()
 
 // 初始化主題系統
 const { initTheme } = useTheme()
