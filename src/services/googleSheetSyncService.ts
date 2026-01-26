@@ -3,7 +3,7 @@ import { getGradeFromScore } from '@/types/game'
 import { getDataConsent, getUserGameSessions } from '@/services/db'
 import { detectClientSource, loadClientSourceForUser } from '@/services/clientSource'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { getSheetEndpoint } from '@/services/sheetConfig'
+import { buildSheetAuthMeta, getSheetEndpoint, type SheetAuthMeta } from '@/services/sheetConfig'
 
 // 已部署的 Apps Script Web App
 const SHEET_ENDPOINT = getSheetEndpoint()
@@ -39,6 +39,7 @@ type SheetTracking = TrackingData & {
 
 type SheetPayload = {
   action?: 'upsertGameResults'
+  meta?: SheetAuthMeta
   protocolVersion?: number
   schemaVersion?: number
   scoringVersion?: number
@@ -352,16 +353,20 @@ function shouldSyncSession(odId: string, sessionId: string, payload: SheetPayloa
   return previous !== hash
 }
 
-async function postToSheet(payload: SheetPayload | { action: 'upsertGameResults'; protocolVersion?: number; items: SheetPayload[] }): Promise<boolean> {
+async function postToSheet(
+  payload: SheetPayload | { action: 'upsertGameResults'; protocolVersion?: number; items: SheetPayload[]; meta?: SheetAuthMeta }
+): Promise<boolean> {
   try {
+    if (!SHEET_ENDPOINT) return false
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 12000)
+    const payloadWithMeta = payload.meta ? payload : { ...payload, meta: buildSheetAuthMeta() }
     // Apps Script Web App 通常無法自訂 CORS header，若用 application/json 會觸發 preflight 而導致瀏覽器直接擋下。
     // 因此使用 no-cors + 不指定 Content-Type，讓請求能送達（回應為 opaque，無法讀取內容）。
     const res = await fetch(SHEET_ENDPOINT, {
       method: 'POST',
       mode: 'no-cors',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payloadWithMeta),
       signal: controller.signal,
     })
     clearTimeout(timeoutId)
@@ -380,6 +385,7 @@ async function postToSheet(payload: SheetPayload | { action: 'upsertGameResults'
  * 單筆遊戲結果即時同步（完成遊戲時呼叫）
  */
 export async function syncSessionToSheet(session: GameSession, bestScore?: number): Promise<void> {
+  if (!SHEET_ENDPOINT) return
   if (!isBrowserOnline()) return
   ensureSyncProtocolVersion(session.odId)
   if (!(await isSheetSyncAllowed(session.odId))) return
@@ -427,6 +433,7 @@ export async function syncSessionToSheet(session: GameSession, bestScore?: numbe
  */
 export async function backfillUserSessionsToSheet(odId: string): Promise<void> {
   try {
+    if (!SHEET_ENDPOINT) return
     if (!isBrowserOnline()) return
     ensureSyncProtocolVersion(odId)
     if (!(await isSheetSyncAllowed(odId))) return
@@ -457,7 +464,12 @@ export async function backfillUserSessionsToSheet(odId: string): Promise<void> {
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize)
       updateSessionSyncStatus(odId, { lastAttemptAt: new Date().toISOString() })
-      const ok = await postToSheet({ action: 'upsertGameResults', protocolVersion: SHEET_SYNC_PROTOCOL_VERSION, items: batch })
+      const ok = await postToSheet({
+        action: 'upsertGameResults',
+        protocolVersion: SHEET_SYNC_PROTOCOL_VERSION,
+        items: batch,
+        meta: buildSheetAuthMeta(),
+      })
       if (ok) {
         for (const item of batch) {
           markSessionSynced(odId, item.sessionId)

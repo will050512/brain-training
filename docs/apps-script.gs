@@ -10,6 +10,7 @@
  * - Server-side grade fallback (if not provided)
  * - JSON fields stored as strings: gameSpecific default {}, displayStats default []
  * - LockService to avoid concurrent writes
+ * - Optional auth token + clientId based rate limit
  * - Optional JSONP GET endpoints via doGet (browser-friendly)
  *
  * Deploy:
@@ -19,11 +20,14 @@
  *
  * Setup:
  * - Fill in CONFIG.SPREADSHEET_ID with your Sheet ID (required for this version)
+ * - (Optional) Set Script Properties `SYNC_TOKEN` and keep CONFIG.SYNC_TOKEN empty
  */
 
 var CONFIG = {
   SPREADSHEET_ID: '16UoYf-u7Gj0waariezCJAO8Q-PZ3e2L17f-_P_3RC8Y',
   ENABLE_CORS: true,
+  SYNC_TOKEN: '',
+  REQUIRE_CLIENT_ID: true,
   SHEETS: {
     GAME_RESULTS: 'GameResults',
     USERS: 'Users',
@@ -194,6 +198,11 @@ var CONFIG = {
     ],
   },
   DEFAULT_LIMIT: 500,
+  MAX_ITEMS_PER_REQUEST: 200,
+  MAX_PAYLOAD_BYTES: 250000,
+  RATE_LIMIT_WINDOW_SEC: 60,
+  RATE_LIMIT_MAX_REQUESTS: 30,
+  RATE_LIMIT_MAX_ITEMS: 500,
   LOCK_TIMEOUT_MS: 30000,
 }
 
@@ -249,6 +258,66 @@ function clampNumber_(v, min, max, fallback) {
 function asString_(v, fallback) {
   if (fallback === undefined) fallback = ''
   return typeof v === 'string' ? v : (v == null ? fallback : String(v))
+}
+
+function getScriptProperty_(key) {
+  try {
+    var props = PropertiesService.getScriptProperties()
+    return asString_(props.getProperty(key), '')
+  } catch (e) {
+    return ''
+  }
+}
+
+function getSyncToken_() {
+  var token = getScriptProperty_('SYNC_TOKEN')
+  if (token) return token
+  return asString_(CONFIG.SYNC_TOKEN, '')
+}
+
+function extractAuthMeta_(data, params) {
+  var meta = (data && data.meta) ? data.meta : {}
+  var clientId = asString_(meta.clientId || (params && params.clientId), '').trim()
+  var token = asString_(meta.token || (params && params.token), '').trim()
+  return { clientId: clientId, token: token }
+}
+
+function isValidClientId_(clientId) {
+  return /^[A-Za-z0-9_-]{6,64}$/.test(clientId)
+}
+
+function enforceAuth_(meta) {
+  var requiredToken = getSyncToken_()
+  if (requiredToken && meta.token !== requiredToken) return 'invalid token'
+  if (CONFIG.REQUIRE_CLIENT_ID && !isValidClientId_(meta.clientId)) return 'missing clientId'
+  return ''
+}
+
+function getItemCount_(data) {
+  if (!data) return 0
+  if (Array.isArray(data.items)) return data.items.length
+  return 1
+}
+
+function checkRateLimit_(clientId, itemCount) {
+  if (!clientId) return ''
+  try {
+    var cache = CacheService.getScriptCache()
+    var key = 'rate:' + clientId
+    var raw = cache.get(key)
+    var current = raw ? JSON.parse(raw) : { count: 0, items: 0 }
+    var maxReq = CONFIG.RATE_LIMIT_MAX_REQUESTS || 30
+    var maxItems = CONFIG.RATE_LIMIT_MAX_ITEMS || 500
+    if (current.count >= maxReq || (current.items + itemCount) > maxItems) {
+      return 'rate limit exceeded'
+    }
+    current.count += 1
+    current.items += itemCount
+    cache.put(key, JSON.stringify(current), CONFIG.RATE_LIMIT_WINDOW_SEC || 60)
+  } catch (e) {
+    // ignore rate limit failures
+  }
+  return ''
 }
 
 function normalizeTransferCode_(value) {
@@ -808,11 +877,31 @@ function doPost(e) {
       return jsonOutput_({ ok: false, error: 'No post data received', requestId: requestId, serverTime: serverTime })
     }
 
+    if (CONFIG.MAX_PAYLOAD_BYTES && e.postData.contents.length > CONFIG.MAX_PAYLOAD_BYTES) {
+      return jsonOutput_({ ok: false, error: 'Payload too large', requestId: requestId, serverTime: serverTime })
+    }
+
     var data
     try {
       data = JSON.parse(e.postData.contents)
     } catch (err) {
       return jsonOutput_({ ok: false, error: 'Invalid JSON: ' + String(err), requestId: requestId, serverTime: serverTime })
+    }
+
+    var meta = extractAuthMeta_(data, e.parameter || {})
+    var authError = enforceAuth_(meta)
+    if (authError) {
+      return jsonOutput_({ ok: false, error: authError, requestId: requestId, serverTime: serverTime })
+    }
+
+    var itemCount = getItemCount_(data)
+    if (CONFIG.MAX_ITEMS_PER_REQUEST && itemCount > CONFIG.MAX_ITEMS_PER_REQUEST) {
+      return jsonOutput_({ ok: false, error: 'Too many items', requestId: requestId, serverTime: serverTime })
+    }
+
+    var rateError = checkRateLimit_(meta.clientId, itemCount)
+    if (rateError) {
+      return jsonOutput_({ ok: false, error: rateError, requestId: requestId, serverTime: serverTime })
     }
 
     var action = (data && data.action) || 'upsertGameResults'
@@ -907,6 +996,20 @@ function doGet(e) {
     var params = (e && e.parameter) ? e.parameter : {}
     var action = params.action || 'ping'
     var callback = params.callback || ''
+
+    if (action !== 'ping') {
+      var meta = extractAuthMeta_(null, params)
+      var authError = enforceAuth_(meta)
+      if (authError) {
+        var outAuth = { ok: false, action: action, error: authError }
+        return callback ? jsonpOutput_(callback, outAuth) : jsonOutput_(outAuth)
+      }
+      var rateError = checkRateLimit_(meta.clientId, 1)
+      if (rateError) {
+        var outRate = { ok: false, action: action, error: rateError }
+        return callback ? jsonpOutput_(callback, outRate) : jsonOutput_(outRate)
+      }
+    }
 
     if (action === 'ping') {
       var outPing = { ok: true, action: action, serverTime: new Date().toISOString() }

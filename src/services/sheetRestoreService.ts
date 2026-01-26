@@ -26,7 +26,7 @@ import {
 } from '@/services/db'
 import { calculateCognitiveScoresFromResult } from '@/services/scoreCalculator'
 import { getGradeFromScore } from '@/types/game'
-import { getSheetEndpoint } from '@/services/sheetConfig'
+import { appendSheetAuthParams, getSheetEndpoint } from '@/services/sheetConfig'
 import { normalizeBirthdayInput } from '@/utils/birthday'
 
 const SHEET_ENDPOINT = getSheetEndpoint()
@@ -155,6 +155,7 @@ function parseSubDifficulty(value: unknown): SubDifficulty | undefined {
 
 async function fetchJson(url: string): Promise<any | null> {
   try {
+    if (!SHEET_ENDPOINT) return null
     const res = await fetch(url)
     if (!res.ok) return null
     return await res.json()
@@ -164,7 +165,9 @@ async function fetchJson(url: string): Promise<any | null> {
 }
 
 async function fetchUserProfile(odId: string): Promise<Record<string, unknown> | null> {
-  const url = `${SHEET_ENDPOINT}?action=getUser&userId=${encodeURIComponent(odId)}`
+  const url = appendSheetAuthParams(
+    `${SHEET_ENDPOINT}?action=getUser&userId=${encodeURIComponent(odId)}`
+  )
   const payload = await fetchJson(url)
   if (!payload?.ok || !payload.user) return null
   return payload.user as Record<string, unknown>
@@ -173,14 +176,18 @@ async function fetchUserProfile(odId: string): Promise<Record<string, unknown> |
 // 新增：透過轉移碼獲取使用者資料
 export async function getUserByTransferCode(code: string): Promise<User | null> {
   if (!code || code.length !== 6) return null
-  const url = `${SHEET_ENDPOINT}?action=getUserByTransferCode&code=${encodeURIComponent(code)}`
+  const url = appendSheetAuthParams(
+    `${SHEET_ENDPOINT}?action=getUserByTransferCode&code=${encodeURIComponent(code)}`
+  )
   const payload = await fetchJson(url)
   if (!payload?.ok || !payload.user) return null
   return mapUserProfile(payload.user)
 }
 
 async function fetchSingleItem(action: 'getUserSettings' | 'getUserStats' | 'getDataConsent', odId: string): Promise<Record<string, unknown> | null> {
-  const url = `${SHEET_ENDPOINT}?action=${action}&userId=${encodeURIComponent(odId)}`
+  const url = appendSheetAuthParams(
+    `${SHEET_ENDPOINT}?action=${action}&userId=${encodeURIComponent(odId)}`
+  )
   const payload = await fetchJson(url)
   if (!payload?.ok || !payload.item) return null
   return payload.item as Record<string, unknown>
@@ -203,13 +210,17 @@ async function fetchPagedList(urlBuilder: (cursor: number) => string): Promise<R
 
 async function fetchGameResults(odId: string): Promise<Record<string, unknown>[]> {
   return fetchPagedList(cursor => (
-    `${SHEET_ENDPOINT}?action=listGameResults&userId=${encodeURIComponent(odId)}&limit=500&cursor=${cursor}`
+    appendSheetAuthParams(
+      `${SHEET_ENDPOINT}?action=listGameResults&userId=${encodeURIComponent(odId)}&limit=500&cursor=${cursor}`
+    )
   ))
 }
 
 async function fetchListByUser(type: string, odId: string): Promise<Record<string, unknown>[]> {
   return fetchPagedList(cursor => (
-    `${SHEET_ENDPOINT}?action=listByUser&type=${encodeURIComponent(type)}&userId=${encodeURIComponent(odId)}&limit=500&cursor=${cursor}`
+    appendSheetAuthParams(
+      `${SHEET_ENDPOINT}?action=listByUser&type=${encodeURIComponent(type)}&userId=${encodeURIComponent(odId)}&limit=500&cursor=${cursor}`
+    )
   ))
 }
 
@@ -503,6 +514,7 @@ export async function restoreAllUserDataFromSheet(
   }
 
   if (!odId) return summary
+  if (!SHEET_ENDPOINT) return summary
   if (!isBrowserOnline()) return summary
   if (!options?.force && shouldThrottleRestore(odId)) return summary
 

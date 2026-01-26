@@ -35,6 +35,9 @@ jobs:
 
       - name: Vite build
         run: npm run build
+        env:
+          VITE_SHEET_ENDPOINT: ${{ secrets.VITE_SHEET_ENDPOINT }}
+          VITE_SHEET_SYNC_TOKEN: ${{ secrets.VITE_SHEET_SYNC_TOKEN }}
 
       - name: Show build output (diagnostics)
         run: |

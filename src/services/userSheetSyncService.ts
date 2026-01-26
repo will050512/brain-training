@@ -2,7 +2,7 @@ import type { User } from '@/types'
 import { getDataConsent } from '@/services/db'
 import { detectClientSource, loadClientSourceForUser } from '@/services/clientSource'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { getSheetEndpoint } from '@/services/sheetConfig'
+import { buildSheetAuthMeta, getSheetEndpoint, type SheetAuthMeta } from '@/services/sheetConfig'
 import { normalizeTransferCode } from '@/services/userTransferCode'
 
 const SHEET_ENDPOINT = getSheetEndpoint()
@@ -25,6 +25,7 @@ const EMPTY_STATUS: UserSyncStatus = {
 
 type UserSheetPayload = {
   action: 'upsertUsers'
+  meta?: SheetAuthMeta
   userId: string
   name: string
   birthday: string
@@ -135,10 +136,11 @@ async function postToSheet(payload: UserSheetPayload): Promise<boolean> {
     }
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 12000)
+    const payloadWithMeta = payload.meta ? payload : { ...payload, meta: buildSheetAuthMeta() }
     await fetch(SHEET_ENDPOINT, {
       method: 'POST',
       mode: 'no-cors',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payloadWithMeta),
       signal: controller.signal,
     })
     clearTimeout(timeoutId)
@@ -168,6 +170,7 @@ async function postToSheet(payload: UserSheetPayload): Promise<boolean> {
  */
 export async function syncUserProfileToSheet(user: User | null | undefined): Promise<void> {
   if (!user) return
+  if (!SHEET_ENDPOINT) return
   if (!isBrowserOnline()) return
   if (!(await isAllowed(user.id))) return
 

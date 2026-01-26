@@ -1,12 +1,14 @@
 # App 內嵌與 Firebase 對接指南
 
 ## 總覽
+
 - App (Flutter/Firebase) 在 WebView/Chrome Custom Tabs 中載入本專案。
 - Firebase 完成登入後，將使用者 Profile + IdToken 傳給 Web App。
 - Web App 透過 `externalAuthBridge` 建立/更新使用者（id 固定 `fb_<uid>`）、記錄 `clientSource`，並同步至 Google Sheet。
 - 遊戲/使用者同步仍受 `analyticsConsent` 控制；未同意不會上傳。
 
 ## 前端（Web App）設定
+
 1. 入口啟用 bridge
    ```ts
    // main.ts
@@ -24,6 +26,7 @@
    - 若要呼叫自家 API，請自行從 `sessionStorage` 取出並塞到 `Authorization` header（目前專案未對後端驗證）。
 
 ## Profile 格式（App → Web）
+
 ```json
 {
   "provider": "firebase",
@@ -36,16 +39,20 @@
   "clientSource": "app-android"
 }
 ```
+
 允許的 `clientSource` 建議：`app-android | app-ios | pwa | web | unknown`。
 
 ## Flutter / WebView 呼叫範例
+
 方法 A：直接呼叫 bridge
+
 ```dart
 await controller.runJavascript(
   'window.BrainTrainingBridge?.setExternalProfile(${jsonEncode(profile)})');
 ```
 
 方法 B：postMessage
+
 ```dart
 await controller.runJavascript(
   'window.postMessage({type:"brain-training/external-profile", payload:${jsonEncode(profile)}}, "*")');
@@ -56,7 +63,11 @@ QueryString（可選）：`?externalProfile=<base64url(json of profile)>`
 安全：bridge 接受同源與 `null` origin（WebView 常見）；可在 `externalAuthBridge.ts` 內再加白名單。
 
 ## Google Sheet / Apps Script
-- Web App URL：`https://script.google.com/macros/s/AKfycbx9z4UYHSLUWXhHMbq6qtmMdmfmqI-6VGkF_UY4EdF9yuYYq_DVFwE6od6XTemA0dgw/exec`
+
+- Web App URL：`<YOUR_APPS_SCRIPT_WEB_APP_URL>`
+- 前端透過 `VITE_SHEET_ENDPOINT` 設定，不再硬編碼於程式碼。
+- 若需保護上傳/讀取，請設定 `VITE_SHEET_SYNC_TOKEN`，並在 Apps Script 的 Script Properties 內設定 `SYNC_TOKEN`。
+- 客戶端會自動附上 `meta`（`clientId`, `token`, `sentAt`）供伺服端限流與驗證。
 - POST 使用 `mode: "no-cors"`；回應為 opaque。
 - 支援 `action: upsertGameResults | upsertUsers`，批次用 `items`。
 
@@ -67,6 +78,7 @@ GameResults 欄位（Sheet `GameResults`）：
 `userId, sessionId, gameId, difficulty, subDifficulty, timestamp, durationSec, score, grade, metrics.*, tracking.*, bestScore, gameSpecific, displayStats, protocolVersion`
 
 示例：Users payload
+
 ```json
 {
   "action": "upsertUsers",
@@ -85,6 +97,7 @@ GameResults 欄位（Sheet `GameResults`）：
 ```
 
 示例：GameResult payload（可在 `gameSpecific.clientSource` 帶來源）
+
 ```json
 {
   "action": "upsertGameResults",
@@ -107,6 +120,7 @@ GameResults 欄位（Sheet `GameResults`）：
 ```
 
 ## 注意事項
+
 - 遙測/同步需 `analyticsConsent=true` 才會上傳。
 - WebView 預設無法讀取 Apps Script 回應；以上傳成功為主，並在前端用 sessionId/userId 去重。
 - 若要後端驗證 IdToken，請在自有 API 層處理；目前僅存於 `sessionStorage`。

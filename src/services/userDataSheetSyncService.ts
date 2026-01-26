@@ -21,7 +21,7 @@ import {
 } from '@/services/db'
 import { detectClientSource, loadClientSourceForUser } from '@/services/clientSource'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { getSheetEndpoint } from '@/services/sheetConfig'
+import { buildSheetAuthMeta, getSheetEndpoint, type SheetAuthMeta } from '@/services/sheetConfig'
 
 const SHEET_ENDPOINT = getSheetEndpoint()
 const FULL_SYNC_KEY_PREFIX = 'sheetFullSyncAt:'
@@ -307,8 +307,9 @@ function buildBehaviorLogPayload(log: BehaviorLog) {
   }
 }
 
-async function postToSheet(payload: { action: SheetAction; items: unknown[] }): Promise<boolean> {
+async function postToSheet(payload: { action: SheetAction; items: unknown[]; meta?: SheetAuthMeta }): Promise<boolean> {
   try {
+    if (!SHEET_ENDPOINT) return false
     try {
       const settingsStore = useSettingsStore()
       settingsStore.setSyncUiStatus('syncing')
@@ -317,10 +318,11 @@ async function postToSheet(payload: { action: SheetAction; items: unknown[] }): 
     }
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 12000)
+    const payloadWithMeta = payload.meta ? payload : { ...payload, meta: buildSheetAuthMeta() }
     await fetch(SHEET_ENDPOINT, {
       method: 'POST',
       mode: 'no-cors',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payloadWithMeta),
       signal: controller.signal,
     })
     clearTimeout(timeoutId)
