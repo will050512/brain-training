@@ -27,7 +27,7 @@ import { dataInitService } from '@/services/dataInitService'
 import { syncUserSettingsToSheet, syncUserStatsToSheet } from '@/services/userDataSheetSyncService'
 import { syncUserProfileToSheet } from '@/services/userSheetSyncService'
 import { generateTransferCode, isValidTransferCode, normalizeTransferCode } from '@/services/userTransferCode'
-import { getSheetEndpoint } from '@/services/sheetConfig'
+import { appendSheetAuthParams, getSheetEndpoint } from '@/services/sheetConfig'
 
 function normalizeUser(user: User): User {
   const now = new Date()
@@ -124,7 +124,10 @@ async function fetchUserByTransferCodeFromSheet(code: string): Promise<User | nu
 
   try {
     const endpoint = getSheetEndpoint()
-    const url = `${endpoint}?action=getUserByTransferCode&code=${encodeURIComponent(normalized)}`
+    if (!endpoint) return null
+    const url = appendSheetAuthParams(
+      `${endpoint}?action=getUserByTransferCode&code=${encodeURIComponent(normalized)}`
+    )
     const res = await fetch(url)
     if (!res.ok) return null
     const payload = await res.json()
