@@ -148,7 +148,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'confirm', difficulty: GameDifficulty, subDifficulty: GameSubDifficulty): void
+  (e: 'confirm', difficulty: GameDifficulty, subDifficulty: GameSubDifficulty, applyToAll: boolean): void
 }>()
 
 const settingsStore = useSettingsStore()
@@ -211,8 +211,9 @@ function setSubDifficulty(sub: GameSubDifficulty) {
 
 // 重置為預設
 function resetToDefault() {
-  currentDifficulty.value = settingsStore.defaultDifficulty
-  currentSubDifficulty.value = settingsStore.defaultSubDifficulty
+  const defaults = settingsStore.getDefaultDifficultySetting()
+  currentDifficulty.value = defaults.difficulty
+  currentSubDifficulty.value = defaults.subDifficulty
 }
 
 // 關閉面板
@@ -222,20 +223,7 @@ function close() {
 
 // 確認並關閉
 function confirmAndClose() {
-  // 儲存設定
-  if (applyToAll.value) {
-    // 套用到所有遊戲
-    settingsStore.setDefaultDifficulty(currentDifficulty.value, currentSubDifficulty.value)
-    settingsStore.resetAllGameDifficulties()
-  } else if (props.gameInfo) {
-    // 只套用到當前遊戲
-    settingsStore.setGameDifficulty(props.gameInfo.id, {
-      difficulty: currentDifficulty.value,
-      subDifficulty: currentSubDifficulty.value
-    })
-  }
-  
-  emit('confirm', currentDifficulty.value, currentSubDifficulty.value)
+  emit('confirm', currentDifficulty.value, currentSubDifficulty.value, applyToAll.value)
   close()
 }
 </script>

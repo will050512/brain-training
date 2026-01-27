@@ -69,6 +69,39 @@ interface AudioCache {
 let globalAudioContext: AudioContext | null = null
 const audioBufferCache = new Map<string, AudioBuffer>()
 const audioElementCache = new Map<string, HTMLAudioElement>()
+const audioNormalizationCache = new Map<string, number>()
+
+const TARGET_RMS = 0.12
+const MIN_NORMALIZED_GAIN = 0.7
+const MAX_NORMALIZED_GAIN = 1.3
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
+}
+
+function calculateRms(buffer: AudioBuffer): number {
+  const channels = buffer.numberOfChannels
+  if (channels <= 0 || buffer.length <= 0) return 0
+  const length = buffer.length
+  const step = Math.max(1, Math.floor(length / 5000))
+  let sumSq = 0
+  let count = 0
+
+  for (let ch = 0; ch < channels; ch++) {
+    const data = buffer.getChannelData(ch)
+    for (let i = 0; i < length; i += step) {
+      const value = data[i] ?? 0
+      sumSq += value * value
+      count++
+    }
+  }
+
+  return count > 0 ? Math.sqrt(sumSq / count) : 0
+}
+
+function getNormalizationGain(soundId: string): number {
+  return audioNormalizationCache.get(soundId) ?? 1
+}
 
 function getAudioContext(): AudioContext {
   if (!globalAudioContext) {
@@ -150,6 +183,11 @@ export function useGameAudio(options: UseGameAudioOptions = {}) {
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
         
         audioBufferCache.set(soundId, audioBuffer)
+        const rms = calculateRms(audioBuffer)
+        if (Number.isFinite(rms) && rms > 0) {
+          const gain = clamp(TARGET_RMS / rms, MIN_NORMALIZED_GAIN, MAX_NORMALIZED_GAIN)
+          audioNormalizationCache.set(soundId, gain)
+        }
         loadedSounds.value.add(soundId)
         return true
       } catch {
@@ -223,7 +261,8 @@ export function useGameAudio(options: UseGameAudioOptions = {}) {
       source.connect(gainNode)
       gainNode.connect(audioContext.destination)
       
-      gainNode.gain.value = (customVolume ?? masterVolume.value)
+      const normalizedGain = getNormalizationGain(soundId)
+      gainNode.gain.value = clamp((customVolume ?? masterVolume.value) * normalizedGain, 0, 1)
       
       source.start(0)
       activeSources.add(source)
@@ -245,7 +284,8 @@ export function useGameAudio(options: UseGameAudioOptions = {}) {
 
     try {
       const clone = audio.cloneNode() as HTMLAudioElement
-      clone.volume = customVolume ?? masterVolume.value
+      const normalizedGain = getNormalizationGain(soundId)
+      clone.volume = clamp((customVolume ?? masterVolume.value) * normalizedGain, 0, 1)
       clone.play().catch(() => {})
     } catch (error) {
       console.warn(`播放音效失敗 [${soundId}]:`, error)

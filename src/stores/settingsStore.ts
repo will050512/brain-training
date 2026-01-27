@@ -160,6 +160,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const defaultDifficulty = ref<GameDifficulty>('easy') // 全域預設難度
   const defaultSubDifficulty = ref<GameSubDifficulty>(2) // 全域預設子難度
   const gameDifficultySettings = ref<GameDifficultySettings>({}) // 每款遊戲獨立難度
+  const hasGlobalDifficultyOverride = ref(false)
 
   // 計算屬性
   const fontSizePx = computed(() => FONT_SIZE_MAP[fontSize.value])
@@ -199,6 +200,7 @@ export const useSettingsStore = defineStore('settings', () => {
         defaultDifficulty.value = data.defaultDifficulty ?? 'easy'
         defaultSubDifficulty.value = data.defaultSubDifficulty ?? 2
         gameDifficultySettings.value = data.gameDifficultySettings ?? {}
+        hasGlobalDifficultyOverride.value = data.hasGlobalDifficultyOverride === true
       } catch {
         // 忽略解析錯誤
       }
@@ -306,6 +308,7 @@ export const useSettingsStore = defineStore('settings', () => {
       defaultDifficulty: defaultDifficulty.value,
       defaultSubDifficulty: defaultSubDifficulty.value,
       gameDifficultySettings: gameDifficultySettings.value,
+      hasGlobalDifficultyOverride: hasGlobalDifficultyOverride.value,
     }
     localStorage.setItem('brain-training-settings', JSON.stringify(data))
   }
@@ -366,7 +369,7 @@ export const useSettingsStore = defineStore('settings', () => {
     [soundEnabled, musicEnabled, soundVolume, musicVolume, hasSeenWelcome, fontSize, 
      themeMode, orientationPreference, declineDetectionMode, dailyTrainingDuration, weeklyTrainingGoal,
      enableBehaviorTracking, reduceMotion, highContrast, enableVoicePrompts, enableHapticFeedback, assessmentReminderEnabled,
-     sidebarCollapsed, defaultDifficulty, defaultSubDifficulty, gameDifficultySettings],
+     sidebarCollapsed, defaultDifficulty, defaultSubDifficulty, gameDifficultySettings, hasGlobalDifficultyOverride],
     () => saveToStorage(),
     { deep: true }
   )
@@ -535,14 +538,25 @@ export const useSettingsStore = defineStore('settings', () => {
     if (subDifficulty !== undefined) {
       defaultSubDifficulty.value = subDifficulty
     }
+    hasGlobalDifficultyOverride.value = true
+  }
+
+  function getDefaultDifficultySetting(): GameDifficultySetting {
+    if (hasGlobalDifficultyOverride.value) {
+      return {
+        difficulty: defaultDifficulty.value,
+        subDifficulty: defaultSubDifficulty.value,
+      }
+    }
+    return {
+      difficulty: 'easy',
+      subDifficulty: 2
+    }
   }
 
   /** 取得指定遊戲的難度設定，若無則返回全域預設 */
   function getGameDifficulty(gameId: string): GameDifficultySetting {
-    return gameDifficultySettings.value[gameId] ?? {
-      difficulty: defaultDifficulty.value,
-      subDifficulty: defaultSubDifficulty.value,
-    }
+    return gameDifficultySettings.value[gameId] ?? getDefaultDifficultySetting()
   }
 
   /** 設定指定遊戲的難度 */
@@ -615,6 +629,7 @@ export const useSettingsStore = defineStore('settings', () => {
     defaultDifficulty,
     defaultSubDifficulty,
     gameDifficultySettings,
+    hasGlobalDifficultyOverride,
 
     // 動作
     toggleSound,
@@ -645,6 +660,7 @@ export const useSettingsStore = defineStore('settings', () => {
     toggleSidebar,
     // 遊戲難度動作
     setDefaultDifficulty,
+    getDefaultDifficultySetting,
     getGameDifficulty,
     setGameDifficulty,
     resetGameDifficulty,

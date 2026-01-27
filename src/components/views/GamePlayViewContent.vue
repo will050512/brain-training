@@ -106,10 +106,10 @@
 import { ref, computed, onMounted, onUnmounted, watch, defineAsyncComponent, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { gameRegistry } from '@/core/gameRegistry'
-import { useGameStore, useUserStore } from '@/stores'
+import { useGameStore, useUserStore, useSettingsStore } from '@/stores'
 import { useResponsive } from '@/composables/useResponsive'
 import { type GameResult, type GameState, type GameDefinition, type GameStatusUpdate, type UnifiedGameResult, type Difficulty, type SubDifficulty, type GameMode } from '@/types/game'
-import { calculateDifficultyAdjustment, applyDifficultyAdjustment, getFullDifficultyLabel, getSuggestedDifficulty, type DifficultyAdjustment } from '@/services/adaptiveDifficultyService'
+import { calculateDifficultyAdjustment, applyDifficultyAdjustment, getFullDifficultyLabel, type DifficultyAdjustment } from '@/services/adaptiveDifficultyService'
 import { markGameCompleted, updatePlannedGameDifficulties } from '@/services/dailyTrainingService'
 import TrainingCompleteModal from '@/components/ui/TrainingCompleteModal.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -146,6 +146,7 @@ const route = useRoute()
 const router = useRouter()
 const gameStore = useGameStore()
 const userStore = useUserStore()
+const settingsStore = useSettingsStore()
 const { isMobile } = useResponsive()
 
 // 檢測橫屏
@@ -696,10 +697,12 @@ function continueToNextGame(): void {
 // 開始推薦遊戲
 function startRecommendedGame(game: GameDefinition): void {
   gameStore.selectGame(game.id)
-  gameStore.selectDifficulty('easy')
+  const stored = settingsStore.getGameDifficulty(game.id)
+  gameStore.selectDifficulty(stored.difficulty)
+  gameStore.selectSubDifficulty(stored.subDifficulty)
   router.push({
     path: `/games/${game.id}`,
-    query: { autoStart: 'true' }
+    query: { autoStart: 'true', subDifficulty: String(stored.subDifficulty) }
   })
 }
 
@@ -726,9 +729,14 @@ function goBackToList(): void {
   router.push(isFromDailyTraining.value ? '/daily-challenge' : '/games')
 }
 
-function handleDifficultyConfirm(difficulty: Difficulty, subDifficulty: SubDifficulty): void {
+function handleDifficultyConfirm(difficulty: Difficulty, subDifficulty: SubDifficulty, applyToAll: boolean): void {
   gameStore.selectDifficulty(difficulty)
   gameStore.selectSubDifficulty(subDifficulty)
+  if (applyToAll) {
+    settingsStore.setDefaultDifficulty(difficulty, subDifficulty)
+    settingsStore.resetAllGameDifficulties()
+  }
+
   if (isFromDailyTraining.value && resolvedGameId.value) {
     gameStore.updateCurrentTrainingGameDifficulty(difficulty, subDifficulty, { manualOverride: true })
     const odId = userStore.currentUser?.id
@@ -737,6 +745,8 @@ function handleDifficultyConfirm(difficulty: Difficulty, subDifficulty: SubDiffi
         { gameId: resolvedGameId.value, difficulty, subDifficulty, manualOverride: true }
       ]).catch(err => console.error('updatePlannedGameDifficulties failed', err))
     }
+  } else if (!applyToAll && resolvedGameId.value) {
+    settingsStore.setGameDifficulty(resolvedGameId.value, { difficulty, subDifficulty })
   }
   router.replace({
     path: resolvedGameId.value ? `/games/${resolvedGameId.value}` : route.path,
@@ -805,25 +815,13 @@ watch(routeGameId, (newId) => {
       gameStore.selectSubDifficulty(clamped)
     }
 
-    // 非每日訓練：載入系統建議難度（避免長者被過難/過簡單影響信心）
-    const odId = userStore.currentUser?.id
-    if (!isFromDailyTraining.value && odId) {
-      getSuggestedDifficulty(odId, newId)
-        .then(suggested => {
-          if (routeGameId.value !== newId) return
-          if (isFromDailyTraining.value) return
-          gameStore.selectDifficulty(suggested.difficulty)
-          gameStore.selectSubDifficulty(suggested.subDifficulty)
-          if (!route.query.subDifficulty) {
-            router.replace({
-              path: `/games/${newId}`,
-              query: { ...route.query, subDifficulty: String(suggested.subDifficulty) }
-            })
-          }
-        })
-        .catch(() => {
-          // ignore
-        })
+    // 非每日訓練：使用該遊戲的已儲存難度（未設定時回到全域預設）
+    if (!isFromDailyTraining.value) {
+      const stored = settingsStore.getGameDifficulty(newId)
+      gameStore.selectDifficulty(stored.difficulty)
+      if (!route.query.subDifficulty) {
+        gameStore.selectSubDifficulty(stored.subDifficulty)
+      }
     }
     resetToReadyState()
     return

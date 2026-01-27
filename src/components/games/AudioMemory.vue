@@ -23,6 +23,7 @@ import {
   calculateGrade,
   summarizeResult,
   getSoundPool,
+  SOUND_LIBRARY,
   DIFFICULTY_CONFIGS,
   type AudioMemoryState,
   type SoundItem,
@@ -70,7 +71,7 @@ const config = computed<AudioMemoryConfig>(() => {
   )
   return {
     ...adjusted,
-    soundPoolSize: Math.min(9, adjusted.soundPoolSize),
+    soundPoolSize: Math.min(12, adjusted.soundPoolSize),
     totalRounds: baseConfig.value.totalRounds,
   }
 })
@@ -97,7 +98,7 @@ const {
   setFeedback,
   clearFeedback,
   resetGame,
-  addScore,
+  recordAnswer,
 } = useGameState({
   totalRounds: config.value.totalRounds,
 })
@@ -112,7 +113,7 @@ function finishGame() {
 }
 
 // ===== 音效 =====
-const NOTE_PROFILES = [
+const FALLBACK_NOTE_PROFILES = [
   { id: 'note-do', name: 'Do', frequency: 262, oscillatorType: 'sine', volume: 0.9 },
   { id: 'note-re', name: 'Re', frequency: 294, oscillatorType: 'triangle', volume: 0.9 },
   { id: 'note-mi', name: 'Mi', frequency: 330, oscillatorType: 'square', volume: 0.9 },
@@ -123,19 +124,34 @@ const NOTE_PROFILES = [
   { id: 'note-do2', name: 'Do+', frequency: 523, oscillatorType: 'sawtooth', volume: 0.95 },
 ] as const
 
-const NOTE_SOUND_IDS = NOTE_PROFILES.map(note => note.id)
-
-const { playCorrect, playWrong, playEnd, playCustomSound, preloadDefaultSounds, preloadSounds } = useGameAudio({
-  gameFolder: 'audio-memory',
-  volume: 0.95,
-  customSounds: NOTE_PROFILES.map(note => ({
-    id: note.id,
-    name: note.name,
-    frequency: note.frequency,
+const SOUND_IDS = SOUND_LIBRARY.map(sound => sound.id)
+const AUDIO_MEMORY_VOLUME = 0.85
+const FALLBACK_SOUND_CONFIGS = SOUND_IDS.map((id, index) => {
+  const profile = FALLBACK_NOTE_PROFILES[index % FALLBACK_NOTE_PROFILES.length]
+  return {
+    id,
+    name: id,
+    frequency: profile.frequency,
     duration: 420,
-    volume: note.volume,
-    oscillatorType: note.oscillatorType,
-  })),
+    volume: AUDIO_MEMORY_VOLUME,
+    oscillatorType: profile.oscillatorType,
+  }
+})
+
+const {
+  playCorrect,
+  playWrong,
+  playEnd,
+  playCustomSound,
+  preloadSound,
+  preloadDefaultSounds,
+  preloadSounds,
+  loadedSounds,
+  stopAll,
+} = useGameAudio({
+  gameFolder: 'audio-memory',
+  volume: AUDIO_MEMORY_VOLUME,
+  customSounds: FALLBACK_SOUND_CONFIGS,
 })
 
 // ===== 遊戲資料 =====
@@ -146,11 +162,16 @@ const gamePhase = ref<'listening' | 'input' | 'result'>('listening')
 const currentPlayingIndex = ref(-1)
 const streak = ref(0)
 const maxStreak = ref(0)
+const NOTE_DURATION_MS = 2000
+let noteStopTimer: ReturnType<typeof setTimeout> | null = null
 
 // ===== 計算屬性 =====
 const userInput = computed(() => gameState.value?.userInput || [])
 const sequence = computed(() => gameState.value?.sequence || [])
 const currentLength = computed(() => gameState.value?.currentLength || config.value.startLength)
+const soundGridClasses = computed(() =>
+  props.difficulty === 'hard' ? 'grid-cols-4 sm:grid-cols-4' : 'grid-cols-3 sm:grid-cols-4'
+)
 
 // ===== 回饋映射 =====
 const feedbackData = computed(() => {
@@ -172,10 +193,28 @@ const gameInstructions = [
 ]
 
 // ===== 音效生成 =====
-function getSoundAudioId(soundId: string): string {
-  const index = soundPool.value.findIndex(sound => sound.id === soundId)
-  const mappedIndex = index >= 0 ? index % NOTE_SOUND_IDS.length : 0
-  return NOTE_SOUND_IDS[mappedIndex] ?? NOTE_SOUND_IDS[0]!
+function stopNotePlayback(): void {
+  if (noteStopTimer) {
+    clearTimeout(noteStopTimer)
+    noteStopTimer = null
+  }
+  stopAll()
+}
+
+async function ensureSoundLoaded(soundId: string): Promise<void> {
+  if (!loadedSounds.value.has(soundId)) {
+    await preloadSound(soundId)
+  }
+}
+
+async function playNote(soundId: string): Promise<void> {
+  stopNotePlayback()
+  await ensureSoundLoaded(soundId)
+  playCustomSound(soundId, AUDIO_MEMORY_VOLUME)
+  noteStopTimer = window.setTimeout(() => {
+    stopAll()
+    noteStopTimer = null
+  }, NOTE_DURATION_MS)
 }
 
 // ===== 遊戲方法 =====
@@ -201,7 +240,7 @@ function startNewRound() {
 async function playSequence() {
   if (!gameState.value) return
   
-  const interval = config.value.interval
+  const interval = Math.max(config.value.interval, NOTE_DURATION_MS)
   
   for (let i = 0; i < sequence.value.length; i++) {
     if (phase.value === 'paused') {
@@ -212,11 +251,14 @@ async function playSequence() {
     currentPlayingIndex.value = i
     const sound = sequence.value[i]
     if (sound) {
-      playCustomSound(getSoundAudioId(sound.id))
+      await playNote(sound.id)
     }
-    await delay(interval)
+    await delay(NOTE_DURATION_MS)
     currentPlayingIndex.value = -1
-    await delay(250) // 間隔
+    const gap = interval - NOTE_DURATION_MS
+    if (gap > 0) {
+      await delay(gap)
+    }
   }
   
   // 進入輸入階段
@@ -235,7 +277,7 @@ function handleSoundClick(sound: SoundItem) {
   if (!isPlaying.value || gamePhase.value !== 'input' || !gameState.value) return
   
   // 播放選中的聲音
-  playCustomSound(getSoundAudioId(sound.id))
+  void playNote(sound.id)
   
   gameState.value = addUserInput(gameState.value, sound)
   
@@ -250,6 +292,8 @@ function checkAnswer() {
   
   gamePhase.value = 'result'
   const isCorrect = validateAnswer(gameState.value)
+  const userAnswer = gameState.value.userInput.map(sound => sound.id)
+  const correctAnswer = sequence.value.map(sound => sound.id)
   
   if (isCorrect) {
     streak.value++
@@ -258,7 +302,8 @@ function checkAnswer() {
     }
     
     const earnedScore = calculateRoundScore(currentLength.value, isCorrect, streak.value)
-    addScore(earnedScore)
+    recordAnswer(true, userAnswer, correctAnswer, earnedScore)
+    stopNotePlayback()
     playCorrect()
     setFeedback('correct', `正確！+${earnedScore}分`, earnedScore)
     
@@ -268,6 +313,8 @@ function checkAnswer() {
     }
   } else {
     streak.value = 0
+    recordAnswer(false, userAnswer, correctAnswer, 0)
+    stopNotePlayback()
     playWrong()
     setFeedback('wrong', '順序錯誤')
   }
@@ -295,6 +342,7 @@ function replaySequence() {
   if (gamePhase.value !== 'input' || !gameState.value) return
   
   gamePhase.value = 'listening'
+  stopNotePlayback()
   // 清空使用者輸入
   gameState.value = {
     ...gameState.value,
@@ -304,6 +352,7 @@ function replaySequence() {
 }
 
 function handleGameEnd() {
+  stopNotePlayback()
   playEnd()
   
   const result = summarizeResult(
@@ -321,7 +370,7 @@ function handleGameEnd() {
 // ===== 生命週期 =====
 onMounted(() => {
   preloadDefaultSounds()
-  preloadSounds(NOTE_SOUND_IDS)
+  preloadSounds(SOUND_IDS)
 })
 
 // 監聽狀態變化，節流 emit 給父層
@@ -342,6 +391,7 @@ watchEffect(() => {
 })
 
 onUnmounted(() => {
+  stopNotePlayback()
   cleanupThrottle()
   clearTimers()
 })
@@ -349,6 +399,7 @@ onUnmounted(() => {
 watch(isPaused, (paused) => {
   if (paused && phase.value === 'playing') {
     pauseGame()
+    stopNotePlayback()
     return
   }
 
@@ -361,6 +412,7 @@ watch(isPaused, (paused) => {
 watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     clearTimers()
+    stopNotePlayback()
     resetGame()
   }
 })
@@ -460,7 +512,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           </div>
 
           <!-- 聲音選擇區 -->
-          <div class="sound-grid grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3 max-w-sm sm:max-w-lg mx-auto">
+          <div class="sound-grid grid gap-2 sm:gap-3 max-w-sm sm:max-w-lg mx-auto" :class="soundGridClasses">
             <button
               v-for="sound in soundPool"
               :key="sound.id"
