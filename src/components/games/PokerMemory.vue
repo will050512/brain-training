@@ -7,6 +7,7 @@ import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useGameTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
+import { usePauseController } from '@/games/core/usePauseController'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
 import { useResponsive } from '@/composables/useResponsive'
 import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
@@ -49,10 +50,12 @@ const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
   subDifficulty?: SubDifficulty
   autoStart?: boolean
+  isPaused?: boolean
 }>(), {
   difficulty: 'easy',
   subDifficulty: 2,
   autoStart: false,
+  isPaused: false,
 })
 
 const emit = defineEmits<{
@@ -89,6 +92,8 @@ const config = computed<PokerMemoryConfig>(() => {
     props.subDifficulty ?? 2
   )
 })
+const isPaused = computed(() => props.isPaused ?? false)
+const { scheduleTimeout, clearTimers } = usePauseController(isPaused)
 
 // ===== 遊戲狀態 =====
 const {
@@ -97,6 +102,8 @@ const {
   feedback,
   showFeedback,
   isPlaying,
+  pauseGame,
+  resumeGame,
   startGame: startGameState,
   finishGame: finishGameState,
   setFeedback,
@@ -122,6 +129,8 @@ const {
   time: timeLeft,
   isWarning: timerWarning,
   start: startTimer,
+  pause: pauseTimer,
+  resume: resumeTimer,
   stop: stopTimer,
   reset: resetTimer,
 } = useGameTimer({
@@ -140,6 +149,16 @@ const moves = ref(0)
 const isPreviewing = ref(false)
 const isChecking = ref(false)
 const selectedCards = ref<number[]>([])
+const isTransitioning = ref(false)
+const transitionDelayMs = 500
+let transitionTimer: ReturnType<typeof setTimeout> | null = null
+
+function clearTransitionTimer() {
+  if (transitionTimer) {
+    clearTimeout(transitionTimer)
+    transitionTimer = null
+  }
+}
 
 // ===== 計算屬性 =====
 const gridCols = computed(() => config.value.gridCols)
@@ -176,6 +195,8 @@ function handleStart() {
   moves.value = 0
   selectedCards.value = []
   isChecking.value = false
+  isTransitioning.value = false
+  clearTransitionTimer()
   
   // 開始遊戲
   startGame()
@@ -185,18 +206,22 @@ function handleStart() {
   isPreviewing.value = true
   cards.value = flipAllCards(cards.value)
   
-  setTimeout(() => {
+  scheduleTimeout(() => {
     // 蓋上所有卡片
     cards.value = coverAllCards(cards.value)
     isPreviewing.value = false
-    
-    // 開始計時
-    startTimer()
+    isTransitioning.value = true
+    clearTransitionTimer()
+    transitionTimer = scheduleTimeout(() => {
+      isTransitioning.value = false
+      // 開始計時
+      startTimer()
+    }, transitionDelayMs)
   }, config.value.peekTime)
 }
 
 function handleCardClick(cardId: number) {
-  if (!isPlaying.value || isPreviewing.value || isChecking.value) return
+  if (!isPlaying.value || isPreviewing.value || isChecking.value || isTransitioning.value) return
   
   const card = cards.value.find(c => c.id === cardId)
   if (!card || card.isFlipped || card.isMatched) return
@@ -217,7 +242,7 @@ function handleCardClick(cardId: number) {
     
     if (card1 && card2 && checkMatch(card1, card2)) {
       // 配對成功
-      setTimeout(() => {
+      scheduleTimeout(() => {
         playMatch()
         cards.value = markAsMatched(cards.value, selectedCards.value)
         
@@ -225,7 +250,7 @@ function handleCardClick(cardId: number) {
         addScore(pairScore)
         setFeedback('correct', `配對成功！+${pairScore}`, pairScore)
         
-        setTimeout(() => {
+        scheduleTimeout(() => {
           clearFeedback()
           selectedCards.value = []
           isChecking.value = false
@@ -238,11 +263,11 @@ function handleCardClick(cardId: number) {
       }, 300)
     } else {
       // 配對失敗
-      setTimeout(() => {
+      scheduleTimeout(() => {
         playWrong()
         setFeedback('wrong')
         
-        setTimeout(() => {
+        scheduleTimeout(() => {
           cards.value = coverCards(cards.value, selectedCards.value)
           clearFeedback()
           selectedCards.value = []
@@ -259,6 +284,8 @@ function handleTimeUp() {
 
 function handleGameEnd(completed: boolean) {
   stopTimer()
+  clearTransitionTimer()
+  clearTimers()
   playEnd()
   
   // 完成獎勵
@@ -301,12 +328,30 @@ watchEffect(() => {
 
 onUnmounted(() => {
   cleanupThrottle()
+  clearTransitionTimer()
+  clearTimers()
+})
+
+watch(isPaused, (paused) => {
+  if (paused && phase.value === 'playing') {
+    pauseGame()
+    pauseTimer()
+    return
+  }
+
+  if (!paused && phase.value === 'paused') {
+    resumeGame()
+    resumeTimer()
+  }
 })
 
 // 監聽難度變化
 watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     stopTimer()
+    clearTransitionTimer()
+    clearTimers()
+    isTransitioning.value = false
     resetGame()
   }
 })
@@ -344,6 +389,12 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         class="preview-hint text-center mt-4 text-base sm:text-lg font-medium text-blue-500 px-4"
       >
         記住牌面位置...
+      </div>
+      <div
+        v-else-if="isTransitioning"
+        class="preview-hint text-center mt-4 text-base sm:text-lg font-medium text-blue-500 px-4"
+      >
+        準備開始...
       </div>
 
       <!-- 卡片網格 -->

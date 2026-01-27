@@ -6,6 +6,7 @@
 import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useGameAudio } from '@/games/core/useGameAudio'
+import { usePauseController } from '@/games/core/usePauseController'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
 import { useResponsive } from '@/composables/useResponsive'
 import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
@@ -36,10 +37,12 @@ const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
   subDifficulty?: SubDifficulty
   autoStart?: boolean
+  isPaused?: boolean
 }>(), {
   difficulty: 'easy',
   subDifficulty: 2,
   autoStart: false,
+  isPaused: false,
 })
 
 const emit = defineEmits<{
@@ -65,6 +68,8 @@ const config = computed<InstantMemoryConfig>(() => {
     props.subDifficulty ?? 2
   )
 })
+const isPaused = computed(() => props.isPaused ?? false)
+const { scheduleTimeout, pauseAwareDelay, waitForResume, clearTimers } = usePauseController(isPaused)
 
 // ===== 遊戲狀態 =====
 const {
@@ -78,6 +83,8 @@ const {
   feedback,
   showFeedback,
   isPlaying,
+  pauseGame,
+  resumeGame,
   startGame: startGameState,
   finishGame: finishGameState,
   nextRound,
@@ -109,6 +116,7 @@ const maxReached = ref(config.value.startLength)
 const showingPhase = ref<'showing' | 'input' | 'result'>('showing')
 const currentShowIndex = ref(-1)
 const startTime = ref(0)
+const inputReadyDelayMs = 400
 
 // ===== 計算屬性 =====
 const displayDigit = computed(() => {
@@ -163,6 +171,11 @@ async function showSequence() {
   const showTime = getDigitShowTime(config.value, roundState.value.sequence.length)
   
   for (let i = 0; i < roundState.value.sequence.length; i++) {
+    if (phase.value === 'paused') {
+      await waitForResume()
+    }
+    if (phase.value !== 'playing') return
+
     currentShowIndex.value = i
     await delay(showTime)
     currentShowIndex.value = -1
@@ -170,11 +183,16 @@ async function showSequence() {
   }
   
   // 進入輸入階段
+  if (phase.value === 'paused') {
+    await waitForResume()
+  }
+  if (phase.value !== 'playing') return
+  await delay(inputReadyDelayMs)
   showingPhase.value = 'input'
 }
 
 function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
+  return pauseAwareDelay(ms)
 }
 
 function handleNumberInput(digit: number) {
@@ -230,7 +248,7 @@ function checkAnswer() {
   }
   
   // 延遲後進入下一回合或結束
-  setTimeout(() => {
+  scheduleTimeout(() => {
     clearFeedback()
     
     if (currentRound.value < totalRounds - 1) {
@@ -282,11 +300,24 @@ watchEffect(() => {
 
 onUnmounted(() => {
   cleanupThrottle()
+  clearTimers()
+})
+
+watch(isPaused, (paused) => {
+  if (paused && phase.value === 'playing') {
+    pauseGame()
+    return
+  }
+
+  if (!paused && phase.value === 'paused') {
+    resumeGame()
+  }
 })
 
 // 監聽難度變化
 watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
+    clearTimers()
     resetGame()
   }
 })
@@ -365,16 +396,15 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           <!-- 數字鍵盤 -->
           <div class="number-pad grid grid-cols-3 gap-2 sm:gap-3 max-w-xs sm:max-w-sm mx-auto">
             <button
-              v-for="num in [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]"
+              v-for="num in [1, 2, 3, 4, 5, 6, 7, 8, 9]"
               :key="num"
               class="number-btn w-14 h-14 sm:w-16 sm:h-16 text-lg sm:text-2xl font-bold bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-blue-500 hover:text-white transition-colors min-h-[56px] min-w-[56px] sm:min-h-[64px] sm:min-w-[64px]"
-              :class="{ 'col-start-2': num === 0 }"
               @click="handleNumberInput(num)"
             >
               {{ num }}
             </button>
             <button
-              class="delete-btn w-14 h-14 sm:w-16 sm:h-16 text-lg sm:text-xl bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 rounded-xl hover:bg-red-500 hover:text-white transition-colors min-h-[56px] min-w-[56px] sm:min-h-[64px] sm:min-w-[64px]"
+              class="delete-btn col-span-3 w-full text-lg sm:text-xl bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 rounded-xl hover:bg-red-500 hover:text-white transition-colors min-h-[48px] sm:min-h-[56px]"
               @click="handleDelete"
             >
               ⌫

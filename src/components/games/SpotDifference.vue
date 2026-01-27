@@ -7,6 +7,7 @@ import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useRoundTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
+import { usePauseController } from '@/games/core/usePauseController'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
 import { useResponsive } from '@/composables/useResponsive'
 import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
@@ -32,10 +33,12 @@ const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
   subDifficulty?: SubDifficulty
   autoStart?: boolean
+  isPaused?: boolean
 }>(), {
   difficulty: 'easy',
   subDifficulty: 2,
   autoStart: false,
+  isPaused: false,
 })
 
 const emit = defineEmits<{
@@ -61,6 +64,8 @@ const config = computed<SpotDifferenceConfig>(() => {
     props.subDifficulty ?? 2
   )
 })
+const isPaused = computed(() => props.isPaused ?? false)
+const { scheduleTimeout, clearTimers } = usePauseController(isPaused)
 
 // ===== 遊戲狀態 =====
 const {
@@ -72,6 +77,8 @@ const {
   feedback,
   showFeedback,
   isPlaying,
+  pauseGame,
+  resumeGame,
   startGame: startGameState,
   finishGame: finishGameState,
   nextRound,
@@ -96,6 +103,8 @@ function finishGame() {
 const {
   roundTime,
   startRound,
+  pauseRound,
+  resumeRound,
   stopRound,
   resetRound,
 } = useRoundTimer({
@@ -113,7 +122,17 @@ const wrongClicks = ref(0)
 const totalFound = ref(0)
 const foundTimes = ref<number[]>([])
 const hintsUsed = ref(0)
+const isRoundReady = ref(false)
+const roundReadyDelayMs = 600
+let roundReadyTimer: ReturnType<typeof setTimeout> | null = null
 let roundStartTime = 0
+
+function clearRoundReadyTimer() {
+  if (roundReadyTimer) {
+    clearTimeout(roundReadyTimer)
+    roundReadyTimer = null
+  }
+}
 
 // ===== 計算屬性 =====
 const gridRows = computed(() => config.value.gridRows)
@@ -145,6 +164,8 @@ function handleStart() {
   totalFound.value = 0
   foundTimes.value = []
   hintsUsed.value = 0
+  isRoundReady.value = false
+  clearRoundReadyTimer()
   
   startGame()
   generateNextRound()
@@ -153,12 +174,18 @@ function handleStart() {
 function generateNextRound() {
   currentRoundData.value = generateRound(config.value)
   foundDifferences.value = []
-  roundStartTime = Date.now()
-  startRound()
+  isRoundReady.value = false
+  roundStartTime = 0
+  clearRoundReadyTimer()
+  roundReadyTimer = scheduleTimeout(() => {
+    roundStartTime = Date.now()
+    isRoundReady.value = true
+    startRound()
+  }, roundReadyDelayMs)
 }
 
 function handleCellClick(index: number) {
-  if (!isPlaying.value || !currentRoundData.value) return
+  if (!isPlaying.value || !currentRoundData.value || !isRoundReady.value) return
   
   const result = processClick(
     index,
@@ -175,7 +202,7 @@ function handleCellClick(index: number) {
     addScore(10)
     setFeedback('correct', '找到了！')
     
-    setTimeout(() => clearFeedback(), 500)
+    scheduleTimeout(() => clearFeedback(), 500)
     
     // 檢查是否完成回合
     if (isRoundComplete(foundDifferences.value.length, diffCount.value)) {
@@ -185,14 +212,15 @@ function handleCellClick(index: number) {
     wrongClicks.value++
     playWrong()
     setFeedback('wrong', '這裡沒有不同')
-    setTimeout(() => clearFeedback(), 500)
+    scheduleTimeout(() => clearFeedback(), 500)
   }
 }
 
 function handleRoundComplete() {
   stopRound()
+  isRoundReady.value = false
   
-  setTimeout(() => {
+  scheduleTimeout(() => {
     if (currentRound.value < totalRounds - 1) {
       nextRound()
       generateNextRound()
@@ -203,8 +231,9 @@ function handleRoundComplete() {
 }
 
 function handleRoundTimeout() {
+  isRoundReady.value = false
   // 超時，進入下一回合
-  setTimeout(() => {
+  scheduleTimeout(() => {
     if (currentRound.value < totalRounds - 1) {
       nextRound()
       generateNextRound()
@@ -215,7 +244,7 @@ function handleRoundTimeout() {
 }
 
 function handleUseHint() {
-  if (!isPlaying.value || !currentRoundData.value) return
+  if (!isPlaying.value || !currentRoundData.value || !isRoundReady.value) return
   if (hintsUsed.value >= config.value.maxHints) return
   
   // 找出尚未發現的不同點
@@ -228,12 +257,13 @@ function handleUseHint() {
     // 顯示提示（閃爍效果由模板處理）
     const hintIndex = unfound[0]!
     setFeedback('correct', `提示：注意位置 ${hintIndex + 1}`)
-    setTimeout(() => clearFeedback(), 2000)
+    scheduleTimeout(() => clearFeedback(), 2000)
   }
 }
 
 function handleGameEnd() {
   stopRound()
+  clearRoundReadyTimer()
   playEnd()
   
   const result = summarizeResult(
@@ -271,12 +301,30 @@ watchEffect(() => {
 
 onUnmounted(() => {
   cleanupThrottle()
+  clearRoundReadyTimer()
+  clearTimers()
+})
+
+watch(isPaused, (paused) => {
+  if (paused && phase.value === 'playing') {
+    pauseGame()
+    pauseRound()
+    return
+  }
+
+  if (!paused && phase.value === 'paused') {
+    resumeGame()
+    resumeRound()
+  }
 })
 
 // 監聽難度變化
 watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     stopRound()
+    clearRoundReadyTimer()
+    clearTimers()
+    isRoundReady.value = false
     resetGame()
   }
 })
@@ -310,12 +358,18 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         </div>
         <button
           v-if="config.maxHints > 0"
-          class="hint-btn text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-lg bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 min-h-[36px] font-medium"
+          class="hint-btn text-xs sm:text-sm px-2 sm:px-3 py-2 rounded-lg bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 min-h-[44px] font-medium"
           :disabled="hintsUsed >= config.maxHints"
           @click="handleUseHint"
         >
           💡 提示 ({{ config.maxHints - hintsUsed }})
         </button>
+      </div>
+      <div
+        v-if="!isRoundReady"
+        class="text-xs sm:text-sm text-[var(--color-text-muted)] mt-2 text-center"
+      >
+        先觀察圖片，再開始找不同
       </div>
 
       <!-- 圖片對比區域 -->
@@ -365,7 +419,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
                 'bg-green-200 dark:bg-green-800 ring-2 ring-green-500': foundDifferences.includes(index),
                 'bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900': !foundDifferences.includes(index),
               }"
-              :disabled="foundDifferences.includes(index)"
+              :disabled="!isRoundReady || foundDifferences.includes(index)"
               @click="handleCellClick(index)"
             >
               {{ emoji }}

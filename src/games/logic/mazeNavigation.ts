@@ -117,6 +117,87 @@ function generateScatterMap(size: number, density: number): CellType[] {
   return cells
 }
 
+function countWalls(cells: CellType[]): number {
+  let total = 0
+  for (const cell of cells) {
+    if (cell === 'wall') total++
+  }
+  return total
+}
+
+function carveRandomNeighbor(
+  row: number,
+  col: number,
+  size: number,
+  cells: CellType[]
+) {
+  const dirs = [
+    { r: -1, c: 0 },
+    { r: 1, c: 0 },
+    { r: 0, c: -1 },
+    { r: 0, c: 1 },
+  ]
+  dirs.sort(() => Math.random() - 0.5)
+  for (const d of dirs) {
+    const nr = row + d.r
+    const nc = col + d.c
+    if (nr <= 0 || nr >= size - 1 || nc <= 0 || nc >= size - 1) continue
+    const idx = positionToIndex(nr, nc, size)
+    if (cells[idx] === 'wall') {
+      cells[idx] = 'path'
+      break
+    }
+  }
+}
+
+function createFallbackMaze(size: number): CellType[] {
+  const cells: CellType[] = new Array(size * size).fill('wall')
+  const startRow = 1
+  const startCol = 1
+  const endRow = size - 2
+  const endCol = size - 2
+  let row = startRow
+  let col = startCol
+  const carve = (r: number, c: number) => {
+    cells[positionToIndex(r, c, size)] = 'path'
+  }
+
+  carve(row, col)
+
+  const maxSteps = size * size * 2
+  let steps = 0
+  while ((row !== endRow || col !== endCol) && steps < maxSteps) {
+    steps++
+    const canRight = col < endCol
+    const canDown = row < endRow
+    const moveRight = canRight && (!canDown || Math.random() > 0.5)
+
+    if (moveRight) {
+      col++
+    } else if (canDown) {
+      row++
+    } else if (canRight) {
+      col++
+    }
+
+    carve(row, col)
+
+    if (Math.random() < 0.25) {
+      carveRandomNeighbor(row, col, size, cells)
+    }
+  }
+
+  const extraCarves = Math.floor(size * size * 0.12)
+  for (let i = 0; i < extraCarves; i++) {
+    const idx = Math.floor(Math.random() * cells.length)
+    if (cells[idx] !== 'path') continue
+    const { row: r, col: c } = indexToPosition(idx, size)
+    carveRandomNeighbor(r, c, size, cells)
+  }
+
+  return cells
+}
+
 // ========== 生成演算法：中等 (幾何花圃) ==========
 function generateShapesMap(size: number, complexity: number): CellType[] {
   const cells: CellType[] = new Array(size * size).fill('path')
@@ -212,10 +293,13 @@ function generateMazeMap(size: number): CellType[] {
 export function generateMaze(config: MazeConfig): MazeState {
   const { size, complexity, mode } = config
   let cells: CellType[] = []
-  let startIndex = 0
-  let endIndex = 0
+  let startIndex = positionToIndex(1, 1, size)
+  let endIndex = positionToIndex(size - 2, size - 2, size)
   let isValid = false
   let attempts = 0
+  let bestCandidate: { cells: CellType[]; pathLen: number; wallCount: number } | null = null
+  const minWallRatio = mode === 'maze' ? 0.28 : 0.18
+  const minWallCount = Math.floor(size * size * minWallRatio)
 
   while (!isValid && attempts < 50) {
     attempts++
@@ -244,11 +328,18 @@ export function generateMaze(config: MazeConfig): MazeState {
     })
 
     const pathLen = getShortestPathLength(cells, size, startIndex, endIndex)
-    
+    const wallCount = countWalls(cells)
+
     if (pathLen > 0) {
-      // 確保路徑不會太短
-      if (mode === 'maze' && pathLen < size * 1.5) {
-        isValid = false
+      if (!bestCandidate || pathLen > bestCandidate.pathLen) {
+        bestCandidate = { cells: [...cells], pathLen, wallCount }
+      } else if (pathLen === bestCandidate.pathLen && wallCount > bestCandidate.wallCount) {
+        bestCandidate = { cells: [...cells], pathLen, wallCount }
+      }
+
+      if (mode === 'maze') {
+        const hasEnoughWalls = wallCount >= minWallCount
+        if (pathLen >= size * 1.5 && hasEnoughWalls) isValid = true
       } else {
         isValid = true
       }
@@ -257,11 +348,26 @@ export function generateMaze(config: MazeConfig): MazeState {
 
   // Fallback
   if (!isValid) {
-    cells = new Array(size * size).fill('path')
-    startIndex = 0
-    endIndex = size * size - 1
+    if (bestCandidate) {
+      cells = bestCandidate.cells
+    } else if (mode === 'maze') {
+      cells = createFallbackMaze(size)
+    } else if (mode === 'shapes') {
+      cells = generateShapesMap(size, complexity)
+    } else {
+      cells = generateScatterMap(size, complexity)
+    }
   }
 
+  startIndex = positionToIndex(1, 1, size)
+  endIndex = positionToIndex(size - 2, size - 2, size)
+  const protectedIndices = [
+    startIndex, startIndex + 1, startIndex + size,
+    endIndex, endIndex - 1, endIndex - size
+  ]
+  protectedIndices.forEach(idx => {
+    if (idx >= 0 && idx < cells.length) cells[idx] = 'path'
+  })
   cells[startIndex] = 'start'
   cells[endIndex] = 'end'
 
@@ -351,7 +457,7 @@ export function calculateScore(
   const efficiency = calculateEfficiency(moves, optimalMoves)
   const efficiencyScore = efficiency * 70
 
-  const standardTime = Math.max(20, optimalMoves * 2)
+  const standardTime = Math.max(25, optimalMoves * 2.5)
   const timeScore = Math.max(0, Math.min(30, (standardTime / Math.max(1, timeSpent)) * 30))
 
   const totalScore = Math.round(efficiencyScore + timeScore)

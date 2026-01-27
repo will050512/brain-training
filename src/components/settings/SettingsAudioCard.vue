@@ -18,12 +18,24 @@ const settingsStore = useSettingsStore()
           <div class="text-base font-medium text-[var(--color-text)]">遊戲音效</div>
           <SubtleLabel text="答對、答錯等互動音效" tone="muted" class="mt-0.5 block" />
         </div>
-        <button
-          class="toggle-switch flex-shrink-0"
-          :class="{ 'toggle-on': settingsStore.soundEnabled }"
-        >
-          <span class="toggle-thumb"></span>
-        </button>
+        <div class="flex items-center gap-2">
+          <span
+            class="px-2 py-0.5 rounded-full text-xs font-semibold border"
+            :class="settingsStore.soundEnabled
+              ? 'bg-[var(--color-primary-bg)] text-[var(--color-primary)] border-[var(--color-primary)]/30'
+              : 'bg-[var(--color-bg-soft)] text-[var(--color-text-muted)] border-[var(--color-border)]'"
+          >
+            {{ settingsStore.soundEnabled ? '已開啟' : '已關閉' }}
+          </span>
+          <button
+            type="button"
+            class="toggle-switch flex-shrink-0"
+            :class="{ 'toggle-on': settingsStore.soundEnabled }"
+            :aria-pressed="settingsStore.soundEnabled"
+          >
+            <span class="toggle-thumb"></span>
+          </button>
+        </div>
       </div>
 
       <div class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="settingsStore.toggleMusic()">
@@ -31,12 +43,24 @@ const settingsStore = useSettingsStore()
           <div class="text-base font-medium text-[var(--color-text)]">背景音樂</div>
           <SubtleLabel text="遊戲過程中的背景音樂" tone="muted" class="mt-0.5 block" />
         </div>
-        <button
-          class="toggle-switch flex-shrink-0"
-          :class="{ 'toggle-on': settingsStore.musicEnabled }"
-        >
-          <span class="toggle-thumb"></span>
-        </button>
+        <div class="flex items-center gap-2">
+          <span
+            class="px-2 py-0.5 rounded-full text-xs font-semibold border"
+            :class="settingsStore.musicEnabled
+              ? 'bg-[var(--color-primary-bg)] text-[var(--color-primary)] border-[var(--color-primary)]/30'
+              : 'bg-[var(--color-bg-soft)] text-[var(--color-text-muted)] border-[var(--color-border)]'"
+          >
+            {{ settingsStore.musicEnabled ? '已開啟' : '已關閉' }}
+          </span>
+          <button
+            type="button"
+            class="toggle-switch flex-shrink-0"
+            :class="{ 'toggle-on': settingsStore.musicEnabled }"
+            :aria-pressed="settingsStore.musicEnabled"
+          >
+            <span class="toggle-thumb"></span>
+          </button>
+        </div>
       </div>
 
       <div v-if="false" class="setting-item flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-soft)] transition-colors" @click="settingsStore.enableVoicePrompts = !settingsStore.enableVoicePrompts">
@@ -57,12 +81,24 @@ const settingsStore = useSettingsStore()
           <div class="text-base font-medium text-[var(--color-text)]">震動回饋</div>
           <SubtleLabel text="觸控時的輕微震動" tone="muted" class="mt-0.5 block" />
         </div>
-        <button
-          class="toggle-switch flex-shrink-0"
-          :class="{ 'toggle-on': settingsStore.enableHapticFeedback }"
-        >
-          <span class="toggle-thumb"></span>
-        </button>
+        <div class="flex items-center gap-2">
+          <span
+            class="px-2 py-0.5 rounded-full text-xs font-semibold border"
+            :class="settingsStore.enableHapticFeedback
+              ? 'bg-[var(--color-primary-bg)] text-[var(--color-primary)] border-[var(--color-primary)]/30'
+              : 'bg-[var(--color-bg-soft)] text-[var(--color-text-muted)] border-[var(--color-border)]'"
+          >
+            {{ settingsStore.enableHapticFeedback ? '已開啟' : '已關閉' }}
+          </span>
+          <button
+            type="button"
+            class="toggle-switch flex-shrink-0"
+            :class="{ 'toggle-on': settingsStore.enableHapticFeedback }"
+            :aria-pressed="settingsStore.enableHapticFeedback"
+          >
+            <span class="toggle-thumb"></span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

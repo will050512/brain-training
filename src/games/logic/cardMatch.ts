@@ -25,22 +25,22 @@ export interface CardMatchConfig {
 // 難度配置
 export const CARD_MATCH_CONFIGS: Record<'easy' | 'medium' | 'hard', CardMatchConfig> = {
   easy: {
-    pairs: 6,
-    previewTime: 3000,
-    gridCols: 3,
+    pairs: 4,
+    previewTime: 3500,
+    gridCols: 4,
     timeLimit: 0, // 無時間限制
   },
   medium: {
     pairs: 8,
-    previewTime: 2000,
+    previewTime: 2500,
     gridCols: 4,
-    timeLimit: 120,
+    timeLimit: 150,
   },
   hard: {
     pairs: 12,
-    previewTime: 1500,
+    previewTime: 2000,
     gridCols: 4,
-    timeLimit: 90,
+    timeLimit: 120,
   },
 }
 
@@ -176,7 +176,7 @@ export function calculateScore(
   const efficiencyScore = efficiency * 30
   
   // 時間獎勵
-  const expectedTime = totalPairs * 10 // 預期每對 10 秒
+  const expectedTime = totalPairs * 12 // 預期每對 12 秒（較友善）
   const timeBonus = Math.max(0, 1 - elapsedTime / expectedTime)
   const timeScore = timeBonus * 20
   

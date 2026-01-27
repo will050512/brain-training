@@ -32,7 +32,7 @@ export interface MathCalcConfig {
 // 難度配置
 export const MATH_CALC_CONFIGS: Record<'easy' | 'medium' | 'hard', MathCalcConfig> = {
   easy: {
-    timeLimit: 90,
+    timeLimit: 120,
     questionsCount: 10,
     operations: ['+', '-'],
     maxNumber: 20,
@@ -40,16 +40,16 @@ export const MATH_CALC_CONFIGS: Record<'easy' | 'medium' | 'hard', MathCalcConfi
     timeBonusFactor: 500,
   },
   medium: {
-    timeLimit: 90,
-    questionsCount: 15,
+    timeLimit: 120,
+    questionsCount: 12,
     operations: ['+', '-', '×'],
     maxNumber: 50,
     basePoints: 15,
     timeBonusFactor: 400,
   },
   hard: {
-    timeLimit: 90,
-    questionsCount: 20,
+    timeLimit: 120,
+    questionsCount: 15,
     operations: ['+', '-', '×', '÷'],
     maxNumber: 100,
     basePoints: 20,
@@ -184,7 +184,11 @@ export function calculateQuestionScore(
   
   // 時間獎勵（越快越多分）
   const maxTimeBonus = 10
-  const timeBonus = Math.max(0, Math.floor((5000 - responseTimeMs) / config.timeBonusFactor))
+  const expectedMs = Math.max(
+    4000,
+    Math.min(8000, Math.round((config.timeLimit * 1000) / Math.max(1, config.questionsCount)))
+  )
+  const timeBonus = Math.max(0, Math.floor((expectedMs - responseTimeMs) / config.timeBonusFactor))
   score += Math.min(timeBonus, maxTimeBonus)
   
   // 連擊獎勵

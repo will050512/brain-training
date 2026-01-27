@@ -307,7 +307,7 @@ function getDifficultyClass(difficulty: string): string {
     case 'easy': return 'bg-[var(--color-success-bg)] text-[var(--color-success)] border-transparent'
     case 'medium': return 'bg-[var(--color-warning-bg)] text-[var(--color-warning)] border-transparent'
     case 'hard': return 'bg-[var(--color-danger-bg)] text-[var(--color-danger)] border-transparent'
-    default: return 'bg-[var(--color-bg-soft)] text-[var(--color-text-muted)]'
+    default: return 'bg-[var(--color-bg-soft)] text-[var(--color-text-secondary)] border-[var(--color-border)]'
   }
 }
 

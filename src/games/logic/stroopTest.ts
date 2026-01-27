@@ -39,22 +39,22 @@ export interface StroopConfig {
 export const STROOP_CONFIGS: Record<'easy' | 'medium' | 'hard', StroopConfig> = {
   // easy: 固定詢問「墨水顏色」
   easy: {
-    rounds: 10,
-    timePerRound: 8,
+    rounds: 5,
+    timePerRound: 9,
     congruentChance: 0.5,
     mode: 'ink',
   },
   // medium: 固定詢問「文字意思」（反直覺挑戰）
   medium: {
-    rounds: 15,
-    timePerRound: 6,
+    rounds: 10,
+    timePerRound: 7,
     congruentChance: 0.3,
     mode: 'meaning',
   },
   // hard: 隨機切換詢問類型（mixed 模式）
   hard: {
-    rounds: 20,
-    timePerRound: 4,
+    rounds: 15,
+    timePerRound: 6,
     congruentChance: 0.2,
     mode: 'mixed',
   },
@@ -218,9 +218,9 @@ export function calculateScore(
   // 準確度佔 75%
   const accuracyScore = accuracy * 75
   
-  // 速度獎勵佔 25%（2秒內作答給予獎勵）
-  const speedBonus = avgReactionTime > 0 && avgReactionTime < 2000
-    ? Math.min(25, (2000 - avgReactionTime) / 80)
+  // 速度獎勵佔 25%（2.5秒內作答給予獎勵）
+  const speedBonus = avgReactionTime > 0 && avgReactionTime < 2500
+    ? Math.min(25, (2500 - avgReactionTime) / 100)
     : 0
   
   return Math.round(Math.min(100, accuracyScore + speedBonus))
@@ -255,6 +255,7 @@ export function calculateGrade(
 export interface StroopResult {
   score: number
   correctCount: number
+  wrongCount: number
   totalCount: number
   accuracy: number
   avgReactionTime: number
@@ -276,6 +277,7 @@ export function summarizeResult(
   incongruentCorrect: number = 0
 ): StroopResult {
   const accuracy = totalCount > 0 ? correctCount / totalCount : 0
+  const wrongCount = Math.max(0, totalCount - correctCount)
   const avgReactionTime = reactionTimes.length > 0
     ? Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length)
     : 0
@@ -287,6 +289,7 @@ export function summarizeResult(
   return {
     score,
     correctCount,
+    wrongCount,
     totalCount,
     accuracy,
     avgReactionTime,

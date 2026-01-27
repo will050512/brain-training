@@ -46,6 +46,8 @@ export interface WhackAMoleResult {
   score: number
   /** 打中的地鼠數 */
   hitMoles: number
+  /** 漏掉的地鼠數 */
+  missedMoles: number
   /** 總共出現的地鼠數 */
   totalMoles: number
   /** 打中的炸彈數 */
@@ -58,32 +60,38 @@ export interface WhackAMoleResult {
   maxCombo: number
   /** 遊戲時長（秒） */
   duration: number
+  /** 兼容統計：正確數 */
+  correctCount: number
+  /** 兼容統計：錯誤數（誤打炸彈） */
+  wrongCount: number
+  /** 兼容統計：總數 */
+  totalCount: number
 }
 
 // ==================== 難度配置 ====================
 
 export const DIFFICULTY_CONFIGS: Record<Difficulty, WhackAMoleConfig> = {
   easy: {
-    interval: 2000,
-    duration: 1500,
+    interval: 2400,
+    duration: 1800,
     holes: 3,
     bombChance: 0.1,
-    gameTime: 30,
+    gameTime: 40,
     baseScore: 10,
     bombPenalty: 20,
   },
   medium: {
-    interval: 1500,
-    duration: 1200,
+    interval: 1900,
+    duration: 1400,
     holes: 6,
     bombChance: 0.15,
-    gameTime: 45,
+    gameTime: 50,
     baseScore: 10,
     bombPenalty: 20,
   },
   hard: {
-    interval: 1000,
-    duration: 800,
+    interval: 1500,
+    duration: 1100,
     holes: 9,
     bombChance: 0.2,
     gameTime: 60,
@@ -273,9 +281,9 @@ export function calculateFinalScore(
   const accuracy = hitMoles / totalMoles
   const accuracyScore = accuracy * 60
 
-  // 反應時間 30%（300ms 為最佳基準）
+  // 反應時間 30%（450ms 為最佳基準，較友善）
   const reactionScore = avgReactionTime > 0
-    ? Math.max(0, 30 - (avgReactionTime - 300) / 50)
+    ? Math.max(0, 30 - (avgReactionTime - 450) / 70)
     : 0
 
   // 連擊獎勵 10%
@@ -307,6 +315,7 @@ export function summarizeResult(
   gameTime: number
 ): WhackAMoleResult {
   const accuracy = totalMoles > 0 ? hitMoles / totalMoles : 0
+  const missedMoles = Math.max(0, totalMoles - hitMoles)
   const avgReactionTime = reactionTimes.length > 0
     ? Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length)
     : 0
@@ -316,11 +325,15 @@ export function summarizeResult(
   return {
     score,
     hitMoles,
+    missedMoles,
     totalMoles,
     hitBombs,
     accuracy,
     avgReactionTime,
     maxCombo,
     duration: gameTime,
+    correctCount: hitMoles,
+    wrongCount: hitBombs,
+    totalCount: totalMoles,
   }
 }

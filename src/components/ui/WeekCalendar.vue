@@ -260,10 +260,11 @@ defineExpose({
 
 <style scoped>
 .week-calendar {
-  background: var(--color-bg-secondary, #ffffff);
+  background: var(--color-surface);
   border-radius: 16px;
   padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
 }
 
 .week-header {
@@ -277,19 +278,19 @@ defineExpose({
   width: 32px;
   height: 32px;
   border: none;
-  background: var(--color-bg-tertiary, #f3f4f6);
+  background: var(--color-bg-soft);
   border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-text-secondary);
   transition: all 0.2s ease;
 }
 
 .nav-btn:hover:not(:disabled) {
-  background: var(--color-bg-hover, #e5e7eb);
-  color: var(--color-text-primary, #1f2937);
+  background: var(--color-bg-muted);
+  color: var(--color-text);
 }
 
 .nav-btn:disabled {
@@ -300,7 +301,7 @@ defineExpose({
 .week-title {
   font-size: 16px;
   font-weight: 600;
-  color: var(--color-text-primary, #1f2937);
+  color: var(--color-text);
 }
 
 .week-days {
@@ -322,11 +323,11 @@ defineExpose({
 }
 
 .day-item:hover {
-  background: var(--color-bg-tertiary, #f3f4f6);
+  background: var(--color-bg-soft);
 }
 
 .day-item.is-today {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
 }
 
 .day-item.is-today .day-name,
@@ -336,8 +337,8 @@ defineExpose({
 }
 
 .day-item.is-selected:not(.is-today) {
-  background: var(--color-primary-light, #eef2ff);
-  border: 2px solid var(--color-primary, #667eea);
+  background: var(--color-primary-bg);
+  border: 2px solid var(--color-primary);
 }
 
 .day-item.is-future {
@@ -346,14 +347,14 @@ defineExpose({
 
 .day-name {
   font-size: 12px;
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-text-secondary);
   margin-bottom: 4px;
 }
 
 .day-number {
   font-size: 16px;
   font-weight: 600;
-  color: var(--color-text-primary, #1f2937);
+  color: var(--color-text);
   margin-bottom: 4px;
 }
 
@@ -371,18 +372,18 @@ defineExpose({
 }
 
 .indicator.completed {
-  background: #10b981;
+  background: var(--color-success);
   color: white;
   font-size: 10px;
   font-weight: bold;
 }
 
 .indicator.partial {
-  color: #f59e0b;
+  color: var(--color-warning);
 }
 
 .indicator.empty {
-  color: var(--color-text-muted, #d1d5db);
+  color: var(--color-text-muted);
 }
 
 .week-stats {
@@ -390,7 +391,7 @@ defineExpose({
   align-items: center;
   justify-content: center;
   padding-top: 12px;
-  border-top: 1px solid var(--color-border, #e5e7eb);
+  border-top: 1px solid var(--color-border);
 }
 
 .stat-item {
@@ -403,70 +404,19 @@ defineExpose({
 .stat-value {
   font-size: 20px;
   font-weight: 700;
-  color: var(--color-primary, #667eea);
+  color: var(--color-primary);
 }
 
 .stat-label {
   font-size: 12px;
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-text-secondary);
   margin-top: 2px;
 }
 
 .stat-divider {
   width: 1px;
   height: 32px;
-  background: var(--color-border, #e5e7eb);
-}
-
-/* 深色模式 */
-:global(.dark) .week-calendar {
-  background: #1f2937;
-}
-
-:global(.dark) .nav-btn {
-  background: #374151;
-  color: #9ca3af;
-}
-
-:global(.dark) .nav-btn:hover:not(:disabled) {
-  background: #4b5563;
-  color: #f9fafb;
-}
-
-:global(.dark) .week-title {
-  color: #f9fafb;
-}
-
-:global(.dark) .day-item:hover {
-  background: #374151;
-}
-
-:global(.dark) .day-item.is-selected:not(.is-today) {
-  background: rgba(102, 126, 234, 0.2);
-}
-
-:global(.dark) .day-name {
-  color: #9ca3af;
-}
-
-:global(.dark) .day-number {
-  color: #f9fafb;
-}
-
-:global(.dark) .indicator.empty {
-  color: #4b5563;
-}
-
-:global(.dark) .week-stats {
-  border-top-color: #374151;
-}
-
-:global(.dark) .stat-divider {
-  background: #374151;
-}
-
-:global(.dark) .stat-label {
-  color: #9ca3af;
+  background: var(--color-border);
 }
 
 /* 響應式 */

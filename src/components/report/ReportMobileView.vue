@@ -61,7 +61,7 @@
           <div class="flex-1 min-w-0">
             <div class="flex justify-between items-center mb-1.5">
               <span class="text-sm font-bold text-[var(--color-text)]">{{ dim.name }}</span>
-              <span class="text-sm font-bold font-mono" :style="{ color: dim.color }">{{ cognitiveScores[dim.id] }}</span>
+              <span class="text-sm font-bold" :style="{ color: dim.color }">{{ cognitiveScores[dim.id] }}</span>
             </div>
             <div class="h-1.5 bg-[var(--color-bg-muted)] rounded-full overflow-hidden">
               <div class="h-full rounded-full transition-all duration-1000" :style="{ width: `${cognitiveScores[dim.id]}%`, backgroundColor: dim.color }"></div>

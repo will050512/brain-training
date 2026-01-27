@@ -30,13 +30,13 @@ const emit = defineEmits<{
 <template>
   <div class="mb-6">
     <SectionTitle title="今日訓練" spacing="sm" class="px-1" />
-    <div class="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-light)] rounded-2xl p-4 sm:p-5 text-[var(--color-text-inverse)] shadow-lg relative overflow-hidden group">
+    <div class="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-light)] rounded-2xl p-4 sm:p-5 text-white shadow-lg relative overflow-hidden group">
       <div class="absolute -right-10 -top-10 w-40 h-40 bg-[var(--color-surface)]/10 rounded-full blur-3xl pointer-events-none"></div>
 
       <div class="flex items-start sm:items-center justify-between mb-4 gap-3 relative z-10">
         <div class="flex-1 min-w-0">
           <h2 class="text-xl sm:text-2xl font-bold truncate tracking-wide">每日目標</h2>
-          <p class="text-[var(--color-bg-soft)] text-sm sm:text-base mt-1 font-medium opacity-90">
+          <p class="text-white text-sm sm:text-base mt-1 font-medium opacity-90">
             每週 {{ props.weeklyTrainingGoal }} 天 · {{ props.dailyTrainingDuration }} 分鐘/天
           </p>
         </div>
@@ -64,11 +64,11 @@ const emit = defineEmits<{
             track-color="var(--color-track-on-primary)"
             :show-percentage="false"
           >
-            <div class="text-center text-[var(--color-text-inverse)]">
+            <div class="text-center text-white">
               <span class="text-4xl font-black tracking-tight">{{ props.weeklyProgress.completedDays }}</span>
               <span class="text-base opacity-80 font-medium mx-1">/</span>
               <span class="text-xl opacity-90 font-bold">{{ props.weeklyTrainingGoal }}</span>
-              <SubtleLabel text="天達標" class="block opacity-80 mt-1 font-medium text-[var(--color-text-inverse)]" />
+              <SubtleLabel text="天達標" tone="inherit" class="block opacity-80 mt-1 font-medium text-white" />
             </div>
           </CircularProgress>
         </div>
@@ -76,16 +76,16 @@ const emit = defineEmits<{
         <div class="space-y-4 flex-1 sm:flex-initial">
           <div class="flex items-center gap-4 bg-[var(--color-surface)]/10 rounded-2xl p-3 backdrop-blur-sm border border-[var(--color-surface)]/10">
             <span class="text-3xl filter drop-shadow-md">⏱️</span>
-            <div class="min-w-0 flex-1 text-[var(--color-text-inverse)]">
+            <div class="min-w-0 flex-1 text-white">
               <p class="text-2xl font-bold truncate leading-none">{{ props.weeklyProgress.totalMinutes }}</p>
-              <SubtleLabel text="本週訓練分鐘" class="opacity-80 mt-1 text-[var(--color-text-inverse)]" />
+              <SubtleLabel text="本週訓練分鐘" tone="inherit" class="opacity-80 mt-1 text-white" />
             </div>
           </div>
           <div class="flex items-center gap-4 bg-[var(--color-surface)]/10 rounded-2xl p-3 backdrop-blur-sm border border-[var(--color-surface)]/10">
             <span class="text-3xl filter drop-shadow-md">🎮</span>
-            <div class="min-w-0 flex-1 text-[var(--color-text-inverse)]">
+            <div class="min-w-0 flex-1 text-white">
               <p class="text-2xl font-bold truncate leading-none">{{ props.weeklyProgress.totalSessions }}</p>
-              <SubtleLabel text="遊戲次數" class="opacity-80 mt-1 text-[var(--color-text-inverse)]" />
+              <SubtleLabel text="遊戲次數" tone="inherit" class="opacity-80 mt-1 text-white" />
             </div>
           </div>
         </div>
@@ -93,7 +93,7 @@ const emit = defineEmits<{
 
       <router-link
         to="/daily-challenge"
-        class="block w-full py-3 mt-2 bg-[var(--color-surface)] text-[var(--color-primary)] rounded-xl font-bold text-center text-base sm:text-lg
+        class="block w-full py-3 mt-2 bg-[var(--color-surface)] text-[var(--color-primary)] dark:text-[var(--color-text)] rounded-xl font-bold text-center text-base sm:text-lg
                hover:bg-[var(--color-bg-soft)] active:scale-[0.98] transition-all shadow-md relative z-10 overflow-hidden"
       >
         <span class="relative z-10 flex items-center justify-center gap-2">

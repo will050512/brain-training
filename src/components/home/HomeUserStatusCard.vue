@@ -37,7 +37,7 @@ const emit = defineEmits<{
             @click="emit('copy-transfer-code')"
           >
             <SubtleLabel text="登入碼" size="xs" caps />
-            <span class="font-mono text-[15px] font-bold text-[var(--color-text)] tracking-[0.12em]">
+            <span class="text-[15px] font-bold text-[var(--color-text)] tracking-[0.12em]">
               {{ props.transferCodeLabel || '------' }}
             </span>
             <SubtleLabel :text="props.copiedTransferCode ? '已複製' : '點我複製'" size="xs" tone="muted" class="whitespace-nowrap" />

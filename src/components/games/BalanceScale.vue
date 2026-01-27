@@ -7,6 +7,7 @@ import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useRoundTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
+import { usePauseController } from '@/games/core/usePauseController'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
 import { useResponsive } from '@/composables/useResponsive'
 import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
@@ -40,10 +41,12 @@ const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
   subDifficulty?: SubDifficulty
   autoStart?: boolean
+  isPaused?: boolean
 }>(), {
   difficulty: 'easy',
   subDifficulty: 2,
   autoStart: false,
+  isPaused: false,
 })
 
 const emit = defineEmits<{
@@ -81,6 +84,8 @@ const config = computed<BalanceScaleConfig>(() => {
     props.subDifficulty ?? 2
   )
 })
+const isPaused = computed(() => props.isPaused ?? false)
+const { scheduleTimeout, clearTimers } = usePauseController(isPaused)
 
 // ===== 遊戲狀態 =====
 const {
@@ -94,6 +99,8 @@ const {
   feedback,
   showFeedback,
   isPlaying,
+  pauseGame,
+  resumeGame,
   startGame: startGameState,
   finishGame: finishGameState,
   nextRound,
@@ -120,6 +127,8 @@ const {
   roundTime,
   formattedRoundTime,
   startRound,
+  pauseRound,
+  resumeRound,
   stopRound,
   resetRound,
 } = useRoundTimer({
@@ -137,6 +146,16 @@ const showResult = ref(false)
 const isCorrect = ref(false)
 const reactionTimes = ref<number[]>([])
 const isAnswering = ref(false)
+const isRoundReady = ref(false)
+const roundReadyDelayMs = 500
+let roundReadyTimer: ReturnType<typeof setTimeout> | null = null
+
+function clearRoundReadyTimer() {
+  if (roundReadyTimer) {
+    clearTimeout(roundReadyTimer)
+    roundReadyTimer = null
+  }
+}
 
 // ===== 計算屬性 =====
 const armRotation = computed(() => {
@@ -172,6 +191,8 @@ const gameInstructions = [
 function handleStart() {
   reactionTimes.value = []
   isAnswering.value = false
+  isRoundReady.value = false
+  clearRoundReadyTimer()
   
   startGame()
   generateNextRound()
@@ -182,11 +203,16 @@ function generateNextRound() {
   selectedSide.value = null
   showResult.value = false
   isCorrect.value = false
-  startRound()
+  isRoundReady.value = false
+  clearRoundReadyTimer()
+  roundReadyTimer = scheduleTimeout(() => {
+    isRoundReady.value = true
+    startRound()
+  }, roundReadyDelayMs)
 }
 
 function handleSelectSide(side: 'left' | 'right') {
-  if (!isPlaying.value || showResult.value || isAnswering.value) return
+  if (!isPlaying.value || showResult.value || isAnswering.value || !isRoundReady.value) return
   if (!currentRoundData.value) return
   
   isAnswering.value = true
@@ -215,7 +241,7 @@ function handleSelectSide(side: 'left' | 'right') {
   }
   
   // 延遲後進入下一題或結束
-  setTimeout(() => {
+  scheduleTimeout(() => {
     clearFeedback()
     isAnswering.value = false
     
@@ -230,6 +256,7 @@ function handleSelectSide(side: 'left' | 'right') {
 
 function handleRoundTimeout() {
   if (!currentRoundData.value) return
+  isRoundReady.value = false
   
   // 超時視為答錯
   showResult.value = true
@@ -241,7 +268,7 @@ function handleRoundTimeout() {
   const correctLabel = currentRoundData.value.correctAnswer === 'left' ? '左邊' : '右邊'
   setFeedback('wrong', `時間到！答案是${correctLabel}`)
   
-  setTimeout(() => {
+  scheduleTimeout(() => {
     clearFeedback()
     
     if (currentRound.value < totalRounds - 1) {
@@ -255,6 +282,8 @@ function handleRoundTimeout() {
 
 function handleGameEnd() {
   stopRound()
+  clearRoundReadyTimer()
+  clearTimers()
   playEnd()
   
   const result = summarizeResult(
@@ -293,12 +322,30 @@ watchEffect(() => {
 
 onUnmounted(() => {
   cleanupThrottle()
+  clearRoundReadyTimer()
+  clearTimers()
+})
+
+watch(isPaused, (paused) => {
+  if (paused && phase.value === 'playing') {
+    pauseGame()
+    pauseRound()
+    return
+  }
+
+  if (!paused && phase.value === 'paused') {
+    resumeGame()
+    resumeRound()
+  }
 })
 
 // 監聽難度變化
 watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     stopRound()
+    clearRoundReadyTimer()
+    clearTimers()
+    isRoundReady.value = false
     resetGame()
   }
 })
@@ -327,6 +374,12 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         <div class="text-base sm:text-lg font-medium mt-2">
           哪一邊比較重？
         </div>
+        <div
+          v-if="!isRoundReady"
+          class="text-xs sm:text-sm text-[var(--color-text-muted)] mt-2"
+        >
+          請先觀察天平再選擇
+        </div>
       </div>
 
       <!-- 天平 -->
@@ -346,10 +399,10 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         >
           <!-- 左盤 -->
           <div
-            class="scale-pan left transition-all min-h-[120px] sm:min-h-[140px]"
-            :class="{
-              'cursor-pointer hover:ring-4 hover:ring-blue-300': isPlaying && !showResult,
-              'pointer-events-none': showResult || !isPlaying,
+          class="scale-pan left transition-all min-h-[120px] sm:min-h-[140px]"
+          :class="{
+              'cursor-pointer hover:ring-4 hover:ring-blue-300': isPlaying && !showResult && isRoundReady,
+              'pointer-events-none': showResult || !isPlaying || !isRoundReady,
               'ring-4 ring-green-400': showResult && currentRoundData.leftWeight > currentRoundData.rightWeight,
               'ring-4 ring-red-400': showResult && currentRoundData.leftWeight < currentRoundData.rightWeight && selectedSide === 'left'
             }"
@@ -379,10 +432,10 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
           <!-- 右盤 -->
           <div
-            class="scale-pan right transition-all min-h-[120px] sm:min-h-[140px]"
-            :class="{
-              'cursor-pointer hover:ring-4 hover:ring-blue-300': isPlaying && !showResult,
-              'pointer-events-none': showResult || !isPlaying,
+          class="scale-pan right transition-all min-h-[120px] sm:min-h-[140px]"
+          :class="{
+              'cursor-pointer hover:ring-4 hover:ring-blue-300': isPlaying && !showResult && isRoundReady,
+              'pointer-events-none': showResult || !isPlaying || !isRoundReady,
               'ring-4 ring-green-400': showResult && currentRoundData.rightWeight > currentRoundData.leftWeight,
               'ring-4 ring-red-400': showResult && currentRoundData.rightWeight < currentRoundData.leftWeight && selectedSide === 'right'
             }"

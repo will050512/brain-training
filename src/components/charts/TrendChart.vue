@@ -9,6 +9,7 @@ import type { ScoreHistory } from '@/services/scoreCalculator'
 import { COGNITIVE_DIMENSIONS, type CognitiveDimension } from '@/types/cognitive'
 import { useTheme } from '@/composables/useTheme'
 import { getChartTheme } from '@/utils/chartTheme'
+import { getAppFontFamily } from '@/utils/typography'
 
 const props = withDefaults(defineProps<{
   history: ScoreHistory[]
@@ -51,6 +52,7 @@ function updateChart(): void {
 
   // 取得當前主題配色
   const theme = chartTheme.value
+  const fontFamily = getAppFontFamily()
 
   // 如果沒有歷史數據
   if (props.history.length === 0) {
@@ -62,6 +64,7 @@ function updateChart(): void {
         textStyle: {
           color: theme.textColorSecondary,
           fontSize: 16,
+          fontFamily,
         },
       },
     })
@@ -140,12 +143,17 @@ function updateChart(): void {
   }
 
   const option: echarts.EChartsOption = {
+    textStyle: {
+      color: theme.textColor,
+      fontFamily,
+    },
     tooltip: {
       trigger: 'axis',
       backgroundColor: theme.tooltip.backgroundColor,
       borderColor: theme.tooltip.borderColor,
       textStyle: {
         color: theme.tooltip.textColor,
+        fontFamily,
       },
       axisPointer: {
         type: 'cross',
@@ -171,6 +179,7 @@ function updateChart(): void {
       textStyle: {
         fontSize: 12,
         color: theme.legend.textColor,
+        fontFamily,
       },
     },
     grid: {
@@ -187,6 +196,7 @@ function updateChart(): void {
       axisLabel: {
         fontSize: 12,
         color: theme.textColorSecondary,
+        fontFamily,
       },
       axisLine: {
         lineStyle: {
@@ -203,6 +213,7 @@ function updateChart(): void {
         formatter: '{value}',
         fontSize: 12,
         color: theme.textColorSecondary,
+        fontFamily,
       },
       axisLine: {
         lineStyle: {

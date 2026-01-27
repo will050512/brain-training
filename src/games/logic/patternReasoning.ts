@@ -87,19 +87,19 @@ export const ROTATIONS = [0, 45, 90, 135, 180, 225, 270, 315]
 export const DIFFICULTY_CONFIGS: Record<Difficulty, PatternReasoningConfig> = {
   easy: {
     totalQuestions: 8,
-    timePerQuestion: 30,
+    timePerQuestion: 35,
     patternTypes: ['sequence', 'rotation'],
     optionCount: 3,
   },
   medium: {
     totalQuestions: 10,
-    timePerQuestion: 25,
+    timePerQuestion: 30,
     patternTypes: ['sequence', 'rotation', 'transform'],
     optionCount: 4,
   },
   hard: {
     totalQuestions: 12,
-    timePerQuestion: 20,
+    timePerQuestion: 25,
     patternTypes: ['sequence', 'rotation', 'transform', 'analogy', 'progression'],
     optionCount: 5,
   },
@@ -470,8 +470,8 @@ export function calculateScore(
   avgTime: number,
   timeLimit: number
 ): number {
-  const accuracyScore = (correct / total) * 70
-  const timeBonus = Math.max(0, (timeLimit - avgTime) / timeLimit) * 30
+  const accuracyScore = (correct / total) * 80
+  const timeBonus = Math.max(0, (timeLimit - avgTime) / timeLimit) * 20
 
   return Math.round(accuracyScore + timeBonus)
 }

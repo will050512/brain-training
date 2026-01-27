@@ -19,9 +19,9 @@ export function registerAllGames(): void {
       attention: 0.2,
     },
     defaultSettings: {
-      easy: { interval: 2000, duration: 1500, holes: 6, bombChance: 0.1, gameTime: 30 },
-      medium: { interval: 1500, duration: 1200, holes: 9, bombChance: 0.15, gameTime: 45 },
-      hard: { interval: 1000, duration: 800, holes: 9, bombChance: 0.2, gameTime: 60 },
+      easy: { interval: 2400, duration: 1800, holes: 3, bombChance: 0.1, gameTime: 40 },
+      medium: { interval: 1900, duration: 1400, holes: 6, bombChance: 0.15, gameTime: 50 },
+      hard: { interval: 1500, duration: 1100, holes: 9, bombChance: 0.2, gameTime: 60 },
     },
     instructions: [
       '點擊「開始遊戲」按鈕',
@@ -45,9 +45,9 @@ export function registerAllGames(): void {
       cognition: 0.1,
     },
     defaultSettings: {
-      easy: { rounds: 8, maxItems: 4, minDiff: 2, maxDiff: 4, timePerRound: 10, showWeightHint: true, showTilt: true, tiltStrength: 3.5, maxTilt: 20 },
-      medium: { rounds: 12, maxItems: 5, minDiff: 2, maxDiff: 3, timePerRound: 8, showWeightHint: false, showTilt: true, tiltStrength: 3, maxTilt: 18 },
-      hard: { rounds: 15, maxItems: 6, minDiff: 1, maxDiff: 2, timePerRound: 6, showWeightHint: false, showTilt: true, tiltStrength: 2.5, maxTilt: 14 },
+      easy: { rounds: 8, maxItems: 4, minDiff: 2, maxDiff: 4, timePerRound: 12, showWeightHint: true, showTilt: true, tiltStrength: 3.5, maxTilt: 20 },
+      medium: { rounds: 12, maxItems: 5, minDiff: 2, maxDiff: 3, timePerRound: 10, showWeightHint: false, showTilt: true, tiltStrength: 3, maxTilt: 18 },
+      hard: { rounds: 15, maxItems: 6, minDiff: 1, maxDiff: 2, timePerRound: 8, showWeightHint: false, showTilt: true, tiltStrength: 2.5, maxTilt: 14 },
     },
     instructions: [
       '觀察天平兩側的物品',
@@ -71,9 +71,9 @@ export function registerAllGames(): void {
       attention: 0.15,
     },
     defaultSettings: {
-      easy: { pairs: 6, previewTime: 3000, gridCols: 3 },
-      medium: { pairs: 8, previewTime: 2000, gridCols: 4 },
-      hard: { pairs: 12, previewTime: 1500, gridCols: 4 },
+      easy: { pairs: 6, previewTime: 3500, gridCols: 3, timeLimit: 0 },
+      medium: { pairs: 8, previewTime: 2500, gridCols: 4, timeLimit: 150 },
+      hard: { pairs: 12, previewTime: 2000, gridCols: 4, timeLimit: 120 },
     },
     instructions: [
       '遊戲開始會短暫顯示所有卡片',
@@ -96,11 +96,11 @@ export function registerAllGames(): void {
       cognition: 0.7,
       reaction: 0.3,
     },
-    defaultSettings: {
-      easy: { rounds: 10, timePerRound: 8, congruentChance: 0.5 },
-      medium: { rounds: 15, timePerRound: 6, congruentChance: 0.3 },
-      hard: { rounds: 20, timePerRound: 4, congruentChance: 0.2 },
-    },
+      defaultSettings: {
+        easy: { rounds: 5, timePerRound: 9, congruentChance: 0.5 },
+        medium: { rounds: 10, timePerRound: 7, congruentChance: 0.3 },
+        hard: { rounds: 15, timePerRound: 6, congruentChance: 0.2 },
+      },
     instructions: [
       '螢幕會顯示一個有顏色的文字',
       '選擇文字的「顏色」，而不是文字本身',
@@ -149,9 +149,9 @@ export function registerAllGames(): void {
       cognition: 0.2,
     },
     defaultSettings: {
-      easy: { gridSize: 4, diffCount: 2, rounds: 3, timePerRound: 45, maxHints: 3 },
-      medium: { gridSize: 5, diffCount: 3, rounds: 4, timePerRound: 40, maxHints: 2 },
-      hard: { gridSize: 6, diffCount: 4, rounds: 5, timePerRound: 35, maxHints: 1 },
+      easy: { gridSize: 4, diffCount: 2, rounds: 3, timePerRound: 50, maxHints: 3 },
+      medium: { gridSize: 5, diffCount: 3, rounds: 4, timePerRound: 45, maxHints: 2 },
+      hard: { gridSize: 6, diffCount: 4, rounds: 5, timePerRound: 40, maxHints: 1 },
     },
     instructions: [
       '觀察左右兩張圖片',
@@ -176,9 +176,9 @@ export function registerAllGames(): void {
       reaction: 0.1,
     },
     defaultSettings: {
-      easy: { questionsCount: 10, timeLimit: 90, operations: ['+', '-'], maxNumber: 20 },
-      medium: { questionsCount: 15, timeLimit: 90, operations: ['+', '-', '×'], maxNumber: 50 },
-      hard: { questionsCount: 20, timeLimit: 90, operations: ['+', '-', '×', '÷'], maxNumber: 100 },
+      easy: { questionsCount: 10, timeLimit: 120, operations: ['+', '-'], maxNumber: 20 },
+      medium: { questionsCount: 12, timeLimit: 120, operations: ['+', '-', '×'], maxNumber: 50 },
+      hard: { questionsCount: 15, timeLimit: 120, operations: ['+', '-', '×', '÷'], maxNumber: 100 },
     },
     instructions: [
       '觀察數學題目',
@@ -202,9 +202,9 @@ export function registerAllGames(): void {
       attention: 0.2,
     },
     defaultSettings: {
-      easy: { startLength: 3, maxLength: 6, showTime: 2000, rounds: 8 },
-      medium: { startLength: 4, maxLength: 8, showTime: 1500, rounds: 10 },
-      hard: { startLength: 5, maxLength: 10, showTime: 1000, rounds: 12 },
+      easy: { startLength: 3, maxLength: 6, showTime: 2400, rounds: 8 },
+      medium: { startLength: 4, maxLength: 8, showTime: 2000, rounds: 10 },
+      hard: { startLength: 5, maxLength: 10, showTime: 1600, rounds: 12 },
     },
     instructions: [
       '觀察螢幕上閃現的數字',
@@ -228,9 +228,9 @@ export function registerAllGames(): void {
       attention: 0.3,
     },
     defaultSettings: {
-      easy: { pairs: 6, gridCols: 4, timeLimit: 120, peekTime: 3000 },
-      medium: { pairs: 8, gridCols: 4, timeLimit: 120, peekTime: 2000 },
-      hard: { pairs: 12, gridCols: 6, timeLimit: 120, peekTime: 1500 },
+      easy: { pairs: 6, gridCols: 4, timeLimit: 120, peekTime: 3500 },
+      medium: { pairs: 8, gridCols: 4, timeLimit: 120, peekTime: 2500 },
+      hard: { pairs: 12, gridCols: 6, timeLimit: 120, peekTime: 2000 },
     },
     instructions: [
       '開始會短暫顯示所有牌面',
@@ -255,9 +255,9 @@ export function registerAllGames(): void {
       attention: 0.1,
     },
     defaultSettings: {
-      easy: { rounds: 10, timePerRound: 5, reverseChance: 0 },
-      medium: { rounds: 15, timePerRound: 4, reverseChance: 0.3 },
-      hard: { rounds: 20, timePerRound: 3, reverseChance: 0.5 },
+      easy: { rounds: 10, timePerRound: 6, reverseChance: 0 },
+      medium: { rounds: 12, timePerRound: 5, reverseChance: 0.25 },
+      hard: { rounds: 15, timePerRound: 4, reverseChance: 0.4 },
     },
     instructions: [
       '電腦出拳後快速選擇你的手勢',
@@ -281,9 +281,9 @@ export function registerAllGames(): void {
       coordination: 0.4,
     },
     defaultSettings: {
-      easy: { startLength: 2, maxLength: 4, showTime: 1500, gesturePool: 6, totalRounds: 8 },
-      medium: { startLength: 3, maxLength: 6, showTime: 1200, gesturePool: 8, totalRounds: 10 },
-      hard: { startLength: 4, maxLength: 8, showTime: 900, gesturePool: 12, totalRounds: 12 },
+      easy: { startLength: 2, maxLength: 4, showTime: 1800, gesturePool: 6, totalRounds: 8 },
+      medium: { startLength: 3, maxLength: 6, showTime: 1500, gesturePool: 8, totalRounds: 10 },
+      hard: { startLength: 4, maxLength: 8, showTime: 1200, gesturePool: 9, totalRounds: 12 },
     },
     instructions: [
       '觀察依序出現的手勢圖案',
@@ -307,9 +307,9 @@ export function registerAllGames(): void {
       cognition: 0.4,
     },
     defaultSettings: {
-      easy: { count: 10, timeLimit: 60, nodeSize: 50, spacing: 80 },
-      medium: { count: 15, timeLimit: 90, nodeSize: 45, spacing: 70 },
-      hard: { count: 25, timeLimit: 120, nodeSize: 40, spacing: 55 },
+      easy: { count: 6, timeLimit: 60, nodeSize: 56, spacing: 90 },
+      medium: { count: 8, timeLimit: 80, nodeSize: 52, spacing: 80 },
+      hard: { count: 9, timeLimit: 90, nodeSize: 48, spacing: 72 },
     },
     instructions: [
       '畫面上散佈著數字',
@@ -333,9 +333,9 @@ export function registerAllGames(): void {
       cognition: 0.4,
     },
     defaultSettings: {
-      easy: { sequenceLength: 3, optionCount: 3, totalRounds: 8, timePerRound: 30, complexity: 1 },
-      medium: { sequenceLength: 4, optionCount: 4, totalRounds: 10, timePerRound: 25, complexity: 2 },
-      hard: { sequenceLength: 5, optionCount: 4, totalRounds: 12, timePerRound: 20, complexity: 3 },
+      easy: { sequenceLength: 3, optionCount: 3, totalRounds: 8, timePerRound: 35, complexity: 1 },
+      medium: { sequenceLength: 4, optionCount: 4, totalRounds: 10, timePerRound: 30, complexity: 2 },
+      hard: { sequenceLength: 5, optionCount: 4, totalRounds: 12, timePerRound: 25, complexity: 3 },
     },
     instructions: [
       '觀察圖形序列的變化規律',
@@ -358,11 +358,11 @@ export function registerAllGames(): void {
       memory: 0.6,
       attention: 0.4,
     },
-    defaultSettings: {
-      easy: { startLength: 2, maxLength: 5, soundPool: 4, totalRounds: 8, playbackSpeed: 800 },
-      medium: { startLength: 3, maxLength: 7, soundPool: 6, totalRounds: 10, playbackSpeed: 600 },
-      hard: { startLength: 4, maxLength: 9, soundPool: 8, totalRounds: 12, playbackSpeed: 500 },
-    },
+      defaultSettings: {
+        easy: { startLength: 2, maxLength: 4, soundPool: 6, totalRounds: 5, playbackSpeed: 1700 },
+        medium: { startLength: 3, maxLength: 6, soundPool: 8, totalRounds: 8, playbackSpeed: 1400 },
+        hard: { startLength: 4, maxLength: 8, soundPool: 9, totalRounds: 10, playbackSpeed: 1100 },
+      },
     instructions: [
       '仔細聆聽播放的音符序列',
       '記住音符出現的順序',
@@ -385,9 +385,9 @@ export function registerAllGames(): void {
       reaction: 0.4,
     },
     defaultSettings: {
-      easy: { startBeats: 3, maxBeats: 6, tempo: 800, tolerance: 300, totalRounds: 8 },
-      medium: { startBeats: 4, maxBeats: 8, tempo: 600, tolerance: 200, totalRounds: 10 },
-      hard: { startBeats: 5, maxBeats: 10, tempo: 450, tolerance: 150, totalRounds: 12 },
+      easy: { startBeats: 3, maxBeats: 6, tempo: 900, tolerance: 320, totalRounds: 8 },
+      medium: { startBeats: 4, maxBeats: 8, tempo: 700, tolerance: 240, totalRounds: 10 },
+      hard: { startBeats: 5, maxBeats: 10, tempo: 550, tolerance: 180, totalRounds: 12 },
     },
     instructions: [
       '觀察示範的節奏模式',

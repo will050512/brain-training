@@ -74,20 +74,20 @@ export const GESTURE_LIST: Gesture[] = ['rock', 'paper', 'scissors']
 export const DIFFICULTY_CONFIGS: Record<Difficulty, RockPaperScissorsConfig> = {
   easy: {
     rounds: 10,
-    timePerRound: 5,
+    timePerRound: 6,
     reverseChance: 0,
     points: 10,
   },
   medium: {
-    rounds: 15,
-    timePerRound: 4,
-    reverseChance: 0.3,
+    rounds: 12,
+    timePerRound: 5,
+    reverseChance: 0.25,
     points: 15,
   },
   hard: {
-    rounds: 20,
-    timePerRound: 3,
-    reverseChance: 0.5,
+    rounds: 15,
+    timePerRound: 4,
+    reverseChance: 0.4,
     points: 20,
   },
 }
@@ -194,8 +194,9 @@ export function calculateRoundScore(
   responseTime: number
 ): number {
   if (result === 'win') {
-    const timeBonus = Math.floor((config.timePerRound * 1000 - responseTime) / 200)
-    return config.points + Math.max(0, timeBonus)
+    const rawBonus = Math.floor((config.timePerRound * 1000 - responseTime) / 250)
+    const timeBonus = Math.max(0, Math.min(12, rawBonus))
+    return config.points + timeBonus
   }
   if (result === 'tie') {
     return Math.floor(config.points / 2)
@@ -207,7 +208,7 @@ export function calculateRoundScore(
  * 計算最大可能分數
  */
 export function calculateMaxScore(config: RockPaperScissorsConfig): number {
-  return config.rounds * (config.points + 15)
+  return config.rounds * (config.points + 12)
 }
 
 /**

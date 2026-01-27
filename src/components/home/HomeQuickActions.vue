@@ -19,7 +19,7 @@ const props = defineProps<Props>()
           <BaseButton
             size="lg"
             full-width
-            class="shadow-md h-14 text-base rounded-2xl border-0"
+            class="shadow-md h-14 text-base rounded-2xl border-0 !text-white"
             @click="navigate"
           >
             <span class="text-2xl mr-3">🎮</span>

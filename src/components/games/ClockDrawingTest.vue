@@ -124,6 +124,7 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import type { ClockDrawingResult } from '@/services/miniCogService'
 import { calculateClockDrawingScore } from '@/services/miniCogService'
 import { getRandomClockTime, getTimeDescription } from '@/services/clockDrawingAnalyzer'
+import { getAppFontFamily } from '@/utils/typography'
 import clockFaceImg from '@/assets/images/clock-drawing/clock-face.svg'
 
 const clockFaceImgUrl = `url(${clockFaceImg})`
@@ -569,6 +570,7 @@ function generateAssemblePreview() {
   canvas.height = size
   const ctx = canvas.getContext('2d')
   if (!ctx) return
+  const fontFamily = getAppFontFamily()
   
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, size, size)
@@ -579,7 +581,7 @@ function generateAssemblePreview() {
   ctx.lineWidth = 3
   ctx.stroke()
   
-  ctx.font = 'bold 20px sans-serif'
+  ctx.font = `bold 20px ${fontFamily}`
   ctx.fillStyle = '#1f2937'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'

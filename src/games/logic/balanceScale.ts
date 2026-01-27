@@ -46,6 +46,8 @@ export interface BalanceScaleResult {
   score: number
   /** 正確次數 */
   correctCount: number
+  /** 錯誤次數 */
+  wrongCount: number
   /** 總回合數 */
   totalRounds: number
   /** 準確率 */
@@ -54,6 +56,8 @@ export interface BalanceScaleResult {
   avgReactionTime: number
   /** 遊戲時長（秒） */
   duration: number
+  /** 兼容統計：總數 */
+  totalCount: number
 }
 
 // ==================== 常數配置 ====================
@@ -77,22 +81,22 @@ export const WEIGHT_ITEMS: WeightItem[] = [
 
 export const DIFFICULTY_CONFIGS: Record<Difficulty, BalanceScaleConfig> = {
   easy: {
-    rounds: 8,
+    rounds: 5,
     maxItems: 4,
     minDiff: 2,
     maxDiff: 4,
-    timePerRound: 10,
+    timePerRound: 12,
     showWeightHint: true,
     showTilt: true,
     tiltStrength: 3.5,
     maxTilt: 20,
   },
   medium: {
-    rounds: 12,
+    rounds: 10,
     maxItems: 5,
     minDiff: 2,
     maxDiff: 3,
-    timePerRound: 8,
+    timePerRound: 10,
     showWeightHint: false,
     showTilt: true,
     tiltStrength: 3,
@@ -103,7 +107,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, BalanceScaleConfig> = {
     maxItems: 6,
     minDiff: 1,
     maxDiff: 2,
-    timePerRound: 6,
+    timePerRound: 8,
     showWeightHint: false,
     showTilt: true,
     tiltStrength: 2.5,
@@ -320,12 +324,12 @@ export function calculateScore(
 
   const accuracy = correctCount / totalRounds
   
-  // 正確率佔 80%
-  const accuracyScore = accuracy * 80
+  // 正確率佔 85%
+  const accuracyScore = accuracy * 85
   
-  // 速度獎勵佔 20%（3 秒內反應得滿分）
-  const speedBonus = avgReactionTime > 0 && avgReactionTime < 3000
-    ? Math.min(20, (3000 - avgReactionTime) / 150)
+  // 速度獎勵佔 15%（4 秒內反應得滿分）
+  const speedBonus = avgReactionTime > 0 && avgReactionTime < 4000
+    ? Math.min(15, (4000 - avgReactionTime) / 200)
     : 0
 
   return Math.round(Math.min(100, accuracyScore + speedBonus))
@@ -352,6 +356,7 @@ export function summarizeResult(
   config: BalanceScaleConfig
 ): BalanceScaleResult {
   const accuracy = totalRounds > 0 ? correctCount / totalRounds : 0
+  const wrongCount = Math.max(0, totalRounds - correctCount)
   const avgReactionTime = reactionTimes.length > 0
     ? Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length)
     : 0
@@ -361,9 +366,11 @@ export function summarizeResult(
   return {
     score,
     correctCount,
+    wrongCount,
     totalRounds,
     accuracy,
     avgReactionTime,
     duration: totalRounds * config.timePerRound,
+    totalCount: totalRounds,
   }
 }

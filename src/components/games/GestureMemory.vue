@@ -6,6 +6,7 @@
 import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useGameAudio } from '@/games/core/useGameAudio'
+import { usePauseController } from '@/games/core/usePauseController'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
 import { useResponsive } from '@/composables/useResponsive'
 import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
@@ -36,10 +37,12 @@ const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
   subDifficulty?: SubDifficulty
   autoStart?: boolean
+  isPaused?: boolean
 }>(), {
   difficulty: 'easy',
   subDifficulty: 2,
   autoStart: false,
+  isPaused: false,
 })
 
 const emit = defineEmits<{
@@ -65,6 +68,8 @@ const config = computed<GestureMemoryConfig>(() => {
     props.subDifficulty ?? 2
   )
 })
+const isPaused = computed(() => props.isPaused ?? false)
+const { scheduleTimeout, pauseAwareDelay, waitForResume, clearTimers } = usePauseController(isPaused)
 
 // ===== 遊戲狀態 =====
 const {
@@ -78,6 +83,8 @@ const {
   feedback,
   showFeedback,
   isPlaying,
+  pauseGame,
+  resumeGame,
   startGame: startGameState,
   finishGame: finishGameState,
   nextRound,
@@ -169,19 +176,28 @@ async function showSequence() {
   const showTime = config.value.showTime
   
   for (let i = 0; i < roundState.value.sequence.length; i++) {
+    if (phase.value === 'paused') {
+      await waitForResume()
+    }
+    if (phase.value !== 'playing') return
+
     currentShowIndex.value = i
     await delay(showTime)
     currentShowIndex.value = -1
-    await delay(300) // 間隔
+    await delay(350) // 間隔
   }
   
   // 進入輸入階段
+  if (phase.value === 'paused') {
+    await waitForResume()
+  }
+  if (phase.value !== 'playing') return
   showingPhase.value = 'input'
   roundStartTime = Date.now()
 }
 
 function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
+  return pauseAwareDelay(ms)
 }
 
 function handleGestureClick(gesture: Gesture) {
@@ -231,7 +247,7 @@ function checkAnswer() {
   }
   
   // 延遲後進入下一回合或結束
-  setTimeout(() => {
+  scheduleTimeout(() => {
     clearFeedback()
     
     if (currentRound.value < totalRounds - 1) {
@@ -245,7 +261,7 @@ function checkAnswer() {
     } else {
       handleGameEnd()
     }
-  }, 1500)
+  }, 1700)
 }
 
 function handleGameEnd() {
@@ -288,11 +304,24 @@ watchEffect(() => {
 
 onUnmounted(() => {
   cleanupThrottle()
+  clearTimers()
+})
+
+watch(isPaused, (paused) => {
+  if (paused && phase.value === 'playing') {
+    pauseGame()
+    return
+  }
+
+  if (!paused && phase.value === 'paused') {
+    resumeGame()
+  }
 })
 
 // 監聽難度變化
 watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
+    clearTimers()
     resetGame()
   }
 })

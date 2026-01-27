@@ -22,7 +22,7 @@
     />
 
     <div
-      class="game-play-area flex-1 min-h-0 content-max w-full"
+      class="game-play-area flex-1 min-h-0 content-max w-full px-3 sm:px-6"
       :class="{ 'pt-20': isMobile && gameState === 'playing' }"
       @mousedown="handlePlayAreaInteraction"
       @touchstart="handlePlayAreaInteraction"
@@ -37,45 +37,53 @@
         :onBack="goBackToList"
       />
 
-      <GamePlayingArea
-        v-else-if="gameState === 'playing'"
-        :gameComponent="gameComponent"
-        :gameComponentKey="gameComponentKey"
-        :difficulty="gameStore.currentDifficulty"
-        :subDifficulty="gameStore.currentSubDifficulty"
-        :settings="difficultySettings"
-        :autoStart="shouldAutoStart"
-        :onScoreChange="handleScoreChange"
-        :onGameStart="handleGameStart"
-        :onGameEnd="handleGameEnd"
-        :onStatusUpdate="handleStatusUpdate"
-      />
+      <div v-else class="relative w-full h-full min-h-0">
+        <GamePlayingArea
+          v-if="gameState === 'playing' || gameState === 'paused'"
+          :gameComponent="gameComponent"
+          :gameComponentKey="gameComponentKey"
+          :difficulty="gameStore.currentDifficulty"
+          :subDifficulty="gameStore.currentSubDifficulty"
+          :settings="difficultySettings"
+          :autoStart="shouldAutoStart"
+          :isPaused="gameState === 'paused'"
+          :onScoreChange="handleScoreChange"
+          :onGameStart="handleGameStart"
+          :onGameEnd="handleGameEnd"
+          :onStatusUpdate="handleStatusUpdate"
+        />
 
-      <GamePausedScreen v-else-if="gameState === 'paused'" :onResume="resumeGame" :onQuit="quitGame" />
+        <div
+          v-if="gameState === 'paused'"
+          class="absolute inset-0 z-20"
+        >
+          <GamePausedScreen :onResume="resumeGame" :onQuit="quitGame" />
+        </div>
 
-      <GameResultScreen
-        v-else-if="gameState === 'finished'"
-        :currentScore="currentScore"
-        :unifiedGameResult="unifiedGameResult"
-        :gameResult="gameResult"
-        :bestScore="bestScore"
-        :difficultyAdjustment="difficultyAdjustment"
-        :difficultyFeedbackStyle="difficultyFeedbackStyle"
-        :difficultyReasonText="difficultyReasonText"
-        :recommendedGames="recommendedGames"
-        :isFromDailyTraining="isFromDailyTraining"
-        :nextTrainingAvailable="!!gameStore.getNextTrainingGame()"
-        :dailyQueueCount="gameStore.dailyTrainingQueue.length"
-        :trainingIndex="gameStore.currentTrainingIndex"
-        :formatTime="formatTime"
-        :getFinalEmoji="getFinalEmoji"
-        :getScoreClass="getScoreClass"
-        :getFullDifficultyLabel="getFullDifficultyLabel"
-        :getGameDimensionLabel="getGameDimensionLabel"
-        :onStartRecommendedGame="startRecommendedGame"
-        :onPlayAgain="playAgain"
-        :onContinueToNextGame="continueToNextGame"
-      />
+        <GameResultScreen
+          v-if="gameState === 'finished'"
+          :currentScore="currentScore"
+          :unifiedGameResult="unifiedGameResult"
+          :gameResult="gameResult"
+          :bestScore="bestScore"
+          :difficultyAdjustment="difficultyAdjustment"
+          :difficultyFeedbackStyle="difficultyFeedbackStyle"
+          :difficultyReasonText="difficultyReasonText"
+          :recommendedGames="recommendedGames"
+          :isFromDailyTraining="isFromDailyTraining"
+          :nextTrainingAvailable="!!gameStore.getNextTrainingGame()"
+          :dailyQueueCount="gameStore.dailyTrainingQueue.length"
+          :trainingIndex="gameStore.currentTrainingIndex"
+          :formatTime="formatTime"
+          :getFinalEmoji="getFinalEmoji"
+          :getScoreClass="getScoreClass"
+          :getFullDifficultyLabel="getFullDifficultyLabel"
+          :getGameDimensionLabel="getGameDimensionLabel"
+          :onStartRecommendedGame="startRecommendedGame"
+          :onPlayAgain="playAgain"
+          :onContinueToNextGame="continueToNextGame"
+        />
+      </div>
     </div>
 
     <TrainingCompleteModal
@@ -446,6 +454,10 @@ function quitGame(): void {
   finalizeBehaviorLogs().catch(() => {
     // ignore
   })
+  if (window.history.length > 1) {
+    router.back()
+    return
+  }
   router.push(isFromDailyTraining.value ? '/daily-challenge' : '/games')
 }
 
@@ -702,6 +714,10 @@ function handleBack(): void {
   if (gameState.value === 'playing') {
     pauseGame()
   } else {
+    if (window.history.length > 1) {
+      router.back()
+      return
+    }
     router.push(isFromDailyTraining.value ? '/daily-challenge' : '/games')
   }
 }

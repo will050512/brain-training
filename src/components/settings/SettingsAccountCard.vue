@@ -41,10 +41,10 @@ const props = defineProps<Props>()
 
     <BaseButton
       type="button"
-      variant="outline"
+      variant="primary"
       size="md"
       full-width
-      class="py-2.5 text-sm font-medium border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-bg-muted)]"
+      class="py-2.5 text-sm font-medium"
       @click="props.onLogout"
     >
       登出 / 切換帳號

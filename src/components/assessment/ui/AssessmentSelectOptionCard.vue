@@ -46,7 +46,7 @@ const metaClasses = computed(() => {
   if (props.metaVariant === 'primary') {
     return 'bg-[var(--color-primary-bg)] text-[var(--color-primary)]'
   }
-  return 'bg-[var(--color-bg-muted)] text-[var(--color-text-muted)]'
+  return 'bg-[var(--color-bg-muted)] text-[var(--color-text-secondary)]'
 })
 </script>
 
@@ -65,7 +65,7 @@ const metaClasses = computed(() => {
         <h3 class="text-lg font-bold text-[var(--color-text)] leading-tight mb-1">{{ title }}</h3>
         <div class="flex items-center gap-1.5 mt-2">
           <span :class="['px-2 py-1 rounded text-sm', metaClasses]">
-            <SubtleLabel :text="metaLabel" />
+            <SubtleLabel :text="metaLabel" tone="inherit" />
           </span>
         </div>
       </div>

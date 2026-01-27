@@ -150,7 +150,7 @@ describe('猜拳遊戲邏輯', () => {
     it('應計算最大可能分數', () => {
       const config = DIFFICULTY_CONFIGS.easy
       const max = calculateMaxScore(config)
-      expect(max).toBe(config.rounds * (config.points + 15))
+      expect(max).toBe(config.rounds * (config.points + 12))
     })
   })
 

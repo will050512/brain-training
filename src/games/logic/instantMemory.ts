@@ -54,21 +54,21 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, InstantMemoryConfig> = {
   easy: {
     startLength: 3,
     maxLength: 6,
-    showTime: 2000,
+    showTime: 2400,
     rounds: 8,
     points: 15,
   },
   medium: {
     startLength: 4,
     maxLength: 8,
-    showTime: 1500,
+    showTime: 2000,
     rounds: 10,
     points: 20,
   },
   hard: {
     startLength: 5,
     maxLength: 10,
-    showTime: 1000,
+    showTime: 1600,
     rounds: 12,
     points: 25,
   },
@@ -77,12 +77,12 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, InstantMemoryConfig> = {
 // ==================== 工具函數 ====================
 
 /**
- * 產生指定長度的數字序列
+ * 產生指定長度的數字序列（1-9）
  */
 export function generateSequence(length: number): number[] {
   const sequence: number[] = []
   for (let i = 0; i < length; i++) {
-    sequence.push(Math.floor(Math.random() * 10))
+    sequence.push(Math.floor(Math.random() * 9) + 1)
   }
   return sequence
 }

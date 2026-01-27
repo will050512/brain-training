@@ -7,6 +7,7 @@ import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useRoundTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
+import { usePauseController } from '@/games/core/usePauseController'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
 import { useResponsive } from '@/composables/useResponsive'
 import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
@@ -34,19 +35,17 @@ import {
 import GameReadyScreen from './ui/GameReadyScreen.vue'
 import GameFeedback from './ui/GameFeedback.vue'
 
-import rockImg from '@/assets/images/rock-paper-scissors/rock.svg'
-import paperImg from '@/assets/images/rock-paper-scissors/paper.svg'
-import scissorsImg from '@/assets/images/rock-paper-scissors/scissors.svg'
-
 // ===== Props & Emits =====
 const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
   subDifficulty?: SubDifficulty
   autoStart?: boolean
+  isPaused?: boolean
 }>(), {
   difficulty: 'easy',
   subDifficulty: 2,
   autoStart: false,
+  isPaused: false,
 })
 
 const emit = defineEmits<{
@@ -64,17 +63,6 @@ const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
 )
 const { isSmallLandscape } = useResponsive()
 
-const gestureImages: Record<string, string> = {
-  rock: rockImg,
-  paper: paperImg,
-  scissors: scissorsImg,
-}
-
-function getGestureImage(gestureId?: string | null): string | null {
-  if (!gestureId) return null
-  return gestureImages[gestureId] ?? null
-}
-
 // ===== 遊戲配置 =====
 const baseConfig = computed<RockPaperScissorsConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
 const config = computed<RockPaperScissorsConfig>(() => {
@@ -83,6 +71,8 @@ const config = computed<RockPaperScissorsConfig>(() => {
     props.subDifficulty ?? 2
   )
 })
+const isPaused = computed(() => props.isPaused ?? false)
+const { scheduleTimeout, clearTimers } = usePauseController(isPaused)
 
 // ===== 遊戲狀態 =====
 const {
@@ -94,6 +84,8 @@ const {
   feedback,
   showFeedback,
   isPlaying,
+  pauseGame,
+  resumeGame,
   startGame: startGameState,
   finishGame: finishGameState,
   nextRound,
@@ -118,6 +110,8 @@ function finishGame() {
 const {
   roundTime,
   startRound,
+  pauseRound,
+  resumeRound,
   stopRound,
 } = useRoundTimer({
   timePerRound: config.value.timePerRound,
@@ -201,7 +195,7 @@ function handleSelectGesture(gesture: Gesture) {
   }
   
   // 延遲後進入下一回合
-  setTimeout(() => {
+  scheduleTimeout(() => {
     clearFeedback()
     
     if (currentRound.value < totalRounds - 1) {
@@ -210,7 +204,7 @@ function handleSelectGesture(gesture: Gesture) {
     } else {
       handleGameEnd()
     }
-  }, 1200)
+  }, 1400)
 }
 
 function handleRoundTimeout() {
@@ -224,7 +218,7 @@ function handleRoundTimeout() {
   playWrong()
   setFeedback('wrong', '時間到！')
   
-  setTimeout(() => {
+  scheduleTimeout(() => {
     clearFeedback()
     
     if (currentRound.value < totalRounds - 1) {
@@ -233,11 +227,12 @@ function handleRoundTimeout() {
     } else {
       handleGameEnd()
     }
-  }, 1000)
+  }, 1200)
 }
 
 function handleGameEnd() {
   stopRound()
+  clearTimers()
   playEnd()
   
   const result = summarizeResult(score.value, allRounds.value, config.value)
@@ -268,12 +263,27 @@ watchEffect(() => {
 
 onUnmounted(() => {
   cleanupThrottle()
+  clearTimers()
+})
+
+watch(isPaused, (paused) => {
+  if (paused && phase.value === 'playing') {
+    pauseGame()
+    pauseRound()
+    return
+  }
+
+  if (!paused && phase.value === 'paused') {
+    resumeGame()
+    resumeRound()
+  }
 })
 
 // 監聽難度變化
 watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     stopRound()
+    clearTimers()
     resetGame()
   }
 })
@@ -314,16 +324,9 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         </div>
       </div>      <!-- 電腦出拳 -->
       <div class="computer-gesture game-panel mt-6 text-center px-4 py-4">
-        <div class="text-sm text-[var(--color-text-muted)] mb-2">電腦出：</div>
-        <div class="gesture-display text-8xl">
-          <img
-            v-if="getGestureImage(computerGesture)"
-            class="gesture-img"
-            :src="getGestureImage(computerGesture)!"
-            alt=""
-            aria-hidden="true"
-          />
-          <span v-else>{{ computerGesture ? GESTURES[computerGesture].emoji : '?' }}</span>
+      <div class="text-sm text-[var(--color-text-muted)] mb-2">電腦出：</div>
+        <div class="gesture-display text-8xl leading-none">
+          <span>{{ computerGesture ? GESTURES[computerGesture].emoji : '?' }}</span>
         </div>
         <div class="gesture-name text-lg font-medium mt-2">
           {{ computerGesture ? GESTURES[computerGesture].name : '' }}
@@ -335,16 +338,9 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         v-if="showResult && currentRoundResult"
         class="result-display game-panel mt-6 text-center px-4 py-4"
       >
-                <div class="player-choice text-4xl mb-2">
+                <div class="player-choice text-4xl mb-2 leading-none">
           你選：
-          <img
-            v-if="getGestureImage(currentRoundResult.playerGesture)"
-            class="gesture-img inline"
-            :src="getGestureImage(currentRoundResult.playerGesture)!"
-            alt=""
-            aria-hidden="true"
-          />
-          <span v-else>{{ currentRoundResult.playerGesture ? GESTURES[currentRoundResult.playerGesture].emoji : '?' }}</span>
+          <span>{{ currentRoundResult.playerGesture ? GESTURES[currentRoundResult.playerGesture].emoji : '?' }}</span>
         </div>
         <div 
           class="result-text text-xl font-bold"
@@ -365,14 +361,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           class="gesture-btn min-w-[80px] w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-primary)] hover:text-[var(--color-text-inverse)] transition-all transform hover:scale-105 active:scale-95 flex flex-col items-center justify-center gap-1 p-2 shadow-sm"
           @click="handleSelectGesture(gesture)"
         >
-                    <img
-            v-if="getGestureImage(gesture)"
-            class="gesture-btn-img"
-            :src="getGestureImage(gesture)!"
-            alt=""
-            aria-hidden="true"
-          />
-          <div v-else class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl">{{ GESTURES[gesture].emoji }}</div>
+          <div class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-none">{{ GESTURES[gesture].emoji }}</div>
           <div class="text-xs sm:text-sm font-medium leading-tight">{{ GESTURES[gesture].name }}</div>
         </button>
       </div>
@@ -397,26 +386,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   justify-content: center;
 }
 
-.gesture-img {
-  width: clamp(80px, 24vw, 140px);
-  height: clamp(80px, 24vw, 140px);
-}
-
-.gesture-img.inline {
-  display: inline-block;
-  vertical-align: middle;
-}
-
-.gesture-btn-img {
-  width: 60%;
-  height: 60%;
-  object-fit: contain;
-}
-
 .gesture-btn:active {
   transform: scale(0.9);
 }
 </style>
-
-
-

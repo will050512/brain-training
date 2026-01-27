@@ -28,8 +28,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, nextTick } from 'vue'
+import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { useGameStore } from '@/stores'
 import { COGNITIVE_DIMENSIONS, type CognitiveDimension } from '@/types/cognitive'
 import type { GameDefinition } from '@/types/game'
@@ -44,6 +44,34 @@ const gameStore = useGameStore()
 // 狀態
 const selectedDimension = ref<CognitiveDimension | null>(null)
 const gameIconMap = ref<Record<string, { emoji: string; path?: string }>>({})
+const scrollKey = 'game-select.scrollTop'
+
+function getScrollContainer(): HTMLElement | null {
+  const pageScroll = document.querySelector('.app-content-scroll') as HTMLElement | null
+  if (pageScroll) return pageScroll
+  const appShellScroll = document.querySelector('.app-shell-content.content-scroll') as HTMLElement | null
+  if (appShellScroll) return appShellScroll
+  return document.scrollingElement as HTMLElement | null
+}
+
+function saveScrollPosition(): void {
+  const container = getScrollContainer()
+  if (!container) return
+  sessionStorage.setItem(scrollKey, String(container.scrollTop))
+}
+
+function restoreScrollPosition(): void {
+  const raw = sessionStorage.getItem(scrollKey)
+  if (!raw) return
+  const saved = Number(raw)
+  if (!Number.isFinite(saved)) return
+
+  nextTick(() => {
+    const container = getScrollContainer()
+    if (!container) return
+    container.scrollTop = saved
+  })
+}
 
 // 認知維度列表
 const cognitiveDimensions = Object.values(COGNITIVE_DIMENSIONS)
@@ -104,6 +132,11 @@ async function loadGameIcons(): Promise<void> {
 
 onMounted(() => {
   loadGameIcons()
+  restoreScrollPosition()
+})
+
+onBeforeRouteLeave(() => {
+  saveScrollPosition()
 })
 
 // 取得分數顏色 class

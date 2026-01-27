@@ -81,28 +81,28 @@ export const CHINESE_NUMBERS = ['一', '二', '三', '四', '五', '六', '七',
 
 export const DIFFICULTY_CONFIGS: Record<Difficulty, NumberConnectConfig> = {
   easy: {
-    count: 10,
+    count: 6,
     canvasWidth: 400,
     canvasHeight: 400,
     // 以手機/小螢幕可點擊尺寸為優先，避免節點重疊造成誤觸
-    minDistance: 65,
+    minDistance: 80,
     timeLimit: 60,
     format: 'arabic',
   },
   medium: {
-    count: 15,
+    count: 8,
     canvasWidth: 400,
     canvasHeight: 400,
-    minDistance: 60,
-    timeLimit: 90,
+    minDistance: 72,
+    timeLimit: 80,
     format: 'arabic',
   },
   hard: {
-    count: 20,
+    count: 9,
     canvasWidth: 400,
     canvasHeight: 400,
-    minDistance: 55,
-    timeLimit: 120,
+    minDistance: 66,
+    timeLimit: 90,
     format: 'mixed',
   },
 }
@@ -323,7 +323,7 @@ export function calculateScore(
   const timeBonus = Math.max(0, (timeLimit - completionTime) / timeLimit) * 20
 
   // 錯誤扣分
-  const errorPenalty = Math.min(errors * 3, 20)
+  const errorPenalty = Math.min(errors * 2, 16)
 
   // 完成獎勵
   const completionBonus = safeConnected === safeTotal ? 20 : 0

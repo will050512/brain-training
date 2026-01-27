@@ -96,6 +96,7 @@ export function useGameAudio(options: UseGameAudioOptions = {}) {
   const masterVolume = ref(volume)
   const isLoading = ref(false)
   const loadedSounds = ref<Set<string>>(new Set())
+  const isActive = ref(true)
 
   // 用於追蹤當前播放的音效
   const activeSources: Set<AudioBufferSourceNode> = new Set()
@@ -294,7 +295,7 @@ export function useGameAudio(options: UseGameAudioOptions = {}) {
    * 優先順序：AudioBuffer > HTMLAudioElement > Web Audio 合成
    */
   function playSound(soundType: GameSoundType, customVolume?: number): void {
-    if (!isEnabled.value) return
+    if (!isEnabled.value || !isActive.value) return
 
     // 嘗試播放預載的音效
     if (audioBufferCache.has(soundType)) {
@@ -323,7 +324,7 @@ export function useGameAudio(options: UseGameAudioOptions = {}) {
    * 播放自訂音效
    */
   function playCustomSound(soundId: string, customVolume?: number): void {
-    if (!isEnabled.value) return
+    if (!isEnabled.value || !isActive.value) return
 
     // 嘗試從快取播放
     if (audioBufferCache.has(soundId)) {
@@ -357,6 +358,7 @@ export function useGameAudio(options: UseGameAudioOptions = {}) {
     gap: number = 100
   ): Promise<void> {
     for (const freq of frequencies) {
+      if (!isActive.value) return
       playSynthSound(freq, duration, 'sine')
       await new Promise(resolve => setTimeout(resolve, duration + gap))
     }
@@ -366,7 +368,7 @@ export function useGameAudio(options: UseGameAudioOptions = {}) {
    * 播放單個音調
    */
   function playTone(frequency: number, duration: number = 300): void {
-    if (!isEnabled.value) return
+    if (!isEnabled.value || !isActive.value) return
     playSynthSound(frequency, duration, 'sine')
   }
 
@@ -412,12 +414,14 @@ export function useGameAudio(options: UseGameAudioOptions = {}) {
    * 清理資源
    */
   function cleanup(): void {
+    isActive.value = false
     stopAll()
     loadedSounds.value.clear()
   }
 
   // 組件卸載時清理
   onUnmounted(() => {
+    isActive.value = false
     stopAll()
   })
 

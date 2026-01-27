@@ -63,7 +63,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, SpotDifferenceConfig> = {
     gridCols: 4,
     diffCount: 2,
     rounds: 3,
-    timePerRound: 45,
+    timePerRound: 50,
     maxHints: 3,
   },
   medium: {
@@ -71,7 +71,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, SpotDifferenceConfig> = {
     gridCols: 4,
     diffCount: 3,
     rounds: 4,
-    timePerRound: 40,
+    timePerRound: 45,
     maxHints: 2,
   },
   hard: {
@@ -79,7 +79,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, SpotDifferenceConfig> = {
     gridCols: 4,
     diffCount: 4,
     rounds: 5,
-    timePerRound: 35,
+    timePerRound: 40,
     maxHints: 1,
   },
 }
@@ -197,9 +197,9 @@ export function calculateScore(
   // 扣分項目：每次錯誤扣 2 分，最多扣 20 分
   const penaltyScore = Math.max(0, 20 - wrongClicks * 2)
 
-  // 速度獎勵：5 秒內找到得滿分，最多 10 分
-  const speedBonus = avgFoundTime > 0 && avgFoundTime < 5000
-    ? Math.min(10, (5000 - avgFoundTime) / 500)
+  // 速度獎勵：7 秒內找到得滿分，最多 10 分
+  const speedBonus = avgFoundTime > 0 && avgFoundTime < 7000
+    ? Math.min(10, (7000 - avgFoundTime) / 700)
     : 0
 
   return Math.round(Math.min(100, accuracyScore + penaltyScore + speedBonus))

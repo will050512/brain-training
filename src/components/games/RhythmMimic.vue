@@ -9,6 +9,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useGameAudio } from '@/games/core/useGameAudio'
+import { usePauseController } from '@/games/core/usePauseController'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
 import { useResponsive } from '@/composables/useResponsive'
 import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
@@ -34,10 +35,12 @@ const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
   subDifficulty?: SubDifficulty
   autoStart?: boolean
+  isPaused?: boolean
 }>(), {
   difficulty: 'easy',
   subDifficulty: 2,
   autoStart: false,
+  isPaused: false,
 })
 
 const emit = defineEmits<{
@@ -52,6 +55,8 @@ const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
   100
 )
 const { isSmallLandscape } = useResponsive()
+const isPaused = computed(() => props.isPaused ?? false)
+const { scheduleTimeout, scheduleInterval, pauseAwareDelay, clearTimers } = usePauseController(isPaused)
 
 // ===== 遊戲核心設定 =====
 const baseConfig = computed<RhythmMimicConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
@@ -69,6 +74,8 @@ const {
   feedback,
   showFeedback,
   isPlaying,
+  pauseGame,
+  resumeGame,
   startGame: startGameState,
   finishGame: finishGameState,
   nextRound,
@@ -79,12 +86,11 @@ const {
 } = useGameState({ totalRounds: config.value.totalRounds })
 
 // ===== 音效系統 =====
-const { playCorrect, playWrong, playEnd, playCustomSound, preloadDefaultSounds } = useGameAudio({
+const { playCorrect, playWrong, playEnd, playCustomSound, preloadDefaultSounds, preloadSounds } = useGameAudio({
   gameFolder: 'rhythm-mimic',
   volume: 0.9,
   customSounds: [
-    { id: 'guide', name: 'Guide', frequency: 800, duration: 80, volume: 0.8, oscillatorType: 'sine' },
-    { id: 'tap', name: 'Tap', frequency: 200, duration: 120, volume: 1.0, oscillatorType: 'triangle' },
+    { id: 'beat', name: 'Beat', frequency: 800, duration: 80, volume: 0.8, oscillatorType: 'sine' },
     { id: 'tick', name: 'Tick', frequency: 600, duration: 50, volume: 0.5, oscillatorType: 'square' },
     { id: 'go', name: 'Go', frequency: 1000, duration: 300, volume: 0.8, oscillatorType: 'sine' },
   ],
@@ -107,6 +113,8 @@ const countdown = ref(3)
 // 動畫循環控制
 let animationFrameId: number = 0
 let startTime = 0
+let pausedAt: number | null = null
+let pausedDuration = 0
 const currentTime = ref(0) 
 const totalDuration = ref(3000) 
 const playToken = ref(0) 
@@ -161,7 +169,7 @@ async function startNewRound() {
   }
 
   // 3. 延遲啟動，確保畫面準備好
-  setTimeout(() => {
+  scheduleTimeout(() => {
     if (playToken.value === token) {
       startPlaybackSequence(token)
     }
@@ -176,7 +184,7 @@ async function startPlaybackSequence(token: number) {
     await runTimelineAnimation(token, 'listening')
     
     if (i < config.value.playCount - 1) {
-      await new Promise(r => setTimeout(r, config.value.waitTime))
+      await pauseAwareDelay(config.value.waitTime)
     }
   }
   
@@ -190,7 +198,7 @@ function startCountdown(token: number) {
   gamePhase.value = 'countdown'
   countdown.value = 3
   
-  const timer = setInterval(() => {
+  const timer = scheduleInterval(() => {
     if (playToken.value !== token) {
       clearInterval(timer)
       return
@@ -204,7 +212,7 @@ function startCountdown(token: number) {
       playCustomSound('go')
       startInputPhase(token)
     }
-  }, 800)
+  }, 900)
 }
 
 // 開始輸入階段
@@ -226,19 +234,33 @@ function runTimelineAnimation(token: number, mode: 'listening' | 'input'): Promi
     cancelAnimationFrame(animationFrameId)
     
     startTime = performance.now()
+    pausedDuration = 0
+    pausedAt = isPaused.value ? startTime : null
     const duration = totalDuration.value
     const playedBeats = new Set<number>()
+
+    const getTimelineTime = (now: number) => {
+      if (pausedAt !== null) {
+        return Math.max(0, pausedAt - startTime - pausedDuration)
+      }
+      return Math.max(0, now - startTime - pausedDuration)
+    }
     
     function loop(now: number) {
       if (playToken.value !== token) return
-      
-      const elapsed = now - startTime
+
+      if (pausedAt !== null) {
+        animationFrameId = requestAnimationFrame(loop)
+        return
+      }
+
+      const elapsed = getTimelineTime(now)
       currentTime.value = elapsed
       
       if (mode === 'listening' && currentPattern.value) {
         currentPattern.value.beats.forEach((beat, index) => {
           if (!playedBeats.has(index) && elapsed >= beat.time) {
-            playCustomSound('guide')
+            playCustomSound('beat')
             playedBeats.add(index)
           }
         })
@@ -257,13 +279,18 @@ function runTimelineAnimation(token: number, mode: 'listening' | 'input'): Promi
 }
 
 function handleTap() {
-  if (gamePhase.value !== 'input' || !inputReady.value) return
+  if (gamePhase.value !== 'input' || !inputReady.value || isPaused.value) return
   
-  playCustomSound('tap')
+  playCustomSound('beat')
   isTapping.value = true
-  setTimeout(() => isTapping.value = false, 150)
+  scheduleTimeout(() => {
+    isTapping.value = false
+  }, 150)
   
-  userTaps.value.push(currentTime.value)
+  const tapTime = pausedAt !== null
+    ? Math.max(0, pausedAt - startTime - pausedDuration)
+    : Math.max(0, performance.now() - startTime - pausedDuration)
+  userTaps.value.push(tapTime)
 }
 
 function handleRoundComplete() {
@@ -286,7 +313,7 @@ function handleRoundComplete() {
   }
   
   // 結算畫面停留 2.5 秒
-  setTimeout(async () => {
+  scheduleTimeout(async () => {
     clearFeedback()
     
     // 檢查是否還有下一回合 (使用 patterns.length 作為唯一真理，避免 totalRounds 不同步)
@@ -300,7 +327,7 @@ function handleRoundComplete() {
       finishGame()
       emit('game-end', summarizeResult(roundResults.value))
     }
-  }, 2500)
+  }, 2700)
 }
 
 // 供父組件呼叫的結束函數 (以防萬一)
@@ -317,7 +344,7 @@ function replay() {
   cancelAnimationFrame(animationFrameId)
   
   gamePhase.value = 'listening'
-  setTimeout(() => {
+  scheduleTimeout(() => {
     startPlaybackSequence(token)
   }, 500)
 }
@@ -348,11 +375,13 @@ function getTapStatusForBeat(beatTime: number) {
 
 onMounted(() => {
   preloadDefaultSounds()
+  preloadSounds(['beat']).catch(() => {})
 })
 
 onUnmounted(() => {
   cancelAnimationFrame(animationFrameId)
   cleanupThrottle()
+  clearTimers()
 })
 
 watch(() => score.value, (newScore) => emit('score-change', newScore))
@@ -368,6 +397,24 @@ watch(phase, () => {
       showScore: true,
       showProgress: true
     })
+  }
+})
+
+watch(isPaused, (paused) => {
+  if (paused && phase.value === 'playing') {
+    pauseGame()
+    if (pausedAt === null) {
+      pausedAt = performance.now()
+    }
+    return
+  }
+
+  if (!paused && phase.value === 'paused') {
+    if (pausedAt !== null) {
+      pausedDuration += performance.now() - pausedAt
+      pausedAt = null
+    }
+    resumeGame()
   }
 })
 </script>
@@ -437,15 +484,14 @@ watch(phase, () => {
             <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-red-500"></div>
             <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[8px] border-b-red-500"></div>
           </div>
-        </div>
-
-        <div class="user-taps-layer absolute top-0 left-0 w-full h-full pointer-events-none">
-          <div 
-            v-for="(tapTime, i) in userTaps" 
-            :key="i"
-            class="absolute top-[calc(50%+2rem)] w-2 h-2 rounded-full bg-blue-500 opacity-50 transition-opacity duration-1000"
-            :style="{ left: `${getBeatPosition(tapTime)}%` }"
-          ></div>
+          <div class="user-taps-layer absolute left-0 top-full mt-3 w-full h-6 pointer-events-none">
+            <div 
+              v-for="(tapTime, i) in userTaps" 
+              :key="i"
+              class="absolute top-1/2 w-2 h-2 rounded-full bg-blue-500 opacity-50 transition-opacity duration-1000 -translate-y-1/2 -translate-x-1/2"
+              :style="{ left: `${getBeatPosition(tapTime)}%` }"
+            ></div>
+          </div>
         </div>
       </div>
 
@@ -470,7 +516,7 @@ watch(phase, () => {
           <button 
             v-if="replayRemaining > 0 && gamePhase === 'input'"
             @click="replay"
-            class="px-4 py-2 rounded-full bg-amber-100 text-amber-700 font-bold text-sm hover:bg-amber-200 transition-colors flex items-center gap-2"
+            class="px-4 py-2 min-h-[44px] rounded-full bg-amber-100 text-amber-700 font-bold text-sm hover:bg-amber-200 transition-colors flex items-center gap-2"
           >
             <span>↺</span> 再聽一次 ({{ replayRemaining }})
           </button>

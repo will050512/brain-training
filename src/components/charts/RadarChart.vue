@@ -9,6 +9,7 @@ import type { CognitiveScores } from '@/types/cognitive'
 import { COGNITIVE_DIMENSIONS } from '@/types/cognitive'
 import { useTheme } from '@/composables/useTheme'
 import { getChartTheme } from '@/utils/chartTheme'
+import { getAppFontFamily } from '@/utils/typography'
 
 const props = withDefaults(defineProps<{
   scores: CognitiveScores
@@ -53,6 +54,7 @@ function initChart(): void {
 // 更新圖表
 function updateChart(): void {
   if (!chart) return
+  const fontFamily = getAppFontFamily()
 
   const indicators = dimensions.map(dim => ({
     name: COGNITIVE_DIMENSIONS[dim].name,
@@ -189,12 +191,17 @@ function updateChart(): void {
     : [theme.backgroundColor, theme.backgroundColor]
 
   const option: echarts.EChartsOption = {
+    textStyle: {
+      color: theme.textColor,
+      fontFamily,
+    },
     tooltip: {
       trigger: 'item',
       backgroundColor: theme.tooltip.backgroundColor,
       borderColor: theme.tooltip.borderColor,
       textStyle: {
         color: theme.tooltip.textColor,
+        fontFamily,
       },
       formatter: (params: unknown) => {
         const p = params as { name: string; value: number[] }
@@ -213,6 +220,7 @@ function updateChart(): void {
       textStyle: {
         fontSize: 14,
         color: theme.legend.textColor,
+        fontFamily,
       },
     },
     radar: {
@@ -223,6 +231,7 @@ function updateChart(): void {
         color: theme.radar.axisNameColor,
         fontSize: 14,
         fontWeight: 'bold',
+        fontFamily,
       },
       splitLine: {
         lineStyle: {

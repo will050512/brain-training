@@ -15,7 +15,7 @@
         <div class="flex items-center flex-1 gap-3">
           <div
             class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 transition-colors"
-            :class="!game.isCompleted && !isCompleted && index === completedGames ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)]' : 'bg-[var(--color-bg-muted)] text-[var(--color-text-muted)]'"
+            :class="!game.isCompleted && !isCompleted && index === completedGames ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)]' : 'bg-[var(--color-bg-muted)] text-[var(--color-text-secondary)]'"
           >
             {{ index + 1 }}
           </div>
@@ -43,7 +43,7 @@
             <div class="font-bold text-base text-[var(--color-text)] truncate mb-0.5 group-hover:text-[var(--color-primary)] transition-colors">{{ game.game.name }}</div>
             <div class="flex flex-wrap items-center gap-1.5">
               <span class="px-1.5 py-0.5 rounded border" :class="getDifficultyClass(game.difficulty)">
-                <SubtleLabel :text="getDifficultyText(game.difficulty)" size="xs" />
+                <SubtleLabel :text="getDifficultyText(game.difficulty)" size="xs" tone="inherit" />
               </span>
               <div class="flex gap-0.5 ml-0.5">
                 <span
@@ -64,7 +64,7 @@
               <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
-          <div v-else class="w-6 h-6 rounded-full bg-[var(--color-bg-muted)] flex items-center justify-center text-[var(--color-text-muted)] group-hover:bg-[var(--color-primary)]/10 group-hover:text-[var(--color-primary)] transition-colors">
+          <div v-else class="w-6 h-6 rounded-full bg-[var(--color-bg-muted)] flex items-center justify-center text-[var(--color-text-secondary)] group-hover:bg-[var(--color-primary)]/10 group-hover:text-[var(--color-primary)] transition-colors">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>

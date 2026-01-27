@@ -25,9 +25,19 @@ export function usePWA() {
    * 檢查更新
    */
   async function checkForUpdates() {
-    if (registration) {
+    let currentRegistration = registration
+    if (!currentRegistration && 'serviceWorker' in navigator) {
       try {
-        await registration.update()
+        currentRegistration = await navigator.serviceWorker.getRegistration()
+        if (currentRegistration) registration = currentRegistration
+      } catch (error) {
+        console.error('[PWA] 取得 Service Worker 註冊失敗:', error)
+      }
+    }
+
+    if (currentRegistration) {
+      try {
+        await currentRegistration.update()
         console.log('[PWA] 手動檢查更新完成')
       } catch (error) {
         console.error('[PWA] 檢查更新失敗:', error)

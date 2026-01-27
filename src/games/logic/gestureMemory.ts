@@ -74,22 +74,22 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, GestureMemoryConfig> = {
   easy: {
     startLength: 2,
     maxLength: 4,
-    showTime: 1500,
+    showTime: 1800,
     gesturePool: 6,
     totalRounds: 8,
   },
   medium: {
     startLength: 3,
     maxLength: 6,
-    showTime: 1200,
+    showTime: 1500,
     gesturePool: 8,
     totalRounds: 10,
   },
   hard: {
     startLength: 4,
     maxLength: 8,
-    showTime: 900,
-    gesturePool: 12,
+    showTime: 1200,
+    gesturePool: 9,
     totalRounds: 12,
   },
 }

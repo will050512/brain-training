@@ -7,6 +7,7 @@ import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useGameTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
+import { usePauseController } from '@/games/core/usePauseController'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
 import { useResponsive } from '@/composables/useResponsive'
 import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
@@ -32,10 +33,12 @@ const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
   subDifficulty?: SubDifficulty
   autoStart?: boolean
+  isPaused?: boolean
 }>(), {
   difficulty: 'easy',
   subDifficulty: 2,
   autoStart: false,
+  isPaused: false,
 })
 
 const emit = defineEmits<{
@@ -61,6 +64,8 @@ const config = computed<MathCalcConfig>(() => {
     props.subDifficulty ?? 2
   )
 })
+const isPaused = computed(() => props.isPaused ?? false)
+const { scheduleTimeout, clearTimers } = usePauseController(isPaused)
 
 // ===== 遊戲狀態 =====
 const {
@@ -76,6 +81,8 @@ const {
   feedback,
   showFeedback,
   isPlaying,
+  pauseGame,
+  resumeGame,
   startGame: startGameState,
   finishGame: finishGameState,
   nextRound,
@@ -104,6 +111,8 @@ const {
   isWarning: timerWarning,
   formattedTime,
   start: startTimer,
+  pause: pauseTimer,
+  resume: resumeTimer,
   stop: stopTimer,
   reset: resetTimer,
 } = useGameTimer({
@@ -200,7 +209,7 @@ function handleSelectAnswer(answer: number | string) {
   }
   
   // 延遲後進入下一題
-  setTimeout(() => {
+  scheduleTimeout(() => {
     clearFeedback()
     isAnswering.value = false
     
@@ -210,7 +219,7 @@ function handleSelectAnswer(answer: number | string) {
     } else {
       handleGameEnd()
     }
-  }, 800)
+  }, 1000)
 }
 
 function handleTimeUp() {
@@ -219,6 +228,7 @@ function handleTimeUp() {
 
 function handleGameEnd() {
   stopTimer()
+  clearTimers()
   playEnd()
   
   const result = summarizeResult(
@@ -262,11 +272,26 @@ watchEffect(() => {
 
 onUnmounted(() => {
   cleanupThrottle()
+  clearTimers()
+})
+
+watch(isPaused, (paused) => {
+  if (paused && phase.value === 'playing') {
+    pauseGame()
+    pauseTimer()
+    return
+  }
+
+  if (!paused && phase.value === 'paused') {
+    resumeGame()
+    resumeTimer()
+  }
 })
 
 // 監聽難度變化
 watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
+    clearTimers()
     resetGame()
   }
 })

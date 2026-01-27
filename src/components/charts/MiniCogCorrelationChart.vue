@@ -86,6 +86,7 @@
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import * as echarts from 'echarts'
 import { useTheme } from '@/composables/useTheme'
+import { getAppFontFamily } from '@/utils/typography'
 import { 
   getMiniCogGameCorrelationData,
   analyzeMiniCogGameCorrelation, 
@@ -218,6 +219,7 @@ function getChartOption(): echarts.EChartsOption {
   const textColor = isDark.value ? '#e5e7eb' : '#374151'
   const gridColor = isDark.value ? '#374151' : '#e5e7eb'
   const bgColor = isDark.value ? '#1f2937' : '#ffffff'
+  const fontFamily = getAppFontFamily()
 
   // 準備散點資料
   const scatterData = dataPoints.value.map(d => [d.miniCogScore, d.averageGameScore])
@@ -238,8 +240,16 @@ function getChartOption(): echarts.EChartsOption {
 
   return {
     backgroundColor: 'transparent',
+    textStyle: {
+      color: textColor,
+      fontFamily,
+    },
     tooltip: {
       trigger: 'item',
+      textStyle: {
+        color: textColor,
+        fontFamily,
+      },
       formatter: (params: unknown) => {
         const p = params as { data?: number[] }
         if (p.data && Array.isArray(p.data) && p.data.length >= 2) {
@@ -266,13 +276,15 @@ function getChartOption(): echarts.EChartsOption {
       max: 5,
       nameTextStyle: {
         color: textColor,
-        fontSize: 12
+        fontSize: 12,
+        fontFamily,
       },
       axisLine: {
         lineStyle: { color: gridColor }
       },
       axisLabel: {
-        color: textColor
+        color: textColor,
+        fontFamily,
       },
       splitLine: {
         lineStyle: { color: gridColor, type: 'dashed' }
@@ -285,13 +297,15 @@ function getChartOption(): echarts.EChartsOption {
       nameGap: 45,
       nameTextStyle: {
         color: textColor,
-        fontSize: 12
+        fontSize: 12,
+        fontFamily,
       },
       axisLine: {
         lineStyle: { color: gridColor }
       },
       axisLabel: {
-        color: textColor
+        color: textColor,
+        fontFamily,
       },
       splitLine: {
         lineStyle: { color: gridColor, type: 'dashed' }

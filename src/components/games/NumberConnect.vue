@@ -7,6 +7,7 @@ import { ref, computed, watch, watchEffect, onMounted, onBeforeUnmount, onUnmoun
 import { useGameState } from '@/games/core/useGameState'
 import { useGameTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
+import { usePauseController } from '@/games/core/usePauseController'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
 import { useResponsive } from '@/composables/useResponsive'
 import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
@@ -37,10 +38,12 @@ const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
   subDifficulty?: SubDifficulty
   autoStart?: boolean
+  isPaused?: boolean
 }>(), {
   difficulty: 'easy',
   subDifficulty: 2,
   autoStart: false,
+  isPaused: false,
 })
 
 const emit = defineEmits<{
@@ -66,6 +69,8 @@ const config = computed<NumberConnectConfig>(() => {
     props.subDifficulty ?? 2
   )
 })
+const isPaused = computed(() => props.isPaused ?? false)
+const { scheduleTimeout, clearTimers } = usePauseController(isPaused)
 
 // ===== 遊戲狀態 =====
 const {
@@ -74,6 +79,8 @@ const {
   feedback,
   showFeedback,
   isPlaying,
+  pauseGame,
+  resumeGame,
   startGame: startGameState,
   finishGame: finishGameState,
   setFeedback,
@@ -98,6 +105,8 @@ const {
   time: timeRemaining, 
   start: startTimer, 
   stop: stopTimer,
+  pause: pauseTimer,
+  resume: resumeTimer,
   reset: resetTimer 
 } = useGameTimer({
   mode: 'countdown',
@@ -193,7 +202,7 @@ function handleNodeClick(node: NumberNode) {
     gameState.value = result.newState // 更新錯誤計數
     playWrong()
     setFeedback('wrong', `應該連接 ${currentTarget.value}`)
-    setTimeout(clearFeedback, 1000)
+    scheduleTimeout(clearFeedback, 1200)
   }
 }
 
@@ -207,7 +216,7 @@ function showHint() {
   
   if (hintPos) {
     setFeedback('correct', `下一個是 ${currentTarget.value}`)
-    setTimeout(clearFeedback, 2000)
+    scheduleTimeout(clearFeedback, 2200)
   }
 }
 
@@ -260,6 +269,7 @@ function handleTimeout() {
 
 function handleGameEnd() {
   stopTimer()
+  clearTimers()
   playEnd()
   
   const elapsed = (Date.now() - startTime.value) / 1000
@@ -324,12 +334,27 @@ onBeforeUnmount(() => {
 
 onUnmounted(() => {
   cleanupThrottle()
+  clearTimers()
+})
+
+watch(isPaused, (paused) => {
+  if (paused && phase.value === 'playing') {
+    pauseGame()
+    pauseTimer()
+    return
+  }
+
+  if (!paused && phase.value === 'paused') {
+    resumeGame()
+    resumeTimer()
+  }
 })
 
 // 監聽難度變化
 watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     stopTimer()
+    clearTimers()
     resetGame()
   }
 })

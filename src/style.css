@@ -8,7 +8,7 @@
 /* CSS 變數定義 - 淺色模式（預設） */
 :root {
   --font-sans: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-  --font-display: 'Noto Serif TC', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', serif;
+  --font-display: var(--font-sans);
   --ui-scale: 1.12;
   --ui-space-scale: 0.9;
   --text-scale: 1;
@@ -404,6 +404,21 @@ body {
   overscroll-behavior-x: none;
 }
 
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
+/* Primary buttons always use white text for contrast */
+button[class*="bg-[var(--color-primary)]"],
+a[class*="bg-[var(--color-primary)]"],
+[role="button"][class*="bg-[var(--color-primary)]"] {
+  color: #ffffff !important;
+}
+
 #app {
   min-height: 100vh;
   /* 確保內容不超出視窗 */
@@ -626,6 +641,40 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 .btn-ghost:hover:not(:disabled) {
   background: var(--color-bg-soft);
   color: var(--color-text);
+}
+
+/* Toggle Switch 開關樣式 */
+.toggle-switch {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  border-radius: 9999px;
+  background-color: var(--color-bg-muted, #e5e7eb);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.toggle-switch.toggle-on {
+  background-color: var(--color-primary, #6366f1);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.toggle-switch.toggle-on .toggle-thumb {
+  transform: translateX(24px);
 }
 
 /* 按鈕尺寸 */
@@ -1658,6 +1707,9 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   -ms-overflow-style: none;
   scroll-padding-top: calc(var(--spacing-lg) + env(safe-area-inset-top));
   touch-action: pan-y;
+}
+.app-shell.has-bottom-nav .app-page .app-content-scroll {
+  padding-bottom: calc(64px + var(--spacing-md) + env(safe-area-inset-bottom, 0px));
 }
 .app-content-scroll::-webkit-scrollbar {
   display: none;

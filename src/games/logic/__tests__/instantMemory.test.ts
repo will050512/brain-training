@@ -24,10 +24,10 @@ describe('瞬間記憶遊戲邏輯', () => {
       expect(sequence.length).toBe(5)
     })
 
-    it('序列應只包含 0-9 的數字', () => {
+    it('序列應只包含 1-9 的數字', () => {
       const sequence = generateSequence(10)
       sequence.forEach(num => {
-        expect(num).toBeGreaterThanOrEqual(0)
+        expect(num).toBeGreaterThanOrEqual(1)
         expect(num).toBeLessThanOrEqual(9)
       })
     })

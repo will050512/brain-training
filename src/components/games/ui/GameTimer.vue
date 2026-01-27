@@ -101,7 +101,7 @@ const sizeClasses = computed(() => ({
 }
 
 .timer-value {
-  font-family: 'Roboto Mono', monospace;
+  font-family: var(--font-sans);
   font-weight: 700;
   color: var(--color-text);
 }

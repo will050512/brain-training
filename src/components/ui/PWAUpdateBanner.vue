@@ -17,14 +17,15 @@
             <button 
               class="btn-update"
               @click="handleUpdate"
-              :disabled="isUpdating"
+              :disabled="props.isUpdating"
             >
-              {{ isUpdating ? '更新中...' : '立即更新' }}
+              {{ props.isUpdating ? '更新中...' : '立即更新' }}
             </button>
             <button 
+              v-if="!props.forceUpdate"
               class="btn-dismiss"
               @click="dismissBanner"
-              :disabled="isUpdating"
+              :disabled="props.isUpdating"
             >
               稍後
             </button>
@@ -48,29 +49,32 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
-import { usePWA } from '@/composables/usePWA'
 
-const { 
-  isUpdateAvailable, 
-  isOfflineReady, 
-  needRefresh,
-  isUpdating,
-  applyUpdate 
-} = usePWA()
+interface Props {
+  needRefresh: boolean
+  isOfflineReady: boolean
+  isUpdating: boolean
+  forceUpdate?: boolean
+  onApplyUpdate: () => void | Promise<void>
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  forceUpdate: false
+})
 
 const showBanner = ref(false)
 const showOfflineReady = ref(false)
 const dismissed = ref(false)
 
 // 監聽更新狀態
-watch(needRefresh, (available) => {
-  if (available && !dismissed.value) {
+watch(() => props.needRefresh, (available) => {
+  if (available && (!dismissed.value || props.forceUpdate)) {
     showBanner.value = true
   }
 })
 
 // 監聽離線就緒狀態
-watch(isOfflineReady, (ready) => {
+watch(() => props.isOfflineReady, (ready) => {
   if (ready) {
     showOfflineReady.value = true
     // 3 秒後自動隱藏
@@ -81,17 +85,18 @@ watch(isOfflineReady, (ready) => {
 })
 
 async function handleUpdate() {
-  await applyUpdate()
+  await props.onApplyUpdate()
 }
 
 function dismissBanner() {
+  if (props.forceUpdate) return
   showBanner.value = false
   dismissed.value = true
   
   // 30 分鐘後重新顯示提醒
   setTimeout(() => {
     dismissed.value = false
-    if (needRefresh.value) {
+    if (props.needRefresh) {
       showBanner.value = true
     }
   }, 30 * 60 * 1000)
@@ -99,7 +104,7 @@ function dismissBanner() {
 
 onMounted(() => {
   // 如果頁面載入時已經有更新可用
-  if (needRefresh.value) {
+  if (props.needRefresh) {
     showBanner.value = true
   }
 })

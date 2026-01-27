@@ -10,6 +10,7 @@ import { ref, computed, watch, watchEffect, onMounted, onUnmounted, nextTick } f
 import { useGameState } from '@/games/core/useGameState'
 import { useGameTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
+import { usePauseController } from '@/games/core/usePauseController'
 import { useTouchGesture, type SwipeDirection } from '@/composables/useTouchGesture'
 import { useResponsive } from '@/composables/useResponsive'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
@@ -40,10 +41,12 @@ const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
   subDifficulty?: SubDifficulty
   autoStart?: boolean
+  isPaused?: boolean
 }>(), {
   difficulty: 'easy',
   subDifficulty: 2,
   autoStart: false,
+  isPaused: false,
 })
 
 const emit = defineEmits<{
@@ -68,6 +71,8 @@ const config = computed<MazeConfig>(() => {
     props.subDifficulty ?? 2
   )
 })
+const isPaused = computed(() => props.isPaused ?? false)
+const { scheduleTimeout, clearTimers } = usePauseController(isPaused)
 
 // ===== 遊戲狀態 =====
 const {
@@ -76,6 +81,8 @@ const {
   feedback,
   showFeedback,
   isPlaying,
+  pauseGame,
+  resumeGame,
   startGame: startGameState,
   finishGame: finishGameState,
   resetGame,
@@ -85,6 +92,8 @@ const {
 const {
   time: elapsedTime,
   start: startTimer,
+  pause: pauseTimer,
+  resume: resumeTimer,
   stop: stopTimer,
   reset: resetTimer,
 } = useGameTimer({ mode: 'stopwatch', initialTime: 0 })
@@ -229,13 +238,16 @@ function getTargetIndex(current: number, dir: Direction, size: number): number |
 
 function triggerShake(index: number) {
   shakeCellIndex.value = index
-  setTimeout(() => shakeCellIndex.value = null, 400)
+  scheduleTimeout(() => {
+    shakeCellIndex.value = null
+  }, 400)
 }
 
 function handleGameEnd() {
   stopTimer()
   playCorrect() 
-  setTimeout(() => playEnd(), 500)
+  scheduleTimeout(() => playEnd(), 500)
+  clearTimers()
   resizeObserver.disconnect()
 
   if (!mazeState.value) return
@@ -297,11 +309,26 @@ onUnmounted(() => {
   window.removeEventListener('resize', calculateLayout)
   resizeObserver.disconnect()
   cleanupThrottle()
+  clearTimers()
+})
+
+watch(isPaused, (paused) => {
+  if (paused && phase.value === 'playing') {
+    pauseGame()
+    pauseTimer()
+    return
+  }
+
+  if (!paused && phase.value === 'paused') {
+    resumeGame()
+    resumeTimer()
+  }
 })
 
 watch(() => [props.difficulty, props.subDifficulty], () => {
   if (phase.value !== 'ready') {
     stopTimer()
+    clearTimers()
     resetGame()
   }
 })
@@ -403,7 +430,7 @@ watch(() => [props.difficulty, props.subDifficulty], () => {
               <!-- 終點 -->
               <span 
                 v-else-if="type === 'end'" 
-                class="text-[1.2em] leading-none animate-bounce text-red-700"
+                class="text-[1.2em] leading-none animate-bounce motion-reduce:animate-none text-red-700"
                 :style="{ fontSize: `${cellSize * 0.6}px` }"
               >
                 🚩
@@ -421,7 +448,7 @@ watch(() => [props.difficulty, props.subDifficulty], () => {
         </div>
 
         <!-- 提示文字 -->
-        <div v-if="moves === 0" class="absolute bottom-4 bg-black/60 text-white px-4 py-2 rounded-full text-sm animate-pulse pointer-events-none">
+        <div v-if="moves === 0" class="absolute bottom-4 bg-black/60 text-white px-4 py-2 rounded-full text-sm animate-pulse motion-reduce:animate-none pointer-events-none">
           點擊鄰近格子或滑動螢幕移動
         </div>
       </div>

@@ -7,6 +7,7 @@ import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useGameTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
+import { usePauseController } from '@/games/core/usePauseController'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
 import { useResponsive } from '@/composables/useResponsive'
 import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
@@ -41,10 +42,12 @@ const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
   subDifficulty?: SubDifficulty
   autoStart?: boolean
+  isPaused?: boolean
 }>(), {
   difficulty: 'easy',
   subDifficulty: 2,
   autoStart: false,
+  isPaused: false,
 })
 
 const emit = defineEmits<{
@@ -65,11 +68,17 @@ const { isSmallLandscape } = useResponsive()
 // ===== 遊戲配置 =====
 const baseConfig = computed<WhackAMoleConfig>(() => DIFFICULTY_CONFIGS[props.difficulty])
 const config = computed<WhackAMoleConfig>(() => {
-  return adjustSettingsForSubDifficulty(
+  const adjusted = adjustSettingsForSubDifficulty(
     baseConfig.value,
     props.subDifficulty ?? 2
   )
+  return {
+    ...adjusted,
+    holes: baseConfig.value.holes,
+  }
 })
+const isPaused = computed(() => props.isPaused ?? false)
+const { scheduleTimeout, scheduleInterval, clearTimers } = usePauseController(isPaused)
 
 // ===== 遊戲狀態 =====
 const {
@@ -80,6 +89,8 @@ const {
   feedback,
   showFeedback,
   isPlaying,
+  pauseGame,
+  resumeGame,
   startGame: startGameState,
   finishGame: finishGameState,
   setFeedback,
@@ -105,6 +116,8 @@ const {
   time: timeLeft,
   isWarning: timerWarning,
   start: startTimer,
+  pause: pauseTimer,
+  resume: resumeTimer,
   stop: stopTimer,
   reset: resetTimer,
 } = useGameTimer({
@@ -201,7 +214,7 @@ function handleStart() {
   
   // 開始生成地鼠
   spawnMole()
-  spawnTimer = setInterval(spawnMole, config.value.interval)
+  spawnTimer = scheduleInterval(spawnMole, config.value.interval)
 }
 
 function spawnMole() {
@@ -223,7 +236,7 @@ function spawnMole() {
   }
   
   // 自動消失
-  setTimeout(() => {
+  scheduleTimeout(() => {
     const hole = holes.value[randomIdx]
     if (hole && hole.active && !hole.hit) {
       holes.value = hideHole(holes.value, randomIdx)
@@ -275,10 +288,10 @@ function handleHoleClick(index: number) {
   }
   
   // 清除得分顯示
-  setTimeout(() => {
+  scheduleTimeout(() => {
     holes.value = clearHoleAfterHit(holes.value, index)
     clearFeedback()
-  }, 300)
+  }, 400)
 }
 
 function handleTimeUp() {
@@ -291,6 +304,7 @@ function handleGameEnd() {
     clearInterval(spawnTimer)
     spawnTimer = null
   }
+  clearTimers()
   playEnd()
   
   const result = summarizeResult(
@@ -316,7 +330,21 @@ onUnmounted(() => {
   if (spawnTimer) {
     clearInterval(spawnTimer)
   }
+  clearTimers()
   cleanupThrottle()
+})
+
+watch(isPaused, (paused) => {
+  if (paused && phase.value === 'playing') {
+    pauseGame()
+    pauseTimer()
+    return
+  }
+
+  if (!paused && phase.value === 'paused') {
+    resumeGame()
+    resumeTimer()
+  }
 })
 
 // 監聽難度變化
@@ -327,6 +355,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
       clearInterval(spawnTimer)
       spawnTimer = null
     }
+    clearTimers()
     resetGame()
   }
 })

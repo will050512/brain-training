@@ -7,6 +7,7 @@ import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useRoundTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
+import { usePauseController } from '@/games/core/usePauseController'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
 import { useResponsive } from '@/composables/useResponsive'
 import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
@@ -44,10 +45,12 @@ const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
   subDifficulty?: SubDifficulty
   autoStart?: boolean
+  isPaused?: boolean
 }>(), {
   difficulty: 'easy',
   subDifficulty: 2,
   autoStart: false,
+  isPaused: false,
 })
 
 const emit = defineEmits<{
@@ -104,6 +107,20 @@ const config = computed<PatternReasoningConfig>(() => {
     props.subDifficulty ?? 2
   )
 })
+const isHardMode = computed(() => props.difficulty === 'hard')
+const optionGridStyle = computed(() => {
+  const count = config.value.optionCount
+  if (isHardMode.value && count >= 6) {
+    return {
+      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    }
+  }
+  return {
+    gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))`,
+  }
+})
+const isPaused = computed(() => props.isPaused ?? false)
+const { scheduleTimeout, clearTimers } = usePauseController(isPaused)
 
 // ===== 遊戲狀態 =====
 const {
@@ -117,6 +134,8 @@ const {
   feedback,
   showFeedback,
   isPlaying,
+  pauseGame,
+  resumeGame,
   startGame: startGameState,
   finishGame: finishGameState,
   nextRound,
@@ -141,6 +160,8 @@ function finishGame() {
 const {
   roundTime: timeRemaining,
   startRound,
+  pauseRound,
+  resumeRound,
   stopRound,
   resetRound,
 } = useRoundTimer({
@@ -271,7 +292,7 @@ function handleOptionSelect(option: { id: string; value: number }) {
   }
   
   // 延遲後進入下一回合
-  setTimeout(() => {
+  scheduleTimeout(() => {
     clearFeedback()
     
     if (currentRound.value < totalRounds - 1) {
@@ -280,7 +301,7 @@ function handleOptionSelect(option: { id: string; value: number }) {
     } else {
       handleGameEnd()
     }
-  }, 1500)
+  }, 1700)
 }
 
 function handleRoundTimeout() {
@@ -294,7 +315,7 @@ function handleRoundTimeout() {
   playWrong()
   setFeedback('timeout', '時間到！')
   
-  setTimeout(() => {
+  scheduleTimeout(() => {
     clearFeedback()
     
     if (currentRound.value < totalRounds - 1) {
@@ -303,11 +324,12 @@ function handleRoundTimeout() {
     } else {
       handleGameEnd()
     }
-  }, 1500)
+  }, 1700)
 }
 
 function handleGameEnd() {
   stopRound()
+  clearTimers()
   playEnd()
   
   const avgTime = responseTimes.value.length > 0
@@ -350,12 +372,27 @@ watchEffect(() => {
 
 onUnmounted(() => {
   cleanupThrottle()
+  clearTimers()
+})
+
+watch(isPaused, (paused) => {
+  if (paused && phase.value === 'playing') {
+    pauseGame()
+    pauseRound()
+    return
+  }
+
+  if (!paused && phase.value === 'paused') {
+    resumeGame()
+    resumeRound()
+  }
 })
 
 // 監聽難度變化
 watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     stopRound()
+    clearTimers()
     resetGame()
   }
 })
@@ -429,22 +466,25 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
             選擇答案
           </div>
 
-        <div class="options-grid grid gap-2 sm:gap-3" :class="{
-          'grid-cols-3': config.optionCount === 3,
-          'grid-cols-4': config.optionCount === 4,
-          'grid-cols-5': config.optionCount === 5,
-        }">
+        <div
+          class="options-grid grid gap-2 sm:gap-3"
+          :class="{ 'options-grid-hard': isHardMode }"
+          :style="optionGridStyle"
+        >
           <button
             v-for="(opt, idx) in options"
             :key="opt.id"
-            class="option-btn p-3 sm:p-4 rounded-xl flex items-center justify-center transition-all transform enabled:hover:scale-105 min-h-[60px] sm:min-h-[70px] md:min-h-[80px]"
-            :class="{
-              'bg-gray-100 dark:bg-gray-700': !isAnswerLocked,
-              'bg-green-500': isAnswerLocked && idx === currentQuestion?.correctIndex,
-              'bg-red-500': isAnswerLocked && idx === selectedAnswer && idx !== currentQuestion?.correctIndex,
-              'opacity-50': isAnswerLocked && idx !== currentQuestion?.correctIndex && idx !== selectedAnswer,
-              'ring-2 ring-blue-500': selectedAnswer === idx && !isAnswerLocked,
-            }"
+            class="option-btn p-3 sm:p-4 rounded-xl flex items-center justify-center transition-all transform min-h-[60px] sm:min-h-[70px] md:min-h-[80px]"
+            :class="[
+              isHardMode ? 'option-btn-hard' : 'enabled:hover:scale-105',
+              {
+                'bg-gray-100 dark:bg-gray-700': !isAnswerLocked,
+                'bg-green-500': isAnswerLocked && idx === currentQuestion?.correctIndex,
+                'bg-red-500': isAnswerLocked && idx === selectedAnswer && idx !== currentQuestion?.correctIndex,
+                'opacity-50': isAnswerLocked && idx !== currentQuestion?.correctIndex && idx !== selectedAnswer,
+                'ring-2 ring-blue-500': selectedAnswer === idx && !isAnswerLocked,
+              }
+            ]"
             :disabled="isAnswerLocked"
             @click="handleOptionSelect({ id: opt.id, value: opt.value })"
           >
@@ -490,6 +530,21 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
 .option-btn:active:not(:disabled) {
   transform: scale(0.95);
+}
+
+.option-btn-hard {
+  width: 100%;
+  min-height: clamp(72px, 18vw, 110px);
+  padding: 0.5rem;
+}
+
+.option-btn-hard:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.options-grid-hard {
+  max-width: 520px;
+  margin: 0 auto;
 }
 
 .is-landscape .options-grid {

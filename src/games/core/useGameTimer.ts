@@ -72,13 +72,9 @@ export function useGameTimer(options: UseGameTimerOptions = {}) {
 
   // ===== 方法 =====
 
-  /** 開始計時 */
-  function start() {
-    if (isRunning.value && !isPaused.value) return
-    
-    isRunning.value = true
-    isPaused.value = false
-    
+  function startInterval() {
+    if (intervalId) return
+
     intervalId = setInterval(() => {
       if (mode === 'countdown') {
         time.value--
@@ -103,6 +99,15 @@ export function useGameTimer(options: UseGameTimerOptions = {}) {
     }, 1000)
   }
 
+  /** 開始計時 */
+  function start() {
+    if (isRunning.value && !isPaused.value) return
+    
+    isRunning.value = true
+    isPaused.value = false
+    startInterval()
+  }
+
   /** 暫停計時 */
   function pause() {
     if (!isRunning.value || isPaused.value) return
@@ -119,7 +124,7 @@ export function useGameTimer(options: UseGameTimerOptions = {}) {
     if (!isRunning.value || !isPaused.value) return
     
     isPaused.value = false
-    start()
+    startInterval()
   }
 
   /** 停止計時 */
@@ -212,6 +217,7 @@ export function useRoundTimer(options: UseRoundTimerOptions) {
   
   const roundTime = ref(timePerRound)
   const isRunning = ref(false)
+  const isPaused = ref(false)
   
   let intervalId: ReturnType<typeof setInterval> | null = null
 
@@ -220,11 +226,7 @@ export function useRoundTimer(options: UseRoundTimerOptions) {
     return seconds.toString()
   })
 
-  function startRound() {
-    stopRound()
-    roundTime.value = timePerRound
-    isRunning.value = true
-    
+  function startInterval() {
     intervalId = setInterval(() => {
       roundTime.value--
       onTick?.(roundTime.value)
@@ -236,8 +238,34 @@ export function useRoundTimer(options: UseRoundTimerOptions) {
     }, 1000)
   }
 
+  function startRound() {
+    stopRound()
+    roundTime.value = timePerRound
+    isRunning.value = true
+    isPaused.value = false
+    startInterval()
+  }
+
+  function pauseRound() {
+    if (!isRunning.value || isPaused.value) return
+    isPaused.value = true
+    if (intervalId) {
+      clearInterval(intervalId)
+      intervalId = null
+    }
+  }
+
+  function resumeRound() {
+    if (!isRunning.value || !isPaused.value || roundTime.value <= 0) return
+    isPaused.value = false
+    if (!intervalId) {
+      startInterval()
+    }
+  }
+
   function stopRound() {
     isRunning.value = false
+    isPaused.value = false
     if (intervalId) {
       clearInterval(intervalId)
       intervalId = null
@@ -256,8 +284,11 @@ export function useRoundTimer(options: UseRoundTimerOptions) {
   return {
     roundTime: readonly(roundTime),
     isRunning: readonly(isRunning),
+    isPaused: readonly(isPaused),
     formattedRoundTime,
     startRound,
+    pauseRound,
+    resumeRound,
     stopRound,
     resetRound,
   }

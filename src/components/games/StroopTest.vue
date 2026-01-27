@@ -7,6 +7,7 @@ import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGameState } from '@/games/core/useGameState'
 import { useRoundTimer } from '@/games/core/useGameTimer'
 import { useGameAudio } from '@/games/core/useGameAudio'
+import { usePauseController } from '@/games/core/usePauseController'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
 import { useResponsive } from '@/composables/useResponsive'
 import { adjustSettingsForSubDifficulty } from '@/services/adaptiveDifficultyService'
@@ -35,10 +36,12 @@ const props = withDefaults(defineProps<{
   difficulty?: 'easy' | 'medium' | 'hard'
   subDifficulty?: SubDifficulty
   autoStart?: boolean
+  isPaused?: boolean
 }>(), {
   difficulty: 'easy',
   subDifficulty: 2,
   autoStart: false,
+  isPaused: false,
 })
 
 const emit = defineEmits<{
@@ -59,11 +62,17 @@ const { isSmallLandscape } = useResponsive()
 // ===== 遊戲配置 =====
 const baseConfig = computed<StroopConfig>(() => STROOP_CONFIGS[props.difficulty])
 const config = computed<StroopConfig>(() => {
-  return adjustSettingsForSubDifficulty(
+  const adjusted = adjustSettingsForSubDifficulty(
     baseConfig.value,
     props.subDifficulty ?? 2
   )
+  return {
+    ...adjusted,
+    rounds: baseConfig.value.rounds
+  }
 })
+const isPaused = computed(() => props.isPaused ?? false)
+const { scheduleTimeout, clearTimers } = usePauseController(isPaused)
 
 // ===== 遊戲狀態 =====
 const {
@@ -77,6 +86,8 @@ const {
   feedback,
   showFeedback,
   isPlaying,
+  pauseGame,
+  resumeGame,
   startGame: startGameState,
   finishGame: finishGameState,
   nextRound,
@@ -103,6 +114,8 @@ const {
   roundTime,
   formattedRoundTime,
   startRound,
+  pauseRound,
+  resumeRound,
   stopRound,
   resetRound,
 } = useRoundTimer({
@@ -208,7 +221,7 @@ function handleSelectAnswer(colorName: string) {
   }
   
   // 延遲後進入下一題
-  setTimeout(() => {
+  scheduleTimeout(() => {
     clearFeedback()
     isAnswering.value = false
     
@@ -220,7 +233,7 @@ function handleSelectAnswer(colorName: string) {
     } else {
       handleGameEnd()
     }
-  }, 800)
+  }, 1000)
 }
 
 function handleRoundTimeout() {
@@ -234,7 +247,7 @@ function handleRoundTimeout() {
   const correctColor = COLORS.find(c => c.name === currentQuestion.value!.correctAnswer)
   setFeedback('wrong', `時間到！正確答案：${correctColor?.label}`)
   
-  setTimeout(() => {
+  scheduleTimeout(() => {
     clearFeedback()
     
     if (currentQuestionIndex.value < questions.value.length - 1) {
@@ -245,11 +258,12 @@ function handleRoundTimeout() {
     } else {
       handleGameEnd()
     }
-  }, 1000)
+  }, 1200)
 }
 
 function handleGameEnd() {
   stopRound()
+  clearTimers()
   playEnd()
   
   const result = summarizeResult(
@@ -291,12 +305,27 @@ watchEffect(() => {
 
 onUnmounted(() => {
   cleanupThrottle()
+  clearTimers()
+})
+
+watch(isPaused, (paused) => {
+  if (paused && phase.value === 'playing') {
+    pauseGame()
+    pauseRound()
+    return
+  }
+
+  if (!paused && phase.value === 'paused') {
+    resumeGame()
+    resumeRound()
+  }
 })
 
 // 監聯難度變化
 watch(() => [props.difficulty, props.subDifficulty] as const, () => {
   if (phase.value !== 'ready') {
     stopRound()
+    clearTimers()
     resetGame()
   }
 })

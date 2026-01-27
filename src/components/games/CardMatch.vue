@@ -9,6 +9,7 @@
  */
 import { ref, computed, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useGame } from '@/games/core/useGame'
+import { usePauseController } from '@/games/core/usePauseController'
 import { useThrottledEmit } from '@/composables/useThrottledEmit'
 import { useResponsive } from '@/composables/useResponsive'
 import type { DifficultyConfig } from '@/games/core/gameTypes'
@@ -53,10 +54,12 @@ const props = withDefaults(defineProps<{
   subDifficulty?: SubDifficulty
   settings?: Record<string, unknown>
   autoStart?: boolean
+  isPaused?: boolean
 }>(), {
   difficulty: 'easy',
   subDifficulty: 2,
   autoStart: false,
+  isPaused: false,
 })
 
 const emit = defineEmits<{
@@ -75,6 +78,8 @@ const { throttledEmit, cleanup: cleanupThrottle } = useThrottledEmit(
   100
 )
 const { isSmallLandscape } = useResponsive()
+const isPaused = computed(() => props.isPaused ?? false)
+const { scheduleTimeout, clearTimers } = usePauseController(isPaused)
 
 const iconImages = [
   iconApple,
@@ -160,7 +165,12 @@ const isChecking = ref(false)
 const isPreviewing = ref(false)
 
 // ===== 計算屬性 =====
-const config = computed(() => game.currentConfig.value)
+const baseConfig = computed(() => CARD_MATCH_CONFIGS[props.difficulty])
+const config = computed(() => ({
+  ...game.currentConfig.value,
+  pairs: baseConfig.value.pairs,
+  gridCols: baseConfig.value.gridCols,
+}))
 const totalPairs = computed(() => config.value.pairs)
 const gridCols = computed(() => config.value.gridCols)
 const phase = computed(() => game.state.phase.value)
@@ -225,7 +235,7 @@ function handleStart() {
   cards.value = showAllCards(cards.value)
   
   // 預覽結束後隱藏卡片並開始計時
-  setTimeout(() => {
+  scheduleTimeout(() => {
     cards.value = hideUnmatchedCards(cards.value)
     isPreviewing.value = false
     
@@ -273,7 +283,7 @@ function handleCardClick(index: number) {
 
 /** 配對成功處理 */
 function handleMatchSuccess(idx1: number, idx2: number, card1: Card, card2: Card) {
-  setTimeout(() => {
+  scheduleTimeout(() => {
     // 播放配對成功音效
     game.audio.playCustomSound('card-match')
     
@@ -290,7 +300,7 @@ function handleMatchSuccess(idx1: number, idx2: number, card1: Card, card2: Card
     // 顯示回饋
     game.showFeedback('correct', '配對成功！', matchScore)
     
-    setTimeout(() => {
+    scheduleTimeout(() => {
       game.hideFeedback()
       flippedIndices.value = []
       isChecking.value = false
@@ -299,26 +309,26 @@ function handleMatchSuccess(idx1: number, idx2: number, card1: Card, card2: Card
       if (matchedPairs.value >= totalPairs.value) {
         handleGameComplete()
       }
-    }, 300)
-  }, 300)
+    }, 400)
+  }, 400)
 }
 
 /** 配對失敗處理 */
 function handleMatchFailure(idx1: number, idx2: number, card1: Card, card2: Card) {
-  setTimeout(() => {
+  scheduleTimeout(() => {
     // 播放錯誤音效
     game.audio.playWrong()
     game.showFeedback('wrong', '再試一次')
     
-    setTimeout(() => {
+    scheduleTimeout(() => {
       // 翻回卡片
       cards.value[idx1] = { ...card1, isFlipped: false }
       cards.value[idx2] = { ...card2, isFlipped: false }
       game.hideFeedback()
       flippedIndices.value = []
       isChecking.value = false
-    }, 500)
-  }, 500)
+    }, 600)
+  }, 600)
 }
 
 /** 遊戲完成處理 */
@@ -360,6 +370,7 @@ onMounted(() => {
 watch(() => [props.difficulty, props.subDifficulty] as const, ([newDifficulty, newSubDifficulty]) => {
   if (phase.value !== 'ready') {
     game.timer.stop()
+    clearTimers()
     game.state.resetGame()
   }
   game.setDifficulty(newDifficulty, newSubDifficulty ?? 2)
@@ -390,6 +401,18 @@ watchEffect(() => {
 // 清理
 onUnmounted(() => {
   cleanupThrottle()
+  clearTimers()
+})
+
+watch(isPaused, (paused) => {
+  if (paused && phase.value === 'playing') {
+    game.pauseGame()
+    return
+  }
+
+  if (!paused && phase.value === 'paused') {
+    game.resumeGame()
+  }
 })
 </script>
 

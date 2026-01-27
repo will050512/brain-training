@@ -28,8 +28,10 @@ const settingsStore = useSettingsStore()
           <SubtleLabel text="允許將資料備份到雲端" tone="muted" class="mt-0.5 block" />
         </div>
         <button
+          type="button"
           class="toggle-switch flex-shrink-0"
           :class="{ 'toggle-on': props.consentState?.analyticsConsent }"
+          :aria-pressed="props.consentState?.analyticsConsent ?? false"
         >
           <span class="toggle-thumb"></span>
         </button>
@@ -41,8 +43,10 @@ const settingsStore = useSettingsStore()
           <SubtleLabel text="啟用行為記錄以產生洞察" tone="muted" class="mt-0.5 block" />
         </div>
         <button
+          type="button"
           class="toggle-switch flex-shrink-0"
           :class="{ 'toggle-on': settingsStore.enableBehaviorTracking }"
+          :aria-pressed="settingsStore.enableBehaviorTracking"
         >
           <span class="toggle-thumb"></span>
         </button>

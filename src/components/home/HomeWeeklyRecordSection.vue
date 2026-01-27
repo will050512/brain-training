@@ -40,20 +40,20 @@ const handleWeekChange = (startDate: string, endDate: string): void => {
       <div class="inline-flex items-center gap-1 rounded-full bg-[var(--color-surface-elevated)] p-1 border border-[var(--color-border)] shadow-sm">
         <button
           type="button"
-          class="px-3 py-1.5 rounded-full transition-all text-sm font-medium"
+          class="px-3 py-1.5 rounded-full transition-all text-sm font-medium border border-transparent"
           :class="props.activityFilter === 'daily'
-            ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-sm'
-            : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-soft)]'"
+            ? 'bg-[var(--color-primary)] !text-white shadow-sm'
+            : 'bg-[var(--color-bg-soft)] text-[var(--color-text)] border-[var(--color-border)] hover:bg-[var(--color-bg-muted)]'"
           @click="setFilter('daily')"
         >
           每日訓練
         </button>
         <button
           type="button"
-          class="px-3 py-1.5 rounded-full transition-all text-sm font-medium"
+          class="px-3 py-1.5 rounded-full transition-all text-sm font-medium border border-transparent"
           :class="props.activityFilter === 'all'
-            ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-sm'
-            : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-soft)]'"
+            ? 'bg-[var(--color-primary)] !text-white shadow-sm'
+            : 'bg-[var(--color-bg-soft)] text-[var(--color-text)] border-[var(--color-border)] hover:bg-[var(--color-bg-muted)]'"
           @click="setFilter('all')"
         >
           全部活動

@@ -50,15 +50,15 @@ const props = defineProps<Props>()
         </div>
         <div class="flex justify-between">
           <SubtleLabel text="上次同步" tone="muted" />
-          <span class="font-mono text-[var(--color-text)]">{{ props.formatSyncTime(props.syncStatus.session.lastSuccessAt) }}</span>
+          <span class="text-[var(--color-text)]">{{ props.formatSyncTime(props.syncStatus.session.lastSuccessAt) }}</span>
         </div>
         <div class="flex justify-between">
           <SubtleLabel text="遊戲記錄上傳" tone="muted" />
-          <span class="font-mono text-[var(--color-text)]">{{ props.formatSyncTime(props.syncStatus.session.lastSuccessAt) }}</span>
+          <span class="text-[var(--color-text)]">{{ props.formatSyncTime(props.syncStatus.session.lastSuccessAt) }}</span>
         </div>
         <div class="flex justify-between">
           <SubtleLabel text="個人資料上傳" tone="muted" />
-          <span class="font-mono text-[var(--color-text)]">{{ props.formatSyncTime(props.syncStatus.user.lastSuccessAt) }}</span>
+          <span class="text-[var(--color-text)]">{{ props.formatSyncTime(props.syncStatus.user.lastSuccessAt) }}</span>
         </div>
       </div>
     </div>

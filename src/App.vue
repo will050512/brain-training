@@ -8,6 +8,7 @@ import { useResponsive } from '@/composables/useResponsive'
 import { useNotification } from '@/composables/useNotification'
 import { useToast } from '@/composables/useToast'
 import { useUiScale } from '@/composables/useUiScale'
+import { usePWA } from '@/composables/usePWA'
 import { backfillUserSessionsToSheet } from '@/services/googleSheetSyncService'
 import { syncUserProfileToSheet } from '@/services/userSheetSyncService'
 import { backfillAllUserDataToSheet } from '@/services/userDataSheetSyncService'
@@ -30,6 +31,7 @@ const { isMobile, isTablet, isDesktop } = useResponsive()
 const { checkTrainingReminder, checkAssessmentReminder } = useNotification()
 const toast = useToast()
 useUiScale()
+const { isOfflineReady, needRefresh, isUpdating, checkForUpdates, applyUpdate } = usePWA()
 
 // 初始化主題系統
 const { initTheme } = useTheme()
@@ -45,9 +47,35 @@ const needsEducationYears = computed(() => {
   return !user.educationYears || user.educationYears <= 0
 })
 
+const updateGateState = ref<'checking' | 'blocked' | 'ready'>('checking')
+
+const showUpdateGate = computed(() => updateGateState.value !== 'ready' || isUpdating.value)
+
+const updateGateMessage = computed(() => {
+  if (isUpdating.value) return '正在更新版本，完成後會自動重新載入。'
+  if (updateGateState.value === 'blocked') return '偵測到新版本，請先更新才能繼續。'
+  return '請稍等，確認最新版後再開始使用。'
+})
+
+const updateGateTitle = computed(() => {
+  if (isUpdating.value) return '版本更新中'
+  if (updateGateState.value === 'blocked') return '需要更新'
+  return '正在確認更新'
+})
+
 watch(needsEducationYears, (needs) => {
   showEducationModal.value = needs
 }, { immediate: true })
+
+watch(needRefresh, (available) => {
+  if (available) {
+    updateGateState.value = 'blocked'
+    return
+  }
+  if (updateGateState.value !== 'checking') {
+    updateGateState.value = 'ready'
+  }
+})
 
 // ===== 佈局系統 =====
 
@@ -204,6 +232,13 @@ async function handleOnline(): Promise<void> {
 }
 
 onMounted(async () => {
+  updateGateState.value = 'checking'
+  await checkForUpdates()
+  await new Promise(resolve => setTimeout(resolve, 600))
+  if (!needRefresh.value) {
+    updateGateState.value = 'ready'
+  }
+
   // 初始化主題
   initTheme()
   
@@ -265,6 +300,24 @@ onUnmounted(() => {
       'layout-fullscreen': isFullscreenLayout,
     }"
   >
+    <div v-if="showUpdateGate" class="app-update-gate" role="alertdialog" aria-live="assertive">
+      <div class="app-update-card">
+        <div class="text-3xl">🔄</div>
+        <h2 class="app-update-title">{{ updateGateTitle }}</h2>
+        <p class="app-update-message">{{ updateGateMessage }}</p>
+        <div class="app-update-actions">
+          <button
+            v-if="updateGateState === 'blocked'"
+            class="btn btn-primary"
+            :disabled="isUpdating"
+            @click="applyUpdate"
+          >
+            {{ isUpdating ? '更新中...' : '立即更新' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- 桌面版佈局 -->
     <DesktopLayout 
       v-if="useDesktopLayout"
@@ -318,7 +371,13 @@ onUnmounted(() => {
     <InstallPrompt />
     
     <!-- PWA 更新提示 -->
-    <PWAUpdateBanner />
+    <PWAUpdateBanner
+      :need-refresh="needRefresh"
+      :is-offline-ready="isOfflineReady"
+      :is-updating="isUpdating"
+      :force-update="needRefresh"
+      :on-apply-update="applyUpdate"
+    />
 
     <!-- 學歷補充對話框（外部登入） -->
     <EducationPromptModal
@@ -346,6 +405,44 @@ onUnmounted(() => {
 .app-container {
   min-height: 100vh;
   min-height: 100dvh;
+}
+
+.app-update-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  background: var(--color-overlay);
+}
+
+.app-update-card {
+  width: min(420px, 100%);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-lg);
+  text-align: center;
+  box-shadow: var(--shadow-xl);
+}
+
+.app-update-title {
+  margin: var(--spacing-sm) 0;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.app-update-message {
+  margin: 0 0 var(--spacing-md);
+  color: var(--color-text-secondary);
+}
+
+.app-update-actions {
+  display: flex;
+  justify-content: center;
 }
 
 /* 桌面佈局時，內容已由 DesktopLayout 處理 */

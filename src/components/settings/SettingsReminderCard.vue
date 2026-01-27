@@ -18,8 +18,10 @@ const settingsStore = useSettingsStore()
         <SubtleLabel text="距離上次評估超過 30 天提醒" tone="muted" class="mt-0.5 block" />
       </div>
       <button
+        type="button"
         class="toggle-switch flex-shrink-0"
         :class="{ 'toggle-on': settingsStore.assessmentReminderEnabled }"
+        :aria-pressed="settingsStore.assessmentReminderEnabled"
       >
         <span class="toggle-thumb"></span>
       </button>
