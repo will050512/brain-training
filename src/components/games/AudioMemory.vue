@@ -127,7 +127,7 @@ const FALLBACK_NOTE_PROFILES = [
 const SOUND_IDS = SOUND_LIBRARY.map(sound => sound.id)
 const AUDIO_MEMORY_VOLUME = 0.85
 const FALLBACK_SOUND_CONFIGS = SOUND_IDS.map((id, index) => {
-  const profile = FALLBACK_NOTE_PROFILES[index % FALLBACK_NOTE_PROFILES.length]
+  const profile = FALLBACK_NOTE_PROFILES[index % FALLBACK_NOTE_PROFILES.length]!
   return {
     id,
     name: id,

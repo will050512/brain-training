@@ -49,6 +49,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,mp3,wav,ogg,webp,jpg,jpeg,gif,json}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         // 確保樣式變更能即時生效
         skipWaiting: true,
         clientsClaim: true,
