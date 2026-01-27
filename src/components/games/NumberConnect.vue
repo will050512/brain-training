@@ -420,7 +420,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
             class="node-btn absolute w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center text-sm sm:text-base md:text-lg font-bold transition-all transform hover:scale-110 min-h-[44px] min-w-[44px] sm:min-h-[48px] sm:min-w-[48px]"
             :class="{
               'bg-green-500 text-white': node.connected,
-              'bg-blue-500 text-white ring-2 ring-blue-300 animate-pulse': !node.connected && node.value === currentTarget,
+              'bg-blue-500 text-white ring-2 ring-blue-300': !node.connected && node.value === currentTarget,
               'bg-white dark:bg-gray-700 shadow-md': !node.connected && node.value !== currentTarget,
             }"
             :style="{
