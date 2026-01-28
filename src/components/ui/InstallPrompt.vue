@@ -7,7 +7,7 @@
     >
       <div class="pwa-install-banner-content">
         <div class="pwa-install-banner-title flex items-center gap-2">
-          <img src="/logo-64.png" alt="愛護腦" class="w-5 h-5 rounded-md" />
+          <img :src="logoUrl" alt="愛護腦" class="w-5 h-5 rounded-md" />
           安裝愛護腦
         </div>
         <div class="pwa-install-banner-text">安裝到主畫面，離線也能使用！</div>
@@ -15,6 +15,9 @@
       <div class="pwa-install-banner-actions">
         <button @click="installApp" class="pwa-install-btn pwa-install-btn-primary">
           立即安裝
+        </button>
+        <button @click="openAndroidGuide" class="pwa-install-btn pwa-install-btn-secondary">
+          安裝教學
         </button>
         <button @click="dismissPrompt" class="pwa-install-btn pwa-install-btn-secondary">
           稍後
@@ -65,6 +68,17 @@
           </span>
         </div>
       </div>
+
+      <div class="mt-4">
+        <div class="text-sm font-semibold text-[var(--color-text)] mb-2">操作影片</div>
+        <video
+          class="w-full rounded-xl border border-[var(--color-border)]"
+          controls
+          playsinline
+          preload="metadata"
+          :src="appleVideoUrl"
+        ></video>
+      </div>
       
       <button 
         @click="dismissIOSGuide" 
@@ -75,23 +89,168 @@
     </div>
   </Transition>
 
+  <!-- LINE 內建瀏覽器安裝指引 -->
+  <Transition name="slide-up">
+    <div v-if="showLineGuide && !isAppEntry" class="ios-install-guide">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-[var(--color-text)]">在瀏覽器開啟安裝</h3>
+        <button 
+          @click="dismissLineGuide" 
+          class="text-[var(--color-text-muted)] hover:text-[var(--color-text)] p-2"
+          aria-label="關閉"
+        >
+          ×
+        </button>
+      </div>
+
+      <div class="ios-install-steps">
+        <div class="ios-install-step">
+          <span class="ios-install-step-number">1</span>
+          <span class="ios-install-step-text">
+            LINE 內建瀏覽器不支援 PWA 安裝
+          </span>
+        </div>
+        <div class="ios-install-step">
+          <span class="ios-install-step-number">2</span>
+          <span class="ios-install-step-text">
+            <template v-if="isIOS">
+              點右上角「分享」選單，選擇「在 Safari 開啟」
+            </template>
+            <template v-else-if="isAndroid">
+              點右上角「⋯」選單，選擇「在 Chrome 開啟」
+            </template>
+            <template v-else>
+              點右上角「⋯」或「分享」選單，選擇「在瀏覽器開啟」
+            </template>
+          </span>
+        </div>
+        <div class="ios-install-step">
+          <span class="ios-install-step-number">3</span>
+          <span class="ios-install-step-text">
+            在瀏覽器中依提示加入主畫面完成安裝
+          </span>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <div class="text-sm font-semibold text-[var(--color-text)] mb-2">平台教學影片</div>
+        <template v-if="isIOS">
+          <video
+            class="w-full rounded-xl border border-[var(--color-border)]"
+            controls
+            playsinline
+            preload="metadata"
+            :src="appleVideoUrl"
+          ></video>
+        </template>
+        <template v-else-if="isAndroid">
+          <video
+            class="w-full rounded-xl border border-[var(--color-border)]"
+            controls
+            playsinline
+            preload="metadata"
+            :src="androidVideoUrl"
+          ></video>
+        </template>
+        <template v-else>
+          <video
+            class="w-full rounded-xl border border-[var(--color-border)] mb-3"
+            controls
+            playsinline
+            preload="metadata"
+            :src="appleVideoUrl"
+          ></video>
+          <video
+            class="w-full rounded-xl border border-[var(--color-border)]"
+            controls
+            playsinline
+            preload="metadata"
+            :src="androidVideoUrl"
+          ></video>
+        </template>
+      </div>
+
+      <button 
+        @click="dismissLineGuide" 
+        class="w-full mt-4 py-3 bg-[var(--color-primary)] text-white rounded-xl font-semibold"
+      >
+        我知道了
+      </button>
+    </div>
+  </Transition>
+
+  <!-- Android 安裝指引 -->
+  <Transition name="slide-up">
+    <div v-if="showAndroidGuide && !isAppEntry" class="ios-install-guide">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-[var(--color-text)]">安裝到主畫面</h3>
+        <button 
+          @click="dismissAndroidGuide" 
+          class="text-[var(--color-text-muted)] hover:text-[var(--color-text)] p-2"
+          aria-label="關閉"
+        >
+          ×
+        </button>
+      </div>
+
+      <div class="ios-install-steps">
+        <div class="ios-install-step">
+          <span class="ios-install-step-number">1</span>
+          <span class="ios-install-step-text">
+            點右上角「⋯」選單
+          </span>
+        </div>
+        <div class="ios-install-step">
+          <span class="ios-install-step-number">2</span>
+          <span class="ios-install-step-text">
+            選擇「<strong>安裝應用程式</strong>」或「<strong>加入主畫面</strong>」
+          </span>
+        </div>
+        <div class="ios-install-step">
+          <span class="ios-install-step-number">3</span>
+          <span class="ios-install-step-text">
+            按下「<strong>安裝</strong>」完成
+          </span>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <div class="text-sm font-semibold text-[var(--color-text)] mb-2">操作影片</div>
+        <video
+          class="w-full rounded-xl border border-[var(--color-border)]"
+          controls
+          playsinline
+          preload="metadata"
+          :src="androidVideoUrl"
+        ></video>
+      </div>
+
+      <button 
+        @click="dismissAndroidGuide" 
+        class="w-full mt-4 py-3 bg-[var(--color-primary)] text-white rounded-xl font-semibold"
+      >
+        我知道了
+      </button>
+    </div>
+  </Transition>
+
   <!-- 輕量提示橫幅（底部常駐，用於未安裝的手機用戶） -->
   <Transition name="fade">
     <div 
-      v-if="showMiniBanner && !showPrompt && !showIOSGuide && !isAppEntry" 
+      v-if="showMiniBanner && !showPrompt && !showIOSGuide && !showLineGuide && !showAndroidGuide && !isAppEntry" 
       class="fixed bottom-0 left-0 right-0 bg-[var(--color-surface)] border-t border-[var(--color-border)] py-2 px-4 flex items-center justify-between z-40"
       style="padding-bottom: max(0.5rem, env(safe-area-inset-bottom));"
     >
       <div class="flex items-center gap-2">
         <span class="text-xl">📲</span>
-        <span class="text-sm text-[var(--color-text)]">安裝 APP 獲得更好體驗</span>
+        <span class="text-sm text-[var(--color-text)]">{{ miniBannerText }}</span>
       </div>
       <div class="flex items-center gap-2">
         <button 
           @click="showFullPrompt" 
           class="text-sm font-semibold text-[var(--color-primary)]"
         >
-          安裝
+          {{ miniBannerActionLabel }}
         </button>
         <button 
           @click="dismissMiniBanner" 
@@ -115,8 +274,15 @@ interface BeforeInstallPromptEvent extends Event {
 
 const showPrompt = ref(false)
 const showIOSGuide = ref(false)
+const showLineGuide = ref(false)
+const showAndroidGuide = ref(false)
 const showMiniBanner = ref(false)
 let deferredPrompt: BeforeInstallPromptEvent | null = null
+const hasDeferredPrompt = ref(false)
+
+const logoUrl = computed(() => `${import.meta.env.BASE_URL}logo-64.png`)
+const appleVideoUrl = new URL('../../assets/video/apple操作.mp4', import.meta.url).href
+const androidVideoUrl = new URL('../../assets/video/安卓操作.mp4', import.meta.url).href
 
 // 裝置檢測
 const isIOS = computed(() => {
@@ -127,6 +293,10 @@ const isIOS = computed(() => {
 const isMobile = computed(() => {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 })
+
+const isAndroid = computed(() => /Android/i.test(navigator.userAgent))
+
+const isLine = computed(() => /LINE/i.test(navigator.userAgent))
 
 const isStandalone = computed(() => {
   return window.matchMedia('(display-mode: standalone)').matches ||
@@ -146,10 +316,25 @@ function checkAppEntry(): boolean {
 
 const isAppEntry = computed(() => checkAppEntry())
 
+const miniBannerText = computed(() => {
+  if (isLine.value) return 'LINE 內無法安裝，請改用瀏覽器開啟'
+  if (isIOS.value) return '可加入主畫面，離線也能使用'
+  if (!hasDeferredPrompt.value) return '找不到安裝？查看教學'
+  return '安裝 APP 獲得更好體驗'
+})
+
+const miniBannerActionLabel = computed(() => {
+  if (isLine.value) return '查看說明'
+  if (isIOS.value) return '安裝教學'
+  if (!hasDeferredPrompt.value) return '安裝教學'
+  return '安裝'
+})
+
 // 處理 Android beforeinstallprompt 事件
 function handleBeforeInstallPrompt(e: Event) {
   e.preventDefault()
   deferredPrompt = e as BeforeInstallPromptEvent
+  hasDeferredPrompt.value = true
   
   // 手機用戶立即顯示（不再等待 7 天）
   if (isMobile.value && !isStandalone.value) {
@@ -179,6 +364,7 @@ async function installApp() {
   }
   
   deferredPrompt = null
+  hasDeferredPrompt.value = false
   showPrompt.value = false
 }
 
@@ -194,6 +380,17 @@ function dismissIOSGuide() {
   showIOSGuide.value = false
   localStorage.setItem('ios-guide-dismissed', Date.now().toString())
   // 顯示輕量橫幅
+  showMiniBanner.value = !isLine.value
+}
+
+function dismissLineGuide() {
+  showLineGuide.value = false
+  localStorage.setItem('line-guide-dismissed', Date.now().toString())
+  showMiniBanner.value = true
+}
+
+function dismissAndroidGuide() {
+  showAndroidGuide.value = false
   showMiniBanner.value = true
 }
 
@@ -206,11 +403,23 @@ function dismissMiniBanner() {
 function showFullPrompt() {
   showMiniBanner.value = false
   
-  if (isIOS.value) {
+  if (isLine.value) {
+    showLineGuide.value = true
+  } else if (isIOS.value) {
     showIOSGuide.value = true
   } else if (deferredPrompt) {
     showPrompt.value = true
+  } else {
+    openAndroidGuide()
   }
+}
+
+function openAndroidGuide() {
+  showPrompt.value = false
+  showIOSGuide.value = false
+  showLineGuide.value = false
+  showAndroidGuide.value = true
+  showMiniBanner.value = false
 }
 
 // 檢查 iOS 用戶是否應該顯示指引
@@ -235,10 +444,30 @@ function checkIOSPrompt() {
   }
 }
 
+function checkLinePrompt() {
+  if (!isLine.value || isStandalone.value) return
+  const dismissed = localStorage.getItem('line-guide-dismissed')
+  const dismissedTime = dismissed ? parseInt(dismissed) : 0
+  const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000)
+
+  if (!dismissed || dismissedTime < threeDaysAgo) {
+    setTimeout(() => {
+      showLineGuide.value = true
+    }, 1500)
+  } else if (!sessionStorage.getItem('mini-banner-dismissed')) {
+    showMiniBanner.value = true
+  }
+}
+
 onMounted(() => {
   if (isAppEntry.value) return
   // 如果已經是 standalone 模式，不顯示任何提示
   if (isStandalone.value) return
+
+  if (isLine.value) {
+    checkLinePrompt()
+    return
+  }
   
   // 監聽 Android 安裝事件
   window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
@@ -262,6 +491,8 @@ onMounted(() => {
     if (!checkAppEntry()) return
     showPrompt.value = false
     showIOSGuide.value = false
+    showLineGuide.value = false
+    showAndroidGuide.value = false
     showMiniBanner.value = false
     window.clearInterval(entryGuard)
   }, 500)
