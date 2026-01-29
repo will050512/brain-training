@@ -119,7 +119,7 @@ const currentTime = ref(0)
 const totalDuration = ref(3000)
 const playToken = ref(0)
 
-const timelinePaddingPct = computed(() => (isSmallLandscape.value ? 10 : 6))
+const timelinePaddingPct = computed(() => (isSmallLandscape() ? 10 : 6))
 
 function clampTimelinePosition(value: number): number {
   const padding = timelinePaddingPct.value
