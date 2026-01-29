@@ -104,7 +104,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, defineAsyncComponent, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import { gameRegistry } from '@/core/gameRegistry'
 import { useGameStore, useUserStore, useSettingsStore } from '@/stores'
 import { useResponsive } from '@/composables/useResponsive'
@@ -185,6 +185,7 @@ const gameStatus = ref<GameStatusUpdate>({
 const currentSessionId = ref<string | null>(null)
 const behaviorCollector = ref<BehaviorCollector | null>(null)
 let lastTouchAt = 0
+const pendingDailyCompletion = ref<Promise<unknown> | null>(null)
 
 // 每日訓練相關
 const showCompletionModal = ref(false)
@@ -593,17 +594,20 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
 
     // 如果是每日訓練，標記完成並更新狀態（失敗不阻擋「繼續下一個」）
     if (isFromDailyTraining.value) {
-      const currentTraining = gameStore.getCurrentTrainingGame()
-      if (currentTraining?.gameId === finalizedResult.gameId) {
-        gameStore.completeCurrentTrainingGame(finalizedResult.score, finalizedResult.duration)
-      }
+      gameStore.completeCurrentTrainingGame(finalizedResult.score, finalizedResult.duration, finalizedResult.gameId)
 
       const odId = userStore.currentUser?.id
       if (odId) {
         try {
-          await markGameCompleted(odId, finalizedResult.gameId, finalizedResult.duration)
+          const completionPromise = markGameCompleted(odId, finalizedResult.gameId, finalizedResult.duration)
+          pendingDailyCompletion.value = completionPromise
+          await completionPromise
         } catch (error) {
           console.error('markGameCompleted failed:', error)
+        } finally {
+          if (pendingDailyCompletion.value) {
+            pendingDailyCompletion.value = null
+          }
         }
       }
 
@@ -732,6 +736,33 @@ function handleBack(): void {
       return
     }
     router.push(isFromDailyTraining.value ? '/daily-challenge' : '/games')
+  }
+}
+
+async function ensureDailyCompletionSaved(): Promise<void> {
+  if (!isFromDailyTraining.value) return
+  if (gameState.value !== 'finished' || !gameResult.value) return
+
+  const odId = userStore.currentUser?.id
+  if (!odId) return
+
+  if (pendingDailyCompletion.value) {
+    try {
+      await pendingDailyCompletion.value
+    } catch {
+      // already logged elsewhere
+    }
+    return
+  }
+
+  try {
+    const completionPromise = markGameCompleted(odId, gameResult.value.gameId, gameResult.value.duration)
+    pendingDailyCompletion.value = completionPromise
+    await completionPromise
+  } catch (error) {
+    console.error('markGameCompleted failed:', error)
+  } finally {
+    pendingDailyCompletion.value = null
   }
 }
 
@@ -886,6 +917,11 @@ onMounted(() => {
   }
 })
 
+onBeforeRouteLeave(async () => {
+  await ensureDailyCompletionSaved()
+  return true
+})
+
 function startBehaviorSession(): void {
   const odId = userStore.currentUser?.id
   const gameId = resolvedGameId.value
@@ -988,7 +1024,6 @@ function handlePlayAreaInteraction(event: MouseEvent | TouchEvent): void {
   }
 }
 </style>
-
 
 
 

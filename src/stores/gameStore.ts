@@ -306,15 +306,16 @@ export const useGameStore = defineStore('game', () => {
   /**
    * 標記當前訓練遊戲完成
    */
-  function completeCurrentTrainingGame(score: number, duration: number): void {
-    if (currentTrainingIndex.value < dailyTrainingQueue.value.length) {
-      const current = dailyTrainingQueue.value[currentTrainingIndex.value]
-      if (current) {
-        current.isCompleted = true
-        current.score = score
-        current.duration = duration
-      }
-    }
+  function completeCurrentTrainingGame(score: number, duration: number, gameId?: string): void {
+    const targetIndex = typeof gameId === 'string' && gameId
+      ? dailyTrainingQueue.value.findIndex(item => item.gameId === gameId)
+      : currentTrainingIndex.value
+    if (targetIndex < 0 || targetIndex >= dailyTrainingQueue.value.length) return
+    const current = dailyTrainingQueue.value[targetIndex]
+    if (!current) return
+    current.isCompleted = true
+    current.score = score
+    current.duration = duration
   }
 
   /**

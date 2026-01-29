@@ -115,9 +115,33 @@ let animationFrameId: number = 0
 let startTime = 0
 let pausedAt: number | null = null
 let pausedDuration = 0
-const currentTime = ref(0) 
-const totalDuration = ref(3000) 
-const playToken = ref(0) 
+const currentTime = ref(0)
+const totalDuration = ref(3000)
+const playToken = ref(0)
+
+const timelinePaddingPct = computed(() => (isSmallLandscape.value ? 10 : 6))
+
+function clampTimelinePosition(value: number): number {
+  const padding = timelinePaddingPct.value
+  return Math.min(100 - padding, Math.max(padding, value))
+}
+
+function applyLeadInToPattern(pattern: RhythmPattern, leadInMs: number): RhythmPattern {
+  const beats = pattern.beats.map(beat => ({ ...beat }))
+  if (beats.length === 0) return { ...pattern, beats }
+  const earliestBeat = Math.min(...beats.map(beat => beat.time))
+  const offset = Math.max(0, leadInMs - earliestBeat)
+
+  if (offset === 0) {
+    return { ...pattern, beats }
+  }
+
+  return {
+    ...pattern,
+    beats: beats.map(beat => ({ ...beat, time: beat.time + offset })),
+    totalDuration: pattern.totalDuration ? pattern.totalDuration + offset : undefined,
+  }
+}
 
 // ===== 回饋映射 =====
 const feedbackData = computed(() => {
@@ -137,7 +161,9 @@ function startGame() {
   emit('game-start')
   
   // 生成新的譜面
+  const leadInMs = Math.max(0, config.value.leadInMs ?? 0)
   patterns.value = generateRoundPatterns(config.value.totalRounds, props.difficulty)
+    .map(pattern => applyLeadInToPattern(pattern, leadInMs))
   roundResults.value = []
   
   startNewRound()
@@ -354,12 +380,13 @@ function replay() {
 function getBeatPosition(time: number) {
   if (totalDuration.value <= 0) return 0
   const pct = (time / totalDuration.value) * 100
-  return Math.min(Math.max(pct, 0), 95)
+  return clampTimelinePosition(pct)
 }
 
 const cursorPosition = computed(() => {
-  if (totalDuration.value <= 0) return 0
-  return (currentTime.value / totalDuration.value) * 100
+  if (totalDuration.value <= 0) return clampTimelinePosition(0)
+  const pct = (currentTime.value / totalDuration.value) * 100
+  return clampTimelinePosition(pct)
 })
 
 function isBeatActive(beatTime: number) {
@@ -465,9 +492,9 @@ watch(isPaused, (paused) => {
         <div class="timeline-track relative w-full h-16 bg-gray-200 dark:bg-gray-700 rounded-full mt-6">
           <div
             v-for="(beat, index) in currentPattern?.beats"
-            :key="`beat-${currentRound}-${index}`" 
-            class="beat-note absolute top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full border-4 transition-all duration-150 z-10 flex items-center justify-center"
-            :style="{ left: `calc(${getBeatPosition(beat.time)}% - 24px)` }"
+            :key="`beat-${currentRound}-${index}`"
+            class="beat-note absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full border-4 transition-all duration-150 z-10 flex items-center justify-center"
+            :style="{ left: `${getBeatPosition(beat.time)}%` }"
             :class="{
               'bg-white border-gray-400': !isBeatActive(beat.time) && getTapStatusForBeat(beat.time) === 'none',
               'scale-125 bg-yellow-300 border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.6)]': isBeatActive(beat.time) && gamePhase === 'listening',
