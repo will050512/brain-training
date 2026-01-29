@@ -48,8 +48,19 @@ const needsEducationYears = computed(() => {
 })
 
 const updateGateState = ref<'checking' | 'blocked' | 'ready'>('checking')
+const bootGateState = ref<'loading' | 'ready' | 'error'>('loading')
+const refreshGateState = ref<'idle' | 'loading' | 'error'>('idle')
+const isGameRoute = computed(() => route.meta.isGame === true || route.meta.layout === 'game')
 
 const showUpdateGate = computed(() => updateGateState.value !== 'ready' || isUpdating.value)
+const showLoadGate = computed(() => {
+  if (showUpdateGate.value) return false
+  if (bootGateState.value !== 'ready') return true
+  if (refreshGateState.value === 'loading' || refreshGateState.value === 'error') {
+    return !isGameRoute.value
+  }
+  return false
+})
 
 const updateGateMessage = computed(() => {
   if (isUpdating.value) return '正在更新版本，完成後會自動重新載入。'
@@ -61,6 +72,18 @@ const updateGateTitle = computed(() => {
   if (isUpdating.value) return '版本更新中'
   if (updateGateState.value === 'blocked') return '需要更新'
   return '正在確認更新'
+})
+
+const loadGateTitle = computed(() => {
+  if (bootGateState.value === 'loading') return '正在載入資料'
+  if (refreshGateState.value === 'loading') return '同步最新資料'
+  return '載入失敗'
+})
+
+const loadGateMessage = computed(() => {
+  if (bootGateState.value === 'loading') return '請稍等，完成後會自動進入。'
+  if (refreshGateState.value === 'loading') return '正在更新內容，請稍候。'
+  return '載入時發生問題，請重新嘗試。'
 })
 
 watch(needsEducationYears, (needs) => {
@@ -207,6 +230,10 @@ async function handleEducationSave(years: number): Promise<void> {
   showEducationModal.value = false
 }
 
+function reloadForLoadGate(): void {
+  window.location.reload()
+}
+
 // 監聽使用者登入狀態變化
 watch(() => userStore.currentUser, (newUser) => {
   if (newUser?.id) {
@@ -225,13 +252,23 @@ watch(() => userStore.currentUser, (newUser) => {
 async function handleOnline(): Promise<void> {
   const odId = userStore.currentUser?.id
   if (!odId) return
-  await dataInitService.refreshUserDataFromSheet(odId)
-  backfillUserSessionsToSheet(odId)
-  syncUserProfileToSheet(userStore.currentUser)
-  backfillAllUserDataToSheet(odId)
+  if (refreshGateState.value !== 'loading' && !isGameRoute.value) {
+    refreshGateState.value = 'loading'
+  }
+  try {
+    await dataInitService.refreshUserDataFromSheet(odId)
+    backfillUserSessionsToSheet(odId)
+    syncUserProfileToSheet(userStore.currentUser)
+    backfillAllUserDataToSheet(odId)
+    refreshGateState.value = 'idle'
+  } catch (error) {
+    console.error('Failed to refresh user data:', error)
+    refreshGateState.value = 'error'
+  }
 }
 
 onMounted(async () => {
+  bootGateState.value = 'loading'
   updateGateState.value = 'checking'
   await checkForUpdates()
   await new Promise(resolve => setTimeout(resolve, 600))
@@ -239,29 +276,35 @@ onMounted(async () => {
     updateGateState.value = 'ready'
   }
 
-  // 初始化主題
-  initTheme()
-  
-  // 載入設定
-  settingsStore.loadSettings()
-  
-  // 嘗試恢復登入狀態
-  await userStore.restoreSession()
-  
-  // 恢復登入後檢查同意狀態（確保 ID 存在）
-  if (userStore.currentUser?.id) {
-    settingsStore.setAssessmentUser(userStore.currentUser.id)
-    await checkConsentStatus()
-    // 舊用戶資料回填至 Google Sheet（背景執行）
-    backfillUserSessionsToSheet(userStore.currentUser.id)
-    syncUserProfileToSheet(userStore.currentUser)
-    backfillAllUserDataToSheet(userStore.currentUser.id)
-  }
+  try {
+    // 初始化主題
+    initTheme()
+    
+    // 載入設定
+    settingsStore.loadSettings()
+    
+    // 嘗試恢復登入狀態
+    await userStore.restoreSession()
+    
+    // 恢復登入後檢查同意狀態（確保 ID 存在）
+    if (userStore.currentUser?.id) {
+      settingsStore.setAssessmentUser(userStore.currentUser.id)
+      await checkConsentStatus()
+      // 舊用戶資料回填至 Google Sheet（背景執行）
+      backfillUserSessionsToSheet(userStore.currentUser.id)
+      syncUserProfileToSheet(userStore.currentUser)
+      backfillAllUserDataToSheet(userStore.currentUser.id)
+    }
 
-  // 初始化數據同步服務
-  dataInitService.initialize()
-  window.addEventListener('online', handleOnline)
-  window.addEventListener('focus', handleOnline)
+    // 初始化數據同步服務
+    await dataInitService.initialize()
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('focus', handleOnline)
+    bootGateState.value = 'ready'
+  } catch (error) {
+    console.error('Failed to bootstrap app:', error)
+    bootGateState.value = 'error'
+  }
 
   // 檢查提醒（延遲執行以免影響首屏載入）
   setTimeout(() => {
@@ -313,6 +356,23 @@ onUnmounted(() => {
             @click="applyUpdate"
           >
             {{ isUpdating ? '更新中...' : '立即更新' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showLoadGate" class="app-update-gate" role="status" aria-live="polite">
+      <div class="app-update-card">
+        <div class="text-3xl">⏳</div>
+        <h2 class="app-update-title">{{ loadGateTitle }}</h2>
+        <p class="app-update-message">{{ loadGateMessage }}</p>
+        <div class="app-update-actions">
+          <button
+            v-if="bootGateState === 'error' || refreshGateState === 'error'"
+            class="btn btn-primary"
+            @click="reloadForLoadGate"
+          >
+            重新載入
           </button>
         </div>
       </div>
