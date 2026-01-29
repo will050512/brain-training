@@ -549,7 +549,7 @@ export const useUserStore = defineStore('user', () => {
       localStorage.setItem('brain-training-last-user', remoteUser.id)
       localStorage.setItem('brain-training-current-user', remoteUser.id)
 
-      await dataInitService.initUserData(remoteUser.id, { forceRestore: true })
+      await dataInitService.initUserData(remoteUser.id, { forceRestore: true, mode: 'fast' })
       currentSettings.value = await getUserSettings(remoteUser.id) || defaultUserSettings(remoteUser.id)
       const refreshedStats = await getUserStats(remoteUser.id)
       currentStats.value = refreshedStats ? normalizeStats(refreshedStats) : defaultUserStats(remoteUser.id)

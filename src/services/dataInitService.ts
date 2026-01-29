@@ -6,7 +6,7 @@ import { getTodayTrainingSession, saveDailyTrainingSession, getLatestBaselineAss
 import { syncDailyTrainingSessionToSheet } from '@/services/userDataSheetSyncService'
 import { backfillUserSessionsToSheet } from '@/services/googleSheetSyncService'
 import { backfillAllUserDataToSheet } from '@/services/userDataSheetSyncService'
-import { restoreAllUserDataFromSheet } from '@/services/sheetRestoreService'
+import { restoreAllUserDataFromSheet, restoreUserDeltaFromSheet, restoreUserSnapshotFromSheet } from '@/services/sheetRestoreService'
 import { useSettingsStore } from '@/stores/settingsStore'
 
 export type DataSyncStatus = SyncStatus | 'pending'
@@ -29,6 +29,8 @@ class DataInitService {
   private subscriptions: (() => void)[] = []
   private debounceTimer: ReturnType<typeof setTimeout> | null = null
   private isInitialized = false
+  private backgroundSync: Promise<void> | null = null
+  private backgroundSyncUserId: string | null = null
 
   constructor(config: Partial<DataSyncConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config }
@@ -63,11 +65,32 @@ class DataInitService {
     this.isInitialized = true
   }
 
-  async initUserData(odId: string, options?: { forceRestore?: boolean }) {
+  async initUserData(odId: string, options?: { forceRestore?: boolean; mode?: 'full' | 'fast' }) {
     const gameStore = useGameStore()
     const settingsStore = useSettingsStore()
 
+    const mode = options?.mode ?? 'full'
     this.setSyncStatus('syncing')
+
+    if (mode === 'fast') {
+      try {
+        settingsStore.setAssessmentUser(odId)
+        await restoreUserSnapshotFromSheet(odId, { force: options?.forceRestore })
+        await Promise.all([
+          gameStore.loadUserSessions(odId),
+          this.loadDailyTraining(odId),
+        ])
+        await this.syncAssessmentStatus(odId, settingsStore)
+        this.setSyncStatus('idle')
+        this.startBackgroundFullSync(odId)
+        return
+      } catch (error) {
+        console.error('Failed to init user data (fast):', error)
+        this.setSyncStatus('error')
+        return
+      }
+    }
+
     try {
       settingsStore.setAssessmentUser(odId)
       await restoreAllUserDataFromSheet(odId, { force: options?.forceRestore })
@@ -87,14 +110,21 @@ class DataInitService {
     }
   }
 
-  async refreshUserDataFromSheet(odId: string, options?: { forceRestore?: boolean }) {
+  async refreshUserDataFromSheet(
+    odId: string,
+    options?: { forceRestore?: boolean; mode?: 'full' | 'delta' }
+  ) {
     if (!odId) return
     const gameStore = useGameStore()
     const settingsStore = useSettingsStore()
     this.setSyncStatus('syncing')
     try {
       settingsStore.setAssessmentUser(odId)
-      await restoreAllUserDataFromSheet(odId, { force: options?.forceRestore })
+      if (options?.mode === 'delta') {
+        await restoreUserDeltaFromSheet(odId, { force: options?.forceRestore })
+      } else {
+        await restoreAllUserDataFromSheet(odId, { force: options?.forceRestore })
+      }
       await Promise.all([
         gameStore.loadUserSessions(odId),
         this.loadDailyTraining(odId),
@@ -103,6 +133,45 @@ class DataInitService {
       this.setSyncStatus('idle')
     } catch (error) {
       console.error('Failed to refresh user data:', error)
+      this.setSyncStatus('error')
+    }
+  }
+
+  private startBackgroundFullSync(odId: string) {
+    if (!odId) return
+    if (this.backgroundSync && this.backgroundSyncUserId === odId) return
+    this.backgroundSyncUserId = odId
+    this.backgroundSync = this.runBackgroundFullSync(odId)
+      .catch(() => {
+        // errors are handled in runBackgroundFullSync
+      })
+      .finally(() => {
+        if (this.backgroundSyncUserId === odId) {
+          this.backgroundSync = null
+          this.backgroundSyncUserId = null
+        }
+      })
+  }
+
+  private async runBackgroundFullSync(odId: string) {
+    const gameStore = useGameStore()
+    const settingsStore = useSettingsStore()
+    this.setSyncStatus('syncing')
+    try {
+      settingsStore.setAssessmentUser(odId)
+      await restoreAllUserDataFromSheet(odId, { force: true })
+      await Promise.all([
+        gameStore.loadUserSessions(odId),
+        this.loadDailyTraining(odId),
+      ])
+      await this.syncAssessmentStatus(odId, settingsStore)
+      await Promise.all([
+        backfillUserSessionsToSheet(odId),
+        backfillAllUserDataToSheet(odId),
+      ])
+      this.setSyncStatus('idle')
+    } catch (error) {
+      console.error('Background full sync failed:', error)
       this.setSyncStatus('error')
     }
   }

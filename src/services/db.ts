@@ -415,6 +415,19 @@ export async function saveGameSession(session: GameSession): Promise<void> {
 }
 
 /**
+ * 批量儲存遊戲會話
+ */
+export async function saveGameSessions(sessions: GameSession[]): Promise<void> {
+  if (sessions.length === 0) return
+  const db = await getDB()
+  const tx = db.transaction('gameSessions', 'readwrite')
+  for (const session of sessions) {
+    tx.store.put(session)
+  }
+  await tx.done
+}
+
+/**
  * 取得遊戲會話
  */
 export async function getGameSession(id: string): Promise<GameSession | undefined> {
@@ -558,6 +571,19 @@ export async function deleteDataConsent(odId: string): Promise<void> {
 export async function saveMiniCogResult(result: MiniCogResult): Promise<void> {
   const db = await getDB()
   await db.put('miniCogResults', result)
+}
+
+/**
+ * 批量儲存 Mini-Cog 結果
+ */
+export async function saveMiniCogResults(results: MiniCogResult[]): Promise<void> {
+  if (results.length === 0) return
+  const db = await getDB()
+  const tx = db.transaction('miniCogResults', 'readwrite')
+  for (const result of results) {
+    tx.store.put(result)
+  }
+  await tx.done
 }
 
 /**
@@ -1071,6 +1097,19 @@ export async function saveDailyTrainingSession(session: DailyTrainingSession): P
 }
 
 /**
+ * 批量儲存每日訓練會話
+ */
+export async function saveDailyTrainingSessions(sessions: DailyTrainingSession[]): Promise<void> {
+  if (sessions.length === 0) return
+  const db = await getDB()
+  const tx = db.transaction('dailyTrainingSessions', 'readwrite')
+  for (const session of sessions) {
+    tx.store.put(session)
+  }
+  await tx.done
+}
+
+/**
  * 取得今日訓練會話
  */
 export async function getTodayTrainingSession(odId: string): Promise<DailyTrainingSession | undefined> {
@@ -1119,6 +1158,19 @@ export async function saveBaselineAssessment(assessment: BaselineAssessment): Pr
 }
 
 /**
+ * 批量儲存基準能力評估
+ */
+export async function saveBaselineAssessments(assessments: BaselineAssessment[]): Promise<void> {
+  if (assessments.length === 0) return
+  const db = await getDB()
+  const tx = db.transaction('baselineAssessments', 'readwrite')
+  for (const assessment of assessments) {
+    tx.store.put(assessment)
+  }
+  await tx.done
+}
+
+/**
  * 取得使用者最新基準評估
  */
 export async function getLatestBaselineAssessment(odId: string): Promise<BaselineAssessment | undefined> {
@@ -1146,6 +1198,19 @@ export async function getUserBaselineAssessments(odId: string): Promise<Baseline
 export async function saveDeclineAlert(alert: DeclineAlert): Promise<void> {
   const db = await getDB()
   await db.put('declineAlerts', alert)
+}
+
+/**
+ * 批量儲存退化警告
+ */
+export async function saveDeclineAlerts(alerts: DeclineAlert[]): Promise<void> {
+  if (alerts.length === 0) return
+  const db = await getDB()
+  const tx = db.transaction('declineAlerts', 'readwrite')
+  for (const alert of alerts) {
+    tx.store.put(alert)
+  }
+  await tx.done
 }
 
 /**
@@ -1231,7 +1296,9 @@ export async function saveBehaviorLog(log: BehaviorLog): Promise<void> {
 export async function saveBehaviorLogs(logs: BehaviorLog[]): Promise<void> {
   const db = await getDB()
   const tx = db.transaction('behaviorLogs', 'readwrite')
-  await Promise.all(logs.map(log => tx.store.put(log)))
+  for (const log of logs) {
+    tx.store.put(log)
+  }
   await tx.done
 }
 
@@ -1333,6 +1400,19 @@ export async function incrementSyncRetryCount(id: string): Promise<void> {
 export async function saveNutritionRecommendation(recommendation: NutritionRecommendationRecord): Promise<void> {
   const db = await getDB()
   await db.put('nutritionRecommendations', recommendation)
+}
+
+/**
+ * 批量儲存營養品推薦
+ */
+export async function saveNutritionRecommendations(recommendations: NutritionRecommendationRecord[]): Promise<void> {
+  if (recommendations.length === 0) return
+  const db = await getDB()
+  const tx = db.transaction('nutritionRecommendations', 'readwrite')
+  for (const recommendation of recommendations) {
+    tx.store.put(recommendation)
+  }
+  await tx.done
 }
 
 /**

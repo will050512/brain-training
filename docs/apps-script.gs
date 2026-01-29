@@ -413,6 +413,129 @@ function findHeaderIndex_(headers, key) {
   return -1
 }
 
+function resolveHeaderIndex_(headerRow, fallbackHeaders, key) {
+  var idx = findHeaderIndex_(headerRow, key)
+  if (idx >= 0) return idx
+  if (fallbackHeaders && fallbackHeaders.length) {
+    return fallbackHeaders.indexOf(key)
+  }
+  return -1
+}
+
+function resolveTimestampIndex_(headerRow, fallbackHeaders, candidates) {
+  var list = Array.isArray(candidates) ? candidates : []
+  for (var i = 0; i < list.length; i++) {
+    var idx = resolveHeaderIndex_(headerRow, fallbackHeaders, list[i])
+    if (idx >= 0) return idx
+  }
+  return -1
+}
+
+function rowToObject_(headerRow, fallbackHeaders, rowValues) {
+  var keys = (headerRow && headerRow.length > 0) ? headerRow : fallbackHeaders
+  var obj = {}
+  if (!keys || !keys.length) return obj
+  for (var i = 0; i < keys.length; i++) {
+    var key = String(keys[i] || '').trim()
+    if (!key) continue
+    obj[key] = rowValues[i]
+  }
+  return obj
+}
+
+function parseLimit_(value, fallback, min, max) {
+  var n = Number(value)
+  if (!isFinite(n)) n = fallback
+  if (min != null && n < min) n = min
+  if (max != null && n > max) n = max
+  return Math.round(n)
+}
+
+function toTimeMs_(value) {
+  if (!value) return 0
+  var d = value instanceof Date ? value : new Date(value)
+  var t = d.getTime()
+  return isNaN(t) ? 0 : t
+}
+
+function isUpdatedSince_(value, since) {
+  if (!since) return true
+  var sinceMs = toTimeMs_(since)
+  if (!sinceMs) return true
+  var valueMs = toTimeMs_(value)
+  if (!valueMs) return true
+  return valueMs >= sinceMs
+}
+
+function getSingleByKey_(sheetName, headers, keyField, keyValue) {
+  var sheet = getOrCreateSheet_(sheetName, headers)
+  ensureHeaders_(sheet, headers)
+  var rowWidth = Math.max(headers.length, sheet.getLastColumn(), 1)
+  var headerRow = sheet.getRange(1, 1, 1, rowWidth).getValues()[0] || []
+  var keyIdx = resolveHeaderIndex_(headerRow, headers, keyField)
+  if (keyIdx < 0) return null
+  var rowByKey = buildKeyRowMapFromCol_(sheet, keyIdx + 1, false)
+  var row = rowByKey[String(keyValue || '').trim()]
+  if (!row || row < 2) return null
+  var values = sheet.getRange(row, 1, 1, rowWidth).getValues()[0]
+  return rowToObject_(headerRow, headers, values)
+}
+
+function collectRecentRowsByUser_(sheetName, headers, keyField, keyValue, limit) {
+  var maxItems = parseLimit_(limit, 0, 0, 200)
+  if (maxItems <= 0) return []
+  var sheet = getOrCreateSheet_(sheetName, headers)
+  ensureHeaders_(sheet, headers)
+  var rowWidth = Math.max(headers.length, sheet.getLastColumn(), 1)
+  var headerRow = sheet.getRange(1, 1, 1, rowWidth).getValues()[0] || []
+  var keyIdx = resolveHeaderIndex_(headerRow, headers, keyField)
+  if (keyIdx < 0) return []
+  var lastRow = sheet.getLastRow()
+  if (lastRow < 2) return []
+
+  var items = []
+  var cursor = lastRow
+  var chunkSize = 200
+  while (cursor >= 2 && items.length < maxItems) {
+    var startRow = Math.max(2, cursor - chunkSize + 1)
+    var numRows = cursor - startRow + 1
+    var rows = sheet.getRange(startRow, 1, numRows, rowWidth).getValues()
+    for (var i = rows.length - 1; i >= 0; i--) {
+      var rowVals = rows[i]
+      if (asString_(rowVals[keyIdx]) !== String(keyValue)) continue
+      items.push(rowToObject_(headerRow, headers, rowVals))
+      if (items.length >= maxItems) break
+    }
+    cursor = startRow - 1
+  }
+  return items
+}
+
+function collectRowsByUserSince_(sheetName, headers, keyField, keyValue, since, tsCandidates) {
+  var sheet = getOrCreateSheet_(sheetName, headers)
+  ensureHeaders_(sheet, headers)
+  var rowWidth = Math.max(headers.length, sheet.getLastColumn(), 1)
+  var headerRow = sheet.getRange(1, 1, 1, rowWidth).getValues()[0] || []
+  var keyIdx = resolveHeaderIndex_(headerRow, headers, keyField)
+  if (keyIdx < 0) return []
+  var tsIdx = resolveTimestampIndex_(headerRow, headers, tsCandidates || [])
+  var sinceMs = since ? toTimeMs_(since) : 0
+  var lastRow = sheet.getLastRow()
+  if (lastRow < 2) return []
+  var rows = sheet.getRange(2, 1, lastRow - 1, rowWidth).getValues()
+  var items = []
+  for (var i = 0; i < rows.length; i++) {
+    var rowVals = rows[i]
+    if (asString_(rowVals[keyIdx]) !== String(keyValue)) continue
+    if (sinceMs && tsIdx >= 0) {
+      var tsMs = toTimeMs_(rowVals[tsIdx])
+      if (tsMs && tsMs < sinceMs) continue
+    }
+    items.push(rowToObject_(headerRow, headers, rowVals))
+  }
+  return items
+}
+
 function ensureHeaders_(sheet, headers) {
   var lastCol = sheet.getLastColumn()
   var width = Math.max(headers.length, lastCol || 0, 1)
@@ -1163,6 +1286,192 @@ function doGet(e) {
       }
       var outItem0 = { ok: true, action: action, item: item0 }
       return callback ? jsonpOutput_(callback, outItem0) : jsonOutput_(outItem0)
+    }
+
+    if (action === 'getUserSnapshot') {
+      var userIdSnap = params.userId || params.odId || ''
+      if (!userIdSnap) {
+        var outSnapErr = { ok: false, action: action, error: 'missing userId' }
+        return callback ? jsonpOutput_(callback, outSnapErr) : jsonOutput_(outSnapErr)
+      }
+
+      var limitGameResults = parseLimit_(params.limitGameResults, 20, 0, 200)
+      var limitDaily = parseLimit_(params.limitDailyTraining, 3, 0, 50)
+      var limitMiniCog = parseLimit_(params.limitMiniCog, 2, 0, 20)
+      var limitBaseline = parseLimit_(params.limitBaseline, 1, 0, 20)
+      var limitDecline = parseLimit_(params.limitDeclineAlerts, 3, 0, 50)
+      var limitNutrition = parseLimit_(params.limitNutrition, 5, 0, 50)
+
+      var serverTimeSnap = new Date().toISOString()
+      var userSnap = getSingleByKey_(CONFIG.SHEETS.USERS, CONFIG.HEADERS.USERS.slice(), 'userId', userIdSnap)
+      var settingsSnap = getSingleByKey_(CONFIG.SHEETS.USER_SETTINGS, CONFIG.HEADERS.USER_SETTINGS.slice(), 'odId', userIdSnap)
+      var statsSnap = getSingleByKey_(CONFIG.SHEETS.USER_STATS, CONFIG.HEADERS.USER_STATS.slice(), 'odId', userIdSnap)
+      var consentSnap = getSingleByKey_(CONFIG.SHEETS.DATA_CONSENT, CONFIG.HEADERS.DATA_CONSENT.slice(), 'odId', userIdSnap)
+
+      var recentGameResults = collectRecentRowsByUser_(
+        CONFIG.SHEETS.GAME_RESULTS,
+        CONFIG.HEADERS.GAME_RESULTS.slice(),
+        'userId',
+        userIdSnap,
+        limitGameResults
+      )
+      var dailyTrainingSessions = collectRecentRowsByUser_(
+        CONFIG.SHEETS.DAILY_TRAINING_SESSIONS,
+        CONFIG.HEADERS.DAILY_TRAINING_SESSIONS.slice(),
+        'odId',
+        userIdSnap,
+        limitDaily
+      )
+      var miniCogResults = collectRecentRowsByUser_(
+        CONFIG.SHEETS.MINI_COG_RESULTS,
+        CONFIG.HEADERS.MINI_COG_RESULTS.slice(),
+        'odId',
+        userIdSnap,
+        limitMiniCog
+      )
+      var baselineAssessments = collectRecentRowsByUser_(
+        CONFIG.SHEETS.BASELINE_ASSESSMENTS,
+        CONFIG.HEADERS.BASELINE_ASSESSMENTS.slice(),
+        'odId',
+        userIdSnap,
+        limitBaseline
+      )
+      var declineAlerts = collectRecentRowsByUser_(
+        CONFIG.SHEETS.DECLINE_ALERTS,
+        CONFIG.HEADERS.DECLINE_ALERTS.slice(),
+        'odId',
+        userIdSnap,
+        limitDecline
+      )
+      var nutritionRecommendations = collectRecentRowsByUser_(
+        CONFIG.SHEETS.NUTRITION_RECOMMENDATIONS,
+        CONFIG.HEADERS.NUTRITION_RECOMMENDATIONS.slice(),
+        'odId',
+        userIdSnap,
+        limitNutrition
+      )
+
+      var outSnap = {
+        ok: true,
+        action: action,
+        serverTime: serverTimeSnap,
+        snapshotAt: serverTimeSnap,
+        user: userSnap,
+        settings: settingsSnap,
+        stats: statsSnap,
+        consent: consentSnap,
+        recentGameResults: recentGameResults,
+        dailyTrainingSessions: dailyTrainingSessions,
+        miniCogResults: miniCogResults,
+        baselineAssessments: baselineAssessments,
+        declineAlerts: declineAlerts,
+        nutritionRecommendations: nutritionRecommendations,
+      }
+      return callback ? jsonpOutput_(callback, outSnap) : jsonOutput_(outSnap)
+    }
+
+    if (action === 'getUserDelta') {
+      var userIdDelta = params.userId || params.odId || ''
+      if (!userIdDelta) {
+        var outDeltaErr = { ok: false, action: action, error: 'missing userId' }
+        return callback ? jsonpOutput_(callback, outDeltaErr) : jsonOutput_(outDeltaErr)
+      }
+
+      var sinceDelta = params.since || ''
+      var serverTimeDelta = new Date().toISOString()
+
+      var userDelta = getSingleByKey_(CONFIG.SHEETS.USERS, CONFIG.HEADERS.USERS.slice(), 'userId', userIdDelta)
+      if (userDelta && !isUpdatedSince_(userDelta.updatedAt, sinceDelta)) {
+        userDelta = null
+      }
+      var settingsDelta = getSingleByKey_(CONFIG.SHEETS.USER_SETTINGS, CONFIG.HEADERS.USER_SETTINGS.slice(), 'odId', userIdDelta)
+      if (settingsDelta && !isUpdatedSince_(settingsDelta.updatedAt, sinceDelta)) {
+        settingsDelta = null
+      }
+      var statsDelta = getSingleByKey_(CONFIG.SHEETS.USER_STATS, CONFIG.HEADERS.USER_STATS.slice(), 'odId', userIdDelta)
+      if (statsDelta && !isUpdatedSince_(statsDelta.updatedAt, sinceDelta)) {
+        statsDelta = null
+      }
+      var consentDelta = getSingleByKey_(CONFIG.SHEETS.DATA_CONSENT, CONFIG.HEADERS.DATA_CONSENT.slice(), 'odId', userIdDelta)
+      if (consentDelta && !isUpdatedSince_(consentDelta.consentTimestamp, sinceDelta)) {
+        consentDelta = null
+      }
+
+      var gameResultsDelta = collectRowsByUserSince_(
+        CONFIG.SHEETS.GAME_RESULTS,
+        CONFIG.HEADERS.GAME_RESULTS.slice(),
+        'userId',
+        userIdDelta,
+        sinceDelta,
+        ['timestamp']
+      )
+      var miniCogDelta = collectRowsByUserSince_(
+        CONFIG.SHEETS.MINI_COG_RESULTS,
+        CONFIG.HEADERS.MINI_COG_RESULTS.slice(),
+        'odId',
+        userIdDelta,
+        sinceDelta,
+        ['completedAt']
+      )
+      var dailyTrainingDelta = collectRowsByUserSince_(
+        CONFIG.SHEETS.DAILY_TRAINING_SESSIONS,
+        CONFIG.HEADERS.DAILY_TRAINING_SESSIONS.slice(),
+        'odId',
+        userIdDelta,
+        sinceDelta,
+        ['completedAt', 'startedAt', 'date']
+      )
+      var baselineDelta = collectRowsByUserSince_(
+        CONFIG.SHEETS.BASELINE_ASSESSMENTS,
+        CONFIG.HEADERS.BASELINE_ASSESSMENTS.slice(),
+        'odId',
+        userIdDelta,
+        sinceDelta,
+        ['assessedAt']
+      )
+      var declineDelta = collectRowsByUserSince_(
+        CONFIG.SHEETS.DECLINE_ALERTS,
+        CONFIG.HEADERS.DECLINE_ALERTS.slice(),
+        'odId',
+        userIdDelta,
+        sinceDelta,
+        ['detectedAt']
+      )
+      var nutritionDelta = collectRowsByUserSince_(
+        CONFIG.SHEETS.NUTRITION_RECOMMENDATIONS,
+        CONFIG.HEADERS.NUTRITION_RECOMMENDATIONS.slice(),
+        'odId',
+        userIdDelta,
+        sinceDelta,
+        ['recommendedAt']
+      )
+      var behaviorDelta = collectRowsByUserSince_(
+        CONFIG.SHEETS.BEHAVIOR_LOGS,
+        CONFIG.HEADERS.BEHAVIOR_LOGS.slice(),
+        'odId',
+        userIdDelta,
+        sinceDelta,
+        ['timestamp']
+      )
+
+      var outDelta = {
+        ok: true,
+        action: action,
+        serverTime: serverTimeDelta,
+        since: sinceDelta,
+        user: userDelta,
+        settings: settingsDelta,
+        stats: statsDelta,
+        consent: consentDelta,
+        gameResults: gameResultsDelta,
+        miniCogResults: miniCogDelta,
+        dailyTrainingSessions: dailyTrainingDelta,
+        baselineAssessments: baselineDelta,
+        declineAlerts: declineDelta,
+        nutritionRecommendations: nutritionDelta,
+        behaviorLogs: behaviorDelta,
+      }
+      return callback ? jsonpOutput_(callback, outDelta) : jsonOutput_(outDelta)
     }
 
     if (action === 'listGameResults') {

@@ -14,15 +14,14 @@ import {
   saveUser,
   saveUserSettings,
   saveUserStats,
-  saveGameSession,
-  getGameSession,
   saveDataConsent,
-  saveMiniCogResult,
-  saveDailyTrainingSession,
-  saveBaselineAssessment,
-  saveDeclineAlert,
+  saveGameSessions,
+  saveMiniCogResults,
+  saveDailyTrainingSessions,
+  saveBaselineAssessments,
+  saveDeclineAlerts,
   saveBehaviorLogs,
-  saveNutritionRecommendation,
+  saveNutritionRecommendations,
 } from '@/services/db'
 import { calculateCognitiveScoresFromResult } from '@/services/scoreCalculator'
 import { getGradeFromScore } from '@/types/game'
@@ -32,9 +31,32 @@ import { normalizeBirthdayInput } from '@/utils/birthday'
 const SHEET_ENDPOINT = getSheetEndpoint()
 const RESTORE_THROTTLE_MS = 5 * 60 * 1000
 const RESTORE_KEY_PREFIX = 'sheetRestoreAt:'
+const DELTA_STAMP_KEY_PREFIX = 'sheetDeltaAt:'
+
+const DEFAULT_SNAPSHOT_LIMITS = {
+  gameResults: 20,
+  dailyTrainingSessions: 3,
+  miniCogResults: 2,
+  baselineAssessments: 1,
+  declineAlerts: 3,
+  nutritionRecommendations: 5,
+}
 
 type RestoreOptions = {
   force?: boolean
+}
+
+type SnapshotOptions = RestoreOptions & {
+  gameResults?: number
+  dailyTrainingSessions?: number
+  miniCogResults?: number
+  baselineAssessments?: number
+  declineAlerts?: number
+  nutritionRecommendations?: number
+}
+
+type DeltaOptions = RestoreOptions & {
+  fallbackToFull?: boolean
 }
 
 type RestoreSummary = {
@@ -69,6 +91,22 @@ function shouldThrottleRestore(odId: string): boolean {
     // ignore throttling issues
   }
   return false
+}
+
+function loadDeltaStamp(odId: string): string | null {
+  try {
+    return localStorage.getItem(`${DELTA_STAMP_KEY_PREFIX}${odId}`)
+  } catch {
+    return null
+  }
+}
+
+function saveDeltaStamp(odId: string, stamp: string): void {
+  try {
+    localStorage.setItem(`${DELTA_STAMP_KEY_PREFIX}${odId}`, stamp)
+  } catch {
+    // ignore
+  }
 }
 
 function asString(value: unknown, fallback = ''): string {
@@ -214,6 +252,37 @@ async function fetchGameResults(odId: string): Promise<Record<string, unknown>[]
       `${SHEET_ENDPOINT}?action=listGameResults&userId=${encodeURIComponent(odId)}&limit=500&cursor=${cursor}`
     )
   ))
+}
+
+async function fetchUserSnapshot(odId: string, options?: SnapshotOptions): Promise<Record<string, unknown> | null> {
+  const gameResults = options?.gameResults ?? DEFAULT_SNAPSHOT_LIMITS.gameResults
+  const dailyTrainingSessions = options?.dailyTrainingSessions ?? DEFAULT_SNAPSHOT_LIMITS.dailyTrainingSessions
+  const miniCogResults = options?.miniCogResults ?? DEFAULT_SNAPSHOT_LIMITS.miniCogResults
+  const baselineAssessments = options?.baselineAssessments ?? DEFAULT_SNAPSHOT_LIMITS.baselineAssessments
+  const declineAlerts = options?.declineAlerts ?? DEFAULT_SNAPSHOT_LIMITS.declineAlerts
+  const nutritionRecommendations = options?.nutritionRecommendations ?? DEFAULT_SNAPSHOT_LIMITS.nutritionRecommendations
+
+  const url = appendSheetAuthParams(
+    `${SHEET_ENDPOINT}?action=getUserSnapshot&userId=${encodeURIComponent(odId)}` +
+    `&limitGameResults=${gameResults}` +
+    `&limitDailyTraining=${dailyTrainingSessions}` +
+    `&limitMiniCog=${miniCogResults}` +
+    `&limitBaseline=${baselineAssessments}` +
+    `&limitDeclineAlerts=${declineAlerts}` +
+    `&limitNutrition=${nutritionRecommendations}`
+  )
+  const payload = await fetchJson(url)
+  if (!payload?.ok) return null
+  return payload as Record<string, unknown>
+}
+
+async function fetchUserDelta(odId: string, since: string): Promise<Record<string, unknown> | null> {
+  const url = appendSheetAuthParams(
+    `${SHEET_ENDPOINT}?action=getUserDelta&userId=${encodeURIComponent(odId)}&since=${encodeURIComponent(since)}`
+  )
+  const payload = await fetchJson(url)
+  if (!payload?.ok) return null
+  return payload as Record<string, unknown>
 }
 
 async function fetchListByUser(type: string, odId: string): Promise<Record<string, unknown>[]> {
@@ -557,54 +626,75 @@ export async function restoreAllUserDataFromSheet(
   }
 
   const gameResults = await fetchGameResults(odId)
+  const sessionsToSave = new Map<string, GameSession>()
   for (const raw of gameResults) {
     const mapped = mapGameResult(raw)
     if (!mapped) continue
-    const existing = await getGameSession(mapped.id)
-    if (!existing) {
-      await saveGameSession(mapped)
-      summary.gameSessions += 1
-    }
+    sessionsToSave.set(mapped.id, mapped)
+  }
+  if (sessionsToSave.size > 0) {
+    await saveGameSessions(Array.from(sessionsToSave.values()))
+    summary.gameSessions += sessionsToSave.size
   }
 
   const miniCogResults = await fetchListByUser('miniCogResults', odId)
+  const mappedMiniCog: MiniCogResult[] = []
   for (const raw of miniCogResults) {
     const mapped = mapMiniCogResult(raw, odId)
     if (!mapped) continue
-    await saveMiniCogResult(mapped)
-    summary.miniCogResults += 1
+    mappedMiniCog.push(mapped)
+  }
+  if (mappedMiniCog.length > 0) {
+    await saveMiniCogResults(mappedMiniCog)
+    summary.miniCogResults += mappedMiniCog.length
   }
 
   const dailyTrainingSessions = await fetchListByUser('dailyTrainingSessions', odId)
+  const mappedDaily: DailyTrainingSession[] = []
   for (const raw of dailyTrainingSessions) {
     const mapped = mapDailyTrainingSession(raw, odId)
     if (!mapped) continue
-    await saveDailyTrainingSession(mapped)
-    summary.dailyTrainingSessions += 1
+    mappedDaily.push(mapped)
+  }
+  if (mappedDaily.length > 0) {
+    await saveDailyTrainingSessions(mappedDaily)
+    summary.dailyTrainingSessions += mappedDaily.length
   }
 
   const baselineAssessments = await fetchListByUser('baselineAssessments', odId)
+  const mappedBaselines: BaselineAssessment[] = []
   for (const raw of baselineAssessments) {
     const mapped = mapBaselineAssessment(raw, odId)
     if (!mapped) continue
-    await saveBaselineAssessment(mapped)
-    summary.baselineAssessments += 1
+    mappedBaselines.push(mapped)
+  }
+  if (mappedBaselines.length > 0) {
+    await saveBaselineAssessments(mappedBaselines)
+    summary.baselineAssessments += mappedBaselines.length
   }
 
   const declineAlerts = await fetchListByUser('declineAlerts', odId)
+  const mappedAlerts: DeclineAlert[] = []
   for (const raw of declineAlerts) {
     const mapped = mapDeclineAlert(raw, odId)
     if (!mapped) continue
-    await saveDeclineAlert(mapped)
-    summary.declineAlerts += 1
+    mappedAlerts.push(mapped)
+  }
+  if (mappedAlerts.length > 0) {
+    await saveDeclineAlerts(mappedAlerts)
+    summary.declineAlerts += mappedAlerts.length
   }
 
   const nutritionRecommendations = await fetchListByUser('nutritionRecommendations', odId)
+  const mappedRecommendations: NutritionRecommendationRecord[] = []
   for (const raw of nutritionRecommendations) {
     const mapped = mapNutritionRecommendation(raw, odId)
     if (!mapped) continue
-    await saveNutritionRecommendation(mapped)
-    summary.nutritionRecommendations += 1
+    mappedRecommendations.push(mapped)
+  }
+  if (mappedRecommendations.length > 0) {
+    await saveNutritionRecommendations(mappedRecommendations)
+    summary.nutritionRecommendations += mappedRecommendations.length
   }
 
   const behaviorLogs = await fetchListByUser('behaviorLogs', odId)
@@ -618,5 +708,354 @@ export async function restoreAllUserDataFromSheet(
     summary.behaviorLogs += mappedLogs.length
   }
 
+  saveDeltaStamp(odId, new Date().toISOString())
+  return summary
+}
+
+export async function restoreUserSnapshotFromSheet(
+  odId: string,
+  options?: SnapshotOptions
+): Promise<RestoreSummary> {
+  const summary: RestoreSummary = {
+    users: 0,
+    userSettings: 0,
+    userStats: 0,
+    dataConsent: 0,
+    gameSessions: 0,
+    miniCogResults: 0,
+    dailyTrainingSessions: 0,
+    baselineAssessments: 0,
+    declineAlerts: 0,
+    nutritionRecommendations: 0,
+    behaviorLogs: 0,
+  }
+
+  if (!odId) return summary
+  if (!SHEET_ENDPOINT) return summary
+  if (!isBrowserOnline()) return summary
+
+  const payload = await fetchUserSnapshot(odId, options)
+  if (!payload) return summary
+
+  const snapshotAt = asString(payload.snapshotAt || payload.serverTime, new Date().toISOString())
+
+  const userRaw = payload.user as Record<string, unknown> | undefined
+  if (userRaw) {
+    const incoming = mapUserProfile(userRaw)
+    const existing = await getUser(odId)
+    if (!existing) {
+      await saveUser(incoming)
+      summary.users += 1
+    } else {
+      const incomingUpdated = incoming.updatedAt ? incoming.updatedAt.getTime() : 0
+      const existingUpdated = existing.updatedAt ? existing.updatedAt.getTime() : 0
+      if (incomingUpdated >= existingUpdated) {
+        await saveUser(incoming)
+        summary.users += 1
+      }
+    }
+  }
+
+  const settingsRaw = payload.settings as Record<string, unknown> | undefined
+  if (settingsRaw) {
+    await saveUserSettings(mapUserSettings(settingsRaw, odId))
+    summary.userSettings += 1
+  }
+
+  const statsRaw = payload.stats as Record<string, unknown> | undefined
+  if (statsRaw) {
+    await saveUserStats(mapUserStats(statsRaw, odId))
+    summary.userStats += 1
+  }
+
+  const consentRaw = payload.consent as Record<string, unknown> | undefined
+  if (consentRaw) {
+    await saveDataConsent(mapDataConsent(consentRaw, odId))
+    summary.dataConsent += 1
+  }
+
+  const rawGameResults = Array.isArray(payload.recentGameResults)
+    ? (payload.recentGameResults as Record<string, unknown>[])
+    : []
+  if (rawGameResults.length > 0) {
+    const sessionsToSave = new Map<string, GameSession>()
+    for (const raw of rawGameResults) {
+      if (asString(raw.userId) !== odId) continue
+      const mapped = mapGameResult(raw)
+      if (!mapped) continue
+      sessionsToSave.set(mapped.id, mapped)
+    }
+    if (sessionsToSave.size > 0) {
+      await saveGameSessions(Array.from(sessionsToSave.values()))
+      summary.gameSessions += sessionsToSave.size
+    }
+  }
+
+  const rawMiniCog = Array.isArray(payload.miniCogResults)
+    ? (payload.miniCogResults as Record<string, unknown>[])
+    : []
+  if (rawMiniCog.length > 0) {
+    const mappedMiniCog: MiniCogResult[] = []
+    for (const raw of rawMiniCog) {
+      if (asString(raw.odId) !== odId) continue
+      const mapped = mapMiniCogResult(raw, odId)
+      if (mapped) mappedMiniCog.push(mapped)
+    }
+    if (mappedMiniCog.length > 0) {
+      await saveMiniCogResults(mappedMiniCog)
+      summary.miniCogResults += mappedMiniCog.length
+    }
+  }
+
+  const rawDaily = Array.isArray(payload.dailyTrainingSessions)
+    ? (payload.dailyTrainingSessions as Record<string, unknown>[])
+    : []
+  if (rawDaily.length > 0) {
+    const mappedDaily: DailyTrainingSession[] = []
+    for (const raw of rawDaily) {
+      if (asString(raw.odId) !== odId) continue
+      const mapped = mapDailyTrainingSession(raw, odId)
+      if (mapped) mappedDaily.push(mapped)
+    }
+    if (mappedDaily.length > 0) {
+      await saveDailyTrainingSessions(mappedDaily)
+      summary.dailyTrainingSessions += mappedDaily.length
+    }
+  }
+
+  const rawBaselines = Array.isArray(payload.baselineAssessments)
+    ? (payload.baselineAssessments as Record<string, unknown>[])
+    : []
+  if (rawBaselines.length > 0) {
+    const mappedBaselines: BaselineAssessment[] = []
+    for (const raw of rawBaselines) {
+      if (asString(raw.odId) !== odId) continue
+      const mapped = mapBaselineAssessment(raw, odId)
+      if (mapped) mappedBaselines.push(mapped)
+    }
+    if (mappedBaselines.length > 0) {
+      await saveBaselineAssessments(mappedBaselines)
+      summary.baselineAssessments += mappedBaselines.length
+    }
+  }
+
+  const rawAlerts = Array.isArray(payload.declineAlerts)
+    ? (payload.declineAlerts as Record<string, unknown>[])
+    : []
+  if (rawAlerts.length > 0) {
+    const mappedAlerts: DeclineAlert[] = []
+    for (const raw of rawAlerts) {
+      if (asString(raw.odId) !== odId) continue
+      const mapped = mapDeclineAlert(raw, odId)
+      if (mapped) mappedAlerts.push(mapped)
+    }
+    if (mappedAlerts.length > 0) {
+      await saveDeclineAlerts(mappedAlerts)
+      summary.declineAlerts += mappedAlerts.length
+    }
+  }
+
+  const rawNutrition = Array.isArray(payload.nutritionRecommendations)
+    ? (payload.nutritionRecommendations as Record<string, unknown>[])
+    : []
+  if (rawNutrition.length > 0) {
+    const mappedNutrition: NutritionRecommendationRecord[] = []
+    for (const raw of rawNutrition) {
+      if (asString(raw.odId) !== odId) continue
+      const mapped = mapNutritionRecommendation(raw, odId)
+      if (mapped) mappedNutrition.push(mapped)
+    }
+    if (mappedNutrition.length > 0) {
+      await saveNutritionRecommendations(mappedNutrition)
+      summary.nutritionRecommendations += mappedNutrition.length
+    }
+  }
+
+  saveDeltaStamp(odId, snapshotAt)
+  return summary
+}
+
+export async function restoreUserDeltaFromSheet(
+  odId: string,
+  options?: DeltaOptions
+): Promise<RestoreSummary> {
+  const summary: RestoreSummary = {
+    users: 0,
+    userSettings: 0,
+    userStats: 0,
+    dataConsent: 0,
+    gameSessions: 0,
+    miniCogResults: 0,
+    dailyTrainingSessions: 0,
+    baselineAssessments: 0,
+    declineAlerts: 0,
+    nutritionRecommendations: 0,
+    behaviorLogs: 0,
+  }
+
+  if (!odId) return summary
+  if (!SHEET_ENDPOINT) return summary
+  if (!isBrowserOnline()) return summary
+
+  const since = loadDeltaStamp(odId)
+  if (!since) {
+    if (options?.fallbackToFull === false) return summary
+    return restoreAllUserDataFromSheet(odId, { force: true })
+  }
+
+  const payload = await fetchUserDelta(odId, since)
+  if (!payload) return summary
+
+  const serverTime = asString(payload.serverTime, new Date().toISOString())
+
+  const userRaw = payload.user as Record<string, unknown> | undefined
+  if (userRaw) {
+    const incoming = mapUserProfile(userRaw)
+    const existing = await getUser(odId)
+    if (!existing) {
+      await saveUser(incoming)
+      summary.users += 1
+    } else {
+      const incomingUpdated = incoming.updatedAt ? incoming.updatedAt.getTime() : 0
+      const existingUpdated = existing.updatedAt ? existing.updatedAt.getTime() : 0
+      if (incomingUpdated >= existingUpdated) {
+        await saveUser(incoming)
+        summary.users += 1
+      }
+    }
+  }
+
+  const settingsRaw = payload.settings as Record<string, unknown> | undefined
+  if (settingsRaw) {
+    await saveUserSettings(mapUserSettings(settingsRaw, odId))
+    summary.userSettings += 1
+  }
+
+  const statsRaw = payload.stats as Record<string, unknown> | undefined
+  if (statsRaw) {
+    await saveUserStats(mapUserStats(statsRaw, odId))
+    summary.userStats += 1
+  }
+
+  const consentRaw = payload.consent as Record<string, unknown> | undefined
+  if (consentRaw) {
+    await saveDataConsent(mapDataConsent(consentRaw, odId))
+    summary.dataConsent += 1
+  }
+
+  const rawGameResults = Array.isArray(payload.gameResults)
+    ? (payload.gameResults as Record<string, unknown>[])
+    : []
+  if (rawGameResults.length > 0) {
+    const sessionsToSave = new Map<string, GameSession>()
+    for (const raw of rawGameResults) {
+      if (asString(raw.userId) !== odId) continue
+      const mapped = mapGameResult(raw)
+      if (!mapped) continue
+      sessionsToSave.set(mapped.id, mapped)
+    }
+    if (sessionsToSave.size > 0) {
+      await saveGameSessions(Array.from(sessionsToSave.values()))
+      summary.gameSessions += sessionsToSave.size
+    }
+  }
+
+  const rawMiniCog = Array.isArray(payload.miniCogResults)
+    ? (payload.miniCogResults as Record<string, unknown>[])
+    : []
+  if (rawMiniCog.length > 0) {
+    const mappedMiniCog: MiniCogResult[] = []
+    for (const raw of rawMiniCog) {
+      if (asString(raw.odId) !== odId) continue
+      const mapped = mapMiniCogResult(raw, odId)
+      if (mapped) mappedMiniCog.push(mapped)
+    }
+    if (mappedMiniCog.length > 0) {
+      await saveMiniCogResults(mappedMiniCog)
+      summary.miniCogResults += mappedMiniCog.length
+    }
+  }
+
+  const rawDaily = Array.isArray(payload.dailyTrainingSessions)
+    ? (payload.dailyTrainingSessions as Record<string, unknown>[])
+    : []
+  if (rawDaily.length > 0) {
+    const mappedDaily: DailyTrainingSession[] = []
+    for (const raw of rawDaily) {
+      if (asString(raw.odId) !== odId) continue
+      const mapped = mapDailyTrainingSession(raw, odId)
+      if (mapped) mappedDaily.push(mapped)
+    }
+    if (mappedDaily.length > 0) {
+      await saveDailyTrainingSessions(mappedDaily)
+      summary.dailyTrainingSessions += mappedDaily.length
+    }
+  }
+
+  const rawBaselines = Array.isArray(payload.baselineAssessments)
+    ? (payload.baselineAssessments as Record<string, unknown>[])
+    : []
+  if (rawBaselines.length > 0) {
+    const mappedBaselines: BaselineAssessment[] = []
+    for (const raw of rawBaselines) {
+      if (asString(raw.odId) !== odId) continue
+      const mapped = mapBaselineAssessment(raw, odId)
+      if (mapped) mappedBaselines.push(mapped)
+    }
+    if (mappedBaselines.length > 0) {
+      await saveBaselineAssessments(mappedBaselines)
+      summary.baselineAssessments += mappedBaselines.length
+    }
+  }
+
+  const rawAlerts = Array.isArray(payload.declineAlerts)
+    ? (payload.declineAlerts as Record<string, unknown>[])
+    : []
+  if (rawAlerts.length > 0) {
+    const mappedAlerts: DeclineAlert[] = []
+    for (const raw of rawAlerts) {
+      if (asString(raw.odId) !== odId) continue
+      const mapped = mapDeclineAlert(raw, odId)
+      if (mapped) mappedAlerts.push(mapped)
+    }
+    if (mappedAlerts.length > 0) {
+      await saveDeclineAlerts(mappedAlerts)
+      summary.declineAlerts += mappedAlerts.length
+    }
+  }
+
+  const rawNutrition = Array.isArray(payload.nutritionRecommendations)
+    ? (payload.nutritionRecommendations as Record<string, unknown>[])
+    : []
+  if (rawNutrition.length > 0) {
+    const mappedNutrition: NutritionRecommendationRecord[] = []
+    for (const raw of rawNutrition) {
+      if (asString(raw.odId) !== odId) continue
+      const mapped = mapNutritionRecommendation(raw, odId)
+      if (mapped) mappedNutrition.push(mapped)
+    }
+    if (mappedNutrition.length > 0) {
+      await saveNutritionRecommendations(mappedNutrition)
+      summary.nutritionRecommendations += mappedNutrition.length
+    }
+  }
+
+  const rawBehaviorLogs = Array.isArray(payload.behaviorLogs)
+    ? (payload.behaviorLogs as Record<string, unknown>[])
+    : []
+  if (rawBehaviorLogs.length > 0) {
+    const mappedLogs: BehaviorLog[] = []
+    for (const raw of rawBehaviorLogs) {
+      if (asString(raw.odId) !== odId) continue
+      const mapped = mapBehaviorLog(raw, odId)
+      if (mapped) mappedLogs.push(mapped)
+    }
+    if (mappedLogs.length > 0) {
+      await saveBehaviorLogs(mappedLogs)
+      summary.behaviorLogs += mappedLogs.length
+    }
+  }
+
+  saveDeltaStamp(odId, serverTime)
   return summary
 }

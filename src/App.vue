@@ -256,7 +256,7 @@ async function handleOnline(): Promise<void> {
     refreshGateState.value = 'loading'
   }
   try {
-    await dataInitService.refreshUserDataFromSheet(odId)
+    await dataInitService.refreshUserDataFromSheet(odId, { mode: 'delta' })
     backfillUserSessionsToSheet(odId)
     syncUserProfileToSheet(userStore.currentUser)
     backfillAllUserDataToSheet(odId)
