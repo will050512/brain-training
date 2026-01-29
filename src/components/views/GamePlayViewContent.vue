@@ -185,7 +185,7 @@ const gameStatus = ref<GameStatusUpdate>({
 const currentSessionId = ref<string | null>(null)
 const behaviorCollector = ref<BehaviorCollector | null>(null)
 let lastTouchAt = 0
-const pendingDailyCompletion = ref<Promise<unknown> | null>(null)
+const pendingResultSave = ref<Promise<void> | null>(null)
 
 // 每日訓練相關
 const showCompletionModal = ref(false)
@@ -584,35 +584,21 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
       recommendedGames.value = gameStore.getUnplayedGamesByOtherDimensions(id, 4)
     }
 
-    // 記錄遊戲結果（失敗不阻擋結算流程）
-    try {
-      await gameStore.recordGameResult(finalizedResult, gameMode, currentSessionId.value ?? undefined)
-    } catch (error) {
-      console.error('recordGameResult failed:', error)
-    }
-    await finalizeBehaviorLogs()
-
-    // 如果是每日訓練，標記完成並更新狀態（失敗不阻擋「繼續下一個」）
     if (isFromDailyTraining.value) {
       gameStore.completeCurrentTrainingGame(finalizedResult.score, finalizedResult.duration, finalizedResult.gameId)
 
-      const odId = userStore.currentUser?.id
-      if (odId) {
-        try {
-          const completionPromise = markGameCompleted(odId, finalizedResult.gameId, finalizedResult.duration)
-          pendingDailyCompletion.value = completionPromise
-          await completionPromise
-        } catch (error) {
-          console.error('markGameCompleted failed:', error)
-        } finally {
-          if (pendingDailyCompletion.value) {
-            pendingDailyCompletion.value = null
-          }
-        }
-      }
-
       if (gameStore.isAllTrainingCompleted()) {
         showCompletionModal.value = true
+      }
+    }
+
+    const savePromise = saveGameResultAndLogs(finalizedResult, gameMode)
+    pendingResultSave.value = savePromise
+    try {
+      await savePromise
+    } finally {
+      if (pendingResultSave.value === savePromise) {
+        pendingResultSave.value = null
       }
     }
     
@@ -657,7 +643,8 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
 }
 
 // 再玩一次
-function playAgain(): void {
+async function playAgain(): Promise<void> {
+  await ensureResultSaved()
   if (timerInterval) {
     clearInterval(timerInterval)
     timerInterval = null
@@ -682,7 +669,8 @@ function playAgain(): void {
 }
 
 // 繼續下一個訓練遊戲
-function continueToNextGame(): void {
+async function continueToNextGame(): Promise<void> {
+  await ensureResultSaved()
   const nextGame = gameStore.getNextTrainingGame()
   if (nextGame) {
     // 移動到下一個遊戲
@@ -709,7 +697,8 @@ function continueToNextGame(): void {
 }
 
 // 開始推薦遊戲
-function startRecommendedGame(game: GameDefinition): void {
+async function startRecommendedGame(game: GameDefinition): Promise<void> {
+  await ensureResultSaved()
   gameStore.selectGame(game.id)
   const stored = settingsStore.getGameDifficulty(game.id)
   gameStore.selectDifficulty(stored.difficulty)
@@ -739,35 +728,42 @@ function handleBack(): void {
   }
 }
 
-async function ensureDailyCompletionSaved(): Promise<void> {
-  if (!isFromDailyTraining.value) return
-  if (gameState.value !== 'finished' || !gameResult.value) return
+function goBackToList(): void {
+  router.push(isFromDailyTraining.value ? '/daily-challenge' : '/games')
+}
 
-  const odId = userStore.currentUser?.id
-  if (!odId) return
-
-  if (pendingDailyCompletion.value) {
-    try {
-      await pendingDailyCompletion.value
-    } catch {
-      // already logged elsewhere
-    }
-    return
+async function saveGameResultAndLogs(finalizedResult: GameResult, gameMode: GameMode): Promise<void> {
+  try {
+    await gameStore.recordGameResult(finalizedResult, gameMode, currentSessionId.value ?? undefined)
+  } catch (error) {
+    console.error('recordGameResult failed:', error)
   }
 
+  await finalizeBehaviorLogs()
+
+  if (!isFromDailyTraining.value) return
+  const odId = userStore.currentUser?.id
+  if (!odId) return
   try {
-    const completionPromise = markGameCompleted(odId, gameResult.value.gameId, gameResult.value.duration)
-    pendingDailyCompletion.value = completionPromise
-    await completionPromise
+    await markGameCompleted(odId, finalizedResult.gameId, finalizedResult.duration)
   } catch (error) {
     console.error('markGameCompleted failed:', error)
-  } finally {
-    pendingDailyCompletion.value = null
   }
 }
 
-function goBackToList(): void {
-  router.push(isFromDailyTraining.value ? '/daily-challenge' : '/games')
+async function ensureResultSaved(): Promise<void> {
+  if (pendingResultSave.value) {
+    await pendingResultSave.value
+    return
+  }
+  if (!isFromDailyTraining.value || gameState.value !== 'finished' || !gameResult.value) return
+  const odId = userStore.currentUser?.id
+  if (!odId) return
+  try {
+    await markGameCompleted(odId, gameResult.value.gameId, gameResult.value.duration)
+  } catch (error) {
+    console.error('markGameCompleted failed:', error)
+  }
 }
 
 function handleDifficultyConfirm(difficulty: Difficulty, subDifficulty: SubDifficulty, applyToAll: boolean): void {
@@ -918,7 +914,7 @@ onMounted(() => {
 })
 
 onBeforeRouteLeave(async () => {
-  await ensureDailyCompletionSaved()
+  await ensureResultSaved()
   return true
 })
 
@@ -1024,7 +1020,3 @@ function handlePlayAreaInteraction(event: MouseEvent | TouchEvent): void {
   }
 }
 </style>
-
-
-
-

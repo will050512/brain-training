@@ -217,8 +217,8 @@ defineProps<{
   getScoreClass: (score: number) => string
   getFullDifficultyLabel: (difficulty: Difficulty, subDifficulty: SubDifficulty) => string
   getGameDimensionLabel: (gameId: string) => string
-  onStartRecommendedGame: (game: GameDefinition) => void
-  onPlayAgain: () => void
-  onContinueToNextGame: () => void
+  onStartRecommendedGame: (game: GameDefinition) => void | Promise<void>
+  onPlayAgain: () => void | Promise<void>
+  onContinueToNextGame: () => void | Promise<void>
 }>()
 </script>

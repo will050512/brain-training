@@ -181,6 +181,7 @@ const maxStreak = ref(0)
 const responseTimes = ref<number[]>([])
 const answerRecords = ref<boolean[]>([])
 const allQuestions = ref<PatternQuestion[]>([])
+const lastPatternType = ref<PatternType | null>(null)
 let roundStartTime = 0
 
 // ===== 計算屬性 =====
@@ -239,6 +240,7 @@ function handleStart() {
   responseTimes.value = []
   answerRecords.value = []
   allQuestions.value = []
+  lastPatternType.value = null
   
   startGame()
   
@@ -246,10 +248,23 @@ function handleStart() {
   generateNewQuestion()
 }
 
+function pickPatternType(types: PatternType[]): PatternType {
+  if (types.length === 0) return 'sequence'
+  if (types.length === 1) {
+    lastPatternType.value = types[0]!
+    return types[0]!
+  }
+  const candidates = types.filter(type => type !== lastPatternType.value)
+  const pool = candidates.length > 0 ? candidates : types
+  const picked = pool[Math.floor(Math.random() * pool.length)] || types[0]!
+  lastPatternType.value = picked
+  return picked
+}
+
 function generateNewQuestion() {
   // 隨機選擇題目類型
   const types = config.value.patternTypes
-  const type = types[currentRound.value % types.length] as PatternType
+  const type = pickPatternType(types)
   
   currentQuestion.value = generateQuestion(type, config.value.optionCount)
   allQuestions.value.push(currentQuestion.value)

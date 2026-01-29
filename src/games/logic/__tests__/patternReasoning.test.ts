@@ -23,6 +23,27 @@ import {
   DIFFICULTY_CONFIGS,
 } from '../patternReasoning'
 
+const SHAPE_KEY_MAP: Record<string, string> = {
+  '●': 'circle',
+  '○': 'circle',
+  '■': 'square',
+  '□': 'square',
+  '▲': 'triangle',
+  '△': 'triangle',
+  '◆': 'diamond',
+  '◇': 'diamond',
+  '★': 'star',
+  '♥': 'heart',
+}
+
+function getShapeKey(shape: string): string {
+  return SHAPE_KEY_MAP[shape] ?? shape
+}
+
+function getOptionSignature(option: { shape: string; color: string; size: string; rotation: number }): string {
+  return `${getShapeKey(option.shape)}|${option.color}|${option.size}|${option.rotation}`
+}
+
 describe('圖案推理遊戲邏輯', () => {
   describe('createBaseElement', () => {
     it('應產生有效的元素', () => {
@@ -58,7 +79,7 @@ describe('圖案推理遊戲邏輯', () => {
       expect(shape).toBeDefined()
       expect(ROTATABLE_SHAPES).toContain(shape as any)
 
-      const signatures = question.options.map(o => `${o.shape}|${o.color}|${o.size}|${o.rotation}`)
+      const signatures = question.options.map(getOptionSignature)
       expect(new Set(signatures).size).toBe(question.options.length)
     })
   })
@@ -121,9 +142,7 @@ describe('圖案推理遊戲邏輯', () => {
         expect(option.size).toBe(size)
       })
 
-      const signatures = question.options.map(
-        option => `${option.shape}|${option.color}|${option.size}|${option.rotation}`
-      )
+      const signatures = question.options.map(getOptionSignature)
       expect(new Set(signatures).size).toBe(question.options.length)
     })
   })

@@ -58,6 +58,18 @@ export interface PatternReasoningResult {
 // ==================== 常數配置 ====================
 
 export const SHAPES = ['●', '■', '▲', '◆', '★', '♥', '○', '□', '△', '◇']
+const SHAPE_KEY_MAP: Record<string, string> = {
+  '●': 'circle',
+  '○': 'circle',
+  '■': 'square',
+  '□': 'square',
+  '▲': 'triangle',
+  '△': 'triangle',
+  '◆': 'diamond',
+  '◇': 'diamond',
+  '★': 'star',
+  '♥': 'heart',
+}
 // 用於「旋轉」題型：避免選到旋轉後外觀不變的圖形（如圓/方/菱形等），造成選項看起來一樣而無法作答
 export const ROTATABLE_SHAPES = ['▲', '△'] as const
 export const COLORS = [
@@ -128,8 +140,32 @@ function shuffle<T>(arr: T[]): T[] {
   return result
 }
 
+function getShapeKey(shape: string): string {
+  return SHAPE_KEY_MAP[shape] ?? shape
+}
+
+function pickUniqueShapes(count: number, pool: readonly string[] = SHAPES): string[] {
+  const shuffled = shuffle([...pool])
+  const picked: string[] = []
+  const usedKeys = new Set<string>()
+
+  for (const shape of shuffled) {
+    const key = getShapeKey(shape)
+    if (usedKeys.has(key)) continue
+    usedKeys.add(key)
+    picked.push(shape)
+    if (picked.length >= count) break
+  }
+
+  while (picked.length < count) {
+    picked.push(randomFrom(pool))
+  }
+
+  return picked
+}
+
 function getOptionSignature(option: PatternElement): string {
-  return `${option.shape}|${option.color}|${option.size}|${option.rotation}`
+  return `${getShapeKey(option.shape)}|${option.color}|${option.size}|${option.rotation}`
 }
 
 function isQuestionValid(question: PatternQuestion, optionCount: number): boolean {
@@ -202,7 +238,53 @@ export function generateRotationQuestion(optionCount: number): PatternQuestion {
  * 產生序列題目（形狀循環）
  */
 export function generateSequenceQuestion(optionCount: number): PatternQuestion {
-  const shapes = shuffle([...SHAPES]).slice(0, 3)
+  const mode = randomFrom(['shape', 'color'] as const)
+
+  if (mode === 'color') {
+    const shape = randomFrom(SHAPES)
+    const size = randomFrom(SIZES)
+    const colors = shuffle([...COLORS]).slice(0, 3)
+
+    const sequence: PatternElement[] = colors.map(color => ({
+      shape,
+      color,
+      size,
+      rotation: 0,
+    }))
+
+    sequence.push({ ...sequence[0]! })
+
+    const answer: PatternElement = {
+      shape,
+      color: colors[1]!,
+      size,
+      rotation: 0,
+    }
+
+    const wrongOptions: PatternElement[] = []
+    const usedColors = new Set([answer.color])
+
+    while (wrongOptions.length < optionCount - 1) {
+      const color = randomFrom(COLORS)
+      if (!usedColors.has(color)) {
+        usedColors.add(color)
+        wrongOptions.push({ shape, color, size, rotation: 0 })
+      }
+    }
+
+    const options = shuffle([answer, ...wrongOptions])
+    const correctIndex = options.findIndex(o => o.color === answer.color)
+
+    return {
+      type: 'sequence',
+      sequence,
+      correctIndex,
+      options,
+      instruction: '顏色有規律，請選擇下一個圖案',
+    }
+  }
+
+  const shapes = pickUniqueShapes(3)
   const color = randomFrom(COLORS)
   const size = randomFrom(SIZES)
 
@@ -213,26 +295,24 @@ export function generateSequenceQuestion(optionCount: number): PatternQuestion {
     rotation: 0,
   }))
 
-  // 重複一次序列
   sequence.push({ ...sequence[0]! })
 
-  // 正確答案是序列的第二個元素
   const answer = { ...sequence[1]! }
 
-  // 產生錯誤選項
   const wrongOptions: PatternElement[] = []
-  const usedShapes = new Set([answer.shape])
+  const usedShapes = new Set([getShapeKey(answer.shape)])
 
   while (wrongOptions.length < optionCount - 1) {
     const shape = randomFrom(SHAPES)
-    if (!usedShapes.has(shape)) {
-      usedShapes.add(shape)
+    const shapeKey = getShapeKey(shape)
+    if (!usedShapes.has(shapeKey)) {
+      usedShapes.add(shapeKey)
       wrongOptions.push({ shape, color, size, rotation: 0 })
     }
   }
 
   const options = shuffle([answer, ...wrongOptions])
-  const correctIndex = options.findIndex(o => o.shape === answer.shape)
+  const correctIndex = options.findIndex(o => getShapeKey(o.shape) === getShapeKey(answer.shape))
 
   return {
     type: 'sequence',
@@ -247,6 +327,98 @@ export function generateSequenceQuestion(optionCount: number): PatternQuestion {
  * 產生變化題目（大小變化）
  */
 export function generateTransformQuestion(optionCount: number): PatternQuestion {
+  const mode = randomFrom(['size', 'color', 'rotation'] as const)
+
+  if (mode === 'color') {
+    const shape = randomFrom(SHAPES)
+    const size = randomFrom(SIZES)
+    const colors = shuffle([...COLORS]).slice(0, 3)
+
+    const sequence: PatternElement[] = colors.slice(0, 2).map(color => ({
+      shape,
+      color,
+      size,
+      rotation: 0,
+    }))
+
+    const answer: PatternElement = {
+      shape,
+      color: colors[2]!,
+      size,
+      rotation: 0,
+    }
+
+    const wrongOptions: PatternElement[] = []
+    const usedColors = new Set([answer.color, ...sequence.map(item => item.color)])
+
+    while (wrongOptions.length < optionCount - 1) {
+      const color = randomFrom(COLORS)
+      if (!usedColors.has(color)) {
+        usedColors.add(color)
+        wrongOptions.push({ shape, color, size, rotation: 0 })
+      }
+    }
+
+    const options = shuffle([answer, ...wrongOptions])
+    const correctIndex = options.findIndex(o => o.color === answer.color)
+
+    return {
+      type: 'transform',
+      sequence,
+      correctIndex,
+      options,
+      instruction: '顏色改變中，請選擇下一個圖案',
+    }
+  }
+
+  if (mode === 'rotation') {
+    const shape = randomFrom(ROTATABLE_SHAPES)
+    const color = randomFrom(COLORS)
+    const size = randomFrom(SIZES)
+    const rotationStep = randomFrom([45, 90, 135] as const)
+
+    const sequence: PatternElement[] = [0, rotationStep].map(rotation => ({
+      shape,
+      color,
+      size,
+      rotation,
+    }))
+
+    const answer: PatternElement = {
+      shape,
+      color,
+      size,
+      rotation: (rotationStep * 2) % 360,
+    }
+
+    const wrongOptions: PatternElement[] = []
+    const usedRotations = new Set([answer.rotation, ...sequence.map(item => item.rotation)])
+
+    while (wrongOptions.length < optionCount - 1) {
+      const rotation = randomFrom(ROTATIONS)
+      if (!usedRotations.has(rotation)) {
+        usedRotations.add(rotation)
+        wrongOptions.push({
+          shape,
+          color,
+          size,
+          rotation,
+        })
+      }
+    }
+
+    const options = shuffle([answer, ...wrongOptions])
+    const correctIndex = options.findIndex(o => o.rotation === answer.rotation)
+
+    return {
+      type: 'transform',
+      sequence,
+      correctIndex,
+      options,
+      instruction: '圖案正在旋轉，請選擇下一個圖案',
+    }
+  }
+
   const shape = randomFrom(SHAPES)
   const color = randomFrom(COLORS)
   const sizeOrder: ('small' | 'medium' | 'large')[] = ['small', 'medium', 'large']
@@ -258,7 +430,6 @@ export function generateTransformQuestion(optionCount: number): PatternQuestion 
     rotation: 0,
   }))
 
-  // 正確答案是 large
   const answer: PatternElement = {
     shape,
     color,
@@ -266,14 +437,14 @@ export function generateTransformQuestion(optionCount: number): PatternQuestion 
     rotation: 0,
   }
 
-  // 產生錯誤選項（不同形狀）
   const wrongOptions: PatternElement[] = []
-  const usedShapes = new Set([shape])
+  const usedShapes = new Set([getShapeKey(shape)])
 
   while (wrongOptions.length < optionCount - 1) {
     const wrongShape = randomFrom(SHAPES)
-    if (!usedShapes.has(wrongShape)) {
-      usedShapes.add(wrongShape)
+    const shapeKey = getShapeKey(wrongShape)
+    if (!usedShapes.has(shapeKey)) {
+      usedShapes.add(shapeKey)
       wrongOptions.push({
         shape: wrongShape,
         color,
@@ -284,7 +455,7 @@ export function generateTransformQuestion(optionCount: number): PatternQuestion 
   }
 
   const options = shuffle([answer, ...wrongOptions])
-  const correctIndex = options.findIndex(o => o.shape === answer.shape)
+  const correctIndex = options.findIndex(o => getShapeKey(o.shape) === getShapeKey(answer.shape))
 
   return {
     type: 'transform',
@@ -299,7 +470,7 @@ export function generateTransformQuestion(optionCount: number): PatternQuestion 
  * 產生類比題目
  */
 export function generateAnalogyQuestion(optionCount: number): PatternQuestion {
-  const shapes = shuffle([...SHAPES]).slice(0, 4)
+  const shapes = pickUniqueShapes(4)
   const colors = shuffle([...COLORS]).slice(0, 2)
 
   // A : B = C : ?
@@ -320,12 +491,12 @@ export function generateAnalogyQuestion(optionCount: number): PatternQuestion {
 
   // 產生錯誤選項
   const wrongOptions: PatternElement[] = []
-  const usedCombos = new Set([`${answer.shape}-${answer.color}`])
+  const usedCombos = new Set([`${getShapeKey(answer.shape)}-${answer.color}`])
 
   while (wrongOptions.length < optionCount - 1) {
     const wrongShape = randomFrom(SHAPES)
     const wrongColor = randomFrom(COLORS)
-    const combo = `${wrongShape}-${wrongColor}`
+    const combo = `${getShapeKey(wrongShape)}-${wrongColor}`
     if (!usedCombos.has(combo)) {
       usedCombos.add(combo)
       wrongOptions.push({
