@@ -110,7 +110,7 @@ import { useGameStore, useUserStore, useSettingsStore } from '@/stores'
 import { useResponsive } from '@/composables/useResponsive'
 import { type GameResult, type GameState, type GameDefinition, type GameStatusUpdate, type UnifiedGameResult, type Difficulty, type SubDifficulty, type GameMode } from '@/types/game'
 import { calculateDifficultyAdjustment, applyDifficultyAdjustment, getFullDifficultyLabel, type DifficultyAdjustment } from '@/services/adaptiveDifficultyService'
-import { markGameCompleted, updatePlannedGameDifficulties } from '@/services/dailyTrainingService'
+import { markGameCompleted, updatePlannedGameDifficulties, markTrainingInterrupted } from '@/services/dailyTrainingService'
 import TrainingCompleteModal from '@/components/ui/TrainingCompleteModal.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import DifficultyAdjustPanel from '@/components/ui/DifficultyAdjustPanel.vue'
@@ -455,6 +455,7 @@ function quitGame(): void {
   finalizeBehaviorLogs().catch(() => {
     // ignore
   })
+  exitDailyTrainingContext()
   if (window.history.length > 1) {
     router.back()
     return
@@ -696,6 +697,7 @@ function continueToNextGame(): void {
 
 // 開始推薦遊戲
 function startRecommendedGame(game: GameDefinition): void {
+  exitDailyTrainingContext()
   gameStore.selectGame(game.id)
   const stored = settingsStore.getGameDifficulty(game.id)
   gameStore.selectDifficulty(stored.difficulty)
@@ -717,6 +719,7 @@ function handleBack(): void {
   if (gameState.value === 'playing') {
     pauseGame()
   } else {
+    exitDailyTrainingContext()
     if (window.history.length > 1) {
       router.back()
       return
@@ -726,7 +729,17 @@ function handleBack(): void {
 }
 
 function goBackToList(): void {
+  exitDailyTrainingContext()
   router.push(isFromDailyTraining.value ? '/daily-challenge' : '/games')
+}
+
+function exitDailyTrainingContext(): void {
+  if (!isFromDailyTraining.value) return
+  const odId = userStore.currentUser?.id
+  if (odId) {
+    markTrainingInterrupted(odId).catch(err => console.error('markTrainingInterrupted failed:', err))
+  }
+  gameStore.clearDailyTraining()
 }
 
 function handleDifficultyConfirm(difficulty: Difficulty, subDifficulty: SubDifficulty, applyToAll: boolean): void {
@@ -813,6 +826,10 @@ watch(routeGameId, (newId) => {
     if (Number.isFinite(sd)) {
       const clamped = Math.max(1, Math.min(3, Math.round(sd))) as 1 | 2 | 3
       gameStore.selectSubDifficulty(clamped)
+    }
+
+    if (route.query.fromDaily !== 'true' && gameStore.isFromDailyTraining) {
+      exitDailyTrainingContext()
     }
 
     // 非每日訓練：使用該遊戲的已儲存難度（未設定時回到全域預設）

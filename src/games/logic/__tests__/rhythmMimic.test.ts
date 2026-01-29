@@ -138,6 +138,17 @@ describe('節拍模仿遊戲邏輯', () => {
       expect(result.accuracy).toBe(50)
       expect(result.score).toBe(50)
     })
+
+    it('過度連點應降低準確度', () => {
+      const pattern = RHYTHM_PATTERNS.find(p => p.id === 'simple_4')!
+      const config = DIFFICULTY_CONFIGS.easy
+      const userTaps = [0, 100, 200, 1000, 1100, 2000, 2100, 3000, 3100]
+
+      const result = evaluateRound(userTaps, pattern, config)
+
+      expect(result.stats.extra).toBeGreaterThan(0)
+      expect(result.accuracy).toBeLessThan(60)
+    })
   })
 
   describe('getPatternDuration', () => {
