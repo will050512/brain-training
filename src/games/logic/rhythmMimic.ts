@@ -411,14 +411,14 @@ export function evaluateRound(
   // 3. 計算分數
   const maxPossibleScore = expectedTimes.length * 100
   const currentScore = (stats.perfect * 100) + (stats.good * 70) + (stats.ok * 40)
-  const penalty = stats.extra * 15
+  const penalty = stats.extra * 20
   
   let finalScore = maxPossibleScore > 0 ? Math.round(((currentScore - penalty) / maxPossibleScore) * 100) : 0
   finalScore = Math.max(0, finalScore)
 
   const validHits = stats.perfect + stats.good + stats.ok
-  const effectiveTotal = expectedTimes.length + stats.extra
-  const accuracy = effectiveTotal > 0 ? (validHits / effectiveTotal) * 100 : 0
+  const totalInputs = Math.max(expectedTimes.length, userTaps.length)
+  const accuracy = totalInputs > 0 ? (validHits / totalInputs) * 100 : 0
 
   return {
     accuracy: Math.round(accuracy),
@@ -470,17 +470,12 @@ export function summarizeResult(roundResults: RoundSummary[]): RhythmMimicResult
   let missCount = 0
   let totalErrorSum = 0
   let validHitCount = 0
-  let extraCount = 0
 
   for (const round of roundResults) {
     const roundStats = round.stats ?? countRatings([round])
     perfectCount += roundStats.perfect
     goodCount += roundStats.good + roundStats.ok
     missCount += roundStats.miss 
-    const roundExtra = typeof roundStats.extra === 'number'
-      ? roundStats.extra
-      : round.taps.filter(t => t.isGhost).length
-    extraCount += roundExtra
     totalBeats += round.taps.filter(t => !t.isGhost).length
 
     for (const tap of round.taps) {
@@ -495,9 +490,13 @@ export function summarizeResult(roundResults: RoundSummary[]): RhythmMimicResult
   const finalScore = calculateScore(roundResults)
   
   const totalExpected = roundResults.reduce((sum, r) => sum + r.taps.filter(t => !t.isGhost).length, 0)
+  const totalExtras = roundResults.reduce((sum, r) => {
+    if (typeof r.stats?.extra === 'number') return sum + r.stats.extra
+    return sum + r.taps.filter(t => t.isGhost).length
+  }, 0)
   const totalHits = perfectCount + goodCount
-  const totalOpportunities = totalExpected + extraCount
-  const globalAccuracy = totalOpportunities > 0 ? (totalHits / totalOpportunities) * 100 : 0
+  const totalInputs = totalExpected + totalExtras
+  const globalAccuracy = totalInputs > 0 ? (totalHits / totalInputs) * 100 : 0
 
   return {
     score: finalScore,

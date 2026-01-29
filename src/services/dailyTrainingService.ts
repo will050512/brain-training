@@ -102,21 +102,6 @@ async function saveDailyTrainingSessionAndSync(session: DailyTrainingSession): P
   await syncDailyTrainingSessionToSheet(session)
 }
 
-function getPlannedGameIdSet(session: DailyTrainingSession): Set<string> {
-  return new Set(session.plannedGames.map(item => item.gameId))
-}
-
-function getSanitizedCompletedGames(session: DailyTrainingSession): string[] {
-  const planned = getPlannedGameIdSet(session)
-  const unique = new Set<string>()
-  session.completedGames.forEach(id => {
-    if (planned.has(id)) {
-      unique.add(id)
-    }
-  })
-  return Array.from(unique)
-}
-
 function resolveTargetGameCount(
   config: { min: number; max: number },
   weeklyGoal?: WeeklyTrainingGoal
@@ -406,8 +391,6 @@ export async function createDailyTrainingPlan(
  * 將儲存的會話轉換為計畫格式
  */
 function convertSessionToPlan(session: DailyTrainingSession): DailyTrainingPlan {
-  const completedGameIds = getSanitizedCompletedGames(session)
-  const completedSet = new Set(completedGameIds)
   const games: TrainingGameItem[] = session.plannedGames.map((pg, index) => {
     const game = gameRegistry.get(pg.gameId)
     return {
@@ -417,13 +400,13 @@ function convertSessionToPlan(session: DailyTrainingSession): DailyTrainingPlan 
       subDifficulty: pg.subDifficulty,
       estimatedTime: pg.estimatedTime,
       targetDimensions: game ? getGameDimensions(game) : [],
-      isCompleted: completedSet.has(pg.gameId),
+      isCompleted: session.completedGames.includes(pg.gameId),
       order: index + 1,
       manualOverride: pg.manualOverride ?? false
     }
   })
   
-  const completedCount = completedGameIds.length
+  const completedCount = session.completedGames.length
   const totalCount = session.plannedGames.length
   const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
   
@@ -472,37 +455,22 @@ export async function markGameCompleted(
 ): Promise<DailyTrainingPlan | null> {
   const session = await getTodayTrainingSession(odId)
   if (!session) return null
-  
-  const planned = getPlannedGameIdSet(session)
-  const sanitized = getSanitizedCompletedGames(session)
-  const originalKey = session.completedGames.slice().sort().join('|')
-  const sanitizedKey = sanitized.slice().sort().join('|')
-  const sanitizedChanged = originalKey !== sanitizedKey
-  session.completedGames = sanitized
 
-  if (!planned.has(gameId)) {
-    if (sanitizedChanged) {
-      if (session.completedGames.length === session.plannedGames.length && !session.completedAt) {
-        session.completedAt = new Date().toISOString()
-      }
-      await saveDailyTrainingSessionAndSync(session)
-    }
+  const isPlannedGame = session.plannedGames.some(item => item.gameId === gameId)
+  if (!isPlannedGame) {
     return convertSessionToPlan(session)
   }
-
+  
   if (!session.completedGames.includes(gameId)) {
-    session.completedGames = Array.from(new Set([...session.completedGames, gameId]))
+    session.completedGames.push(gameId)
     session.totalDuration += duration
     session.interrupted = false
-
+    
     // 檢查是否全部完成
     if (session.completedGames.length === session.plannedGames.length) {
       session.completedAt = new Date().toISOString()
     }
-
-    await saveDailyTrainingSessionAndSync(session)
-  } else if (session.completedGames.length === session.plannedGames.length && !session.completedAt) {
-    session.completedAt = new Date().toISOString()
+    
     await saveDailyTrainingSessionAndSync(session)
   }
   
@@ -697,23 +665,15 @@ export async function getTrainingStats(odId: string, days: number = 7): Promise<
     return date >= startDate && date <= now
   })
   
-  const completedDays = recentSessions.filter(s => {
-    const planned = new Set(s.plannedGames.map(item => item.gameId))
-    const completedCount = new Set(s.completedGames.filter(id => planned.has(id))).size
-    return completedCount === s.plannedGames.length
-  }).length
+  const completedDays = recentSessions.filter(s => 
+    s.completedGames.length === s.plannedGames.length
+  ).length
   
-  const totalGames = recentSessions.reduce((sum, s) => {
-    const planned = new Set(s.plannedGames.map(item => item.gameId))
-    const completedCount = new Set(s.completedGames.filter(id => planned.has(id))).size
-    return sum + completedCount
-  }, 0)
+  const totalGames = recentSessions.reduce((sum, s) => sum + s.completedGames.length, 0)
   
   const progressSum = recentSessions.reduce((sum, s) => {
-    const planned = new Set(s.plannedGames.map(item => item.gameId))
-    const completedCount = new Set(s.completedGames.filter(id => planned.has(id))).size
     const progress = s.plannedGames.length > 0 
-      ? (completedCount / s.plannedGames.length) * 100 
+      ? (s.completedGames.length / s.plannedGames.length) * 100 
       : 0
     return sum + progress
   }, 0)
@@ -726,11 +686,7 @@ export async function getTrainingStats(odId: string, days: number = 7): Promise<
   let streak = 0
   const completedDateKeys = Array.from(new Set(
     sessions
-      .filter(s => {
-        const planned = new Set(s.plannedGames.map(item => item.gameId))
-        const completedCount = new Set(s.completedGames.filter(id => planned.has(id))).size
-        return completedCount === s.plannedGames.length
-      })
+      .filter(s => s.completedGames.length === s.plannedGames.length)
       .map(s => s.date)
   ))
   const sortedKeys = completedDateKeys.sort((a, b) => {
@@ -787,13 +743,11 @@ export async function getTodayTrainingStatus(): Promise<{
       return { progress: 0, completed: false }
     }
     
-    const planned = new Set(session.plannedGames.map(item => item.gameId))
-    const completedCount = new Set(session.completedGames.filter(id => planned.has(id))).size
     const progress = session.plannedGames.length > 0
-      ? Math.round((completedCount / session.plannedGames.length) * 100)
+      ? Math.round((session.completedGames.length / session.plannedGames.length) * 100)
       : 0
     
-    const completed = completedCount >= session.plannedGames.length
+    const completed = session.completedGames.length >= session.plannedGames.length
     
     return { progress, completed }
   } catch (error) {
