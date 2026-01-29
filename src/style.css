@@ -9,6 +9,7 @@
 :root {
   --font-sans: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
   --font-display: var(--font-sans);
+  --app-height: 100vh;
   --ui-scale: 1.12;
   --ui-space-scale: 0.9;
   --text-scale: 1;
@@ -203,6 +204,12 @@
   --gradient-dark: linear-gradient(135deg, #0B1220 0%, #111827 100%);
 }
 
+@supports (height: 100dvh) {
+  :root {
+    --app-height: 100dvh;
+  }
+}
+
 /* 通用互動效果 */
 .hover-lift {
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
@@ -387,6 +394,7 @@ html {
   font-size: var(--font-size-base);
   /* 防止水平溢出 */
   overflow-x: hidden;
+  min-height: var(--app-height);
 }
 
 body {
@@ -398,6 +406,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  min-height: var(--app-height);
   transition: background-color 0.3s ease, color 0.3s ease;
   /* 防止水平溢出與無意義滑動 */
   overflow-x: hidden;
@@ -421,6 +430,7 @@ a[class*="bg-[var(--color-primary)]"],
 
 #app {
   min-height: 100vh;
+  min-height: var(--app-height);
   /* 確保內容不超出視窗 */
   max-width: 100vw;
   overflow-x: hidden;
@@ -485,6 +495,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   width: 100vw;
   height: 100vh;
   height: 100dvh; /* 動態視窗高度，處理手機瀏覽器工具列 */
+  height: var(--app-height);
   overflow: hidden;
   touch-action: none;
 }

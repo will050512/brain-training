@@ -8,6 +8,19 @@ import { initMigrations } from './services/migrationService'
 import { initExternalAuthBridge } from './services/externalAuthBridge'
 import './style.css'
 
+function setViewportHeight(): void {
+  const viewportHeight = window.visualViewport?.height ?? window.innerHeight
+  document.documentElement.style.setProperty('--app-height', `${viewportHeight}px`)
+}
+
+function initViewportHeightFix(): void {
+  setViewportHeight()
+  window.addEventListener('resize', setViewportHeight)
+  window.addEventListener('orientationchange', setViewportHeight)
+  window.visualViewport?.addEventListener('resize', setViewportHeight)
+  window.visualViewport?.addEventListener('scroll', setViewportHeight)
+}
+
 // 建立應用程式
 const app = createApp(App)
 
@@ -21,6 +34,8 @@ app.use(router)
 // 應用程式初始化
 async function bootstrap() {
   try {
+    initViewportHeightFix()
+
     // 啟動外部登入橋接（供 App / Firebase WebView 傳遞用戶資料）
     // 先註冊 message 監聽，避免 WebView 提早送出而遺失
     initExternalAuthBridge()

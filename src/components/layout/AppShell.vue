@@ -134,12 +134,14 @@ const headerClass = computed(() => {
   flex-direction: column;
   height: 100vh;
   height: 100dvh;
+  height: var(--app-height);
   min-height: 100svh;
   overflow: hidden;
   background: var(--color-bg);
   /* 確保在所有裝置上都填滿視窗 */
   min-height: 100vh;
   min-height: 100dvh;
+  min-height: var(--app-height);
   transition: background-color 0.3s ease;
 }
 
