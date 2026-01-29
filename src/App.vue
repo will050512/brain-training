@@ -348,6 +348,14 @@ onUnmounted(() => {
         <div class="text-3xl">🔄</div>
         <h2 class="app-update-title">{{ updateGateTitle }}</h2>
         <p class="app-update-message">{{ updateGateMessage }}</p>
+        <div class="update-gate-visual" aria-hidden="true">
+          <div class="funnel-spinner">
+            <span class="funnel-emoji" aria-hidden="true">⏳</span>
+          </div>
+          <div class="update-progress">
+            <div class="update-progress-bar"></div>
+          </div>
+        </div>
         <div class="app-update-actions">
           <button
             v-if="updateGateState === 'blocked'"
@@ -366,6 +374,14 @@ onUnmounted(() => {
         <div class="text-3xl">⏳</div>
         <h2 class="app-update-title">{{ loadGateTitle }}</h2>
         <p class="app-update-message">{{ loadGateMessage }}</p>
+        <div class="update-gate-visual" aria-hidden="true">
+          <div class="funnel-spinner">
+            <span class="funnel-emoji" aria-hidden="true">⏳</span>
+          </div>
+          <div class="update-progress">
+            <div class="update-progress-bar"></div>
+          </div>
+        </div>
         <div class="app-update-actions">
           <button
             v-if="bootGateState === 'error' || refreshGateState === 'error'"
@@ -504,6 +520,73 @@ onUnmounted(() => {
 .app-update-actions {
   display: flex;
   justify-content: center;
+}
+
+.update-gate-visual {
+  display: grid;
+  gap: var(--spacing-sm);
+  justify-items: center;
+  margin: 0 0 var(--spacing-md);
+}
+
+.funnel-spinner {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  animation: funnel-spin 2.8s linear infinite;
+}
+
+.funnel-emoji {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.update-progress {
+  width: min(280px, 70vw);
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.update-progress-bar {
+  width: 45%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent, var(--color-primary)));
+  animation: progress-sweep 1.6s ease-in-out infinite;
+}
+
+@keyframes funnel-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes progress-sweep {
+  0% {
+    transform: translateX(-70%);
+  }
+  50% {
+    transform: translateX(60%);
+  }
+  100% {
+    transform: translateX(140%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .funnel-spinner,
+  .update-progress-bar {
+    animation: none;
+  }
 }
 
 /* 桌面佈局時，內容已由 DesktopLayout 處理 */
