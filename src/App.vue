@@ -33,12 +33,6 @@ const { checkTrainingReminder, checkAssessmentReminder } = useNotification()
 const toast = useToast()
 useUiScale()
 const { isOfflineReady, needRefresh, isUpdating, isUserActive, checkForUpdates, applyUpdate } = usePWA()
-const syncStatus = computed(() => dataInitService.syncStatus.value)
-const syncStatusMessage = computed(() => {
-  if (syncStatus.value === 'syncing') return '正在背景同步…'
-  if (syncStatus.value === 'error') return '同步失敗，可稍後再試'
-  return ''
-})
 
 // 初始化主題系統
 const { initTheme } = useTheme()
@@ -93,7 +87,7 @@ watch(needsEducationYears, (needs) => {
 }, { immediate: true })
 
 const showUpdateBanner = computed(() => needRefresh.value && isUserActive.value && !isUpdating.value)
-const showSyncToast = computed(() => syncStatus.value === 'syncing' || syncStatus.value === 'error')
+const showSyncToast = computed(() => false)
 
 // ===== 佈局系統 =====
 
@@ -467,12 +461,6 @@ onUnmounted(() => {
     <!-- Toast 通知 -->
     <ToastNotification />
 
-    <Transition name="fade">
-      <div v-if="showSyncToast" class="app-sync-toast" role="status" aria-live="polite">
-        <span class="app-sync-icon" aria-hidden="true">⏳</span>
-        <span class="app-sync-text">{{ syncStatusMessage }}</span>
-      </div>
-    </Transition>
 
   </div>
 </template>

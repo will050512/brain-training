@@ -326,7 +326,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="app-page page-ambient">
+  <div class="app-page page-ambient" aria-label="週訓練報告">
     <!-- APP 頭部 -->
     <WeeklyReportHeader
       title="週訓練報告"

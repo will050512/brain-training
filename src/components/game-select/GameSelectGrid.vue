@@ -5,6 +5,7 @@
       <div
         v-for="game in games"
         :key="game.id"
+        :data-game-id="game.id"
         class="card-variant-action p-3 sm:p-4 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border-light)] hover-lift min-h-[170px] flex flex-col"
         @click="onOpenGame(game)"
       >

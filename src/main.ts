@@ -37,6 +37,8 @@ app.use(pinia)
 app.use(router)
 
 // 應用程式初始化
+registerAllGames()
+
 async function bootstrap() {
   try {
     perfStart('bootstrap')
@@ -74,10 +76,6 @@ async function bootstrap() {
         perfEnd('userStore.quickLogin')
       })
     }
-    
-    // 註冊所有遊戲
-    registerAllGames()
-    console.log('Games registered')
     
     // 掛載應用程式
     app.mount('#app')

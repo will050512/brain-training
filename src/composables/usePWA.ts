@@ -87,11 +87,13 @@ export function usePWA() {
     isUserActive.value = getVisibilityState() === 'visible'
   }
 
-  async function handleNeedRefresh() {
-    const shouldUpdate = await shouldApplyUpdate()
-    if (!shouldUpdate) {
-      console.log('[PWA] 偵測到更新但版本相同，略過套用')
-      return
+  async function handleNeedRefresh(force: boolean = false) {
+    if (!force) {
+      const shouldUpdate = await shouldApplyUpdate()
+      if (!shouldUpdate) {
+        console.log('[PWA] 偵測到更新但版本相同，略過套用')
+        return
+      }
     }
 
     needRefresh.value = true
@@ -124,7 +126,7 @@ export function usePWA() {
         immediate: false,
         onNeedRefresh() {
           console.log('[PWA] 新版本可用，需要重新整理')
-          void handleNeedRefresh()
+          void handleNeedRefresh(true)
         },
         onOfflineReady() {
           console.log('[PWA] 應用程式已準備好離線使用')
@@ -264,7 +266,16 @@ export function usePWA() {
 
     if (navigator.webdriver && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
       window.__PWA_TEST__ = {
-        setNeedRefresh: () => handleNeedRefresh(),
+        setNeedRefresh: () => {
+          needRefresh.value = true
+          isUpdateAvailable.value = true
+          updateUserActiveState()
+          if (getVisibilityState() !== 'visible') {
+            pendingAutoUpdate.value = true
+            return
+          }
+          void handleNeedRefresh()
+        },
         clearNeedRefresh: () => {
           needRefresh.value = false
           isUpdateAvailable.value = false

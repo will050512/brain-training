@@ -18,10 +18,7 @@
         :sync-status="syncStatus"
         :sync-status-label="syncStatusLabel"
         :sync-status-class="syncStatusClass"
-        :can-manual-sync="canManualSync"
-        :last-manual-sync-error="settingsStore.lastManualSyncError"
         :format-sync-time="formatSyncTime"
-        :handle-manual-sync="handleManualSync"
       />
       <SettingsAccountCard
         v-if="userStore.isLoggedIn"
@@ -55,8 +52,7 @@ import { useUserStore, useSettingsStore, useGameStore } from '@/stores'
 import { clearUserGameSessions, getDataConsent, saveDataConsent } from '@/services/db'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { getTotalGamesPlayed } from '@/utils/trainingStats'
-import { backfillUserSessionsToSheet, loadSessionSyncStatus } from '@/services/googleSheetSyncService'
-import { backfillAllUserDataToSheet } from '@/services/userDataSheetSyncService'
+import { loadSessionSyncStatus } from '@/services/googleSheetSyncService'
 import { loadUserSyncStatus } from '@/services/userSheetSyncService'
 import { CURRENT_CONSENT_VERSION, defaultDataConsent, type DataConsentOptions } from '@/types/user'
 import { formatBirthdayToRoc } from '@/utils/birthday'
@@ -122,12 +118,6 @@ const syncStatusClass = computed(() => {
   return 'text-[var(--color-success)]'
 })
 
-const canManualSync = computed(() => {
-  if (!userStore.isLoggedIn) return false
-  if (syncStatus.value.consent !== 'allowed') return false
-  if (!syncStatus.value.online) return false
-  return settingsStore.syncUiStatus !== 'syncing'
-})
 
 // 格式化遊玩時間
 function formatPlayTime(seconds: number): string {
@@ -266,28 +256,6 @@ function handleStatusRefresh(): void {
   refreshConsentStatus()
 }
 
-async function handleManualSync(): Promise<void> {
-  const odId = userStore.currentUser?.id
-  if (!odId) return
-  if (syncStatus.value.consent !== 'allowed') {
-    settingsStore.setSyncUiStatus('error', '需同意必要功能')
-    return
-  }
-  if (!syncStatus.value.online) {
-    settingsStore.setSyncUiStatus('error', '目前離線，無法同步')
-    return
-  }
-  settingsStore.setSyncUiStatus('syncing')
-  try {
-    await backfillAllUserDataToSheet(odId, { force: true })
-    await backfillUserSessionsToSheet(odId)
-    settingsStore.setSyncUiStatus('success')
-    refreshSyncStatus()
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'sync failed'
-    settingsStore.setSyncUiStatus('error', message)
-  }
-}
 
 watch(() => userStore.currentUser?.id, (id) => {
   if (id) {

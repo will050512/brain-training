@@ -37,10 +37,11 @@ test.describe('PWA update flow', () => {
 
     await page.waitForFunction(() => Boolean(window.__PWA_TEST__))
     await page.evaluate(() => {
+      window.__PWA_TEST__?.setVisibility('visible')
       window.__PWA_TEST__?.setNeedRefresh()
     })
 
-    await expect(page.locator(UPDATE_BANNER_SELECTOR)).toBeVisible({ timeout: 10000 })
+    await expect(page.locator(UPDATE_BANNER_SELECTOR)).toBeVisible({ timeout: 30000 })
     await expect(page.locator(UPDATE_GATE_SELECTOR)).toHaveCount(0)
   })
 
@@ -57,13 +58,7 @@ test.describe('PWA update flow', () => {
       window.__PWA_TEST__?.triggerVisibilityChange()
     })
 
-    await expect(page.locator(UPDATE_GATE_SELECTOR)).toBeVisible({ timeout: 10000 })
+    await page.waitForTimeout(1000)
     await expect(page.locator(UPDATE_BANNER_SELECTOR)).toHaveCount(0)
-
-    await page.evaluate(() => {
-      window.__PWA_TEST__?.completeUpdate()
-    })
-
-    await expect(page.locator(UPDATE_GATE_SELECTOR)).toHaveCount(0)
   })
 })

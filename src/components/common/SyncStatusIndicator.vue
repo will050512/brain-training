@@ -22,13 +22,13 @@ const settingsStore = useSettingsStore()
 const statusLabel = computed(() => {
   switch (settingsStore.syncUiStatus) {
     case 'syncing':
-      return '同步中...'
+      return '自動同步中...'
     case 'success':
-      return '同步完成'
+      return '自動同步完成'
     case 'error':
-      return '同步失敗'
+      return '自動同步失敗'
     default:
-      return '待命'
+      return '等待自動同步'
   }
 })
 

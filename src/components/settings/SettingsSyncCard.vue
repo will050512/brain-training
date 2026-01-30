@@ -21,10 +21,7 @@ interface Props {
   syncStatus: SyncStatus
   syncStatusLabel: string
   syncStatusClass: string
-  canManualSync: boolean
-  lastManualSyncError: string | null
   formatSyncTime: (value: string | null) => string
-  handleManualSync: () => void | Promise<void>
 }
 
 const props = defineProps<Props>()
@@ -39,13 +36,13 @@ const props = defineProps<Props>()
 
     <div class="bg-[var(--color-bg-soft)] rounded-lg p-3 mb-3">
       <div class="flex items-center justify-between mb-2 pb-2 border-b border-[var(--color-border-light)]">
-        <SubtleLabel text="同步狀態" tone="secondary" weight="bold" />
+        <SubtleLabel text="自動同步狀態" tone="secondary" weight="bold" />
         <span class="text-sm font-bold" :class="props.syncStatusClass">{{ props.syncStatusLabel }}</span>
       </div>
 
       <div class="space-y-2">
         <div class="flex justify-between">
-          <SubtleLabel text="手動同步" tone="muted" />
+          <SubtleLabel text="自動同步" tone="muted" />
           <SyncStatusIndicator />
         </div>
         <div class="flex justify-between">
@@ -63,32 +60,10 @@ const props = defineProps<Props>()
       </div>
     </div>
 
-    <div v-if="props.lastManualSyncError" class="mb-2 bg-[var(--color-danger-bg)] p-2 rounded">
-      <SubtleLabel :text="`⚠️ 同步失敗：${props.lastManualSyncError}`" class="text-[var(--color-danger)]" />
-    </div>
-    <div v-if="props.syncStatus.session.lastErrorAt || props.syncStatus.user.lastErrorAt" class="mb-2 bg-[var(--color-danger-bg)] p-2 rounded">
-      <SubtleLabel
-        :text="`⚠️ 最近同步失敗：${props.formatSyncTime(props.syncStatus.session.lastErrorAt || props.syncStatus.user.lastErrorAt)}`"
-        class="text-[var(--color-danger)]"
-      />
-    </div>
-
-    <BaseButton
-      type="button"
-      variant="secondary"
-      size="md"
-      full-width
-      class="py-3 text-sm font-medium flex items-center justify-center gap-2"
-      :disabled="!props.canManualSync"
-      @click="props.handleManualSync"
-    >
-      <span>🔄</span> 立即同步
-    </BaseButton>
-
     <SubtleLabel
-      text="需開啟「雲端備份」且在連線狀態下才能同步"
-      tone="muted"
-      class="mt-2 text-center block"
-    />
+      text="系統會在連線狀態下自動同步"
+    tone="muted"
+    class="mt-2 text-center block"
+  />
   </div>
 </template>

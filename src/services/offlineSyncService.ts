@@ -46,7 +46,7 @@ export interface SyncConfig {
 
 const DEFAULT_CONFIG: SyncConfig = {
   batchSize: 50,
-  maxRetries: 3,
+  maxRetries: 5,
   retryInterval: 5000,
   autoSyncInterval: 60000, // 1 分鐘
   autoSyncEnabled: true
@@ -57,6 +57,8 @@ class OfflineSyncService {
   private config: SyncConfig
   private status: SyncStatus = 'idle'
   private autoSyncTimer: ReturnType<typeof setInterval> | null = null
+  private backoffTimer: ReturnType<typeof setTimeout> | null = null
+  private consecutiveFailures = 0
   private onlineListener: (() => void) | null = null
   private offlineListener: (() => void) | null = null
   private statusChangeCallbacks: ((status: SyncStatus) => void)[] = []
@@ -74,7 +76,7 @@ class OfflineSyncService {
 
     this.onlineListener = () => {
       this.setStatus('idle')
-      this.sync() // 連線時自動同步
+      this.scheduleSync('online')
     }
 
     this.offlineListener = () => {
@@ -96,6 +98,14 @@ class OfflineSyncService {
   private setStatus(status: SyncStatus): void {
     this.status = status
     this.statusChangeCallbacks.forEach(cb => cb(status))
+    try {
+      const settingsStore = useSettingsStore()
+      if (status === 'offline') {
+        settingsStore.setSyncUiStatus('idle')
+      }
+    } catch {
+      // ignore ui status update
+    }
   }
 
   /**
@@ -132,9 +142,7 @@ class OfflineSyncService {
     if (this.autoSyncTimer) return
 
     this.autoSyncTimer = setInterval(() => {
-      if (this.isOnline() && this.status !== 'syncing') {
-        this.sync()
-      }
+      this.scheduleSync('interval')
     }, this.config.autoSyncInterval)
   }
 
@@ -152,6 +160,9 @@ class OfflineSyncService {
    * 執行同步
    */
   async sync(): Promise<SyncResult> {
+    if (!this.isOnline()) {
+      this.clearBackoffTimer()
+    }
     if (!isBehaviorTrackingEnabled()) {
       console.info('[OfflineSync] Sync skipped by user preference.')
       try {
@@ -170,10 +181,11 @@ class OfflineSyncService {
     if (!this.isOnline()) {
       try {
         const settingsStore = useSettingsStore()
-        settingsStore.setSyncUiStatus('error', 'offline')
+        settingsStore.setSyncUiStatus('idle')
       } catch {
         // ignore ui status update
       }
+      this.registerFailure()
       return {
         success: false,
         syncedCount: 0,
@@ -226,9 +238,14 @@ class OfflineSyncService {
       this.setStatus(result.success ? 'idle' : 'error')
       try {
         const settingsStore = useSettingsStore()
-        settingsStore.setSyncUiStatus(result.success ? 'success' : 'error', result.errors[0] || null)
+        settingsStore.setSyncUiStatus(result.success ? 'success' : 'idle', result.errors[0] || null)
       } catch {
         // ignore ui status update
+      }
+      if (result.success) {
+        this.resetFailures()
+      } else {
+        this.registerFailure()
       }
     } catch (error) {
       result.success = false
@@ -236,13 +253,57 @@ class OfflineSyncService {
       this.setStatus('error')
       try {
         const settingsStore = useSettingsStore()
-        settingsStore.setSyncUiStatus('error', error instanceof Error ? error.message : 'unknown error')
+        settingsStore.setSyncUiStatus('idle', error instanceof Error ? error.message : 'unknown error')
       } catch {
         // ignore ui status update
       }
+      this.registerFailure()
     }
 
     return result
+  }
+
+  private scheduleSync(reason: 'online' | 'interval' | 'backoff') {
+    if (!this.isOnline()) {
+      return
+    }
+    if (this.status === 'syncing') {
+      return
+    }
+    if (this.consecutiveFailures >= this.config.maxRetries) {
+      this.startBackoff(reason)
+      return
+    }
+    void this.sync()
+  }
+
+  private startBackoff(reason: 'online' | 'interval' | 'backoff') {
+    if (this.backoffTimer) return
+    this.backoffTimer = setTimeout(() => {
+      this.backoffTimer = null
+      if (this.isOnline()) {
+        void this.sync()
+      }
+    }, 20000)
+  }
+
+  private clearBackoffTimer() {
+    if (this.backoffTimer) {
+      clearTimeout(this.backoffTimer)
+      this.backoffTimer = null
+    }
+  }
+
+  private resetFailures() {
+    this.consecutiveFailures = 0
+    this.clearBackoffTimer()
+  }
+
+  private registerFailure() {
+    this.consecutiveFailures += 1
+    if (this.consecutiveFailures >= this.config.maxRetries) {
+      this.startBackoff('backoff')
+    }
   }
 
   /**
@@ -414,6 +475,7 @@ class OfflineSyncService {
    * 強制重試所有失敗項目
    */
   async retryAll(): Promise<SyncResult> {
+    this.resetFailures()
     // 重置所有重試計數
     const pendingItems = await getPendingSyncItems()
     
@@ -433,6 +495,7 @@ class OfflineSyncService {
    */
   destroy(): void {
     this.stopAutoSync()
+    this.clearBackoffTimer()
     
     if (typeof window !== 'undefined') {
       if (this.onlineListener) {

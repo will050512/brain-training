@@ -3,6 +3,7 @@
     v-if="isMobile"
     :ambient="true"
     contentClass="page-shell-flush"
+    aria-label="認知評估報告"
   >
     <ReportMobileView
       ref="reportMobileRef"
@@ -49,7 +50,11 @@
     />
   </PageShell>
 
-  <div v-else class="min-h-screen page-ambient font-sans text-[var(--color-text)] selection:bg-[var(--color-primary)] selection:text-[var(--color-text-inverse)]">
+  <div
+    v-else
+    class="min-h-screen page-ambient font-sans text-[var(--color-text)] selection:bg-[var(--color-primary)] selection:text-[var(--color-text-inverse)]"
+    aria-label="認知評估報告"
+  >
     <ReportDesktopView
       ref="reportDesktopRef"
       :reportSections="reportSections"
@@ -561,4 +566,3 @@ onUnmounted(() => {
   100% { transform: translateX(100%); }
 }
 </style>
-

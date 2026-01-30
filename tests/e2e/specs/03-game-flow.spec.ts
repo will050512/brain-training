@@ -7,7 +7,9 @@ test.describe('Single Game Flow', () => {
     await expect(page.getByRole('heading', { level: 2, name: '遊戲訓練' })).toBeVisible()
     await expect(page).toHaveScreenshot('game-select.png', { fullPage: true, maxDiffPixelRatio: 0.05 })
 
-    await page.getByRole('button', { name: /打地鼠|翻牌配對|Stroop測試/ }).first().click()
+    await page.waitForSelector('.app-update-gate', { state: 'detached', timeout: 20000 })
+    await page.waitForSelector('[data-game-id]', { timeout: 20000 })
+    await page.locator('[data-game-id]').first().click({ timeout: 20000 })
     await expect(page.getByRole('button', { name: '開始遊戲' })).toBeVisible()
     await expect(page).toHaveScreenshot('game-ready.png', { fullPage: true, maxDiffPixelRatio: 0.05 })
   })

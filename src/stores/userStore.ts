@@ -262,6 +262,14 @@ export const useUserStore = defineStore('user', () => {
       // 載入使用者資料
       currentUser.value = await ensureTransferCode(user as User)
       currentSettings.value = await getUserSettings(odId) || defaultUserSettings(odId)
+      if (currentSettings.value.hasSeenWelcome) {
+        const { useSettingsStore } = await import('@/stores/settingsStore')
+        useSettingsStore().markWelcomeSeen()
+      }
+      if (currentSettings.value.hasSeenWelcome) {
+        const { useSettingsStore } = await import('@/stores/settingsStore')
+        useSettingsStore().markWelcomeSeen()
+      }
       const stats = await getUserStats(odId)
       currentStats.value = stats ? normalizeStats(stats) : defaultUserStats(odId)
 
@@ -463,6 +471,14 @@ export const useUserStore = defineStore('user', () => {
 
       currentUser.value = normalized
       currentSettings.value = await getUserSettings(odId) || defaultUserSettings(odId)
+      if (currentSettings.value.hasSeenWelcome) {
+        const { useSettingsStore } = await import('@/stores/settingsStore')
+        useSettingsStore().markWelcomeSeen()
+      }
+      if (currentSettings.value.hasSeenWelcome) {
+        const { useSettingsStore } = await import('@/stores/settingsStore')
+        useSettingsStore().markWelcomeSeen()
+      }
       const stats = await getUserStats(odId)
       currentStats.value = stats ? normalizeStats(stats) : defaultUserStats(odId)
 
@@ -475,6 +491,10 @@ export const useUserStore = defineStore('user', () => {
       await dataInitService.initUserData(odId, { mode: 'delta', deferSync: true })
       perfEnd('dataInitService.initUserData(quickLogin)')
       currentSettings.value = await getUserSettings(odId) || defaultUserSettings(odId)
+      if (currentSettings.value.hasSeenWelcome) {
+        const { useSettingsStore } = await import('@/stores/settingsStore')
+        useSettingsStore().markWelcomeSeen()
+      }
       const refreshedStats = await getUserStats(odId)
       currentStats.value = refreshedStats ? normalizeStats(refreshedStats) : defaultUserStats(odId)
 

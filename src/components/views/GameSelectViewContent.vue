@@ -153,4 +153,3 @@ function openGameModal(game: GameDefinition): void {
   router.push(`/games/${game.id}`)
 }
 </script>
-

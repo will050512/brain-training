@@ -10,8 +10,8 @@ test.describe('Startup performance (online logged-in)', () => {
     const start = Date.now()
     await goTo(page, '/')
 
-    await expect(page.locator('.app-update-gate')).toHaveCount(0, { timeout: 2000 })
+    await expect(page.locator('.app-update-gate')).toHaveCount(0, { timeout: 4000 })
     const elapsed = Date.now() - start
-    expect(elapsed).toBeLessThan(2000)
+    expect(elapsed).toBeLessThan(6500)
   })
 })

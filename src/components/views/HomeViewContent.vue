@@ -139,13 +139,13 @@ const syncStatusIcon = computed(() => {
 const syncStatusText = computed(() => {
   switch (settingsStore.syncUiStatus) {
     case 'syncing':
-      return '同步中...'
+      return '自動同步中...'
     case 'success':
-      return '同步完成'
+      return '自動同步完成'
     case 'error':
-      return '同步失敗'
+      return '自動同步失敗'
     default:
-      return '等待同步'
+      return '等待自動同步'
   }
 })
 
@@ -171,7 +171,10 @@ async function handleCopyTransferCode(): Promise<void> {
 }
 
 // 是否顯示歡迎彈窗
-const showWelcome = computed(() => !settingsStore.hasSeenWelcome)
+const showWelcome = computed(() => {
+  const userSeen = userStore.currentSettings?.hasSeenWelcome === true
+  return !settingsStore.hasSeenWelcome && !userSeen
+})
 
 // 目標設定彈窗
 const showGoalSettings = ref(false)
@@ -271,12 +274,18 @@ function filterSessionsByMode(records: GameSession[]): GameSession[] {
 // 處理歡迎彈窗關閉
 function handleWelcomeClose(): void {
   settingsStore.markWelcomeSeen()
+  if (userStore.isLoggedIn) {
+    void userStore.markWelcomeSeen()
+  }
 }
 
 // 處理開啟音效
 function handleEnableSound(): void {
   settingsStore.toggleSound(true)
   settingsStore.markWelcomeSeen()
+  if (userStore.isLoggedIn) {
+    void userStore.markWelcomeSeen()
+  }
 }
 
 // 處理登出
