@@ -31,7 +31,7 @@ const { isMobile, isTablet, isDesktop } = useResponsive()
 const { checkTrainingReminder, checkAssessmentReminder } = useNotification()
 const toast = useToast()
 useUiScale()
-const { isOfflineReady, needRefresh, isUpdating, checkForUpdates, applyUpdate } = usePWA()
+const { isOfflineReady, needRefresh, isUpdating, isUserActive, checkForUpdates, applyUpdate } = usePWA()
 
 // 初始化主題系統
 const { initTheme } = useTheme()
@@ -47,12 +47,11 @@ const needsEducationYears = computed(() => {
   return !user.educationYears || user.educationYears <= 0
 })
 
-const updateGateState = ref<'checking' | 'blocked' | 'ready'>('checking')
 const bootGateState = ref<'loading' | 'ready' | 'error'>('loading')
 const refreshGateState = ref<'idle' | 'loading' | 'error'>('idle')
 const isGameRoute = computed(() => route.meta.isGame === true || route.meta.layout === 'game')
 
-const showUpdateGate = computed(() => updateGateState.value !== 'ready' || isUpdating.value)
+const showUpdateGate = computed(() => isUpdating.value)
 const showLoadGate = computed(() => {
   if (showUpdateGate.value) return false
   if (bootGateState.value !== 'ready') return true
@@ -63,15 +62,11 @@ const showLoadGate = computed(() => {
 })
 
 const updateGateMessage = computed(() => {
-  if (isUpdating.value) return '正在更新版本，完成後會自動重新載入。'
-  if (updateGateState.value === 'blocked') return '偵測到新版本，請先更新才能繼續。'
-  return '請稍等，確認最新版後再開始使用。'
+  return '正在更新版本，完成後會自動重新載入。'
 })
 
 const updateGateTitle = computed(() => {
-  if (isUpdating.value) return '版本更新中'
-  if (updateGateState.value === 'blocked') return '需要更新'
-  return '正在確認更新'
+  return '版本更新中'
 })
 
 const loadGateTitle = computed(() => {
@@ -90,15 +85,7 @@ watch(needsEducationYears, (needs) => {
   showEducationModal.value = needs
 }, { immediate: true })
 
-watch(needRefresh, (available) => {
-  if (available) {
-    updateGateState.value = 'blocked'
-    return
-  }
-  if (updateGateState.value !== 'checking') {
-    updateGateState.value = 'ready'
-  }
-})
+const showUpdateBanner = computed(() => needRefresh.value && isUserActive.value && !isUpdating.value)
 
 // ===== 佈局系統 =====
 
@@ -269,12 +256,7 @@ async function handleOnline(): Promise<void> {
 
 onMounted(async () => {
   bootGateState.value = 'loading'
-  updateGateState.value = 'checking'
-  await checkForUpdates()
-  await new Promise(resolve => setTimeout(resolve, 600))
-  if (!needRefresh.value) {
-    updateGateState.value = 'ready'
-  }
+  checkForUpdates()
 
   try {
     // 初始化主題
@@ -355,16 +337,6 @@ onUnmounted(() => {
           <div class="update-progress">
             <div class="update-progress-bar"></div>
           </div>
-        </div>
-        <div class="app-update-actions">
-          <button
-            v-if="updateGateState === 'blocked'"
-            class="btn btn-primary"
-            :disabled="isUpdating"
-            @click="applyUpdate"
-          >
-            {{ isUpdating ? '更新中...' : '立即更新' }}
-          </button>
         </div>
       </div>
     </div>
@@ -448,10 +420,10 @@ onUnmounted(() => {
     
     <!-- PWA 更新提示 -->
     <PWAUpdateBanner
+      v-if="showUpdateBanner"
       :need-refresh="needRefresh"
       :is-offline-ready="isOfflineReady"
       :is-updating="isUpdating"
-      :force-update="needRefresh"
       :on-apply-update="applyUpdate"
     />
 

@@ -40,6 +40,7 @@
         v-if="showOfflineReady" 
         class="pwa-offline-toast"
         role="status"
+        @click="dismissOfflineReady"
       >
         <span>✅ 應用程式已準備好離線使用</span>
       </div>
@@ -48,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, computed } from 'vue'
 
 interface Props {
   needRefresh: boolean
@@ -62,26 +63,58 @@ const props = withDefaults(defineProps<Props>(), {
   forceUpdate: false
 })
 
-const showBanner = ref(false)
+const bannerDismissed = ref(false)
 const showOfflineReady = ref(false)
-const dismissed = ref(false)
+const offlineDismissed = ref(false)
+let dismissTimeout: number | undefined
+let offlineTimeout: number | undefined
 
-// 監聽更新狀態
-watch(() => props.needRefresh, (available) => {
-  if (available && (!dismissed.value || props.forceUpdate)) {
-    showBanner.value = true
+const showBanner = computed(() => {
+  if (props.isUpdating) return false
+  if (!props.needRefresh) return false
+  if (bannerDismissed.value && !props.forceUpdate) return false
+  return true
+})
+
+watch(() => props.needRefresh, (available, prev) => {
+  if (!available && prev) {
+    bannerDismissed.value = false
+    if (dismissTimeout) {
+      window.clearTimeout(dismissTimeout)
+      dismissTimeout = undefined
+    }
   }
 })
 
 // 監聽離線就緒狀態
-watch(() => props.isOfflineReady, (ready) => {
-  if (ready) {
+watch(() => props.isOfflineReady, (ready, prev) => {
+  if (!ready && prev) {
+    showOfflineReady.value = false
+    offlineDismissed.value = false
+    if (offlineTimeout) {
+      window.clearTimeout(offlineTimeout)
+      offlineTimeout = undefined
+    }
+    return
+  }
+  if (ready && !offlineDismissed.value) {
     showOfflineReady.value = true
-    // 3 秒後自動隱藏
-    setTimeout(() => {
+    if (offlineTimeout) {
+      window.clearTimeout(offlineTimeout)
+    }
+    offlineTimeout = window.setTimeout(() => {
       showOfflineReady.value = false
     }, 3000)
   }
+})
+
+watch(() => props.isUpdating, (updating) => {
+  if (!updating) return
+  if (dismissTimeout) {
+    window.clearTimeout(dismissTimeout)
+    dismissTimeout = undefined
+  }
+  bannerDismissed.value = false
 })
 
 async function handleUpdate() {
@@ -90,24 +123,23 @@ async function handleUpdate() {
 
 function dismissBanner() {
   if (props.forceUpdate) return
-  showBanner.value = false
-  dismissed.value = true
-  
-  // 30 分鐘後重新顯示提醒
-  setTimeout(() => {
-    dismissed.value = false
-    if (props.needRefresh) {
-      showBanner.value = true
-    }
+  bannerDismissed.value = true
+  if (dismissTimeout) {
+    window.clearTimeout(dismissTimeout)
+  }
+  dismissTimeout = window.setTimeout(() => {
+    bannerDismissed.value = false
   }, 30 * 60 * 1000)
 }
 
-onMounted(() => {
-  // 如果頁面載入時已經有更新可用
-  if (props.needRefresh) {
-    showBanner.value = true
+function dismissOfflineReady() {
+  offlineDismissed.value = true
+  showOfflineReady.value = false
+  if (offlineTimeout) {
+    window.clearTimeout(offlineTimeout)
+    offlineTimeout = undefined
   }
-})
+}
 </script>
 
 <style scoped>

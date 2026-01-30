@@ -16,7 +16,11 @@ export function usePWA() {
   const isOfflineReady = ref(false)
   const needRefresh = ref(false)
   const isUpdating = ref(false)
+  const isUserActive = ref(true)
+  const pendingAutoUpdate = ref(false)
   let hasReloaded = false
+  let visibilityOverride: 'visible' | 'hidden' | null = null
+  let skipReloadForTests = false
   
   let updateSW: ((reloadPage?: boolean) => Promise<void>) | undefined
   let registration: ServiceWorkerRegistration | undefined
@@ -52,11 +56,32 @@ export function usePWA() {
     if (updateSW) {
       isUpdating.value = true
       try {
-        await updateSW(false)
+        if (skipReloadForTests) {
+          return
+        }
+        await updateSW(true)
       } catch (error) {
         console.error('[PWA] 應用更新失敗:', error)
         isUpdating.value = false
       }
+    }
+  }
+
+  function getVisibilityState() {
+    return visibilityOverride ?? document.visibilityState
+  }
+
+  function updateUserActiveState() {
+    isUserActive.value = getVisibilityState() === 'visible'
+  }
+
+  function handleNeedRefresh() {
+    needRefresh.value = true
+    isUpdateAvailable.value = true
+    updateUserActiveState()
+    if (getVisibilityState() !== 'visible') {
+      pendingAutoUpdate.value = true
+      return
     }
   }
 
@@ -81,8 +106,7 @@ export function usePWA() {
         immediate: true,
         onNeedRefresh() {
           console.log('[PWA] 新版本可用，需要重新整理')
-          needRefresh.value = true
-          isUpdateAvailable.value = true
+          handleNeedRefresh()
         },
         onOfflineReady() {
           console.log('[PWA] 應用程式已準備好離線使用')
@@ -117,15 +141,29 @@ export function usePWA() {
 
   // 監聽頁面可見性變化，當用戶切回應用時檢查更新
   function handleVisibilityChange() {
-    if (document.visibilityState === 'visible' && navigator.onLine) {
-      checkForUpdates()
+    updateUserActiveState()
+    if (getVisibilityState() === 'visible') {
+      if (pendingAutoUpdate.value && needRefresh.value && !isUpdating.value) {
+        pendingAutoUpdate.value = false
+        void applyUpdate()
+        return
+      }
+      if (navigator.onLine) {
+        checkForUpdates()
+      }
+      return
+    }
+    if (needRefresh.value) {
+      pendingAutoUpdate.value = true
     }
   }
 
   // 監聯網路恢復，自動檢查更新
   function handleOnline() {
     console.log('[PWA] 網路已恢復，檢查更新...')
-    checkForUpdates()
+    if (getVisibilityState() === 'visible') {
+      checkForUpdates()
+    }
   }
 
   // 監聽 Service Worker 控制器變化
@@ -142,6 +180,7 @@ export function usePWA() {
 
   onMounted(() => {
     initPWA()
+    updateUserActiveState()
     
     // 添加事件監聽器
     document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -149,6 +188,43 @@ export function usePWA() {
     
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange)
+    }
+
+    if (navigator.webdriver && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+      window.__PWA_TEST__ = {
+        setNeedRefresh: () => handleNeedRefresh(),
+        clearNeedRefresh: () => {
+          needRefresh.value = false
+          isUpdateAvailable.value = false
+          pendingAutoUpdate.value = false
+        },
+        setOfflineReady: () => {
+          isOfflineReady.value = true
+        },
+        setVisibility: (state: 'visible' | 'hidden') => {
+          visibilityOverride = state
+          updateUserActiveState()
+        },
+        setUpdating: (value: boolean) => {
+          isUpdating.value = value
+        },
+        triggerVisibilityChange: () => handleVisibilityChange(),
+        setSkipReload: (value: boolean) => {
+          skipReloadForTests = value
+        },
+        completeUpdate: () => {
+          isUpdating.value = false
+          needRefresh.value = false
+          isUpdateAvailable.value = false
+          pendingAutoUpdate.value = false
+        },
+        getState: () => ({
+          needRefresh: needRefresh.value,
+          isUpdating: isUpdating.value,
+          isUserActive: isUserActive.value,
+          pendingAutoUpdate: pendingAutoUpdate.value,
+        }),
+      }
     }
   })
 
@@ -159,6 +235,10 @@ export function usePWA() {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange)
     }
+
+    if (window.__PWA_TEST__) {
+      window.__PWA_TEST__ = undefined
+    }
   })
 
   return {
@@ -166,6 +246,7 @@ export function usePWA() {
     isOfflineReady,
     needRefresh,
     isUpdating,
+    isUserActive,
     checkForUpdates,
     applyUpdate,
     skipWaiting
