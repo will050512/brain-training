@@ -6,6 +6,9 @@ import { registerAllGames } from './games'
 import { initDatabase } from './services/db'
 import { initMigrations } from './services/migrationService'
 import { initExternalAuthBridge } from './services/externalAuthBridge'
+import { dataInitService } from './services/dataInitService'
+import { initAutoSync } from './services/offlineSyncService'
+import { useUserStore } from './stores/userStore'
 import './style.css'
 
 function setViewportHeight(): void {
@@ -47,6 +50,18 @@ async function bootstrap() {
     // 執行資料遷移
     await initMigrations()
     console.log('Migrations completed')
+
+    // 初始化同步與資料訂閱（每日訓練狀態、離線同步）
+    await dataInitService.initialize()
+    initAutoSync()
+
+    // 恢復使用者 session（避免直接進入需要登入的頁面造成狀態不一致）
+    const userStore = useUserStore()
+    const savedUserId = localStorage.getItem('brain-training-current-user')
+      || localStorage.getItem('brain-training-last-user')
+    if (savedUserId && !userStore.isLoggedIn) {
+      await userStore.quickLogin(savedUserId)
+    }
     
     // 註冊所有遊戲
     registerAllGames()

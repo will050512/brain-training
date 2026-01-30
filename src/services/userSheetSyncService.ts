@@ -129,6 +129,7 @@ function mapUser(user: User): UserSheetPayload {
 async function postToSheet(payload: UserSheetPayload): Promise<boolean> {
   try {
     try {
+      if (!SHEET_ENDPOINT) return false
       const settingsStore = useSettingsStore()
       settingsStore.setSyncUiStatus('syncing')
     } catch {

@@ -488,7 +488,8 @@ onMounted(async () => {
     guidedTourDismissed.value = hasDismissedGuidedTour()
     await Promise.all([
       loadCognitiveTrend(),
-      loadDailyProgress()
+      loadDailyProgress(),
+      loadWeeklyData(),
     ])
     
     // 檢查訓練提醒

@@ -186,6 +186,7 @@ const currentSessionId = ref<string | null>(null)
 const behaviorCollector = ref<BehaviorCollector | null>(null)
 let lastTouchAt = 0
 const pendingResultSave = ref<Promise<void> | null>(null)
+const hasLoggedPendingResultWarning = ref(false)
 
 // 每日訓練相關
 const showCompletionModal = ref(false)
@@ -916,6 +917,17 @@ onMounted(() => {
 onBeforeRouteLeave(async () => {
   await ensureResultSaved()
   return true
+})
+
+watch(pendingResultSave, (pending) => {
+  if (!pending || hasLoggedPendingResultWarning.value) return
+  hasLoggedPendingResultWarning.value = true
+  setTimeout(() => {
+    if (pendingResultSave.value) {
+      console.warn('Game result save still pending; continuing without blocking UI.')
+    }
+    hasLoggedPendingResultWarning.value = false
+  }, 3000)
 })
 
 function startBehaviorSession(): void {

@@ -320,10 +320,14 @@ export class BehaviorCollector {
       ...log,
       synced: false
     }))
-    
-    if (logsWithSync.length > 0) {
-      await saveBehaviorLogs(logsWithSync)
+
+    if (logsWithSync.length === 0) return
+
+    await saveBehaviorLogs(logsWithSync)
+    try {
       await syncBehaviorLogsToSheet(logsWithSync)
+    } catch {
+      // ignore sync errors to avoid blocking main flow
     }
   }
 

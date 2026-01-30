@@ -119,10 +119,7 @@ async function handleSubmit(): Promise<void> {
     )
     
     if (success) {
-      // 儲存當前使用者 ID
-      localStorage.setItem('brain-training-current-user', userStore.currentUser!.id)
-      
-      // 載入遊戲記錄
+      // 載入遊戲記錄（其餘初始化由 userStore.login 處理）
       await gameStore.loadUserSessions(userStore.currentUser!.id)
       
       // 導向目標頁面或遊戲選擇頁
@@ -147,7 +144,6 @@ async function handleQuickLogin(odId: string): Promise<void> {
     const success = await userStore.quickLogin(odId)
     
     if (success) {
-      localStorage.setItem('brain-training-current-user', odId)
       await gameStore.loadUserSessions(odId)
       
       const redirect = route.query.redirect as string
@@ -173,7 +169,6 @@ async function handleTransferLogin(): Promise<void> {
     if (success) {
       const odId = userStore.currentUser?.id
       if (odId) {
-        localStorage.setItem('brain-training-current-user', odId)
         await gameStore.loadUserSessions(odId)
       }
       const redirect = route.query.redirect as string

@@ -267,6 +267,10 @@ export const useUserStore = defineStore('user', () => {
 
       // 保存到 localStorage 以便下次恢復 session
       localStorage.setItem('brain-training-last-user', odId)
+      localStorage.setItem('brain-training-current-user', odId)
+
+      // 初始化全局資料（每日訓練/同步狀態）
+      await dataInitService.initUserData(odId)
 
       return true
     } catch (e) {
@@ -458,6 +462,7 @@ export const useUserStore = defineStore('user', () => {
 
       // 保存到 localStorage 以便下次恢復 session
       localStorage.setItem('brain-training-last-user', odId)
+      localStorage.setItem('brain-training-current-user', odId)
 
       // 初始化全局資料
       await dataInitService.initUserData(odId)
