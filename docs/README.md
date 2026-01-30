@@ -9,6 +9,7 @@
 ## 開發
 - `DEVELOPER_GUIDE.md`：開發環境、流程、常見問題
 - `STORYBOOK.md`：Storybook 使用方式
+- `pwa-update-fix.md`：PWA 更新流程修正說明
 
 ## 產品 / UX / 視覺
 - `DESIGN_SYSTEM.md`：設計系統與元件原則
