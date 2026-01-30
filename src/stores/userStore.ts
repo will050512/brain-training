@@ -28,6 +28,7 @@ import { syncUserSettingsToSheet, syncUserStatsToSheet } from '@/services/userDa
 import { syncUserProfileToSheet } from '@/services/userSheetSyncService'
 import { generateTransferCode, isValidTransferCode, normalizeTransferCode } from '@/services/userTransferCode'
 import { appendSheetAuthParams, getSheetEndpoint } from '@/services/sheetConfig'
+import { perfEnd, perfStart } from '@/utils/perf'
 
 function normalizeUser(user: User): User {
   const now = new Date()
@@ -195,6 +196,7 @@ export const useUserStore = defineStore('user', () => {
     error.value = null
 
     try {
+      perfStart('userStore.login')
       const normalizedBirthday = normalizeBirthdayInput(birthday)
       let odId = generateUserId(name, normalizedBirthday)
       
@@ -270,13 +272,16 @@ export const useUserStore = defineStore('user', () => {
       localStorage.setItem('brain-training-current-user', odId)
 
       // 初始化全局資料（每日訓練/同步狀態）
-      await dataInitService.initUserData(odId, { mode: 'delta' })
+      perfStart('dataInitService.initUserData(login)')
+      await dataInitService.initUserData(odId, { mode: 'delta', deferSync: true })
+      perfEnd('dataInitService.initUserData(login)')
 
       return true
     } catch (e) {
       error.value = e instanceof Error ? e.message : '登入失敗'
       return false
     } finally {
+      perfEnd('userStore.login')
       isLoading.value = false
     }
   }
@@ -444,6 +449,7 @@ export const useUserStore = defineStore('user', () => {
     error.value = null
 
     try {
+      perfStart('userStore.quickLogin')
       const user = await getUser(odId)
       if (!user) {
         error.value = '使用者不存在'
@@ -465,7 +471,9 @@ export const useUserStore = defineStore('user', () => {
       localStorage.setItem('brain-training-current-user', odId)
 
       // 初始化全局資料
-      await dataInitService.initUserData(odId, { mode: 'delta' })
+      perfStart('dataInitService.initUserData(quickLogin)')
+      await dataInitService.initUserData(odId, { mode: 'delta', deferSync: true })
+      perfEnd('dataInitService.initUserData(quickLogin)')
       currentSettings.value = await getUserSettings(odId) || defaultUserSettings(odId)
       const refreshedStats = await getUserStats(odId)
       currentStats.value = refreshedStats ? normalizeStats(refreshedStats) : defaultUserStats(odId)
@@ -477,6 +485,7 @@ export const useUserStore = defineStore('user', () => {
       error.value = e instanceof Error ? e.message : '登入失敗'
       return false
     } finally {
+      perfEnd('userStore.quickLogin')
       isLoading.value = false
     }
   }
@@ -489,6 +498,7 @@ export const useUserStore = defineStore('user', () => {
     error.value = null
 
     try {
+      perfStart('userStore.loginWithTransferCode')
       const normalizedCode = normalizeTransferCode(code)
       if (!isValidTransferCode(normalizedCode)) {
         error.value = '登入碼無效'
@@ -554,7 +564,9 @@ export const useUserStore = defineStore('user', () => {
       localStorage.setItem('brain-training-last-user', remoteUser.id)
       localStorage.setItem('brain-training-current-user', remoteUser.id)
 
-      await dataInitService.initUserData(remoteUser.id, { forceRestore: true, mode: 'fast' })
+      perfStart('dataInitService.initUserData(transferCode)')
+      await dataInitService.initUserData(remoteUser.id, { forceRestore: true, mode: 'fast', deferSync: true })
+      perfEnd('dataInitService.initUserData(transferCode)')
       currentSettings.value = await getUserSettings(remoteUser.id) || defaultUserSettings(remoteUser.id)
       const refreshedStats = await getUserStats(remoteUser.id)
       currentStats.value = refreshedStats ? normalizeStats(refreshedStats) : defaultUserStats(remoteUser.id)
@@ -564,6 +576,7 @@ export const useUserStore = defineStore('user', () => {
       error.value = e instanceof Error ? e.message : '登入失敗'
       return false
     } finally {
+      perfEnd('userStore.loginWithTransferCode')
       isLoading.value = false
     }
   }
@@ -621,6 +634,7 @@ export const useUserStore = defineStore('user', () => {
     error.value = null
 
     try {
+      perfStart('userStore.loginWithExternalProfile')
       const uid = profile.uid?.trim()
       if (!uid) {
         error.value = '外部登入缺少 uid'
@@ -690,7 +704,9 @@ export const useUserStore = defineStore('user', () => {
       localStorage.setItem('brain-training-last-user', odId)
       localStorage.setItem('brain-training-current-user', odId)
 
-      await dataInitService.initUserData(odId, { mode: 'delta' })
+      perfStart('dataInitService.initUserData(externalProfile)')
+      await dataInitService.initUserData(odId, { mode: 'delta', deferSync: true })
+      perfEnd('dataInitService.initUserData(externalProfile)')
       currentSettings.value = await getUserSettings(odId) || defaultUserSettings(odId)
       const refreshedStats = await getUserStats(odId)
       currentStats.value = refreshedStats ? normalizeStats(refreshedStats) : defaultUserStats(odId)
@@ -700,6 +716,7 @@ export const useUserStore = defineStore('user', () => {
       error.value = e instanceof Error ? e.message : '外部登入失敗'
       return false
     } finally {
+      perfEnd('userStore.loginWithExternalProfile')
       isLoading.value = false
     }
   }

@@ -93,4 +93,60 @@ describe('dataInitService sync policy', () => {
 
     expect(restoreAllUserDataFromSheet).toHaveBeenCalled()
   })
+
+  it('defers network restore when deferSync is enabled', async () => {
+    const odId = 'user-d'
+    localStorage.setItem('sheetDeltaVersion:' + odId, JSON.stringify({
+      appVersion: '1.0.0',
+      sheetSchemaVersion: 1,
+      sheetScoringVersion: 2,
+      dataSchemaVersion: 1,
+    }))
+
+    let restoreResolved = false
+    type RestoreSummary = {
+      users: number
+      userSettings: number
+      userStats: number
+      dataConsent: number
+      gameSessions: number
+      miniCogResults: number
+      dailyTrainingSessions: number
+      baselineAssessments: number
+      declineAlerts: number
+      nutritionRecommendations: number
+      behaviorLogs: number
+    }
+
+    const emptySummary: RestoreSummary = {
+      users: 0,
+      userSettings: 0,
+      userStats: 0,
+      dataConsent: 0,
+      gameSessions: 0,
+      miniCogResults: 0,
+      dailyTrainingSessions: 0,
+      baselineAssessments: 0,
+      declineAlerts: 0,
+      nutritionRecommendations: 0,
+      behaviorLogs: 0,
+    }
+
+    let resolveRestore: ((value: RestoreSummary) => void) | undefined
+    const restorePromise = new Promise<RestoreSummary>((resolve) => {
+      resolveRestore = (value) => {
+        restoreResolved = true
+        resolve(value)
+      }
+    })
+    vi.mocked(restoreUserDeltaFromSheet).mockReturnValueOnce(restorePromise)
+
+    await dataInitService.initUserData(odId, { mode: 'delta', deferSync: true })
+
+    expect(restoreUserDeltaFromSheet).toHaveBeenCalled()
+    expect(restoreResolved).toBe(false)
+
+    resolveRestore?.(emptySummary)
+    await restorePromise
+  })
 })

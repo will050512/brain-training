@@ -18,6 +18,7 @@ import {
   type SyncVersionSnapshot
 } from '@/services/syncPolicyService'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { perfEnd, perfStart } from '@/utils/perf'
 
 export type DataSyncStatus = SyncStatus | 'pending'
 
@@ -41,6 +42,8 @@ class DataInitService {
   private isInitialized = false
   private backgroundSync: Promise<void> | null = null
   private backgroundSyncUserId: string | null = null
+  private backgroundDeltaSync: Promise<void> | null = null
+  private backgroundDeltaSyncUserId: string | null = null
 
   constructor(config: Partial<DataSyncConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config }
@@ -75,11 +78,16 @@ class DataInitService {
     this.isInitialized = true
   }
 
-  async initUserData(odId: string, options?: { forceRestore?: boolean; mode?: 'full' | 'fast' | 'delta' }) {
+  async initUserData(
+    odId: string,
+    options?: { forceRestore?: boolean; mode?: 'full' | 'fast' | 'delta'; deferSync?: boolean }
+  ) {
     const gameStore = useGameStore()
     const settingsStore = useSettingsStore()
 
     const mode = options?.mode ?? 'delta'
+    const deferSync = options?.deferSync ?? false
+    perfStart(`dataInitService.initUserData:${mode}`)
     this.setSyncStatus('syncing')
 
     const versionSnapshot: SyncVersionSnapshot = {
@@ -92,55 +100,109 @@ class DataInitService {
     if (mode === 'fast') {
       try {
         settingsStore.setAssessmentUser(odId)
+        if (deferSync) {
+          perfStart('loadUserSessions+dailyTraining')
+          await Promise.all([
+            gameStore.loadUserSessions(odId),
+            this.loadDailyTraining(odId),
+          ])
+          perfEnd('loadUserSessions+dailyTraining')
+          perfStart('syncAssessmentStatus')
+          await this.syncAssessmentStatus(odId, settingsStore)
+          perfEnd('syncAssessmentStatus')
+          this.setSyncStatus('idle')
+          this.startBackgroundFullSync(odId)
+          perfEnd(`dataInitService.initUserData:${mode}`)
+          return
+        }
+
+        perfStart('sheetRestore.snapshot')
         await restoreUserSnapshotFromSheet(odId, { force: options?.forceRestore })
+        perfEnd('sheetRestore.snapshot')
+        perfStart('loadUserSessions+dailyTraining')
         await Promise.all([
           gameStore.loadUserSessions(odId),
           this.loadDailyTraining(odId),
         ])
+        perfEnd('loadUserSessions+dailyTraining')
+        perfStart('syncAssessmentStatus')
         await this.syncAssessmentStatus(odId, settingsStore)
+        perfEnd('syncAssessmentStatus')
         this.setSyncStatus('idle')
         this.startBackgroundFullSync(odId)
         saveStoredSyncVersions(odId, versionSnapshot)
+        perfEnd(`dataInitService.initUserData:${mode}`)
         return
       } catch (error) {
         console.error('Failed to init user data (fast):', error)
         this.setSyncStatus('error')
+        perfEnd(`dataInitService.initUserData:${mode}`)
         return
       }
     }
 
     try {
       settingsStore.setAssessmentUser(odId)
+      if (deferSync) {
+        perfStart('loadUserSessions+dailyTraining')
+        await Promise.all([
+          gameStore.loadUserSessions(odId),
+          this.loadDailyTraining(odId),
+        ])
+        perfEnd('loadUserSessions+dailyTraining')
+        perfStart('syncAssessmentStatus')
+        await this.syncAssessmentStatus(odId, settingsStore)
+        perfEnd('syncAssessmentStatus')
+        this.setSyncStatus('idle')
+        this.startBackgroundDeltaSync(odId, { forceRestore: options?.forceRestore, mode })
+        perfEnd(`dataInitService.initUserData:${mode}`)
+        return
+      }
+
       if (mode === 'delta') {
         const shouldFull = options?.forceRestore
           || shouldFallbackToFullRestore(odId)
           || hasVersionMismatch(odId, versionSnapshot)
 
         if (shouldFull) {
+          perfStart('sheetRestore.full')
           await restoreAllUserDataFromSheet(odId, { force: true })
+          perfEnd('sheetRestore.full')
           resetDeltaFailureCount(odId)
         } else {
+          perfStart('sheetRestore.delta')
           await restoreUserDeltaFromSheet(odId, { force: options?.forceRestore, fallbackToFull: false })
+          perfEnd('sheetRestore.delta')
           resetDeltaFailureCount(odId)
         }
       } else {
+        perfStart('sheetRestore.full')
         await restoreAllUserDataFromSheet(odId, { force: options?.forceRestore })
+        perfEnd('sheetRestore.full')
       }
+      perfStart('loadUserSessions+dailyTraining')
       await Promise.all([
         gameStore.loadUserSessions(odId),
         this.loadDailyTraining(odId),
       ])
+      perfEnd('loadUserSessions+dailyTraining')
+      perfStart('syncAssessmentStatus')
       await this.syncAssessmentStatus(odId, settingsStore)
+      perfEnd('syncAssessmentStatus')
+      perfStart('sheetBackfill')
       await Promise.all([
         backfillUserSessionsToSheet(odId),
         backfillAllUserDataToSheet(odId),
       ])
+      perfEnd('sheetBackfill')
       saveStoredSyncVersions(odId, versionSnapshot)
       this.setSyncStatus('idle')
+      perfEnd(`dataInitService.initUserData:${mode}`)
     } catch (error) {
       console.error('Failed to init user data:', error)
       incrementDeltaFailureCount(odId)
       this.setSyncStatus('error')
+      perfEnd(`dataInitService.initUserData:${mode}`)
     }
   }
 
@@ -151,6 +213,7 @@ class DataInitService {
     if (!odId) return
     const gameStore = useGameStore()
     const settingsStore = useSettingsStore()
+    perfStart('dataInitService.refreshUserDataFromSheet')
     this.setSyncStatus('syncing')
     const versionSnapshot: SyncVersionSnapshot = {
       appVersion: __APP_VERSION__ || 'unknown',
@@ -166,26 +229,38 @@ class DataInitService {
           || hasVersionMismatch(odId, versionSnapshot)
 
         if (shouldFull) {
+          perfStart('sheetRestore.full')
           await restoreAllUserDataFromSheet(odId, { force: true })
+          perfEnd('sheetRestore.full')
           resetDeltaFailureCount(odId)
         } else {
+          perfStart('sheetRestore.delta')
           await restoreUserDeltaFromSheet(odId, { force: options?.forceRestore, fallbackToFull: false })
+          perfEnd('sheetRestore.delta')
           resetDeltaFailureCount(odId)
         }
       } else {
+        perfStart('sheetRestore.full')
         await restoreAllUserDataFromSheet(odId, { force: options?.forceRestore })
+        perfEnd('sheetRestore.full')
       }
+      perfStart('loadUserSessions+dailyTraining')
       await Promise.all([
         gameStore.loadUserSessions(odId),
         this.loadDailyTraining(odId),
       ])
+      perfEnd('loadUserSessions+dailyTraining')
+      perfStart('syncAssessmentStatus')
       await this.syncAssessmentStatus(odId, settingsStore)
+      perfEnd('syncAssessmentStatus')
       saveStoredSyncVersions(odId, versionSnapshot)
       this.setSyncStatus('idle')
+      perfEnd('dataInitService.refreshUserDataFromSheet')
     } catch (error) {
       console.error('Failed to refresh user data:', error)
       incrementDeltaFailureCount(odId)
       this.setSyncStatus('error')
+      perfEnd('dataInitService.refreshUserDataFromSheet')
     }
   }
 
@@ -205,22 +280,114 @@ class DataInitService {
       })
   }
 
+  private startBackgroundDeltaSync(
+    odId: string,
+    options?: { forceRestore?: boolean; mode?: 'full' | 'fast' | 'delta' }
+  ) {
+    if (!odId) return
+    if (this.backgroundDeltaSync && this.backgroundDeltaSyncUserId === odId) return
+    this.backgroundDeltaSyncUserId = odId
+    this.backgroundDeltaSync = this.runBackgroundDeltaSync(odId, options)
+      .catch(() => {
+        // errors are handled in runBackgroundDeltaSync
+      })
+      .finally(() => {
+        if (this.backgroundDeltaSyncUserId === odId) {
+          this.backgroundDeltaSync = null
+          this.backgroundDeltaSyncUserId = null
+        }
+      })
+  }
+
+  private async runBackgroundDeltaSync(
+    odId: string,
+    options?: { forceRestore?: boolean; mode?: 'full' | 'fast' | 'delta' }
+  ) {
+    const gameStore = useGameStore()
+    const settingsStore = useSettingsStore()
+    this.setSyncStatus('syncing')
+    const versionSnapshot: SyncVersionSnapshot = {
+      appVersion: __APP_VERSION__ || 'unknown',
+      sheetSchemaVersion: SHEET_SCHEMA_VERSION,
+      sheetScoringVersion: SHEET_SCORING_VERSION,
+      dataSchemaVersion: DATA_SCHEMA_VERSION,
+    }
+    try {
+      settingsStore.setAssessmentUser(odId)
+      const mode = options?.mode ?? 'delta'
+      if (mode === 'delta') {
+        const shouldFull = options?.forceRestore
+          || shouldFallbackToFullRestore(odId)
+          || hasVersionMismatch(odId, versionSnapshot)
+
+        if (shouldFull) {
+          perfStart('sheetRestore.full(background)')
+          await restoreAllUserDataFromSheet(odId, { force: true })
+          perfEnd('sheetRestore.full(background)')
+          resetDeltaFailureCount(odId)
+        } else {
+          perfStart('sheetRestore.delta(background)')
+          await restoreUserDeltaFromSheet(odId, { force: options?.forceRestore, fallbackToFull: false })
+          perfEnd('sheetRestore.delta(background)')
+          resetDeltaFailureCount(odId)
+        }
+      } else {
+        perfStart('sheetRestore.full(background)')
+        await restoreAllUserDataFromSheet(odId, { force: options?.forceRestore })
+        perfEnd('sheetRestore.full(background)')
+      }
+
+      perfStart('loadUserSessions+dailyTraining(background)')
+      await Promise.all([
+        gameStore.loadUserSessions(odId),
+        this.loadDailyTraining(odId),
+      ])
+      perfEnd('loadUserSessions+dailyTraining(background)')
+
+      perfStart('syncAssessmentStatus(background)')
+      await this.syncAssessmentStatus(odId, settingsStore)
+      perfEnd('syncAssessmentStatus(background)')
+
+      perfStart('sheetBackfill(background)')
+      await Promise.all([
+        backfillUserSessionsToSheet(odId),
+        backfillAllUserDataToSheet(odId),
+      ])
+      perfEnd('sheetBackfill(background)')
+
+      saveStoredSyncVersions(odId, versionSnapshot)
+      this.setSyncStatus('idle')
+    } catch (error) {
+      console.error('Background delta sync failed:', error)
+      incrementDeltaFailureCount(odId)
+      this.setSyncStatus('error')
+    }
+  }
+
   private async runBackgroundFullSync(odId: string) {
     const gameStore = useGameStore()
     const settingsStore = useSettingsStore()
     this.setSyncStatus('syncing')
     try {
       settingsStore.setAssessmentUser(odId)
+      perfStart('sheetRestore.full(background)')
       await restoreAllUserDataFromSheet(odId, { force: true })
+      perfEnd('sheetRestore.full(background)')
+      perfStart('loadUserSessions+dailyTraining(background)')
       await Promise.all([
         gameStore.loadUserSessions(odId),
         this.loadDailyTraining(odId),
       ])
+      perfEnd('loadUserSessions+dailyTraining(background)')
+      perfStart('syncAssessmentStatus(background)')
       await this.syncAssessmentStatus(odId, settingsStore)
+      perfEnd('syncAssessmentStatus(background)')
+      perfStart('sheetBackfill(background)')
       await Promise.all([
         backfillUserSessionsToSheet(odId),
         backfillAllUserDataToSheet(odId),
       ])
+      perfEnd('sheetBackfill(background)')
       this.setSyncStatus('idle')
     } catch (error) {
       console.error('Background full sync failed:', error)

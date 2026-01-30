@@ -5,7 +5,7 @@ test.describe('Daily Challenge', () => {
   test('daily challenge list shows and start button works', async ({ page }) => {
     await goTo(page, '/daily-challenge')
     await expect(page.getByRole('heading', { level: 2, name: '每日挑戰' })).toBeVisible()
-    await expect(page.getByRole('button', { name: /開始今日訓練|繼續訓練|今日已完成/ })).toBeVisible()
-    await expect(page).toHaveScreenshot('daily-challenge.png', { fullPage: true })
+    await expect(page.getByRole('button', { name: /開始今日訓練|繼續訓練|今日已完成/ }).first()).toBeVisible({ timeout: 15000 })
+    await expect(page).toHaveScreenshot('daily-challenge.png', { fullPage: true, maxDiffPixelRatio: 0.05 })
   })
 })

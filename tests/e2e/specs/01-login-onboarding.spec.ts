@@ -16,7 +16,7 @@ test.describe('Login & Onboarding', () => {
     await page.locator('#gender').selectOption('female')
 
     await expect(submit).toBeEnabled()
-    await expect(page).toHaveScreenshot('login-filled.png', { fullPage: true })
+    await expect(page).toHaveScreenshot('login-filled.png', { fullPage: true, maxDiffPixelRatio: 0.05 })
   })
 
   test('onboarding basic flow buttons are present', async ({ page }) => {

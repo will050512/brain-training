@@ -121,7 +121,7 @@ export function usePWA() {
       const { registerSW } = await import('virtual:pwa-register')
       
       updateSW = registerSW({
-        immediate: true,
+        immediate: false,
         onNeedRefresh() {
           console.log('[PWA] 新版本可用，需要重新整理')
           void handleNeedRefresh()
@@ -244,7 +244,14 @@ export function usePWA() {
   }
 
   onMounted(() => {
-    initPWA()
+    const scheduleInit = () => {
+      initPWA()
+    }
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(scheduleInit, { timeout: 2500 })
+    } else {
+      setTimeout(scheduleInit, 1500)
+    }
     updateUserActiveState()
     
     // 添加事件監聽器

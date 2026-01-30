@@ -35,17 +35,19 @@ test.describe('PWA update flow', () => {
   test('active user gets banner without blocking', async ({ page }) => {
     await goTo(page, '/')
 
+    await page.waitForFunction(() => Boolean(window.__PWA_TEST__))
     await page.evaluate(() => {
       window.__PWA_TEST__?.setNeedRefresh()
     })
 
-    await expect(page.locator(UPDATE_BANNER_SELECTOR)).toBeVisible()
+    await expect(page.locator(UPDATE_BANNER_SELECTOR)).toBeVisible({ timeout: 10000 })
     await expect(page.locator(UPDATE_GATE_SELECTOR)).toHaveCount(0)
   })
 
   test('inactive user auto-applies update without showing banner', async ({ page }) => {
     await goTo(page, '/')
 
+    await page.waitForFunction(() => Boolean(window.__PWA_TEST__))
     await page.evaluate(() => {
       window.__PWA_TEST__?.setSkipReload(true)
       window.__PWA_TEST__?.setVisibility('hidden')
@@ -55,7 +57,7 @@ test.describe('PWA update flow', () => {
       window.__PWA_TEST__?.triggerVisibilityChange()
     })
 
-    await expect(page.locator(UPDATE_GATE_SELECTOR)).toBeVisible()
+    await expect(page.locator(UPDATE_GATE_SELECTOR)).toBeVisible({ timeout: 10000 })
     await expect(page.locator(UPDATE_BANNER_SELECTOR)).toHaveCount(0)
 
     await page.evaluate(() => {

@@ -67,5 +67,7 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
+    // Avoid EPERM on Windows when files in dist are locked by other processes.
+    emptyOutDir: false,
   },
 })

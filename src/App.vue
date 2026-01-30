@@ -9,6 +9,7 @@ import { useNotification } from '@/composables/useNotification'
 import { useToast } from '@/composables/useToast'
 import { useUiScale } from '@/composables/useUiScale'
 import { usePWA } from '@/composables/usePWA'
+import { perfEnd, perfStart } from '@/utils/perf'
 import { backfillUserSessionsToSheet } from '@/services/googleSheetSyncService'
 import { syncUserProfileToSheet } from '@/services/userSheetSyncService'
 import { backfillAllUserDataToSheet } from '@/services/userDataSheetSyncService'
@@ -258,8 +259,18 @@ async function handleOnline(): Promise<void> {
 }
 
 onMounted(async () => {
+  perfStart('app.onMounted')
   bootGateState.value = 'loading'
-  checkForUpdates()
+  const scheduleUpdateCheck = () => {
+    setTimeout(() => {
+      checkForUpdates()
+    }, 1500)
+  }
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(scheduleUpdateCheck, { timeout: 2500 })
+  } else {
+    scheduleUpdateCheck()
+  }
 
   try {
     // 初始化主題
@@ -268,24 +279,31 @@ onMounted(async () => {
     // 載入設定
     settingsStore.loadSettings()
     
-    // 嘗試恢復登入狀態
-    await userStore.restoreSession()
-    
-    // 恢復登入後檢查同意狀態（確保 ID 存在）
-    if (userStore.currentUser?.id) {
-      settingsStore.setAssessmentUser(userStore.currentUser.id)
-      await checkConsentStatus()
-      // 舊用戶資料回填至 Google Sheet（背景執行）
-      backfillUserSessionsToSheet(userStore.currentUser.id)
-      syncUserProfileToSheet(userStore.currentUser)
-      backfillAllUserDataToSheet(userStore.currentUser.id)
-    }
+    // 嘗試恢復登入狀態（不阻塞首屏）
+    perfStart('userStore.restoreSession')
+    const restorePromise = userStore.restoreSession()
+    void restorePromise
+      .then(async () => {
+        if (!userStore.currentUser?.id) return
+        settingsStore.setAssessmentUser(userStore.currentUser.id)
+        await checkConsentStatus()
+        // 舊用戶資料回填至 Google Sheet（背景執行）
+        backfillUserSessionsToSheet(userStore.currentUser.id)
+        syncUserProfileToSheet(userStore.currentUser)
+        backfillAllUserDataToSheet(userStore.currentUser.id)
+      })
+      .finally(() => {
+        perfEnd('userStore.restoreSession')
+      })
 
     // 初始化數據同步服務
+    perfStart('dataInitService.initialize(App)')
     await dataInitService.initialize()
+    perfEnd('dataInitService.initialize(App)')
     window.addEventListener('online', handleOnline)
     window.addEventListener('focus', handleOnline)
     bootGateState.value = 'ready'
+    perfEnd('app.onMounted')
   } catch (error) {
     console.error('Failed to bootstrap app:', error)
     bootGateState.value = 'error'
