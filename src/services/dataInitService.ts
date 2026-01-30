@@ -7,6 +7,16 @@ import { syncDailyTrainingSessionToSheet } from '@/services/userDataSheetSyncSer
 import { backfillUserSessionsToSheet } from '@/services/googleSheetSyncService'
 import { backfillAllUserDataToSheet } from '@/services/userDataSheetSyncService'
 import { restoreAllUserDataFromSheet, restoreUserDeltaFromSheet, restoreUserSnapshotFromSheet } from '@/services/sheetRestoreService'
+import { SCHEMA_VERSION as DATA_SCHEMA_VERSION } from '@/services/userDataSheetSyncService'
+import { SHEET_SCHEMA_VERSION, SHEET_SCORING_VERSION } from '@/services/googleSheetSyncService'
+import {
+  hasVersionMismatch,
+  incrementDeltaFailureCount,
+  resetDeltaFailureCount,
+  saveStoredSyncVersions,
+  shouldFallbackToFullRestore,
+  type SyncVersionSnapshot
+} from '@/services/syncPolicyService'
 import { useSettingsStore } from '@/stores/settingsStore'
 
 export type DataSyncStatus = SyncStatus | 'pending'
@@ -65,12 +75,19 @@ class DataInitService {
     this.isInitialized = true
   }
 
-  async initUserData(odId: string, options?: { forceRestore?: boolean; mode?: 'full' | 'fast' }) {
+  async initUserData(odId: string, options?: { forceRestore?: boolean; mode?: 'full' | 'fast' | 'delta' }) {
     const gameStore = useGameStore()
     const settingsStore = useSettingsStore()
 
-    const mode = options?.mode ?? 'full'
+    const mode = options?.mode ?? 'delta'
     this.setSyncStatus('syncing')
+
+    const versionSnapshot: SyncVersionSnapshot = {
+      appVersion: __APP_VERSION__ || 'unknown',
+      sheetSchemaVersion: SHEET_SCHEMA_VERSION,
+      sheetScoringVersion: SHEET_SCORING_VERSION,
+      dataSchemaVersion: DATA_SCHEMA_VERSION,
+    }
 
     if (mode === 'fast') {
       try {
@@ -83,6 +100,7 @@ class DataInitService {
         await this.syncAssessmentStatus(odId, settingsStore)
         this.setSyncStatus('idle')
         this.startBackgroundFullSync(odId)
+        saveStoredSyncVersions(odId, versionSnapshot)
         return
       } catch (error) {
         console.error('Failed to init user data (fast):', error)
@@ -93,7 +111,21 @@ class DataInitService {
 
     try {
       settingsStore.setAssessmentUser(odId)
-      await restoreAllUserDataFromSheet(odId, { force: options?.forceRestore })
+      if (mode === 'delta') {
+        const shouldFull = options?.forceRestore
+          || shouldFallbackToFullRestore(odId)
+          || hasVersionMismatch(odId, versionSnapshot)
+
+        if (shouldFull) {
+          await restoreAllUserDataFromSheet(odId, { force: true })
+          resetDeltaFailureCount(odId)
+        } else {
+          await restoreUserDeltaFromSheet(odId, { force: options?.forceRestore, fallbackToFull: false })
+          resetDeltaFailureCount(odId)
+        }
+      } else {
+        await restoreAllUserDataFromSheet(odId, { force: options?.forceRestore })
+      }
       await Promise.all([
         gameStore.loadUserSessions(odId),
         this.loadDailyTraining(odId),
@@ -103,9 +135,11 @@ class DataInitService {
         backfillUserSessionsToSheet(odId),
         backfillAllUserDataToSheet(odId),
       ])
+      saveStoredSyncVersions(odId, versionSnapshot)
       this.setSyncStatus('idle')
     } catch (error) {
       console.error('Failed to init user data:', error)
+      incrementDeltaFailureCount(odId)
       this.setSyncStatus('error')
     }
   }
@@ -118,10 +152,26 @@ class DataInitService {
     const gameStore = useGameStore()
     const settingsStore = useSettingsStore()
     this.setSyncStatus('syncing')
+    const versionSnapshot: SyncVersionSnapshot = {
+      appVersion: __APP_VERSION__ || 'unknown',
+      sheetSchemaVersion: SHEET_SCHEMA_VERSION,
+      sheetScoringVersion: SHEET_SCORING_VERSION,
+      dataSchemaVersion: DATA_SCHEMA_VERSION,
+    }
     try {
       settingsStore.setAssessmentUser(odId)
       if (options?.mode === 'delta') {
-        await restoreUserDeltaFromSheet(odId, { force: options?.forceRestore })
+        const shouldFull = options?.forceRestore
+          || shouldFallbackToFullRestore(odId)
+          || hasVersionMismatch(odId, versionSnapshot)
+
+        if (shouldFull) {
+          await restoreAllUserDataFromSheet(odId, { force: true })
+          resetDeltaFailureCount(odId)
+        } else {
+          await restoreUserDeltaFromSheet(odId, { force: options?.forceRestore, fallbackToFull: false })
+          resetDeltaFailureCount(odId)
+        }
       } else {
         await restoreAllUserDataFromSheet(odId, { force: options?.forceRestore })
       }
@@ -130,9 +180,11 @@ class DataInitService {
         this.loadDailyTraining(odId),
       ])
       await this.syncAssessmentStatus(odId, settingsStore)
+      saveStoredSyncVersions(odId, versionSnapshot)
       this.setSyncStatus('idle')
     } catch (error) {
       console.error('Failed to refresh user data:', error)
+      incrementDeltaFailureCount(odId)
       this.setSyncStatus('error')
     }
   }

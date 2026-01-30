@@ -270,7 +270,7 @@ export const useUserStore = defineStore('user', () => {
       localStorage.setItem('brain-training-current-user', odId)
 
       // 初始化全局資料（每日訓練/同步狀態）
-      await dataInitService.initUserData(odId)
+      await dataInitService.initUserData(odId, { mode: 'delta' })
 
       return true
     } catch (e) {
@@ -465,7 +465,7 @@ export const useUserStore = defineStore('user', () => {
       localStorage.setItem('brain-training-current-user', odId)
 
       // 初始化全局資料
-      await dataInitService.initUserData(odId)
+      await dataInitService.initUserData(odId, { mode: 'delta' })
       currentSettings.value = await getUserSettings(odId) || defaultUserSettings(odId)
       const refreshedStats = await getUserStats(odId)
       currentStats.value = refreshedStats ? normalizeStats(refreshedStats) : defaultUserStats(odId)
@@ -690,7 +690,7 @@ export const useUserStore = defineStore('user', () => {
       localStorage.setItem('brain-training-last-user', odId)
       localStorage.setItem('brain-training-current-user', odId)
 
-      await dataInitService.initUserData(odId)
+      await dataInitService.initUserData(odId, { mode: 'delta' })
       currentSettings.value = await getUserSettings(odId) || defaultUserSettings(odId)
       const refreshedStats = await getUserStats(odId)
       currentStats.value = refreshedStats ? normalizeStats(refreshedStats) : defaultUserStats(odId)

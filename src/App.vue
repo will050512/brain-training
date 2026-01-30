@@ -32,6 +32,12 @@ const { checkTrainingReminder, checkAssessmentReminder } = useNotification()
 const toast = useToast()
 useUiScale()
 const { isOfflineReady, needRefresh, isUpdating, isUserActive, checkForUpdates, applyUpdate } = usePWA()
+const syncStatus = computed(() => dataInitService.syncStatus.value)
+const syncStatusMessage = computed(() => {
+  if (syncStatus.value === 'syncing') return '正在背景同步…'
+  if (syncStatus.value === 'error') return '同步失敗，可稍後再試'
+  return ''
+})
 
 // 初始化主題系統
 const { initTheme } = useTheme()
@@ -55,7 +61,7 @@ const showUpdateGate = computed(() => isUpdating.value)
 const showLoadGate = computed(() => {
   if (showUpdateGate.value) return false
   if (bootGateState.value !== 'ready') return true
-  if (refreshGateState.value === 'loading' || refreshGateState.value === 'error') {
+  if (refreshGateState.value === 'error') {
     return !isGameRoute.value
   }
   return false
@@ -86,6 +92,7 @@ watch(needsEducationYears, (needs) => {
 }, { immediate: true })
 
 const showUpdateBanner = computed(() => needRefresh.value && isUserActive.value && !isUpdating.value)
+const showSyncToast = computed(() => syncStatus.value === 'syncing' || syncStatus.value === 'error')
 
 // ===== 佈局系統 =====
 
@@ -239,15 +246,11 @@ watch(() => userStore.currentUser, (newUser) => {
 async function handleOnline(): Promise<void> {
   const odId = userStore.currentUser?.id
   if (!odId) return
-  if (refreshGateState.value !== 'loading' && !isGameRoute.value) {
-    refreshGateState.value = 'loading'
-  }
   try {
     await dataInitService.refreshUserDataFromSheet(odId, { mode: 'delta' })
     backfillUserSessionsToSheet(odId)
     syncUserProfileToSheet(userStore.currentUser)
     backfillAllUserDataToSheet(odId)
-    refreshGateState.value = 'idle'
   } catch (error) {
     console.error('Failed to refresh user data:', error)
     refreshGateState.value = 'error'
@@ -446,6 +449,13 @@ onUnmounted(() => {
     <!-- Toast 通知 -->
     <ToastNotification />
 
+    <Transition name="fade">
+      <div v-if="showSyncToast" class="app-sync-toast" role="status" aria-live="polite">
+        <span class="app-sync-icon" aria-hidden="true">⏳</span>
+        <span class="app-sync-text">{{ syncStatusMessage }}</span>
+      </div>
+    </Transition>
+
   </div>
 </template>
 
@@ -575,6 +585,28 @@ onUnmounted(() => {
 .layout-fullscreen {
   display: flex;
   flex-direction: column;
+}
+
+.app-sync-toast {
+  position: fixed;
+  right: var(--spacing-md);
+  bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px));
+  z-index: 12000;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 10px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  color: var(--color-text);
+  box-shadow: var(--shadow-md);
+  font-size: var(--font-size-sm);
+  pointer-events: none;
+}
+
+.app-sync-icon {
+  font-size: 14px;
 }
 
 /* 頁面過渡動畫 */

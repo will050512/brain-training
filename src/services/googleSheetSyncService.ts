@@ -13,8 +13,8 @@ const SYNCED_IDS_KEY_PREFIX = 'sheetSyncedSessionIds:'
 const SESSION_HASH_KEY_PREFIX = 'sheetSessionHash:'
 const MAX_SYNCED_IDS = 5000
 const SHEET_SYNC_PROTOCOL_VERSION = 3
-const SHEET_SCHEMA_VERSION = 1
-const SHEET_SCORING_VERSION = 2
+export const SHEET_SCHEMA_VERSION = 1
+export const SHEET_SCORING_VERSION = 2
 const SYNC_PROTOCOL_KEY_PREFIX = 'sheetSyncProtocol:'
 const SYNC_STATUS_KEY_PREFIX = 'sheetSyncStatusSession:'
 

@@ -29,7 +29,7 @@ const FULL_SYNC_ITEM_KEY_PREFIX = 'sheetFullSyncItem:'
 const FULL_SYNC_VERSION_KEY_PREFIX = 'sheetFullSyncVersion:'
 const FULL_SYNC_VERSION = 2
 const FULL_SYNC_THROTTLE_MS = 24 * 60 * 60 * 1000
-const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 1
 
 type SheetAction =
   | 'upsertUsers'
