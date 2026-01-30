@@ -7,10 +7,12 @@ declare module '*.vue' {
   export default component
 }
 
+declare const __BUILD_HASH__: string
+
 declare global {
   interface Window {
     __PWA_TEST__?: {
-      setNeedRefresh: () => void
+      setNeedRefresh: () => void | Promise<void>
       clearNeedRefresh: () => void
       setOfflineReady: () => void
       setVisibility: (state: 'visible' | 'hidden') => void
@@ -25,9 +27,11 @@ declare global {
         pendingAutoUpdate: boolean
       }
     }
+    __APP_BOOT_READY__?: boolean
   }
 
   const __APP_VERSION__: string
+  const __BUILD_HASH__: string
 }
 
 // PWA 虛擬模組型別宣告
@@ -47,3 +51,4 @@ declare module 'virtual:pwa-register' {
 export {}
 
 declare const __APP_VERSION__: string
+declare const __BUILD_HASH__: string

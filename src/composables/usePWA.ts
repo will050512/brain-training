@@ -4,6 +4,7 @@
  */
 
 import { ref, onMounted, onUnmounted } from 'vue'
+import { getStoredBuildHash } from '@/services/versionService'
 
 export interface PWAUpdateInfo {
   isUpdateAvailable: boolean
@@ -21,6 +22,7 @@ export function usePWA() {
   let hasReloaded = false
   let visibilityOverride: 'visible' | 'hidden' | null = null
   let skipReloadForTests = false
+  let pendingReload = false
   
   let updateSW: ((reloadPage?: boolean) => Promise<void>) | undefined
   let registration: ServiceWorkerRegistration | undefined
@@ -59,6 +61,16 @@ export function usePWA() {
         if (skipReloadForTests) {
           return
         }
+        const shouldUpdate = await shouldApplyUpdate()
+        if (!shouldUpdate) {
+          isUpdating.value = false
+          needRefresh.value = false
+          isUpdateAvailable.value = false
+          pendingAutoUpdate.value = false
+          console.log('[PWA] 版本相同，略過更新套用')
+          return
+        }
+        skipWaiting()
         await updateSW(true)
       } catch (error) {
         console.error('[PWA] 應用更新失敗:', error)
@@ -75,7 +87,13 @@ export function usePWA() {
     isUserActive.value = getVisibilityState() === 'visible'
   }
 
-  function handleNeedRefresh() {
+  async function handleNeedRefresh() {
+    const shouldUpdate = await shouldApplyUpdate()
+    if (!shouldUpdate) {
+      console.log('[PWA] 偵測到更新但版本相同，略過套用')
+      return
+    }
+
     needRefresh.value = true
     isUpdateAvailable.value = true
     updateUserActiveState()
@@ -106,7 +124,7 @@ export function usePWA() {
         immediate: true,
         onNeedRefresh() {
           console.log('[PWA] 新版本可用，需要重新整理')
-          handleNeedRefresh()
+          void handleNeedRefresh()
         },
         onOfflineReady() {
           console.log('[PWA] 應用程式已準備好離線使用')
@@ -173,6 +191,53 @@ export function usePWA() {
       console.log('[PWA] Service Worker 控制器已變更，等待使用者更新')
       return
     }
+    pendingReload = true
+    scheduleReloadWhenReady()
+  }
+
+  async function shouldApplyUpdate(): Promise<boolean> {
+    const waitingHash = await getWaitingServiceWorkerHash()
+    const currentHash = __BUILD_HASH__ || (await getStoredBuildHash()) || ''
+
+    if (!waitingHash || !currentHash) {
+      console.warn('[PWA] 版本資訊不足，略過更新套用')
+      return false
+    }
+
+    return waitingHash !== currentHash
+  }
+
+  async function getWaitingServiceWorkerHash(): Promise<string | null> {
+    const waiting = registration?.waiting
+    if (!waiting) return null
+
+    return new Promise(resolve => {
+      const channel = new MessageChannel()
+      const timeoutId = window.setTimeout(() => {
+        resolve(null)
+      }, 1500)
+
+      channel.port1.onmessage = event => {
+        window.clearTimeout(timeoutId)
+        const buildHash = (event.data as { buildHash?: string } | undefined)?.buildHash
+        resolve(buildHash ?? null)
+      }
+
+      waiting.postMessage({ type: 'GET_VERSION' }, [channel.port2])
+    })
+  }
+
+  function isBootReady(): boolean {
+    return window.__APP_BOOT_READY__ === true
+  }
+
+  function scheduleReloadWhenReady() {
+    if (!pendingReload || hasReloaded) return
+    if (!isBootReady()) {
+      window.setTimeout(scheduleReloadWhenReady, 200)
+      return
+    }
+    pendingReload = false
     hasReloaded = true
     console.log('[PWA] Service Worker 控制器已變更，重新載入頁面')
     window.location.reload()

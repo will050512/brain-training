@@ -8,6 +8,7 @@ import { initMigrations } from './services/migrationService'
 import { initExternalAuthBridge } from './services/externalAuthBridge'
 import { dataInitService } from './services/dataInitService'
 import { initAutoSync } from './services/offlineSyncService'
+import { setStoredBuildHash } from './services/versionService'
 import { useUserStore } from './stores/userStore'
 import './style.css'
 
@@ -70,10 +71,16 @@ async function bootstrap() {
     // 掛載應用程式
     app.mount('#app')
     console.log('App mounted')
+
+    if (__BUILD_HASH__) {
+      await setStoredBuildHash(__BUILD_HASH__)
+    }
+    window.__APP_BOOT_READY__ = true
   } catch (error) {
     console.error('Failed to initialize app:', error)
     // 即使初始化失敗也嘗試掛載應用程式
     app.mount('#app')
+    window.__APP_BOOT_READY__ = true
   }
 }
 
