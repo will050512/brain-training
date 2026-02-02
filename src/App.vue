@@ -51,7 +51,11 @@ const bootGateState = ref<'loading' | 'ready' | 'error'>('loading')
 const refreshGateState = ref<'idle' | 'loading' | 'error'>('idle')
 const isGameRoute = computed(() => route.meta.isGame === true || route.meta.layout === 'game')
 
-const showUpdateGate = computed(() => isUpdating.value)
+const forceRefreshActive = ref(false)
+const forceRefreshSeconds = ref(0)
+let forceRefreshTimer: number | undefined
+
+const showUpdateGate = computed(() => isUpdating.value || forceRefreshActive.value)
 const showLoadGate = computed(() => {
   if (showUpdateGate.value) return false
   if (bootGateState.value !== 'ready') return true
@@ -62,10 +66,14 @@ const showLoadGate = computed(() => {
 })
 
 const updateGateMessage = computed(() => {
+  if (isUpdating.value) return '正在更新版本，完成後會自動重新載入。'
+  if (forceRefreshActive.value) return `偵測到新版本，約 ${forceRefreshSeconds.value} 秒後自動更新。`
   return '正在更新版本，完成後會自動重新載入。'
 })
 
 const updateGateTitle = computed(() => {
+  if (isUpdating.value) return '版本更新中'
+  if (forceRefreshActive.value) return '準備更新'
   return '版本更新中'
 })
 
@@ -91,6 +99,20 @@ const handleForceRefreshNotice = (event: Event) => {
   const seconds = Math.max(1, Math.ceil((detail?.delayMs ?? 0) / 1000))
   const versionLabel = detail?.version ? ` v${detail.version}` : ''
   toast.warning(`偵測到新版本${versionLabel}，約 ${seconds} 秒後自動更新`, { duration: 2500, icon: '⚡' })
+  if (forceRefreshTimer) {
+    window.clearInterval(forceRefreshTimer)
+    forceRefreshTimer = undefined
+  }
+  forceRefreshSeconds.value = seconds
+  forceRefreshActive.value = true
+  forceRefreshTimer = window.setInterval(() => {
+    if (forceRefreshSeconds.value <= 1) {
+      window.clearInterval(forceRefreshTimer)
+      forceRefreshTimer = undefined
+      return
+    }
+    forceRefreshSeconds.value -= 1
+  }, 1000)
 }
 
 // ===== 佈局系統 =====
@@ -334,6 +356,10 @@ onUnmounted(() => {
   window.removeEventListener('online', handleOnline)
   window.removeEventListener('focus', handleOnline)
   window.removeEventListener(FORCE_REFRESH_NOTICE_EVENT, handleForceRefreshNotice)
+  if (forceRefreshTimer) {
+    window.clearInterval(forceRefreshTimer)
+    forceRefreshTimer = undefined
+  }
 })
 </script>
 
