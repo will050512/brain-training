@@ -1,13 +1,14 @@
-# 專案知識庫
+# 專案知識庫 / PROJECT KNOWLEDGE BASE
 
 **Generated:** 2026-01-29 17:56 (Asia/Taipei)
 **Commit:** 07b9277
 **Branch:** main
 
-## 概覽
+## 概覽 / OVERVIEW
 以長者友善為核心的認知訓練 Web App（Vue 3 + Vite + TypeScript），包含遊戲、評估、每日訓練與本地優先同步。
+Elder-friendly cognitive training web app (Vue 3 + Vite + TypeScript) with games, assessments, daily training, and local-first data sync.
 
-## 結構
+## 結構 / STRUCTURE
 ```
 ./
 ├── src/                 # app code
@@ -25,7 +26,7 @@
 └── dist/ dev-dist/      # build artifacts
 ```
 
-## 位置索引
+## 位置索引 / WHERE TO LOOK
 | 任務 | 位置 | 備註 |
 |------|------|------|
 | App 啟動 | `src/main.ts` | DB 初始化 + migration + 遊戲註冊
@@ -43,7 +44,7 @@
 | PWA | `vite.config.ts` + `src/composables/usePWA.ts` | Workbox + 更新流程
 | 設計系統 | `docs/DESIGN_SYSTEM.md` | Tailwind v4 + CSS vars
 
-## 慣例
+## 慣例 / CONVENTIONS
 - Vue SFC 使用 `<script setup lang="ts">`。
 - Tailwind v4 + CSS 變數；token 在 `src/style.css`。
 - 匯入別名 `@` -> `src/`（Vite + TS paths）。
@@ -51,18 +52,18 @@
 - `npm run build` 會先跑 `vue-tsc -b` 再 `vite build`。
 - PWA base 是 `/brain-training/`（影響資產與路由）。
 
-## 反模式（本專案）
+## 反模式（本專案） / ANTI-PATTERNS (THIS PROJECT)
 - 禁用型別抑制（`as any`, `@ts-ignore`, `@ts-expect-error`）。
 - 修 bug 時避免大規模重構。
 - 不要改動 build artifacts（`dist/`, `dev-dist/`）。
 - 避免硬編碼顏色；用語義化 CSS 變數。
 - 觸控目標需 >= 44px（長者友善）。
 
-## 特殊風格
+## 特殊風格 / UNIQUE STYLES
 - 長者友善 UX：大字體、清楚版面、支援 reduce motion。
 - PWA + 離線支援；資產缺失時回退 emoji。
 
-## 指令
+## 指令 / COMMANDS
 ```bash
 npm install
 npm run dev
@@ -71,6 +72,6 @@ npm run test:run
 npm run storybook
 ```
 
-## 備註
+## 備註 / NOTES
 - `base` 有設定時，資產 manifest 路徑為 `/brain-training/assets_manifest.json`。
 - 測試以邏輯為主，無 UI 測試。

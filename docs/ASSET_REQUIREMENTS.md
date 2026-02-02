@@ -1,28 +1,32 @@
-# 素材需求規格書 (設計 + 音效)
+# 素材需求規格書 (設計 + 音效) / Asset Requirements
 
 本文件列出了設計師與音效師所需的缺失素材清單及交付規格。
+This document lists missing assets and delivery specs for designers and sound designers.
 
-## 目前狀態
+## 目前狀態 / Current Status
 
 專案內已加入**占位用**的 SVG 與音效（短音色），用於綁定與測試流程。正式素材交付後請直接覆蓋同名檔案即可。  
 目前多數遊戲已接入圖片與音效，但仍有部分素材「已存在但未使用」或「需要擴充覆蓋」。
 
-## 通用交付規格
+Placeholder SVGs and short SFX are included for wiring/testing. Replace by overwriting same filenames.
+Most games already use images/audio, but some assets are optional or still unused.
 
-### 圖片 (Images)
+## 通用交付規格 / Delivery Specs
+
+### 圖片 (Images) / Images
 
 * **格式：** 首選 `svg`，必要時可接受 `png`/`webp`。
 * **色彩模式：** sRGB。
 * **命名規則：** 全小寫短橫線連接 (lowercase kebab-case)。
 * **大小：** 盡可能將單一檔案大小控制在 200 KB 以下。
 
-### 音訊 (Audio)
+### 音訊 (Audio) / Audio
 
 * **格式：** 需同時提供 `.ogg` (主要) 與 `.mp3` (備用)。
 * **規格：** 單聲道 (Mono)、44.1 kHz、16-bit、標準化 (normalized) 至 -3 dB。
 * **大小：** 單一檔案大小請控制在 100 KB 以下。
 
-## 全域音效 (已提供占位)
+## 全域音效 (已提供占位) / Global SFX (placeholders)
 
 **路徑位置：** `src/assets/audio/games/`
 
@@ -44,7 +48,7 @@
 * tick.ogg/mp3 (計時聲)
 * flip.ogg/mp3 (翻轉聲)
 
-## 遊戲專屬音效 (已提供占位)
+## 遊戲專屬音效 (已提供占位) / Game SFX (placeholders)
 
 目前檔案已存在（占位短音色），正式素材交付後請直接覆蓋同名檔案。
 
@@ -55,7 +59,7 @@
 * **audio-memory (聽覺記憶):** `note-do` 至 `note-do2` (音階)
 * **rhythm-mimic (節奏模仿):** `beat` (或 `tap`) + `miss` (失誤)
 
-## 圖片 - 已補齊占位
+## 圖片 - 已補齊占位 / Images - Placeholder Ready
 
 ### Card Match (卡牌配對)
 
@@ -69,6 +73,7 @@
 **路徑：** `src/assets/images/balance-scale/`
 
 * 已包含 `weight-1.svg` 至 `weight-5.svg`，UI 已使用全部砝碼。
+* Includes `weight-1.svg` to `weight-5.svg`, all used in UI.
 
 
 
@@ -91,6 +96,7 @@
 **路徑：** `src/assets/images/number-connect/`
 
 * `background.svg` 已接入 UI 背景（可視需求替換）。
+* `background.svg` is already used as UI background.
 
 
 
@@ -118,7 +124,7 @@
 
 * **可選：** 用於聲音標籤的 `button` (按鈕) 圖示組 (若需要視覺強化)，尚未提供。
 
-## 圖片 - 現有素材 (已使用)
+## 圖片 - 現有素材 (已使用) / Images in Use
 
 * **whack-a-mole:** `mole.svg` (地鼠), `mole-hit.svg` (被擊中), `hole.svg` (洞), `bomb.svg` (炸彈)
 * **balance-scale:** `scale.svg` (天平), `weight-1.svg` 至 `weight-5.svg` (砝碼)
@@ -131,7 +137,7 @@
 * **rock-paper-scissors:** `rock.svg` (石頭), `paper.svg` (布), `scissors.svg` (剪刀)
 * **clock-drawing:** `clock-face.svg` (鐘面), `reference.svg` (參考圖)
 
-## 未導入或待確認
+## 未導入或待確認 / Not Yet Integrated or Optional
 
 以下素材已存在但尚未完整導入 UI，或目前僅部分使用：
 

@@ -99,7 +99,9 @@ const MINICOG_DIFFICULTY_MAP: Record<number, {
 
 async function saveDailyTrainingSessionAndSync(session: DailyTrainingSession): Promise<void> {
   await saveDailyTrainingSession(session)
-  await syncDailyTrainingSessionToSheet(session)
+  void syncDailyTrainingSessionToSheet(session).catch(error => {
+    console.error('Daily training sheet sync failed', error)
+  })
 }
 
 function resolveTargetGameCount(

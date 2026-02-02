@@ -1,29 +1,43 @@
-# 響應式佈局系統設計規範
+# 響應式佈局系統設計規範 / Responsive Design System
 
-## 概述
+## 概述 / Overview
 
 本系統針對失智症訓練應用設計，特別優化桌面、PWA、手機觀看體驗。採用流體設計原則，使用 `clamp()` 函數實現無縫縮放，解決固定寬度限制、文字過大/小、佈局未優化等問題。
+This system is optimized for desktop, PWA, and mobile. It uses fluid design via `clamp()` to avoid fixed-width issues and improve readability/layout.
 
-## 核心原則
+## 核心原則 / Core Principles
 
-### 1. 流體設計 (Fluid Design)
+### 1. 流體設計 (Fluid Design) / Fluid Design
 - 使用 `clamp(min, preferred, max)` 函數實現動態縮放
 - 根據視窗寬度自動調整元素尺寸
 - 確保在所有裝置上都有良好的可讀性和可用性
 
-### 2. 長者友善觸控體驗
+- Use `clamp(min, preferred, max)` for dynamic scaling.
+- Adjust element sizes based on viewport width.
+- Keep readability and usability across devices.
+
+### 2. 長者友善觸控體驗 / Elder-Friendly Touch
 - 最小觸控目標：56px (建議 64px)
 - 充足的點擊區域和視覺回饋
 - 防止誤觸和跟手偏差
 
-### 3. 內容優先佈局
+- Minimum touch target: 56px (64px recommended).
+- Generous tap area and visual feedback.
+- Reduce mis-taps and tracking errors.
+
+### 3. 內容優先佈局 / Content-First Layout
 - 根據內容重要性進行響應式調整
 - 保持資訊層次結構清晰
 - 優化閱讀流程
 
-## 斷點系統
+- Adjust layout by content priority.
+- Keep clear information hierarchy.
+- Optimize reading flow.
+
+## 斷點系統 / Breakpoints
 
 採用 7 個斷點，提供更細緻的控制：
+Seven breakpoints for finer control:
 
 ```css
 /* 斷點定義 */
@@ -36,7 +50,7 @@
 --breakpoint-3xl: 1920px; /* 大桌面 */
 ```
 
-### 媒體查詢範圍
+### 媒體查詢範圍 / Media Queries
 
 ```css
 /* 超小手機 */
@@ -61,9 +75,9 @@
 @media (min-width: 1536px) { /* 3xl */ }
 ```
 
-## 流體文字系統
+## 流體文字系統 / Fluid Typography
 
-### 基礎文字大小
+### 基礎文字大小 / Base Sizes
 
 ```css
 /* 流體字體大小變數 */
@@ -77,7 +91,7 @@
 --text-4xl: clamp(2.5rem, 8vw, 3.5rem);       /* 40px - 56px */
 ```
 
-### 標題文字優化
+### 標題文字優化 / Headings
 
 ```css
 /* 針對長者的更大字體 */
@@ -89,9 +103,9 @@
 --heading-6: clamp(0.875rem, 2.5vw, 1.125rem); /* 14px - 18px */
 ```
 
-## 流體間距系統
+## 流體間距系統 / Fluid Spacing
 
-### 容器間距
+### 容器間距 / Container Spacing
 
 ```css
 /* 流體容器間距 */
@@ -103,7 +117,7 @@
 --space-2xl: clamp(3rem, 6vw, 4rem);          /* 48px - 64px */
 ```
 
-### 佈局間距
+### 佈局間距 / Layout Spacing
 
 ```css
 /* 頁面佈局間距 */
@@ -112,9 +126,9 @@
 --layout-gap: clamp(1rem, 3vw, 2rem);         /* 16px - 32px */
 ```
 
-## 流體容器系統
+## 流體容器系統 / Fluid Containers
 
-### 內容容器
+### 內容容器 / Content Containers
 
 ```css
 /* 內容寬度限制 */
@@ -131,7 +145,7 @@
 --container-7xl: clamp(100%, 40vw, 80rem);     /* 1280px max */
 ```
 
-### 遊戲容器
+### 遊戲容器 / Game Containers
 
 ```css
 /* 遊戲專用容器 */
@@ -143,9 +157,9 @@
 --game-container-2xl: clamp(100%, 70vw, 38rem); /* 608px max */
 ```
 
-## 觸控優化系統
+## 觸控優化系統 / Touch Optimization
 
-### 觸控目標尺寸
+### 觸控目標尺寸 / Touch Targets
 
 ```css
 /* 長者友善觸控目標 */
@@ -161,7 +175,7 @@
 }
 ```
 
-### 觸控區域類別
+### 觸控區域類別 / Touch Utility Classes
 
 ```css
 /* 觸控優化類別 */
@@ -194,9 +208,9 @@
 }
 ```
 
-## 橫屏豎屏自適應
+## 橫屏豎屏自適應 / Orientation Handling
 
-### 方向偵測
+### 方向偵測 / Orientation Detection
 
 ```css
 /* 豎屏優化 */
@@ -218,7 +232,7 @@
 }
 ```
 
-### 佈局方向調整
+### 佈局方向調整 / Layout Direction
 
 ```css
 /* 橫屏並列佈局 */
@@ -239,9 +253,9 @@
 }
 ```
 
-## 虛擬鍵盤和安全區域處理
+## 虛擬鍵盤和安全區域處理 / Keyboard & Safe Area
 
-### iOS 安全區域
+### iOS 安全區域 / iOS Safe Area
 
 ```css
 /* 安全區域填充 */
@@ -270,7 +284,7 @@
 }
 ```
 
-### 虛擬鍵盤處理
+### 虛擬鍵盤處理 / Virtual Keyboard
 
 ```css
 /* 鍵盤出現時的調整 */
@@ -290,9 +304,9 @@
 }
 ```
 
-## CSS 類別和組件結構
+## CSS 類別和組件結構 / CSS Classes & Component Structure
 
-### 佈局容器類別
+### 佈局容器類別 / Layout Containers
 
 ```css
 /* 響應式容器 */
@@ -314,7 +328,7 @@
 .game-container-2xl { max-width: var(--game-container-2xl); margin: 0 auto; }
 ```
 
-### 文字類別
+### 文字類別 / Typography Classes
 
 ```css
 /* 流體文字類別 */
@@ -336,7 +350,7 @@
 .heading-fluid-6 { font-size: var(--heading-6); font-weight: 600; }
 ```
 
-### 間距類別
+### 間距類別 / Spacing Classes
 
 ```css
 /* 流體間距類別 */
@@ -364,9 +378,9 @@
 .m-fluid-2xl { margin: var(--space-2xl); }
 ```
 
-## 組件結構規範
+## 組件結構規範 / Component Structure
 
-### 響應式組件架構
+### 響應式組件架構 / Responsive Component Pattern
 
 ```vue
 <template>
@@ -389,7 +403,7 @@
 </template>
 ```
 
-### 遊戲組件結構
+### 遊戲組件結構 / Game Component Pattern
 
 ```vue
 <template>
@@ -423,13 +437,13 @@
 </template>
 ```
 
-## 實現優先級
+## 實現優先級 / Implementation Priority
 
 1. **高優先級**: 流體文字系統、觸控優化、基礎容器
 2. **中優先級**: 橫屏豎屏自適應、安全區域處理
 3. **低優先級**: 進階動畫、特殊裝置優化
 
-## 測試檢查清單
+## 測試檢查清單 / Test Checklist
 
 - [ ] 在所有斷點下測試佈局完整性
 - [ ] 驗證觸控目標最小尺寸 (56px+)
@@ -440,7 +454,7 @@
 - [ ] 測試不同瀏覽器相容性
 - [ ] 驗證長者使用體驗
 
-## 更新日誌
+## 更新日誌 / Changelog
 
 - v1.0.0: 初始流體設計系統
 - 新增 7 斷點系統

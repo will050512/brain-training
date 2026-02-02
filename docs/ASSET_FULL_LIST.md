@@ -1,9 +1,11 @@
-# 完整資源清單（檔案 + 路徑 + 用途）
+# 完整資源清單（檔案 + 路徑 + 用途） / Full Asset List (Files + Paths + Usage)
 
 本文件列舉了儲存庫（repo）中的實際資源以及資源清單（manifest）中宣告的遊戲圖示。
 當資源缺失時，必須使用 Emoji 作為替代方案。
 
-## 遊戲圖示（來自 `public/assets_manifest.json`）
+This document lists actual repo assets and manifest-declared icons. Missing assets must fall back to emoji.
+
+## 遊戲圖示（來自 `public/assets_manifest.json`） / Game Icons (from manifest)
 
 這些是**預期**會有的圖示資源（不一定存在於儲存庫中）。Emoji 為替代方案。
 
@@ -26,7 +28,7 @@
 | game.icon.rhythm-mimic | games/icons/rhythm-mimic.svg | 🥁 |
 | game.icon.clock-drawing | games/icons/clock-drawing.svg | 🕒 |
 
-## 公用資源 (Public Assets)
+## 公用資源 (Public Assets) / Public Assets
 
 | 檔案 | 路徑 | 用途 |
 | --- | --- | --- |
@@ -44,7 +46,7 @@
 | assets_manifest.json | public/assets_manifest.json | 資源清單 (Manifest) |
 | fonts/NotoSansTC-Regular.ttf | public/fonts/NotoSansTC-Regular.ttf | 字型 |
 
-## 圖片資源（實際檔案）
+## 圖片資源（實際檔案） / Image Assets (Actual Files)
 
 ### 打地鼠 (Whack-a-mole)
 
@@ -208,7 +210,7 @@
 | trophy-silver.svg | src/assets/images/ui/trophy-silver.svg | 獎盃（銀） |
 | trophy-bronze.svg | src/assets/images/ui/trophy-bronze.svg | 獎盃（銅） |
 
-## 音訊資源（實際檔案）
+## 音訊資源（實際檔案） / Audio Assets (Actual Files)
 
 ### 全域遊戲音效 (`src/assets/audio/games`)
 
@@ -311,7 +313,7 @@
 | miss.ogg | src/assets/audio/games/rhythm-mimic/miss.ogg | 失誤 |
 | miss.mp3 | src/assets/audio/games/rhythm-mimic/miss.mp3 | 失誤 (mp3) |
 
-## 備註 (Notes)
+## 備註 (Notes) / Notes
 
 * 許多遊戲目前使用佔位資源（Placeholder）；請透過覆蓋檔名的方式進行替換。
 * 當圖示遺失時，必須使用 Emoji 作為替代（請參見上方的清單）。

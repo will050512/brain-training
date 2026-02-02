@@ -189,7 +189,9 @@ export const useGameStore = defineStore('game', () => {
     // 即時同步到 Google Sheet（失敗時不影響主流程）
     try {
       const bestScore = getBestScore(normalizedResult.gameId, normalizedResult.difficulty)
-      await syncSessionToSheet(session, bestScore)
+      void syncSessionToSheet(session, bestScore).catch(error => {
+        console.error('syncSessionToSheet failed', error)
+      })
     } catch (error) {
       console.error('syncSessionToSheet failed', error)
     }

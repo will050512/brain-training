@@ -1,31 +1,36 @@
-# App 內嵌與 Firebase 對接指南
+# App 內嵌與 Firebase 對接指南 / App Embedding & Firebase Bridge Guide
 
-## 總覽
+## 總覽 / Overview
 
 - App (Flutter/Firebase) 在 WebView/Chrome Custom Tabs 中載入本專案。
 - Firebase 完成登入後，將使用者 Profile + IdToken 傳給 Web App。
 - Web App 透過 `externalAuthBridge` 建立/更新使用者（id 固定 `fb_<uid>`）、記錄 `clientSource`，並同步至 Google Sheet。
 - 遊戲/使用者同步仍受 `analyticsConsent` 控制；未同意不會上傳。
 
-## 前端（Web App）設定
+- The App (Flutter/Firebase) loads this project in WebView/Chrome Custom Tabs.
+- After Firebase login, the App passes Profile + IdToken to the Web App.
+- The Web App uses `externalAuthBridge` to create/update users (id fixed as `fb_<uid>`), records `clientSource`, and syncs to Google Sheet.
+- Game/user sync is gated by `analyticsConsent`; no consent, no upload.
 
-1. 入口啟用 bridge
+## 前端（Web App）設定 / Web App Setup
+
+1. 入口啟用 bridge / Initialize the bridge
    ```ts
    // main.ts
    import { initExternalAuthBridge } from '@/services/externalAuthBridge'
    initExternalAuthBridge()
    ```
-2. 重要檔案
+2. 重要檔案 / Key Files
    - `src/services/externalAuthBridge.ts`：接收 postMessage / `window.BrainTrainingBridge.setExternalProfile(...)` / `?externalProfile=<base64url(json)>`
    - `src/types/user.ts`：`gender`, `clientSource?`, `authProvider?`
    - `src/stores/userStore.ts`：`loginWithExternalProfile` (固定 id：`fb_<uid>`)
    - `src/services/userSheetSyncService.ts`：同步 Users 時帶 `clientSource`/`authProvider`
    - `src/services/clientSource.ts`：偵測/儲存 `clientSource`
-3. IdToken 使用
+3. IdToken 使用 / IdToken Usage
    - Bridge 會把 `idToken` 存入 `sessionStorage` (`firebaseIdToken`/`firebaseUid`)。
    - 若要呼叫自家 API，請自行從 `sessionStorage` 取出並塞到 `Authorization` header（目前專案未對後端驗證）。
 
-## Profile 格式（App → Web）
+## Profile 格式（App → Web）/ Profile Payload (App → Web)
 
 ```json
 {
@@ -41,10 +46,11 @@
 ```
 
 允許的 `clientSource` 建議：`app-android | app-ios | pwa | web | unknown`。
+Suggested values for `clientSource`: `app-android | app-ios | pwa | web | unknown`.
 
-## Flutter / WebView 呼叫範例
+## Flutter / WebView 呼叫範例 / Flutter/WebView Examples
 
-方法 A：直接呼叫 bridge
+方法 A：直接呼叫 bridge / Direct bridge call
 
 ```dart
 await controller.runJavascript(
@@ -60,7 +66,8 @@ await controller.runJavascript(
 
 QueryString（可選）：`?externalProfile=<base64url(json of profile)>`
 
-安全：bridge 接受同源與 `null` origin（WebView 常見）；可在 `externalAuthBridge.ts` 內再加白名單。
+安全：bridge 接受同源、`https://will050512.github.io` 與 `null` origin（WebView 常見）；可在 `externalAuthBridge.ts` 內再加白名單。
+Security: the bridge accepts same-origin, `https://will050512.github.io`, and `null` origin (common in WebView). Add allowlist entries in `externalAuthBridge.ts` if needed.
 
 ## Google Sheet / Apps Script
 
@@ -71,13 +78,20 @@ QueryString（可選）：`?externalProfile=<base64url(json of profile)>`
 - POST 使用 `mode: "no-cors"`；回應為 opaque。
 - 支援 `action: upsertGameResults | upsertUsers`，批次用 `items`。
 
+- Web App URL: `<YOUR_APPS_SCRIPT_WEB_APP_URL>`
+- The frontend uses `VITE_SHEET_ENDPOINT` (not hard-coded).
+- For protection, set `VITE_SHEET_SYNC_TOKEN` and `SYNC_TOKEN` in Apps Script properties.
+- Client attaches `meta` (`clientId`, `token`, `sentAt`) for validation/ratelimit.
+- POST uses `mode: "no-cors"`; responses are opaque.
+- Supports `action: upsertGameResults | upsertUsers` and batch `items`.
+
 Users 欄位（建議 Sheet `Users`）：
 `userId, name, birthday, educationYears, gender, clientSource, authProvider, createdAt, lastActiveAt, updatedAt, profileVersion`
 
 GameResults 欄位（Sheet `GameResults`）：
 `userId, sessionId, gameId, difficulty, subDifficulty, timestamp, durationSec, score, grade, metrics.*, tracking.*, bestScore, gameSpecific, displayStats, protocolVersion`
 
-示例：Users payload
+示例：Users payload / Example: Users payload
 
 ```json
 {
@@ -96,7 +110,7 @@ GameResults 欄位（Sheet `GameResults`）：
 }
 ```
 
-示例：GameResult payload（可在 `gameSpecific.clientSource` 帶來源）
+示例：GameResult payload（可在 `gameSpecific.clientSource` 帶來源）/ Example: GameResult payload
 
 ```json
 {
@@ -119,8 +133,12 @@ GameResults 欄位（Sheet `GameResults`）：
 }
 ```
 
-## 注意事項
+## 注意事項 / Notes
 
 - 遙測/同步需 `analyticsConsent=true` 才會上傳。
 - WebView 預設無法讀取 Apps Script 回應；以上傳成功為主，並在前端用 sessionId/userId 去重。
 - 若要後端驗證 IdToken，請在自有 API 層處理；目前僅存於 `sessionStorage`。
+
+- Telemetry/sync requires `analyticsConsent=true`.
+- WebView cannot read Apps Script responses by default; treat delivery as success and dedupe by sessionId/userId.
+- For IdToken verification, handle it in your own API; currently only stored in `sessionStorage`.

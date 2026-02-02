@@ -1,10 +1,12 @@
-# 遊戲資料與 Google Sheet 對接欄位
+# 遊戲資料與 Google Sheet 對接欄位 / Game Data & Google Sheet Schema
 
 統一 rawResult 形狀與匯出欄位，避免結算畫面混用與報表誤判。若遊戲新開發，請依下列範本擴充。
+Standardize rawResult shape and exported fields to avoid report mismatches. For new games, extend the template below.
 
-> Apps Script「完整版本」請使用 `docs/apps-script.gs`（支援 `GameResults` + `Users`、batch、upsert 去重、JSONP 讀取）。
+> 本 repo 未提供 Apps Script 檔案；請自行建立 Web App。欄位與 payload 請依本文件與 `docs/app-embedding.md`。
+> This repo does not include an Apps Script file. Create your own Web App and follow this document and `docs/app-embedding.md` for fields and payloads.
 
-## Google Sheet 欄位（每筆 GameResult）
+## Google Sheet 欄位（每筆 GameResult）/ Google Sheet Fields (GameResult)
 - `userId`：使用者/odId
 - `sessionId`：遊戲會話 UUID
 - `gameId`：遊戲 ID（canonical）
@@ -30,7 +32,7 @@
 - `displayStats`（可選：JSON，前端顯示用）
 - `protocolVersion`（同步協議版本；用於回填修正與相容性）
 
-### Sheet 版型建議（供 Apps Script 直接寫入）
+### Sheet 版型建議（供 Apps Script 直接寫入）/ Suggested Sheet Layout
 1. 表單標題：`GameResults`
 2. 首列欄位：
    ```
@@ -44,7 +46,7 @@
 4. timestamp 請存 ISO（`new Date().toISOString()`），避免時區誤判。
 5. 若需分表：可將每日訓練/一般遊戲分不同 Sheet，欄位相同即可。
 
-## Google Sheet 欄位（每筆 User）
+## Google Sheet 欄位（每筆 User）/ Google Sheet Fields (User)
 建議建立 `Users` 工作表（每個 `userId` 一列；以 `userId` upsert 更新，避免重複列）。
 
 - `userId`
@@ -57,7 +59,7 @@
 - `updatedAt`（ISO）
 - `profileVersion`（用於未來擴充）
 
-### Apps Script 對接（已建置）
+### Apps Script 對接（自行建立）/ Apps Script Integration (self-managed)
 - Web App URL：`<YOUR_APPS_SCRIPT_WEB_APP_URL>`
 - 前端透過 `VITE_SHEET_ENDPOINT` 設定，不再硬編碼於程式碼。
 - 若需保護上傳/讀取，請設定 `VITE_SHEET_SYNC_TOKEN`，並在 Apps Script 的 Script Properties 內設定 `SYNC_TOKEN`。
@@ -86,20 +88,20 @@
     ]
   }
   ```
-- 若使用完整 Apps Script 版本：請在 payload 加上 `action: "upsertGameResults"` 及 `protocolVersion: 2`；批次寫入使用 `{ "action": "upsertGameResults", "items": [ ... ] }`。Users 同理使用 `{ "action": "upsertUsers", "items": [ ...UserPayload ] }`。
+- 若要支援批次寫入：請讓 Apps Script 接受 `{ "action": "upsertGameResults", "items": [ ... ] }`；Users 同理使用 `{ "action": "upsertUsers", "items": [ ...UserPayload ] }`。
 - Apps Script 端建議：
   - 驗證必填欄位（`userId`,`sessionId`,`gameId`,`timestamp`,`score`），若欄位缺漏則回傳 400。
   - `displayStats` 建議存 `[]`（JSON 字串），`gameSpecific` 建議存 `{}`（JSON 字串）。
   - 以 `sessionId` 去重：同一 sessionId 重送時不要重複 append（可改成 update 該列）。
   - 批次回填：接受 `{ "action": "upsertGameResults", "items": [ ...SheetPayload ] }`，用 `setValues()` 一次寫入提升速度。
 
-### 舊用戶資料回填流程（連線後自動補寫）
+### 舊用戶資料回填流程（連線後自動補寫）/ Legacy Backfill Flow
 1. 客戶端啟動時，讀取本地 IndexedDB/LocalStorage 的舊紀錄（若有 legacy `GameResult` 形狀）。
 2. 逐筆用 `scoreNormalizer.normalize(gameId, rawResult, difficulty, subDifficulty, durationSec)` 轉為 `UnifiedGameResult`，再用 `unifiedToLegacyGameResult` 或 `normalizeToLegacyGameResult` 確保欄位完整。
 3. 將結果映射成「Google Sheet 欄位」格式（同上表頭，JSON 欄位用 `JSON.stringify`）。
 4. 以批次或逐筆 `POST` 到 Apps Script URL；建議攜帶 `sessionId`/`timestamp` 避免重複寫入，可由 Apps Script 端去重。
 
-## rawResult 需求（各遊戲 emit 到 GamePlayView 的形狀）
+## rawResult 需求（各遊戲 emit 到 GamePlayView 的形狀）/ rawResult Schema per Game
 ### whack-a-mole
 - `hitMoles`, `missedMoles`, `hitBombs`, `totalMoles`, `avgReactionTime`, `maxCombo`, `score`
 

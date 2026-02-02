@@ -187,6 +187,7 @@ const behaviorCollector = ref<BehaviorCollector | null>(null)
 let lastTouchAt = 0
 const pendingResultSave = ref<Promise<void> | null>(null)
 const hasLoggedPendingResultWarning = ref(false)
+const RESULT_SAVE_TIMEOUT_MS = 1500
 
 // 每日訓練相關
 const showCompletionModal = ref(false)
@@ -754,7 +755,10 @@ async function saveGameResultAndLogs(finalizedResult: GameResult, gameMode: Game
 
 async function ensureResultSaved(): Promise<void> {
   if (pendingResultSave.value) {
-    await pendingResultSave.value
+    const completed = await waitForResultSave(pendingResultSave.value, RESULT_SAVE_TIMEOUT_MS)
+    if (!completed) {
+      console.warn('Result save timed out; continuing without blocking UI.')
+    }
     return
   }
   if (!isFromDailyTraining.value || gameState.value !== 'finished' || !gameResult.value) return
@@ -765,6 +769,27 @@ async function ensureResultSaved(): Promise<void> {
   } catch (error) {
     console.error('markGameCompleted failed:', error)
   }
+}
+
+async function waitForResultSave(pending: Promise<void>, timeoutMs: number): Promise<boolean> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+  const timeoutPromise = new Promise<boolean>(resolve => {
+    timeoutId = setTimeout(() => resolve(false), timeoutMs)
+  })
+
+  const completed = await Promise.race([
+    pending.then(
+      () => true,
+      () => true
+    ),
+    timeoutPromise
+  ])
+
+  if (timeoutId) {
+    clearTimeout(timeoutId)
+  }
+
+  return completed
 }
 
 function handleDifficultyConfirm(difficulty: Difficulty, subDifficulty: SubDifficulty, applyToAll: boolean): void {
