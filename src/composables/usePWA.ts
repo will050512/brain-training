@@ -54,21 +54,23 @@ export function usePWA() {
   /**
    * 應用更新並重新載入
    */
-  async function applyUpdate() {
+  async function applyUpdate(force: boolean = false) {
     if (updateSW) {
       isUpdating.value = true
       try {
         if (skipReloadForTests) {
           return
         }
-        const shouldUpdate = await shouldApplyUpdate()
-        if (!shouldUpdate) {
-          isUpdating.value = false
-          needRefresh.value = false
-          isUpdateAvailable.value = false
-          pendingAutoUpdate.value = false
-          console.log('[PWA] 版本相同，略過更新套用')
-          return
+        if (!force) {
+          const shouldUpdate = await shouldApplyUpdate()
+          if (!shouldUpdate) {
+            isUpdating.value = false
+            needRefresh.value = false
+            isUpdateAvailable.value = false
+            pendingAutoUpdate.value = false
+            console.log('[PWA] 版本相同，略過更新套用')
+            return
+          }
         }
         skipWaiting()
         await updateSW(true)

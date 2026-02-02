@@ -187,7 +187,6 @@ const behaviorCollector = ref<BehaviorCollector | null>(null)
 let lastTouchAt = 0
 const pendingResultSave = ref<Promise<void> | null>(null)
 const hasLoggedPendingResultWarning = ref(false)
-const RESULT_SAVE_TIMEOUT_MS = 300
 
 // 每日訓練相關
 const showCompletionModal = ref(false)
@@ -646,7 +645,7 @@ async function handleGameEnd(rawResult: unknown): Promise<void> {
 
 // 再玩一次
 async function playAgain(): Promise<void> {
-  await ensureResultSaved()
+  void ensureResultSaved()
   if (timerInterval) {
     clearInterval(timerInterval)
     timerInterval = null
@@ -672,7 +671,7 @@ async function playAgain(): Promise<void> {
 
 // 繼續下一個訓練遊戲
 async function continueToNextGame(): Promise<void> {
-  await ensureResultSaved()
+  void ensureResultSaved()
   const nextGame = gameStore.getNextTrainingGame()
   if (nextGame) {
     // 移動到下一個遊戲
@@ -700,7 +699,7 @@ async function continueToNextGame(): Promise<void> {
 
 // 開始推薦遊戲
 async function startRecommendedGame(game: GameDefinition): Promise<void> {
-  await ensureResultSaved()
+  void ensureResultSaved()
   gameStore.selectGame(game.id)
   const stored = settingsStore.getGameDifficulty(game.id)
   gameStore.selectDifficulty(stored.difficulty)
@@ -754,42 +753,13 @@ async function saveGameResultAndLogs(finalizedResult: GameResult, gameMode: Game
 }
 
 async function ensureResultSaved(): Promise<void> {
-  if (pendingResultSave.value) {
-    const completed = await waitForResultSave(pendingResultSave.value, RESULT_SAVE_TIMEOUT_MS)
-    if (!completed) {
-      console.warn('Result save timed out; continuing without blocking UI.')
-    }
-    return
-  }
+  if (pendingResultSave.value) return
   if (!isFromDailyTraining.value || gameState.value !== 'finished' || !gameResult.value) return
   const odId = userStore.currentUser?.id
   if (!odId) return
-  try {
-    await markGameCompleted(odId, gameResult.value.gameId, gameResult.value.duration)
-  } catch (error) {
+  void markGameCompleted(odId, gameResult.value.gameId, gameResult.value.duration).catch(error => {
     console.error('markGameCompleted failed:', error)
-  }
-}
-
-async function waitForResultSave(pending: Promise<void>, timeoutMs: number): Promise<boolean> {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null
-  const timeoutPromise = new Promise<boolean>(resolve => {
-    timeoutId = setTimeout(() => resolve(false), timeoutMs)
   })
-
-  const completed = await Promise.race([
-    pending.then(
-      () => true,
-      () => true
-    ),
-    timeoutPromise
-  ])
-
-  if (timeoutId) {
-    clearTimeout(timeoutId)
-  }
-
-  return completed
 }
 
 function handleDifficultyConfirm(difficulty: Difficulty, subDifficulty: SubDifficulty, applyToAll: boolean): void {
@@ -940,7 +910,7 @@ onMounted(() => {
 })
 
 onBeforeRouteLeave(async () => {
-  await ensureResultSaved()
+  void ensureResultSaved()
   return true
 })
 

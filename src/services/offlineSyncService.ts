@@ -13,11 +13,14 @@ import {
   removePendingSyncItem,
   incrementSyncRetryCount,
   generateId,
+  getGameSession,
+  getDailyTrainingSession,
   type BehaviorLog,
   type PendingSyncItem
 } from '@/services/db'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { syncBehaviorLogsToSheet } from '@/services/userDataSheetSyncService'
+import { syncBehaviorLogsToSheet, syncDailyTrainingSessionToSheet } from '@/services/userDataSheetSyncService'
+import { syncSessionToSheet } from '@/services/googleSheetSyncService'
 
 // 同步狀態
 export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline'
@@ -163,21 +166,6 @@ class OfflineSyncService {
     if (!this.isOnline()) {
       this.clearBackoffTimer()
     }
-    if (!isBehaviorTrackingEnabled()) {
-      console.info('[OfflineSync] Sync skipped by user preference.')
-      try {
-        const settingsStore = useSettingsStore()
-        settingsStore.setSyncUiStatus('idle')
-      } catch {
-        // ignore ui status update
-      }
-      return {
-        success: true,
-        syncedCount: 0,
-        failedCount: 0,
-        errors: []
-      }
-    }
     if (!this.isOnline()) {
       try {
         const settingsStore = useSettingsStore()
@@ -318,6 +306,10 @@ class OfflineSyncService {
     }
 
     try {
+      if (!isBehaviorTrackingEnabled()) {
+        console.info('[OfflineSync] Behavior log sync skipped by user preference.')
+        return result
+      }
       const unsyncedLogs = await getUnsyncedBehaviorLogs()
       
       if (unsyncedLogs.length === 0) {
@@ -409,15 +401,49 @@ class OfflineSyncService {
       await syncBehaviorLogsToSheet([item.data as unknown as BehaviorLog])
       return
     }
+    if (item.type === 'game-session') {
+      const sessionId = item.data['sessionId']
+      if (typeof sessionId !== 'string' || !sessionId) {
+        throw new Error('missing game session id')
+      }
+      const session = await getGameSession(sessionId)
+      if (!session) {
+        throw new Error('game session not found')
+      }
+      const outcome = await syncSessionToSheet(session)
+      if (outcome === 'failed') {
+        throw new Error('game session sync failed')
+      }
+      return
+    }
+    if (item.type === 'daily-training-session') {
+      const sessionId = item.data['sessionId']
+      if (typeof sessionId !== 'string' || !sessionId) {
+        throw new Error('missing daily training session id')
+      }
+      const session = await getDailyTrainingSession(sessionId)
+      if (!session) {
+        throw new Error('daily training session not found')
+      }
+      const outcome = await syncDailyTrainingSessionToSheet(session)
+      if (outcome === 'failed') {
+        throw new Error('daily training session sync failed')
+      }
+      return
+    }
     throw new Error(`unsupported pending sync item type: ${item.type}`)
   }
 
   /**
    * 加入待同步佇列
    */
-  async addToQueue(type: PendingSyncItem['type'], data: Record<string, unknown>): Promise<void> {
+  async addToQueue(
+    type: PendingSyncItem['type'],
+    data: Record<string, unknown>,
+    options?: { id?: string }
+  ): Promise<void> {
     const item: PendingSyncItem = {
-      id: generateId(),
+      id: options?.id ?? generateId(),
       type,
       data,
       createdAt: new Date().toISOString(),

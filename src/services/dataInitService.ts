@@ -494,7 +494,14 @@ class DataInitService {
       }
       
       await saveDailyTrainingSession(session)
-      await syncDailyTrainingSessionToSheet(session)
+      const outcome = await syncDailyTrainingSessionToSheet(session)
+      if (outcome === 'failed') {
+        void getSyncService().addToQueue(
+          'daily-training-session',
+          { sessionId: session.id },
+          { id: `daily-training-session:${session.id}` }
+        )
+      }
     }
   })
 

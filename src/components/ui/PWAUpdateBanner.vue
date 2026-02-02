@@ -56,7 +56,7 @@ interface Props {
   isOfflineReady: boolean
   isUpdating: boolean
   forceUpdate?: boolean
-  onApplyUpdate: () => void | Promise<void>
+  onApplyUpdate: (force?: boolean) => void | Promise<void>
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -118,7 +118,7 @@ watch(() => props.isUpdating, (updating) => {
 })
 
 async function handleUpdate() {
-  await props.onApplyUpdate()
+  await props.onApplyUpdate(true)
 }
 
 function dismissBanner() {

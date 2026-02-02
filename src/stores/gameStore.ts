@@ -24,6 +24,7 @@ import {
 } from '@/services/db'
 import type { DailyTrainingPlan } from '@/services/dailyTrainingService'
 import { syncSessionToSheet } from '@/services/googleSheetSyncService'
+import { getSyncService } from '@/services/offlineSyncService'
 import { 
   calculateCognitiveScoresFromResult,
   calculateOverallCognitiveScores,
@@ -189,9 +190,16 @@ export const useGameStore = defineStore('game', () => {
     // 即時同步到 Google Sheet（失敗時不影響主流程）
     try {
       const bestScore = getBestScore(normalizedResult.gameId, normalizedResult.difficulty)
-      void syncSessionToSheet(session, bestScore).catch(error => {
-        console.error('syncSessionToSheet failed', error)
-      })
+      const syncService = getSyncService()
+      void syncSessionToSheet(session, bestScore)
+        .then(outcome => {
+          if (outcome !== 'failed') return
+          void syncService.addToQueue('game-session', { sessionId: session.id }, { id: `game-session:${session.id}` })
+        })
+        .catch(error => {
+          console.error('syncSessionToSheet failed', error)
+          void syncService.addToQueue('game-session', { sessionId: session.id }, { id: `game-session:${session.id}` })
+        })
     } catch (error) {
       console.error('syncSessionToSheet failed', error)
     }

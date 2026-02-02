@@ -21,6 +21,7 @@ import { analyzeWeaknesses, suggestDifficulty } from '@/services/recommendationE
 import { getCurrentGameDifficulty } from '@/services/db'
 import type { DailyTrainingDuration, WeeklyTrainingGoal } from '@/stores/settingsStore'
 import { syncDailyTrainingSessionToSheet } from '@/services/userDataSheetSyncService'
+import { getSyncService } from '@/services/offlineSyncService'
 
 // 訓練狀態
 export type TrainingStatus = 'not-started' | 'in-progress' | 'interrupted' | 'completed'
@@ -99,9 +100,16 @@ const MINICOG_DIFFICULTY_MAP: Record<number, {
 
 async function saveDailyTrainingSessionAndSync(session: DailyTrainingSession): Promise<void> {
   await saveDailyTrainingSession(session)
-  void syncDailyTrainingSessionToSheet(session).catch(error => {
-    console.error('Daily training sheet sync failed', error)
-  })
+  const syncService = getSyncService()
+  void syncDailyTrainingSessionToSheet(session)
+    .then(outcome => {
+      if (outcome !== 'failed') return
+      void syncService.addToQueue('daily-training-session', { sessionId: session.id }, { id: `daily-training-session:${session.id}` })
+    })
+    .catch(error => {
+      console.error('Daily training sheet sync failed', error)
+      void syncService.addToQueue('daily-training-session', { sessionId: session.id }, { id: `daily-training-session:${session.id}` })
+    })
 }
 
 function resolveTargetGameCount(
