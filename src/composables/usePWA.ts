@@ -27,6 +27,16 @@ export function usePWA() {
   
   let updateSW: ((reloadPage?: boolean) => Promise<void>) | undefined
   let registration: ServiceWorkerRegistration | undefined
+  const baseUrl = import.meta.env.BASE_URL || '/'
+  const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`
+  const versionProbePath = `${normalizedBaseUrl}version.json`
+  const isIOSDevice = (() => {
+    if (typeof navigator === 'undefined') return false
+    const ua = navigator.userAgent
+    const isAppleDevice = /iP(hone|od|ad)/.test(ua)
+    const isMacTouch = ua.includes('Mac') && typeof document !== 'undefined' && 'ontouchend' in document
+    return isAppleDevice || isMacTouch
+  })()
 
   /**
    * 檢查更新
@@ -53,6 +63,34 @@ export function usePWA() {
         console.error('[PWA] 檢查更新失敗:', error)
       }
     }
+  }
+
+  async function probeVersion(): Promise<string | null> {
+    try {
+      const probeUrl = new URL(`${versionProbePath}?t=${Date.now()}`, window.location.origin)
+      const response = await fetch(probeUrl.toString(), {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      })
+      if (!response.ok) return null
+      const data = await response.json() as { version?: string } | null
+      if (!data || typeof data.version !== 'string') return null
+      return data.version
+    } catch (error) {
+      console.warn('[PWA] 版本探針失敗:', error)
+      return null
+    }
+  }
+
+  async function checkForUpdatesWithProbe(): Promise<void> {
+    if (!navigator.onLine) return
+    const probedVersion = await probeVersion()
+    if (probedVersion && __APP_VERSION__ && probedVersion === __APP_VERSION__) {
+      return
+    }
+    await checkForUpdates()
   }
 
   /**
@@ -166,7 +204,11 @@ export function usePWA() {
     updateUserActiveState()
     if (getVisibilityState() === 'visible') {
       if (navigator.onLine) {
-        checkForUpdates()
+        if (isIOSDevice) {
+          void checkForUpdatesWithProbe()
+        } else {
+          checkForUpdates()
+        }
       }
       return
     }
@@ -180,7 +222,22 @@ export function usePWA() {
   function handleOnline() {
     console.log('[PWA] 網路已恢復，檢查更新...')
     if (getVisibilityState() === 'visible') {
-      checkForUpdates()
+      void checkForUpdatesWithProbe()
+    }
+  }
+
+  function handlePageShow(event: PageTransitionEvent) {
+    if (!isIOSDevice) return
+    if (!navigator.onLine) return
+    if (event.persisted || getVisibilityState() === 'visible') {
+      void checkForUpdatesWithProbe()
+    }
+  }
+
+  function handleFocus() {
+    if (!isIOSDevice) return
+    if (navigator.onLine) {
+      void checkForUpdatesWithProbe()
     }
   }
 
@@ -276,6 +333,8 @@ export function usePWA() {
     // 添加事件監聽器
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('online', handleOnline)
+    window.addEventListener('pageshow', handlePageShow)
+    window.addEventListener('focus', handleFocus)
     
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange)
@@ -331,6 +390,8 @@ export function usePWA() {
   onUnmounted(() => {
     document.removeEventListener('visibilitychange', handleVisibilityChange)
     window.removeEventListener('online', handleOnline)
+    window.removeEventListener('pageshow', handlePageShow)
+    window.removeEventListener('focus', handleFocus)
     
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange)
