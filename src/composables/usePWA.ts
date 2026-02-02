@@ -59,6 +59,10 @@ export function usePWA() {
       isUpdating.value = true
       try {
         if (skipReloadForTests) {
+          isUpdating.value = false
+          needRefresh.value = false
+          isUpdateAvailable.value = false
+          pendingAutoUpdate.value = false
           return
         }
         if (!force) {
