@@ -187,7 +187,7 @@ const behaviorCollector = ref<BehaviorCollector | null>(null)
 let lastTouchAt = 0
 const pendingResultSave = ref<Promise<void> | null>(null)
 const hasLoggedPendingResultWarning = ref(false)
-const RESULT_SAVE_TIMEOUT_MS = 1500
+const RESULT_SAVE_TIMEOUT_MS = 300
 
 // 每日訓練相關
 const showCompletionModal = ref(false)
@@ -741,16 +741,16 @@ async function saveGameResultAndLogs(finalizedResult: GameResult, gameMode: Game
     console.error('recordGameResult failed:', error)
   }
 
-  await finalizeBehaviorLogs()
+  void finalizeBehaviorLogs().catch(() => {
+    // ignore
+  })
 
   if (!isFromDailyTraining.value) return
   const odId = userStore.currentUser?.id
   if (!odId) return
-  try {
-    await markGameCompleted(odId, finalizedResult.gameId, finalizedResult.duration)
-  } catch (error) {
+  void markGameCompleted(odId, finalizedResult.gameId, finalizedResult.duration).catch(error => {
     console.error('markGameCompleted failed:', error)
-  }
+  })
 }
 
 async function ensureResultSaved(): Promise<void> {
