@@ -8,7 +8,7 @@ import { useResponsive } from '@/composables/useResponsive'
 import { useNotification } from '@/composables/useNotification'
 import { useToast } from '@/composables/useToast'
 import { useUiScale } from '@/composables/useUiScale'
-import { usePWA } from '@/composables/usePWA'
+import { FORCE_REFRESH_NOTICE_EVENT, usePWA } from '@/composables/usePWA'
 import { perfEnd, perfStart } from '@/utils/perf'
 import { backfillUserSessionsToSheet } from '@/services/googleSheetSyncService'
 import { syncUserProfileToSheet } from '@/services/userSheetSyncService'
@@ -86,6 +86,12 @@ watch(needsEducationYears, (needs) => {
 }, { immediate: true })
 
 const showSyncToast = computed(() => false)
+const handleForceRefreshNotice = (event: Event) => {
+  const detail = (event as CustomEvent<{ version?: string; delayMs?: number }>).detail
+  const seconds = Math.max(1, Math.ceil((detail?.delayMs ?? 0) / 1000))
+  const versionLabel = detail?.version ? ` v${detail.version}` : ''
+  toast.warning(`偵測到新版本${versionLabel}，約 ${seconds} 秒後自動更新`, { duration: 2500, icon: '⚡' })
+}
 
 // ===== 佈局系統 =====
 
@@ -294,6 +300,7 @@ onMounted(async () => {
     perfEnd('dataInitService.initialize(App)')
     window.addEventListener('online', handleOnline)
     window.addEventListener('focus', handleOnline)
+    window.addEventListener(FORCE_REFRESH_NOTICE_EVENT, handleForceRefreshNotice)
     bootGateState.value = 'ready'
     perfEnd('app.onMounted')
   } catch (error) {
@@ -326,6 +333,7 @@ onUnmounted(() => {
   dataInitService.destroy()
   window.removeEventListener('online', handleOnline)
   window.removeEventListener('focus', handleOnline)
+  window.removeEventListener(FORCE_REFRESH_NOTICE_EVENT, handleForceRefreshNotice)
 })
 </script>
 

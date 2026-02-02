@@ -12,6 +12,8 @@ export interface PWAUpdateInfo {
   needRefresh: boolean
 }
 
+export const FORCE_REFRESH_NOTICE_EVENT = 'pwa-force-refresh'
+
 export function usePWA() {
   const isUpdateAvailable = ref(false)
   const isOfflineReady = ref(false)
@@ -33,6 +35,7 @@ export function usePWA() {
   const VERSION_RELOAD_KEY = 'brain-training-force-reload-version'
   const VERSION_RELOAD_AT_KEY = 'brain-training-force-reload-at'
   const FORCE_RELOAD_COOLDOWN_MS = 5 * 60 * 1000
+  const FORCE_REFRESH_DELAY_MS = 1800
   const isIOSDevice = (() => {
     if (typeof navigator === 'undefined') return false
     const ua = navigator.userAgent
@@ -118,6 +121,16 @@ export function usePWA() {
     } catch (error) {
       console.warn('[PWA] 強制刷新前更新失敗:', error)
     }
+    window.dispatchEvent(new CustomEvent(FORCE_REFRESH_NOTICE_EVENT, {
+      detail: {
+        version: probedVersion,
+        delayMs: FORCE_REFRESH_DELAY_MS,
+        source,
+      }
+    }))
+    await new Promise(resolve => {
+      window.setTimeout(resolve, FORCE_REFRESH_DELAY_MS)
+    })
     const url = new URL(window.location.href)
     url.searchParams.set('v', probedVersion)
     console.warn(`[PWA] 偵測到新版本(${source})，強制刷新至 ${probedVersion}`)
