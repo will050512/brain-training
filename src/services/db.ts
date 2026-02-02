@@ -103,7 +103,7 @@ export interface BehaviorLog {
 // 待同步佇列
 export interface PendingSyncItem {
   id: string
-  type: 'behavior-log' | 'game-session' | 'daily-training-session' | 'assessment'
+  type: 'behavior-log' | 'game-session' | 'assessment'
   data: Record<string, unknown>
   createdAt: string
   retryCount: number
@@ -1094,14 +1094,6 @@ export async function checkConsentVersionNeedsUpdate(odId: string): Promise<bool
 export async function saveDailyTrainingSession(session: DailyTrainingSession): Promise<void> {
   const db = await getDB()
   await db.put('dailyTrainingSessions', session)
-}
-
-/**
- * 取得單筆每日訓練會話
- */
-export async function getDailyTrainingSession(id: string): Promise<DailyTrainingSession | undefined> {
-  const db = await getDB()
-  return db.get('dailyTrainingSessions', id)
 }
 
 /**

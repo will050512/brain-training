@@ -32,8 +32,6 @@ const EMPTY_STATUS: SheetSyncStatus = {
   lastErrorMessage: null,
 }
 
-export type SessionSyncOutcome = 'synced' | 'blocked' | 'skipped' | 'failed'
-
 type SheetTracking = TrackingData & {
   avgReactionTimeMs?: number
   avgThinkingTimeMs?: number
@@ -386,11 +384,11 @@ async function postToSheet(
 /**
  * 單筆遊戲結果即時同步（完成遊戲時呼叫）
  */
-export async function syncSessionToSheet(session: GameSession, bestScore?: number): Promise<SessionSyncOutcome> {
-  if (!SHEET_ENDPOINT) return 'skipped'
-  if (!isBrowserOnline()) return 'failed'
+export async function syncSessionToSheet(session: GameSession, bestScore?: number): Promise<void> {
+  if (!SHEET_ENDPOINT) return
+  if (!isBrowserOnline()) return
   ensureSyncProtocolVersion(session.odId)
-  if (!(await isSheetSyncAllowed(session.odId))) return 'blocked'
+  if (!(await isSheetSyncAllowed(session.odId))) return
   try {
     const settingsStore = useSettingsStore()
     settingsStore.setSyncUiStatus('syncing')
@@ -399,7 +397,7 @@ export async function syncSessionToSheet(session: GameSession, bestScore?: numbe
   }
   updateSessionSyncStatus(session.odId, { lastAttemptAt: new Date().toISOString() })
   const payload = mapSessionToPayload(session, bestScore)
-  if (!shouldSyncSession(session.odId, session.id, payload)) return 'synced'
+  if (!shouldSyncSession(session.odId, session.id, payload)) return
   const ok = await postToSheet(payload)
   if (ok) {
     markSessionSynced(session.odId, session.id)
@@ -416,7 +414,6 @@ export async function syncSessionToSheet(session: GameSession, bestScore?: numbe
     } catch {
       // ignore ui status update
     }
-    return 'synced'
   } else {
     updateSessionSyncStatus(session.odId, {
       lastErrorAt: new Date().toISOString(),
@@ -428,7 +425,6 @@ export async function syncSessionToSheet(session: GameSession, bestScore?: numbe
     } catch {
       // ignore ui status update
     }
-    return 'failed'
   }
 }
 

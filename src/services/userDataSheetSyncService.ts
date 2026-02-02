@@ -30,7 +30,6 @@ const FULL_SYNC_VERSION_KEY_PREFIX = 'sheetFullSyncVersion:'
 const FULL_SYNC_VERSION = 2
 const FULL_SYNC_THROTTLE_MS = 24 * 60 * 60 * 1000
 export const SCHEMA_VERSION = 1
-export type UserDataSyncOutcome = 'synced' | 'blocked' | 'skipped' | 'failed'
 
 type SheetAction =
   | 'upsertUsers'
@@ -454,21 +453,19 @@ export async function syncUserStatsToSheet(stats: UserStats): Promise<void> {
   }
 }
 
-export async function syncDailyTrainingSessionToSheet(session: DailyTrainingSession): Promise<UserDataSyncOutcome> {
+export async function syncDailyTrainingSessionToSheet(session: DailyTrainingSession): Promise<void> {
   try {
-    if (!isBrowserOnline()) return 'failed'
+    if (!isBrowserOnline()) return
     const consent = await getDataConsent(session.odId)
-    if (!isBasicSyncAllowed(consent)) return 'blocked'
+    if (!isBasicSyncAllowed(consent)) return
     const items = filterSyncItems(
       'upsertDailyTrainingSessions',
       [buildDailyTrainingSessionPayload(session)],
       item => item.id
     )
-    const ok = await postInBatchesWithCache('upsertDailyTrainingSessions', items, 1)
-    return ok ? 'synced' : 'failed'
+    await postInBatchesWithCache('upsertDailyTrainingSessions', items, 1)
   } catch (error) {
     console.error('Daily training sheet sync failed', error)
-    return 'failed'
   }
 }
 
