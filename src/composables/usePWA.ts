@@ -199,12 +199,12 @@ export function usePWA() {
     const waitingHash = await getWaitingServiceWorkerHash()
     const currentHash = __BUILD_HASH__ || (await getStoredBuildHash()) || ''
 
-    if (!waitingHash || !currentHash) {
-      console.warn('[PWA] 版本資訊不足，略過更新套用')
-      return false
+    if (waitingHash && currentHash) {
+      return waitingHash !== currentHash
     }
 
-    return waitingHash !== currentHash
+    console.warn('[PWA] 版本資訊不足，允許套用更新')
+    return true
   }
 
   async function getWaitingServiceWorkerHash(): Promise<string | null> {
