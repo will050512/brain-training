@@ -30,6 +30,9 @@ export function usePWA() {
   const baseUrl = import.meta.env.BASE_URL || '/'
   const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`
   const versionProbePath = `${normalizedBaseUrl}version.json`
+  const VERSION_RELOAD_KEY = 'brain-training-force-reload-version'
+  const VERSION_RELOAD_AT_KEY = 'brain-training-force-reload-at'
+  const FORCE_RELOAD_COOLDOWN_MS = 5 * 60 * 1000
   const isIOSDevice = (() => {
     if (typeof navigator === 'undefined') return false
     const ua = navigator.userAgent
@@ -84,9 +87,50 @@ export function usePWA() {
     }
   }
 
+  async function maybeForceRefresh(probedVersion: string | null, source: string): Promise<boolean> {
+    if (!probedVersion || !__APP_VERSION__) return false
+    if (probedVersion === __APP_VERSION__) return false
+    let lastVersion: string | null = null
+    let lastAt = 0
+    try {
+      lastVersion = localStorage.getItem(VERSION_RELOAD_KEY)
+      lastAt = Number(localStorage.getItem(VERSION_RELOAD_AT_KEY) || 0)
+    } catch (error) {
+      console.warn('[PWA] 無法讀取本機版本記錄:', error)
+    }
+    if (lastVersion === probedVersion && Date.now() - lastAt < FORCE_RELOAD_COOLDOWN_MS) {
+      return false
+    }
+    try {
+      localStorage.setItem(VERSION_RELOAD_KEY, probedVersion)
+      localStorage.setItem(VERSION_RELOAD_AT_KEY, String(Date.now()))
+    } catch (error) {
+      console.warn('[PWA] 無法寫入本機版本記錄:', error)
+    }
+    try {
+      const currentRegistration = await navigator.serviceWorker.getRegistration()
+      if (currentRegistration) {
+        await currentRegistration.update()
+        currentRegistration.waiting?.postMessage({ type: 'SKIP_WAITING' })
+        await currentRegistration.unregister()
+        registration = undefined
+      }
+    } catch (error) {
+      console.warn('[PWA] 強制刷新前更新失敗:', error)
+    }
+    const url = new URL(window.location.href)
+    url.searchParams.set('v', probedVersion)
+    console.warn(`[PWA] 偵測到新版本(${source})，強制刷新至 ${probedVersion}`)
+    window.location.replace(url.toString())
+    return true
+  }
+
   async function checkForUpdatesWithProbe(): Promise<void> {
     if (!navigator.onLine) return
     const probedVersion = await probeVersion()
+    if (await maybeForceRefresh(probedVersion, 'probe')) {
+      return
+    }
     if (probedVersion && __APP_VERSION__ && probedVersion === __APP_VERSION__) {
       return
     }
@@ -204,11 +248,7 @@ export function usePWA() {
     updateUserActiveState()
     if (getVisibilityState() === 'visible') {
       if (navigator.onLine) {
-        if (isIOSDevice) {
-          void checkForUpdatesWithProbe()
-        } else {
-          checkForUpdates()
-        }
+        void checkForUpdatesWithProbe()
       }
       return
     }
@@ -323,11 +363,17 @@ export function usePWA() {
     const scheduleInit = () => {
       initPWA()
     }
+    const scheduleProbe = () => {
+      if (navigator.onLine) {
+        void checkForUpdatesWithProbe()
+      }
+    }
     if ('requestIdleCallback' in window) {
       window.requestIdleCallback(scheduleInit, { timeout: 2500 })
     } else {
       setTimeout(scheduleInit, 1500)
     }
+    setTimeout(scheduleProbe, 1200)
     updateUserActiveState()
     
     // 添加事件監聽器

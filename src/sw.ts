@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
 
+import { clientsClaim, skipWaiting } from 'workbox-core'
 import { cleanupOutdatedCaches, matchPrecache, precacheAndRoute } from 'workbox-precaching'
 import { registerRoute, setCatchHandler } from 'workbox-routing'
 import { NetworkFirst } from 'workbox-strategies'
@@ -14,6 +15,8 @@ const META_KEY = '/meta/build-hash'
 const NETWORK_TIMEOUT_SECONDS = 4
 
 cleanupOutdatedCaches()
+skipWaiting()
+clientsClaim()
 
 const precacheFallbackPlugin = {
   async handlerDidError({ request }: { request: Request }) {
