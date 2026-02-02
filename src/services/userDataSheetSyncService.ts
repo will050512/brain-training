@@ -565,7 +565,33 @@ export async function backfillAllUserDataToSheet(
 
     if (!isBasicSyncAllowed(consent)) return
 
-    const user = await getUser(odId)
+    const allowBehaviorLogs = !!(consent?.behaviorTrackingConsent && consent?.detailedBehaviorConsent)
+    const behaviorLogsPromise = allowBehaviorLogs
+      ? getUnsyncedBehaviorLogs()
+      : Promise.resolve<BehaviorLog[]>([])
+
+    const [
+      user,
+      settings,
+      stats,
+      miniCogResults,
+      dailyTrainingSessions,
+      baselineAssessments,
+      declineAlerts,
+      nutritionRecommendations,
+      behaviorLogs,
+    ] = await Promise.all([
+      getUser(odId),
+      getUserSettings(odId),
+      getUserStats(odId),
+      getUserMiniCogResults(odId),
+      getUserDailyTrainingSessions(odId),
+      getUserBaselineAssessments(odId),
+      getUserDeclineAlerts(odId),
+      getUserNutritionRecommendations(odId),
+      behaviorLogsPromise,
+    ])
+
     if (user) {
       const items = filterSyncItems(
         'upsertUsers',
@@ -575,29 +601,26 @@ export async function backfillAllUserDataToSheet(
       await postInBatchesWithCache('upsertUsers', items, 1)
     }
 
-    const settings = await getUserSettings(odId)
     if (settings) {
-    const items = filterSyncItems(
-      'upsertUserSettings',
-      [buildUserSettingsPayload(settings)],
-      item => item.odId,
-      item => ({ ...item, updatedAt: '' })
-    )
+      const items = filterSyncItems(
+        'upsertUserSettings',
+        [buildUserSettingsPayload(settings)],
+        item => item.odId,
+        item => ({ ...item, updatedAt: '' })
+      )
       await postInBatchesWithCache('upsertUserSettings', items, 1)
     }
 
-    const stats = await getUserStats(odId)
     if (stats) {
-    const items = filterSyncItems(
-      'upsertUserStats',
-      [buildUserStatsPayload(stats)],
-      item => item.odId,
-      item => ({ ...item, updatedAt: '' })
-    )
+      const items = filterSyncItems(
+        'upsertUserStats',
+        [buildUserStatsPayload(stats)],
+        item => item.odId,
+        item => ({ ...item, updatedAt: '' })
+      )
       await postInBatchesWithCache('upsertUserStats', items, 1)
     }
 
-    const miniCogResults = await getUserMiniCogResults(odId)
     if (miniCogResults.length > 0) {
       const allowClockImage = !!consent?.behaviorTrackingConsent
       const items = filterSyncItems(
@@ -608,7 +631,6 @@ export async function backfillAllUserDataToSheet(
       await postInBatchesWithCache('upsertMiniCogResults', items)
     }
 
-    const dailyTrainingSessions = await getUserDailyTrainingSessions(odId)
     if (dailyTrainingSessions.length > 0) {
       const items = filterSyncItems(
         'upsertDailyTrainingSessions',
@@ -629,7 +651,6 @@ export async function backfillAllUserDataToSheet(
       await postInBatchesWithCache('upsertDailyTrainingSessions', items)
     }
 
-    const baselineAssessments = await getUserBaselineAssessments(odId)
     if (baselineAssessments.length > 0) {
       const items = filterSyncItems(
         'upsertBaselineAssessments',
@@ -648,7 +669,6 @@ export async function backfillAllUserDataToSheet(
       await postInBatchesWithCache('upsertBaselineAssessments', items)
     }
 
-    const declineAlerts = await getUserDeclineAlerts(odId)
     if (declineAlerts.length > 0) {
       const items = filterSyncItems(
         'upsertDeclineAlerts',
@@ -669,7 +689,6 @@ export async function backfillAllUserDataToSheet(
       await postInBatchesWithCache('upsertDeclineAlerts', items)
     }
 
-    const nutritionRecommendations = await getUserNutritionRecommendations(odId)
     if (nutritionRecommendations.length > 0) {
       const items = filterSyncItems(
         'upsertNutritionRecommendations',
@@ -691,27 +710,24 @@ export async function backfillAllUserDataToSheet(
       await postInBatchesWithCache('upsertNutritionRecommendations', items)
     }
 
-    if (consent?.behaviorTrackingConsent && consent?.detailedBehaviorConsent) {
-      const behaviorLogs = await getUnsyncedBehaviorLogs()
-      if (behaviorLogs.length > 0) {
-        const items = behaviorLogs
-          .filter(log => log.odId === odId)
-          .map(log => ({
-            id: log.id,
-            odId: log.odId,
-            gameId: log.gameId,
-            sessionId: log.sessionId,
-            timestamp: log.timestamp,
-            eventType: log.eventType,
-            data: log.data,
-            synced: log.synced,
-            schemaVersion: SCHEMA_VERSION,
-          }))
-        if (items.length > 0) {
-          const ok = await postInBatchesNoCache('upsertBehaviorLogs', items)
-          if (ok) {
-            await markBehaviorLogsSynced(items.map(item => item.id))
-          }
+    if (allowBehaviorLogs && behaviorLogs.length > 0) {
+      const items = behaviorLogs
+        .filter(log => log.odId === odId)
+        .map(log => ({
+          id: log.id,
+          odId: log.odId,
+          gameId: log.gameId,
+          sessionId: log.sessionId,
+          timestamp: log.timestamp,
+          eventType: log.eventType,
+          data: log.data,
+          synced: log.synced,
+          schemaVersion: SCHEMA_VERSION,
+        }))
+      if (items.length > 0) {
+        const ok = await postInBatchesNoCache('upsertBehaviorLogs', items)
+        if (ok) {
+          await markBehaviorLogsSynced(items.map(item => item.id))
         }
       }
     }

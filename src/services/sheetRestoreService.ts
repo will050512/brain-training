@@ -32,6 +32,9 @@ const SHEET_ENDPOINT = getSheetEndpoint()
 const RESTORE_THROTTLE_MS = 5 * 60 * 1000
 const RESTORE_KEY_PREFIX = 'sheetRestoreAt:'
 const DELTA_STAMP_KEY_PREFIX = 'sheetDeltaAt:'
+const FETCH_TIMEOUT_MS = 12000
+const FETCH_RETRY_COUNT = 1
+const FETCH_CONCURRENCY = 3
 
 const DEFAULT_SNAPSHOT_LIMITS = {
   gameResults: 20,
@@ -71,6 +74,10 @@ type RestoreSummary = {
   declineAlerts: number
   nutritionRecommendations: number
   behaviorLogs: number
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 function isBrowserOnline(): boolean {
@@ -192,14 +199,22 @@ function parseSubDifficulty(value: unknown): SubDifficulty | undefined {
 }
 
 async function fetchJson(url: string): Promise<any | null> {
-  try {
-    if (!SHEET_ENDPOINT) return null
-    const res = await fetch(url)
-    if (!res.ok) return null
-    return await res.json()
-  } catch {
-    return null
+  if (!SHEET_ENDPOINT) return null
+  for (let attempt = 0; attempt <= FETCH_RETRY_COUNT; attempt += 1) {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+    try {
+      const res = await fetch(url, { signal: controller.signal })
+      if (!res.ok) return null
+      return await res.json()
+    } catch {
+      if (attempt >= FETCH_RETRY_COUNT) return null
+      await sleep(300 * (attempt + 1))
+    } finally {
+      clearTimeout(timeoutId)
+    }
   }
+  return null
 }
 
 async function fetchUserProfile(odId: string): Promise<Record<string, unknown> | null> {
@@ -291,6 +306,25 @@ async function fetchListByUser(type: string, odId: string): Promise<Record<strin
       `${SHEET_ENDPOINT}?action=listByUser&type=${encodeURIComponent(type)}&userId=${encodeURIComponent(odId)}&limit=500&cursor=${cursor}`
     )
   ))
+}
+
+async function runWithConcurrency<T>(tasks: Array<() => Promise<T>>, limit: number): Promise<T[]> {
+  if (tasks.length === 0) return []
+  const results: T[] = new Array(tasks.length)
+  const safeLimit = Math.max(1, Math.floor(limit))
+  let nextIndex = 0
+  const workers = Array.from({ length: Math.min(safeLimit, tasks.length) }, async () => {
+    while (true) {
+      const current = nextIndex
+      nextIndex += 1
+      if (current >= tasks.length) return
+      const task = tasks[current]
+      if (!task) return
+      results[current] = await task()
+    }
+  })
+  await Promise.all(workers)
+  return results
 }
 
 function mapUserProfile(raw: Record<string, unknown>): User {
@@ -625,7 +659,24 @@ export async function restoreAllUserDataFromSheet(
     summary.dataConsent += 1
   }
 
-  const gameResults = await fetchGameResults(odId)
+  const [
+    gameResults = [],
+    miniCogResults = [],
+    dailyTrainingSessions = [],
+    baselineAssessments = [],
+    declineAlerts = [],
+    nutritionRecommendations = [],
+    behaviorLogs = [],
+  ] = await runWithConcurrency([
+    () => fetchGameResults(odId),
+    () => fetchListByUser('miniCogResults', odId),
+    () => fetchListByUser('dailyTrainingSessions', odId),
+    () => fetchListByUser('baselineAssessments', odId),
+    () => fetchListByUser('declineAlerts', odId),
+    () => fetchListByUser('nutritionRecommendations', odId),
+    () => fetchListByUser('behaviorLogs', odId),
+  ], FETCH_CONCURRENCY)
+
   const sessionsToSave = new Map<string, GameSession>()
   for (const raw of gameResults) {
     const mapped = mapGameResult(raw)
@@ -637,7 +688,6 @@ export async function restoreAllUserDataFromSheet(
     summary.gameSessions += sessionsToSave.size
   }
 
-  const miniCogResults = await fetchListByUser('miniCogResults', odId)
   const mappedMiniCog: MiniCogResult[] = []
   for (const raw of miniCogResults) {
     const mapped = mapMiniCogResult(raw, odId)
@@ -649,7 +699,6 @@ export async function restoreAllUserDataFromSheet(
     summary.miniCogResults += mappedMiniCog.length
   }
 
-  const dailyTrainingSessions = await fetchListByUser('dailyTrainingSessions', odId)
   const mappedDaily: DailyTrainingSession[] = []
   for (const raw of dailyTrainingSessions) {
     const mapped = mapDailyTrainingSession(raw, odId)
@@ -661,7 +710,6 @@ export async function restoreAllUserDataFromSheet(
     summary.dailyTrainingSessions += mappedDaily.length
   }
 
-  const baselineAssessments = await fetchListByUser('baselineAssessments', odId)
   const mappedBaselines: BaselineAssessment[] = []
   for (const raw of baselineAssessments) {
     const mapped = mapBaselineAssessment(raw, odId)
@@ -673,7 +721,6 @@ export async function restoreAllUserDataFromSheet(
     summary.baselineAssessments += mappedBaselines.length
   }
 
-  const declineAlerts = await fetchListByUser('declineAlerts', odId)
   const mappedAlerts: DeclineAlert[] = []
   for (const raw of declineAlerts) {
     const mapped = mapDeclineAlert(raw, odId)
@@ -685,7 +732,6 @@ export async function restoreAllUserDataFromSheet(
     summary.declineAlerts += mappedAlerts.length
   }
 
-  const nutritionRecommendations = await fetchListByUser('nutritionRecommendations', odId)
   const mappedRecommendations: NutritionRecommendationRecord[] = []
   for (const raw of nutritionRecommendations) {
     const mapped = mapNutritionRecommendation(raw, odId)
@@ -697,7 +743,6 @@ export async function restoreAllUserDataFromSheet(
     summary.nutritionRecommendations += mappedRecommendations.length
   }
 
-  const behaviorLogs = await fetchListByUser('behaviorLogs', odId)
   const mappedLogs: BehaviorLog[] = []
   for (const raw of behaviorLogs) {
     const mapped = mapBehaviorLog(raw, odId)
