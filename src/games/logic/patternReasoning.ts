@@ -333,7 +333,11 @@ export function generateTransformQuestion(optionCount: number): PatternQuestion 
     const shape = randomFrom(SHAPES)
     const size = randomFrom(SIZES)
     const colors = shuffle([...COLORS]).slice(0, 2)
-    const [firstColor, secondColor] = colors
+    const firstColor = colors[0]
+    const secondColor = colors[1]
+    if (!firstColor || !secondColor) {
+      throw new Error('Insufficient colors for transform sequence')
+    }
 
     const sequence: PatternElement[] = [firstColor, secondColor, firstColor].map(color => ({
       shape,
@@ -344,7 +348,7 @@ export function generateTransformQuestion(optionCount: number): PatternQuestion 
 
     const answer: PatternElement = {
       shape,
-      color: secondColor!,
+      color: secondColor,
       size,
       rotation: 0,
     }
@@ -353,8 +357,8 @@ export function generateTransformQuestion(optionCount: number): PatternQuestion 
     const usedColors = new Set([answer.color])
 
     if (wrongOptions.length < optionCount - 1) {
-      wrongOptions.push({ shape, color: firstColor!, size, rotation: 0 })
-      usedColors.add(firstColor!)
+      wrongOptions.push({ shape, color: firstColor, size, rotation: 0 })
+      usedColors.add(firstColor)
     }
 
     while (wrongOptions.length < optionCount - 1) {

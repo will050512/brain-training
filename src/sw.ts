@@ -16,7 +16,7 @@ const NETWORK_TIMEOUT_SECONDS = 4
 cleanupOutdatedCaches()
 
 const precacheFallbackPlugin = {
-  async handlerDidError({ request }) {
+  async handlerDidError({ request }: { request: Request }) {
     return (await matchPrecache(request)) ?? Response.error()
   }
 }
