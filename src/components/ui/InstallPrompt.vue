@@ -279,7 +279,6 @@ const showAndroidGuide = ref(false)
 const showMiniBanner = ref(false)
 let deferredPrompt: BeforeInstallPromptEvent | null = null
 const hasDeferredPrompt = ref(false)
-const isE2ETest = typeof navigator !== 'undefined' && navigator.webdriver
 
 const logoUrl = computed(() => `${import.meta.env.BASE_URL}logo-64.png`)
 const appleVideoUrl = new URL('../../assets/video/apple操作.mp4', import.meta.url).href
@@ -461,7 +460,6 @@ function checkLinePrompt() {
 }
 
 onMounted(() => {
-  if (isE2ETest) return
   if (isAppEntry.value) return
   // 如果已經是 standalone 模式，不顯示任何提示
   if (isStandalone.value) return
