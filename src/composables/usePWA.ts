@@ -45,6 +45,9 @@ export function usePWA() {
       try {
         await currentRegistration.update()
         console.log('[PWA] 手動檢查更新完成')
+        if (currentRegistration.waiting) {
+          void handleNeedRefresh()
+        }
       } catch (error) {
         console.error('[PWA] 檢查更新失敗:', error)
       }
@@ -100,9 +103,11 @@ export function usePWA() {
     isUpdateAvailable.value = true
     updateUserActiveState()
     if (getVisibilityState() !== 'visible') {
-      pendingAutoUpdate.value = true
+      pendingAutoUpdate.value = false
+      void applyUpdate()
       return
     }
+    pendingAutoUpdate.value = true
   }
 
   /**
@@ -163,18 +168,14 @@ export function usePWA() {
   function handleVisibilityChange() {
     updateUserActiveState()
     if (getVisibilityState() === 'visible') {
-      if (pendingAutoUpdate.value && needRefresh.value && !isUpdating.value) {
-        pendingAutoUpdate.value = false
-        void applyUpdate()
-        return
-      }
       if (navigator.onLine) {
         checkForUpdates()
       }
       return
     }
-    if (needRefresh.value) {
-      pendingAutoUpdate.value = true
+    if (pendingAutoUpdate.value && needRefresh.value && !isUpdating.value) {
+      pendingAutoUpdate.value = false
+      void applyUpdate()
     }
   }
 

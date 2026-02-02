@@ -15,7 +15,7 @@ export default defineConfig({
     vue(), 
     tailwindcss(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png', 'apple-touch-icon.png', 'robots.txt', 'offline.html', 'logo.svg'],
       strategies: 'injectManifest',
       srcDir: 'src',
