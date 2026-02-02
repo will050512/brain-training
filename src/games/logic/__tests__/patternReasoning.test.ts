@@ -99,7 +99,7 @@ describe('圖案推理遊戲邏輯', () => {
       const question = generateTransformQuestion(4)
 
       expect(question.type).toBe('transform')
-      expect(question.sequence.length).toBe(2)
+      expect([2, 3]).toContain(question.sequence.length)
       expect(question.options.length).toBe(4)
     })
   })

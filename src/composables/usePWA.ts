@@ -23,6 +23,7 @@ export function usePWA() {
   let visibilityOverride: 'visible' | 'hidden' | null = null
   let skipReloadForTests = false
   let pendingReload = false
+  let autoUpdateScheduled = false
   
   let updateSW: ((reloadPage?: boolean) => Promise<void>) | undefined
   let registration: ServiceWorkerRegistration | undefined
@@ -102,12 +103,8 @@ export function usePWA() {
     needRefresh.value = true
     isUpdateAvailable.value = true
     updateUserActiveState()
-    if (getVisibilityState() !== 'visible') {
-      pendingAutoUpdate.value = false
-      void applyUpdate()
-      return
-    }
     pendingAutoUpdate.value = true
+    scheduleAutoApplyUpdate()
   }
 
   /**
@@ -232,6 +229,25 @@ export function usePWA() {
 
   function isBootReady(): boolean {
     return window.__APP_BOOT_READY__ === true
+  }
+
+  function scheduleAutoApplyUpdate(): void {
+    if (autoUpdateScheduled || isUpdating.value) return
+    autoUpdateScheduled = true
+    const attempt = () => {
+      if (isUpdating.value) {
+        autoUpdateScheduled = false
+        return
+      }
+      if (!isBootReady()) {
+        window.setTimeout(attempt, 300)
+        return
+      }
+      autoUpdateScheduled = false
+      pendingAutoUpdate.value = false
+      void applyUpdate()
+    }
+    attempt()
   }
 
   function scheduleReloadWhenReady() {

@@ -1,8 +1,8 @@
 /// <reference lib="webworker" />
 
-import { cleanupOutdatedCaches, precacheAndRoute, createHandlerBoundToURL } from 'workbox-precaching'
-import { NavigationRoute, registerRoute, setCatchHandler } from 'workbox-routing'
-import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies'
+import { cleanupOutdatedCaches, matchPrecache, precacheAndRoute } from 'workbox-precaching'
+import { registerRoute, setCatchHandler } from 'workbox-routing'
+import { NetworkFirst } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 import { CacheableResponsePlugin } from 'workbox-cacheable-response'
 
@@ -11,15 +11,46 @@ declare const self: ServiceWorkerGlobalScope
 const BUILD_HASH = __BUILD_HASH__
 const META_CACHE = 'app-meta'
 const META_KEY = '/meta/build-hash'
+const NETWORK_TIMEOUT_SECONDS = 4
 
 cleanupOutdatedCaches()
-precacheAndRoute(self.__WB_MANIFEST)
+
+const precacheFallbackPlugin = {
+  async handlerDidError({ request }) {
+    return (await matchPrecache(request)) ?? Response.error()
+  }
+}
+
+const navigationFallbackPlugin = {
+  async handlerDidError() {
+    return (
+      (await matchPrecache('/brain-training/index.html'))
+      ?? (await matchPrecache('/brain-training/offline.html'))
+      ?? Response.error()
+    )
+  }
+}
+
+registerRoute(
+  ({ request, url }) => request.mode === 'navigate' && url.pathname.startsWith('/brain-training/'),
+  new NetworkFirst({
+    cacheName: 'navigation-pages',
+    networkTimeoutSeconds: NETWORK_TIMEOUT_SECONDS,
+    plugins: [
+      navigationFallbackPlugin,
+      new CacheableResponsePlugin({ statuses: [0, 200] })
+    ]
+  })
+)
 
 registerRoute(
   /\.(?:css|js)$/i,
-  new StaleWhileRevalidate({
+  new NetworkFirst({
     cacheName: 'static-resources',
+    networkTimeoutSeconds: NETWORK_TIMEOUT_SECONDS,
     plugins: [
+      precacheFallbackPlugin,
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({
         maxEntries: 50,
         maxAgeSeconds: 60 * 60 * 24 * 7
@@ -30,56 +61,62 @@ registerRoute(
 
 registerRoute(
   /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
-  new CacheFirst({
+  new NetworkFirst({
     cacheName: 'images-cache',
+    networkTimeoutSeconds: NETWORK_TIMEOUT_SECONDS,
     plugins: [
+      precacheFallbackPlugin,
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({
         maxEntries: 100,
         maxAgeSeconds: 60 * 60 * 24 * 30
-      }),
-      new CacheableResponsePlugin({ statuses: [0, 200] })
+      })
     ]
   })
 )
 
 registerRoute(
   /\.(?:mp3|wav|ogg|m4a)$/i,
-  new CacheFirst({
+  new NetworkFirst({
     cacheName: 'audio-cache',
+    networkTimeoutSeconds: NETWORK_TIMEOUT_SECONDS,
     plugins: [
+      precacheFallbackPlugin,
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({
         maxEntries: 50,
         maxAgeSeconds: 60 * 60 * 24 * 30
-      }),
-      new CacheableResponsePlugin({ statuses: [0, 200] })
+      })
     ]
   })
 )
 
 registerRoute(
   /^https:\/\/fonts\.googleapis\.com\/.*/i,
-  new CacheFirst({
+  new NetworkFirst({
     cacheName: 'google-fonts-cache',
+    networkTimeoutSeconds: NETWORK_TIMEOUT_SECONDS,
     plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({
         maxEntries: 10,
         maxAgeSeconds: 60 * 60 * 24 * 365
-      }),
-      new CacheableResponsePlugin({ statuses: [0, 200] })
+      })
     ]
   })
 )
 
 registerRoute(
   /^https:\/\/fonts\.gstatic\.com\/.*/i,
-  new CacheFirst({
+  new NetworkFirst({
     cacheName: 'google-fonts-webfonts',
+    networkTimeoutSeconds: NETWORK_TIMEOUT_SECONDS,
     plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({
         maxEntries: 30,
         maxAgeSeconds: 60 * 60 * 24 * 365
-      }),
-      new CacheableResponsePlugin({ statuses: [0, 200] })
+      })
     ]
   })
 )
@@ -91,11 +128,7 @@ setCatchHandler(({ request }) => {
   return Promise.resolve(Response.error())
 })
 
-const navigationHandler = createHandlerBoundToURL('/brain-training/index.html')
-const navigationRoute = new NavigationRoute(navigationHandler, {
-  allowlist: [/^\/brain-training\/.*/]
-})
-registerRoute(navigationRoute)
+precacheAndRoute(self.__WB_MANIFEST)
 
 async function persistBuildHash(): Promise<void> {
   const cache = await caches.open(META_CACHE)

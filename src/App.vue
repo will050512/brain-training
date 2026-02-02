@@ -20,7 +20,6 @@ import InstallPrompt from '@/components/ui/InstallPrompt.vue'
 import ConsentModal from '@/components/ui/ConsentModal.vue'
 import EducationPromptModal from '@/components/ui/EducationPromptModal.vue'
 import ToastNotification from '@/components/ui/ToastNotification.vue'
-import PWAUpdateBanner from '@/components/ui/PWAUpdateBanner.vue'
 import { getDataConsent, checkConsentVersionNeedsUpdate } from '@/services/db'
 import type { DataConsentOptions } from '@/types/user'
 import type { LayoutType } from '@/types/layout'
@@ -32,7 +31,7 @@ const { isMobile, isTablet, isDesktop } = useResponsive()
 const { checkTrainingReminder, checkAssessmentReminder } = useNotification()
 const toast = useToast()
 useUiScale()
-const { isOfflineReady, needRefresh, isUpdating, isUserActive, checkForUpdates, applyUpdate } = usePWA()
+const { isUpdating, checkForUpdates } = usePWA()
 
 // 初始化主題系統
 const { initTheme } = useTheme()
@@ -86,7 +85,6 @@ watch(needsEducationYears, (needs) => {
   showEducationModal.value = needs
 }, { immediate: true })
 
-const showUpdateBanner = computed(() => needRefresh.value && isUserActive.value && !isUpdating.value)
 const showSyncToast = computed(() => false)
 
 // ===== 佈局系統 =====
@@ -433,15 +431,6 @@ onUnmounted(() => {
     <!-- PWA 安裝提示 -->
     <InstallPrompt />
     
-    <!-- PWA 更新提示 -->
-    <PWAUpdateBanner
-      v-if="showUpdateBanner"
-      :need-refresh="needRefresh"
-      :is-offline-ready="isOfflineReady"
-      :is-updating="isUpdating"
-      :on-apply-update="applyUpdate"
-    />
-
     <!-- 學歷補充對話框（外部登入） -->
     <EducationPromptModal
       v-model="showEducationModal"

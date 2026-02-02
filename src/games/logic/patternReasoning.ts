@@ -332,9 +332,10 @@ export function generateTransformQuestion(optionCount: number): PatternQuestion 
   if (mode === 'color') {
     const shape = randomFrom(SHAPES)
     const size = randomFrom(SIZES)
-    const colors = shuffle([...COLORS]).slice(0, 3)
+    const colors = shuffle([...COLORS]).slice(0, 2)
+    const [firstColor, secondColor] = colors
 
-    const sequence: PatternElement[] = colors.slice(0, 2).map(color => ({
+    const sequence: PatternElement[] = [firstColor, secondColor, firstColor].map(color => ({
       shape,
       color,
       size,
@@ -343,13 +344,18 @@ export function generateTransformQuestion(optionCount: number): PatternQuestion 
 
     const answer: PatternElement = {
       shape,
-      color: colors[2]!,
+      color: secondColor!,
       size,
       rotation: 0,
     }
 
     const wrongOptions: PatternElement[] = []
-    const usedColors = new Set([answer.color, ...sequence.map(item => item.color)])
+    const usedColors = new Set([answer.color])
+
+    if (wrongOptions.length < optionCount - 1) {
+      wrongOptions.push({ shape, color: firstColor!, size, rotation: 0 })
+      usedColors.add(firstColor!)
+    }
 
     while (wrongOptions.length < optionCount - 1) {
       const color = randomFrom(COLORS)
