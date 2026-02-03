@@ -20,8 +20,6 @@ export type WeeklyTrainingGoal = 1 | 2 | 3 | 4 | 5 | 6 | 7
 // 主題模式
 export type ThemeMode = 'light' | 'dark' | 'system'
 
-// 螢幕方向偏好
-export type OrientationPreference = 'portrait' | 'landscape' | 'auto'
 
 // 遊戲難度
 export type GameDifficulty = 'easy' | 'medium' | 'hard'
@@ -131,16 +129,6 @@ export const useSettingsStore = defineStore('settings', () => {
   // 主題設定 - 預設淺色模式
   const themeMode = ref<ThemeMode>('light')
 
-  // 螢幕方向偏好設定
-  const orientationPreference = ref<OrientationPreference>('auto')
-  
-  // 檢測是否支援方向鎖定
-  const orientationSupported = computed(() => {
-    return typeof screen !== 'undefined' && 
-           'orientation' in screen && 
-           typeof (screen.orientation as ScreenOrientation & { lock?: (type: string) => Promise<void> })?.lock === 'function'
-  })
-
   // 新增：退化檢測與訓練設定
   const declineDetectionMode = ref<DeclineDetectionMode>('general') // 預設一般模式
   const dailyTrainingDuration = ref<DailyTrainingDuration>(15) // 預設 15 分鐘
@@ -187,8 +175,6 @@ export const useSettingsStore = defineStore('settings', () => {
         fontSize.value = normalizeFontSize(data.fontSize)
         // 主題設定
         themeMode.value = data.themeMode ?? 'light'
-        // 螢幕方向偏好
-        orientationPreference.value = data.orientationPreference ?? 'auto'
         // 新增設定
         declineDetectionMode.value = data.declineDetectionMode ?? 'general'
         dailyTrainingDuration.value = data.dailyTrainingDuration ?? 15
@@ -295,8 +281,6 @@ export const useSettingsStore = defineStore('settings', () => {
       fontSize: fontSize.value,
       // 主題設定
       themeMode: themeMode.value,
-      // 螢幕方向偏好
-      orientationPreference: orientationPreference.value,
       // 新增設定
       declineDetectionMode: declineDetectionMode.value,
       dailyTrainingDuration: dailyTrainingDuration.value,
@@ -372,7 +356,7 @@ export const useSettingsStore = defineStore('settings', () => {
   // 監聽變化自動儲存
   watch(
     [soundEnabled, musicEnabled, soundVolume, musicVolume, hasSeenWelcome, fontSize, 
-     themeMode, orientationPreference, declineDetectionMode, dailyTrainingDuration, weeklyTrainingGoal,
+     themeMode, declineDetectionMode, dailyTrainingDuration, weeklyTrainingGoal,
      enableBehaviorTracking, reduceMotion, highContrast, enableVoicePrompts, enableHapticFeedback, assessmentReminderEnabled,
      sidebarCollapsed, defaultDifficulty, defaultSubDifficulty, gameDifficultySettings, hasGlobalDifficultyOverride],
     () => saveToStorage(),
@@ -482,29 +466,6 @@ export const useSettingsStore = defineStore('settings', () => {
     themeMode.value = mode
   }
 
-  // 新增：設定螢幕方向偏好
-  async function setOrientationPreference(preference: OrientationPreference): Promise<void> {
-    orientationPreference.value = preference
-    
-    // 嘗試套用方向鎖定（僅在支援時）
-    if (orientationSupported.value && preference !== 'auto') {
-      try {
-        const lockType = preference === 'portrait' ? 'portrait-primary' : 'landscape-primary'
-        const orientation = screen.orientation as ScreenOrientation & { lock: (type: string) => Promise<void> }
-        await orientation.lock(lockType)
-      } catch (error) {
-        // 方向鎖定失敗（可能在桌面瀏覽器或未全螢幕），僅記錄偏好
-        console.info('螢幕方向鎖定不可用，已儲存偏好設定')
-      }
-    } else if (orientationSupported.value && preference === 'auto') {
-      try {
-        screen.orientation.unlock()
-      } catch {
-        // 忽略解鎖錯誤
-      }
-    }
-  }
-
   // 新增：設定無障礙選項
   function setAccessibilityOption(option: 'reduceMotion' | 'highContrast' | 'enableVoicePrompts' | 'enableHapticFeedback', value: boolean): void {
     switch (option) {
@@ -611,9 +572,6 @@ export const useSettingsStore = defineStore('settings', () => {
     assessmentResult,
     // 主題狀態
     themeMode,
-    // 螢幕方向狀態
-    orientationPreference,
-    orientationSupported,
     // 新增狀態
     declineDetectionMode,
     dailyTrainingDuration,
@@ -648,8 +606,6 @@ export const useSettingsStore = defineStore('settings', () => {
     resetAssessment,
     // 主題動作
     setThemeMode,
-    // 螢幕方向動作
-    setOrientationPreference,
     // 新增動作
     setDeclineDetectionMode,
     setDailyTrainingDuration,

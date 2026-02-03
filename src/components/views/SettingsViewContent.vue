@@ -4,7 +4,6 @@
       <SettingsThemeCard />
       <SettingsTrainingGoalCard />
       <SettingsAccessibilityCard />
-      <SettingsOrientationCard />
       <SettingsAudioCard />
       <SettingsReminderCard />
       <SettingsPrivacyCard
@@ -61,7 +60,6 @@ import SettingsAccessibilityCard from '@/components/settings/SettingsAccessibili
 import SettingsAccountCard from '@/components/settings/SettingsAccountCard.vue'
 import SettingsAdvancedCard from '@/components/settings/SettingsAdvancedCard.vue'
 import SettingsAudioCard from '@/components/settings/SettingsAudioCard.vue'
-import SettingsOrientationCard from '@/components/settings/SettingsOrientationCard.vue'
 import SettingsPrivacyCard from '@/components/settings/SettingsPrivacyCard.vue'
 import SettingsReminderCard from '@/components/settings/SettingsReminderCard.vue'
 import SettingsStatsCard from '@/components/settings/SettingsStatsCard.vue'
