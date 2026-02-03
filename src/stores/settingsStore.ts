@@ -6,7 +6,7 @@ import { defineStore } from 'pinia'
 import { ref, watch, computed } from 'vue'
 
 // 字體大小預設值
-export type FontSize = 'small' | 'medium' | 'large' | 'xlarge'
+export type FontSize = 'small' | 'medium' | 'large'
 
 // 退化檢測模式
 export type DeclineDetectionMode = 'professional' | 'general'
@@ -45,14 +45,19 @@ export const FONT_SIZE_MAP: Record<FontSize, number> = {
   small: 14,
   medium: 16,
   large: 20,
-  xlarge: 24,
 }
 
 export const FONT_SIZE_LABELS: Record<FontSize, string> = {
   small: '小',
   medium: '中',
   large: '大',
-  xlarge: '特大',
+}
+
+function normalizeFontSize(value: unknown): FontSize {
+  if (value === 'small' || value === 'medium' || value === 'large') {
+    return value
+  }
+  return 'large'
 }
 
 // 退化檢測模式設定
@@ -179,7 +184,7 @@ export const useSettingsStore = defineStore('settings', () => {
         soundVolume.value = data.soundVolume ?? 0.7
         musicVolume.value = data.musicVolume ?? 0.5
         hasSeenWelcome.value = data.hasSeenWelcome ?? false
-        fontSize.value = data.fontSize ?? 'large'
+        fontSize.value = normalizeFontSize(data.fontSize)
         // 主題設定
         themeMode.value = data.themeMode ?? 'light'
         // 螢幕方向偏好

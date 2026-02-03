@@ -27,7 +27,7 @@ export default defineConfig({
         theme_color: '#667eea',
         background_color: '#ffffff',
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'any',
         scope: '/brain-training/',
         start_url: '/brain-training/',
         categories: ['health', 'medical', 'games'],

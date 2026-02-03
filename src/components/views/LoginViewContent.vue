@@ -165,14 +165,13 @@ async function handleTransferLogin(): Promise<void> {
   error.value = null
 
   try {
-    const success = await userStore.loginWithTransferCode(normalizeTransferCode(transferCode.value))
+    const success = await userStore.loginWithTransferCode(
+      normalizeTransferCode(transferCode.value),
+      { deferDataInit: true }
+    )
     if (success) {
-      const odId = userStore.currentUser?.id
-      if (odId) {
-        await gameStore.loadUserSessions(odId)
-      }
-      const redirect = route.query.redirect as string
-      router.push(redirect || '/games')
+      const redirect = route.query.redirect as string | undefined
+      router.replace({ name: 'Syncing', query: redirect ? { redirect } : {} })
     } else {
       error.value = userStore.error || '登入失敗'
     }

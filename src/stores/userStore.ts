@@ -513,7 +513,10 @@ export const useUserStore = defineStore('user', () => {
   /**
    * 使用登入碼登入（跨裝置手動轉移）
    */
-  async function loginWithTransferCode(code: string): Promise<boolean> {
+  async function loginWithTransferCode(
+    code: string,
+    options?: { deferDataInit?: boolean }
+  ): Promise<boolean> {
     isLoading.value = true
     error.value = null
 
@@ -584,12 +587,14 @@ export const useUserStore = defineStore('user', () => {
       localStorage.setItem('brain-training-last-user', remoteUser.id)
       localStorage.setItem('brain-training-current-user', remoteUser.id)
 
-      perfStart('dataInitService.initUserData(transferCode)')
-      await dataInitService.initUserData(remoteUser.id, { forceRestore: true, mode: 'fast', deferSync: true })
-      perfEnd('dataInitService.initUserData(transferCode)')
-      currentSettings.value = await getUserSettings(remoteUser.id) || defaultUserSettings(remoteUser.id)
-      const refreshedStats = await getUserStats(remoteUser.id)
-      currentStats.value = refreshedStats ? normalizeStats(refreshedStats) : defaultUserStats(remoteUser.id)
+      if (!options?.deferDataInit) {
+        perfStart('dataInitService.initUserData(transferCode)')
+        await dataInitService.initUserData(remoteUser.id, { forceRestore: true, mode: 'fast', deferSync: true })
+        perfEnd('dataInitService.initUserData(transferCode)')
+        currentSettings.value = await getUserSettings(remoteUser.id) || defaultUserSettings(remoteUser.id)
+        const refreshedStats = await getUserStats(remoteUser.id)
+        currentStats.value = refreshedStats ? normalizeStats(refreshedStats) : defaultUserStats(remoteUser.id)
+      }
       await syncUserProfileToSheet(currentUser.value)
       return true
     } catch (e) {
@@ -599,6 +604,21 @@ export const useUserStore = defineStore('user', () => {
       perfEnd('userStore.loginWithTransferCode')
       isLoading.value = false
     }
+  }
+
+  /**
+   * 重新載入目前使用者資料（同步完成後更新快取狀態）
+   */
+  async function refreshCurrentUserData(): Promise<void> {
+    if (!currentUser.value) return
+    const odId = currentUser.value.id
+    currentSettings.value = await getUserSettings(odId) || defaultUserSettings(odId)
+    if (currentSettings.value.hasSeenWelcome) {
+      const { useSettingsStore } = await import('@/stores/settingsStore')
+      useSettingsStore().markWelcomeSeen()
+    }
+    const stats = await getUserStats(odId)
+    currentStats.value = stats ? normalizeStats(stats) : defaultUserStats(odId)
   }
 
   /**
@@ -773,6 +793,7 @@ export const useUserStore = defineStore('user', () => {
     logout,
     quickLogin,
     restoreSession,
+    refreshCurrentUserData,
     updateSettings,
     updateEducationYears,
     updateStats,

@@ -22,7 +22,7 @@ const fontSizeOptions = (Object.entries(FONT_SIZE_LABELS) as Array<[FontSize, st
       <div class="mb-2 px-1">
         <SubtleLabel text="字體大小" tone="secondary" weight="bold" />
       </div>
-      <div class="grid grid-cols-4 gap-2">
+      <div class="grid grid-cols-3 gap-2">
         <button
           v-for="option in fontSizeOptions"
           :key="option.value"
@@ -33,7 +33,7 @@ const fontSizeOptions = (Object.entries(FONT_SIZE_LABELS) as Array<[FontSize, st
             : 'border-[var(--color-border)] hover:bg-[var(--color-bg-soft)]'"
           @click="settingsStore.setFontSize(option.value)"
         >
-          <span class="font-bold" :style="{ fontSize: option.value === 'small' ? '0.75rem' : option.value === 'large' ? '1.125rem' : option.value === 'xlarge' ? '1.25rem' : '0.875rem' }">A</span>
+          <span class="font-bold" :style="{ fontSize: option.value === 'small' ? '0.75rem' : option.value === 'large' ? '1.125rem' : '0.875rem' }">A</span>
           <SubtleLabel :text="option.label" size="xs" tone="muted" class="mt-1 opacity-80" />
         </button>
       </div>

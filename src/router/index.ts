@@ -27,6 +27,16 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/syncing',
+    name: 'Syncing',
+    component: () => import('@/views/SyncingView.vue'),
+    meta: {
+      requiresAuth: true,
+      layout: 'fullscreen',
+      title: '同步中',
+    },
+  },
+  {
     path: '/onboarding',
     name: 'Onboarding',
     component: () => import('@/views/OnboardingView.vue'),
@@ -173,7 +183,7 @@ router.beforeEach((to, _from, next) => {
     }
   }
 
-  const assessmentAllowedRoutes = new Set(['Assessment', 'Onboarding', 'Login'])
+  const assessmentAllowedRoutes = new Set(['Assessment', 'Onboarding', 'Login', 'Syncing'])
   if (hasUser && !hasCompletedAssessment && !assessmentAllowedRoutes.has(to.name as string)) {
     next({ name: 'Assessment', query: { redirect: to.fullPath } })
     return
