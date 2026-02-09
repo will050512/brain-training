@@ -10,6 +10,7 @@
   --font-sans: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
   --font-display: var(--font-sans);
   --app-height: 100vh;
+  --sticky-bar-height: 80px;
   --ui-scale: 1.12;
   --ui-space-scale: 0.9;
   --text-scale: 1;
@@ -417,7 +418,9 @@ html {
   font-size: var(--font-size-base);
   /* 防止水平溢出 */
   overflow-x: hidden;
-  min-height: var(--app-height);
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: var(--app-height, 100dvh);
 }
 
 body {
@@ -429,7 +432,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
-  min-height: var(--app-height);
+  min-height: 100dvh;
+  min-height: var(--app-height, 100dvh);
   transition: background-color 0.3s ease, color 0.3s ease;
   /* 防止水平溢出與無意義滑動 */
   overflow-x: hidden;
@@ -453,7 +457,8 @@ a[class*="bg-[var(--color-primary)]"],
 
 #app {
   min-height: 100vh;
-  min-height: var(--app-height);
+  min-height: 100dvh;
+  min-height: var(--app-height, 100dvh);
   /* 確保內容不超出視窗 */
   max-width: 100vw;
   overflow-x: hidden;
@@ -518,7 +523,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   width: 100vw;
   height: 100vh;
   height: 100dvh; /* 動態視窗高度，處理手機瀏覽器工具列 */
-  height: var(--app-height);
+  height: var(--app-height, 100dvh);
   overflow: hidden;
   touch-action: none;
 }
@@ -1477,6 +1482,8 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 
 .keyboard-safe {
   min-height: calc(100vh - var(--keyboard-height, 0px));
+  min-height: calc(100dvh - var(--keyboard-height, 0px));
+  min-height: calc(var(--app-height, 100dvh) - var(--keyboard-height, 0px));
   transition: min-height 0.3s ease;
 }
 
@@ -1491,6 +1498,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 .game-fullscreen {
   min-height: 100vh;
   min-height: 100dvh;
+  min-height: var(--app-height, 100dvh);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1623,6 +1631,8 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 :fullscreen .game-container {
   max-width: 100%;
   max-height: 100vh;
+  max-height: 100dvh;
+  max-height: var(--app-height, 100dvh);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1678,7 +1688,9 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 .app-page {
   height: 100vh;
   height: 100dvh;
+  height: var(--app-height, 100dvh);
   min-height: 100svh;
+  min-height: var(--app-height, 100dvh);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -2021,7 +2033,9 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   .layout-fullscreen .app-page {
     height: 100vh;
     height: 100dvh;
+    height: var(--app-height, 100dvh);
     min-height: 100svh;
+    min-height: var(--app-height, 100dvh);
   }
 
   .layout-fullscreen .app-content-scroll {
@@ -2167,6 +2181,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   min-height: 100vh;
   min-height: 100svh;
   min-height: 100dvh;
+  min-height: var(--app-height, 100dvh);
   background: var(--color-bg);
 }
 
@@ -2486,8 +2501,8 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 
 .ready-hero {
   position: relative;
-  overflow: hidden;
-  background: var(--gradient-card);
+  isolation: isolate;
+  background: transparent;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-lg);
@@ -2495,6 +2510,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 
 .ready-screen-fit {
   justify-content: center;
+  scroll-padding-bottom: var(--actual-sticky-height, var(--sticky-bar-height));
 }
 
 .ready-hero-layout {
@@ -2513,9 +2529,13 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   content: '';
   position: absolute;
   inset: 0;
+  z-index: -1;
   background:
     radial-gradient(320px 160px at 15% 0%, rgba(59, 130, 246, 0.14), transparent 60%),
-    radial-gradient(320px 160px at 90% 100%, rgba(34, 197, 94, 0.12), transparent 60%);
+    radial-gradient(320px 160px at 90% 100%, rgba(34, 197, 94, 0.12), transparent 60%),
+    var(--gradient-card);
+  border-radius: inherit;
+  outline: 1px solid transparent;
   pointer-events: none;
   opacity: 0.8;
 }
@@ -2523,6 +2543,65 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 .ready-hero > * {
   position: relative;
   z-index: 1;
+}
+
+.ready-hero-side {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-padding-bottom: var(--actual-sticky-height, var(--sticky-bar-height));
+}
+
+.ready-hero-scroll {
+  flex: 1;
+  min-height: 0;
+  padding-bottom: calc(var(--actual-sticky-height, var(--sticky-bar-height)) + var(--spacing-sm));
+}
+
+.ready-hero-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  width: 100%;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border-light);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+  padding: var(--spacing-sm) var(--spacing-sm)
+    calc(env(safe-area-inset-bottom) + var(--spacing-sm));
+}
+
+.ready-hero-actions::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -24px;
+  height: 24px;
+  background: linear-gradient(to top, transparent, var(--color-surface));
+  pointer-events: none;
+}
+
+.is-ultra-short .ready-hero-icon {
+  display: none;
+}
+
+.is-ultra-short .ready-hero-title {
+  font-size: clamp(1.25rem, 4vh, 2rem);
+}
+
+.is-ultra-short .ready-hero-actions {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm)
+    calc(env(safe-area-inset-bottom) + var(--spacing-xs));
 }
 
 @media (min-width: 1024px) {
@@ -2697,6 +2776,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
     padding: var(--spacing-xs) var(--spacing-sm);
     max-height: 100vh;
     max-height: 100dvh;
+    max-height: var(--app-height, 100dvh);
   }
 
   /* 遊戲頭部改為側邊 */
@@ -2725,6 +2805,8 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
     grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
     gap: var(--spacing-xs);
     max-height: calc(100vh - 80px);
+    max-height: calc(100dvh - 80px);
+    max-height: calc(var(--app-height, 100dvh) - 80px);
     overflow-y: auto;
   }
 
@@ -2927,6 +3009,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   .page-no-scroll {
     height: 100vh;
     height: 100dvh;
+    height: var(--app-height, 100dvh);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -2986,6 +3069,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
   .game-area-fullscreen {
     height: 100vh;
     height: 100dvh;
+    height: var(--app-height, 100dvh);
     width: 100vw;
     width: 100dvw;
     overflow: hidden;
@@ -3088,6 +3172,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
     flex-direction: row;
     height: 100vh;
     height: 100dvh;
+    height: var(--app-height, 100dvh);
     overflow: hidden;
   }
 

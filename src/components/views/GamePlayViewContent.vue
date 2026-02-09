@@ -1,5 +1,5 @@
 <template>
-  <div class="game-wrapper page-ambient h-[100dvh] bg-[var(--color-bg)] flex flex-col overflow-hidden">
+  <div class="game-wrapper page-ambient h-[var(--app-height,100dvh)] bg-[var(--color-bg)] flex flex-col overflow-hidden">
     <GamePlayHeader
       :isMobile="isMobile"
       :isLandscape="isLandscape"

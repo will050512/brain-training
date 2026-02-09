@@ -1,6 +1,6 @@
 <template>
-  <div class="page-shell page-shell-wide grid grid-cols-[280px_1fr] gap-8 items-start min-h-screen">
-    <aside class="sticky top-8 flex flex-col gap-4 h-[calc(100vh-4rem)]">
+  <div class="page-shell page-shell-wide grid grid-cols-[280px_1fr] gap-8 items-start min-h-[var(--app-height,100dvh)]">
+    <aside class="sticky top-8 flex flex-col gap-4 h-[calc(var(--app-height,100dvh)-4rem)]">
       <nav class="flex-1 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] shadow-sm p-3 overflow-y-auto no-scrollbar flex flex-col gap-1">
         <div class="px-3 py-2">
           <SubtleLabel text="報告章節" weight="bold" caps />

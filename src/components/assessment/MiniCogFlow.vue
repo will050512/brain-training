@@ -1285,6 +1285,7 @@ onUnmounted(() => {
     max-width: 100%;
     min-height: 100vh;
     min-height: 100dvh;
+    min-height: var(--app-height, 100dvh);
   }
 
   .step-content {
@@ -1335,6 +1336,7 @@ onUnmounted(() => {
     padding: 0.75rem 1rem calc(1rem + env(safe-area-inset-bottom));
     min-height: 100vh;
     min-height: 100dvh;
+    min-height: var(--app-height, 100dvh);
   }
 
   .step-content {
@@ -1408,6 +1410,7 @@ onUnmounted(() => {
     padding: 0.5rem;
     height: 100vh;
     height: 100dvh;
+    height: var(--app-height, 100dvh);
     overflow: hidden;
     display: flex;
     flex-direction: column;

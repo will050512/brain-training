@@ -1,9 +1,9 @@
 <template>
-  <div class="game-content-fit ready-screen-fit max-w-2xl lg:max-w-5xl mx-auto text-center lg:text-left p-2 sm:p-4 w-full">
+  <div ref="readyRootRef" class="game-content-fit ready-screen-fit max-w-2xl lg:max-w-5xl mx-auto text-center lg:text-left p-2 sm:p-4 w-full">
     <div class="ready-hero ready-hero-layout p-3 sm:p-4">
       <div class="ready-hero-main">
-        <div class="game-text-6xl mb-4 transform hover:scale-110 transition-transform">{{ currentGame?.icon }}</div>
-        <h2 class="game-text-2xl font-bold mb-4 text-[var(--color-text)]">{{ currentGame?.name }}</h2>
+        <div class="ready-hero-icon game-text-6xl mb-4 transform hover:scale-110 transition-transform">{{ currentGame?.icon }}</div>
+        <h2 class="ready-hero-title game-text-2xl font-bold mb-4 text-[var(--color-text)]">{{ currentGame?.name }}</h2>
 
         <p class="game-text-base text-[var(--color-text-secondary)] mb-4 sm:mb-6">
           準備好了嗎？先快速看過玩法，再點擊下方按鈕開始。
@@ -19,19 +19,21 @@
         </div>
       </div>
 
-      <div class="ready-hero-side">
-        <div class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-3 mb-4 max-h-52 lg:max-h-[320px] overflow-auto">
-          <div class="section-label game-text-sm text-[var(--color-text-secondary)] mb-2">遊戲說明</div>
-          <ul class="space-y-1 text-left game-text-base text-[var(--color-text)] leading-snug">
-            <li v-if="!currentGame?.instructions || currentGame.instructions.length === 0" class="text-[var(--color-text-secondary)]">此遊戲未提供額外說明，請依畫面提示操作。</li>
-            <li v-for="(line, idx) in currentGame?.instructions" :key="idx" class="flex items-start gap-2">
-              <span class="text-[var(--color-text-secondary)] mt-0.5">{{ idx + 1 }}.</span>
-              <span class="flex-1">{{ line }}</span>
-            </li>
-          </ul>
+      <div ref="scrollRef" class="ready-hero-side">
+        <div ref="scrollContentRef" class="ready-hero-scroll">
+          <div class="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-3 mb-4">
+            <div class="section-label game-text-sm text-[var(--color-text-secondary)] mb-2">遊戲說明</div>
+            <ul class="space-y-1 text-left game-text-base text-[var(--color-text)] leading-snug">
+              <li v-if="!currentGame?.instructions || currentGame.instructions.length === 0" class="text-[var(--color-text-secondary)]">此遊戲未提供額外說明，請依畫面提示操作。</li>
+              <li v-for="(line, idx) in currentGame?.instructions" :key="idx" class="flex items-start gap-2">
+                <span class="text-[var(--color-text-secondary)] mt-0.5">{{ idx + 1 }}.</span>
+                <span class="flex-1">{{ line }}</span>
+              </li>
+            </ul>
+          </div>
         </div>
 
-        <div class="space-y-2">
+        <div ref="actionsRef" class="ready-hero-actions">
           <div v-if="startError" class="p-3 rounded-lg border border-[var(--color-danger)]/30 bg-[var(--color-danger-bg)] text-[var(--color-danger)] game-text-sm text-left">
             {{ startError }}
           </div>
@@ -48,10 +50,60 @@
 </template>
 
 <script setup lang="ts">
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import SubtleLabel from '@/components/common/SubtleLabel.vue'
 import type { GameDefinition, Difficulty } from '@/types/game'
 import { DIFFICULTIES } from '@/types/game'
+
+const readyRootRef = ref<HTMLElement | null>(null)
+const scrollRef = ref<HTMLElement | null>(null)
+const scrollContentRef = ref<HTMLElement | null>(null)
+const actionsRef = ref<HTMLElement | null>(null)
+let layoutObserver: ResizeObserver | null = null
+
+const updateActionsHeight = (): void => {
+  const root = readyRootRef.value
+  const scroll = scrollRef.value
+  const scrollContent = scrollContentRef.value
+  const actions = actionsRef.value
+  if (!root || !actions) return
+  const height = actions.offsetHeight
+  const needsPadding = !!scroll && scroll.scrollHeight > scroll.clientHeight + 1
+  root.style.setProperty('--actual-sticky-height', `${height}px`)
+  if (scroll) {
+    scroll.style.setProperty('--actual-sticky-height', `${height}px`)
+  }
+  if (scrollContent) {
+    scrollContent.style.paddingBottom = needsPadding
+      ? `calc(${height}px + var(--spacing-sm))`
+      : 'var(--spacing-sm)'
+  }
+}
+
+onMounted(() => {
+  nextTick(() => {
+    updateActionsHeight()
+    if ('ResizeObserver' in window) {
+      layoutObserver = new ResizeObserver(() => {
+        updateActionsHeight()
+      })
+      if (actionsRef.value) {
+        layoutObserver.observe(actionsRef.value)
+      }
+      if (scrollRef.value) {
+        layoutObserver.observe(scrollRef.value)
+      }
+    }
+  })
+})
+
+onUnmounted(() => {
+  if (layoutObserver) {
+    layoutObserver.disconnect()
+    layoutObserver = null
+  }
+})
 
 defineProps<{
   currentGame: GameDefinition | null

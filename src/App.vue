@@ -492,7 +492,7 @@ onUnmounted(() => {
 .app-container {
   min-height: 100vh;
   min-height: 100dvh;
-  min-height: var(--app-height);
+  min-height: var(--app-height, 100dvh);
 }
 
 .app-update-gate {

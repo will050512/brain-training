@@ -308,9 +308,11 @@ provide('gameContainer', {
   min-height: 100vh;
   min-height: 100svh;
   min-height: 100dvh;
+  min-height: var(--app-height, 100dvh);
   height: 100vh;
   height: 100svh;
   height: 100dvh;
+  height: var(--app-height, 100dvh);
   background: var(--color-bg);
   position: relative;
   overflow: hidden;
@@ -458,6 +460,8 @@ provide('gameContainer', {
 
 .is-immersive .game-main {
   height: 100vh;
+  height: 100dvh;
+  height: var(--app-height, 100dvh);
 }
 
 /* 橫向小螢幕優化 */

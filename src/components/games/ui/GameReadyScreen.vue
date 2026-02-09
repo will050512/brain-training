@@ -3,7 +3,7 @@
  * 遊戲準備畫面元件
  * 顯示遊戲開始前的說明與倒數
  */
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 
 interface Props {
   /** 遊戲名稱 */
@@ -40,6 +40,10 @@ const emit = defineEmits<{
 const isCountingDown = ref(false)
 const countdown = ref(props.countdownFrom)
 let countdownTimer: ReturnType<typeof setInterval> | null = null
+const gameInfoRef = ref<HTMLElement | null>(null)
+const gameInfoBodyRef = ref<HTMLElement | null>(null)
+const actionsRef = ref<HTMLElement | null>(null)
+let layoutObserver: ResizeObserver | null = null
 
 // 難度顯示
 const difficultyDisplay: Record<string, { label: string; class: string }> = {
@@ -83,6 +87,42 @@ watch(() => props.autoStart, (val) => {
 
 onUnmounted(() => {
   if (countdownTimer) clearInterval(countdownTimer)
+  if (layoutObserver) {
+    layoutObserver.disconnect()
+    layoutObserver = null
+  }
+})
+
+const updateActionsHeight = (): void => {
+  const root = gameInfoRef.value
+  const body = gameInfoBodyRef.value
+  const actions = actionsRef.value
+  if (!root || !actions) return
+  const height = actions.offsetHeight
+  const needsPadding = root.scrollHeight > root.clientHeight + 1
+  root.style.setProperty('--actual-sticky-height', `${height}px`)
+  if (body) {
+    body.style.paddingBottom = needsPadding
+      ? `calc(${height}px + var(--spacing-sm))`
+      : 'var(--spacing-sm)'
+  }
+}
+
+onMounted(() => {
+  nextTick(() => {
+    updateActionsHeight()
+    if ('ResizeObserver' in window) {
+      layoutObserver = new ResizeObserver(() => {
+        updateActionsHeight()
+      })
+      if (actionsRef.value) {
+        layoutObserver.observe(actionsRef.value)
+      }
+      if (gameInfoRef.value) {
+        layoutObserver.observe(gameInfoRef.value)
+      }
+    }
+  })
 })
 </script>
 
@@ -98,43 +138,47 @@ onUnmounted(() => {
     </Transition>
 
     <!-- 遊戲資訊 -->
-    <div v-if="!isCountingDown" class="game-info">
-      <!-- 圖示 -->
-      <div v-if="icon" class="game-icon">
-        {{ icon }}
+    <div v-if="!isCountingDown" ref="gameInfoRef" class="game-info">
+      <div ref="gameInfoBodyRef" class="game-info-body">
+        <!-- 圖示 -->
+        <div v-if="icon" class="game-icon">
+          {{ icon }}
+        </div>
+
+        <!-- 標題 -->
+        <h2 class="game-title">{{ title }}</h2>
+
+        <!-- 難度 -->
+        <div 
+          v-if="difficulty" 
+          class="game-difficulty"
+          :class="difficultyDisplay[difficulty]?.class"
+        >
+          {{ difficultyLabel || difficultyDisplay[difficulty]?.label }}
+        </div>
+
+        <!-- 準備提示 -->
+        <p class="game-ready-hint">
+          準備好了嗎？點擊下方按鈕開始遊戲
+        </p>
       </div>
 
-      <!-- 標題 -->
-      <h2 class="game-title">{{ title }}</h2>
+      <div ref="actionsRef" class="game-info-actions">
+        <!-- 開始按鈕 -->
+        <button 
+          type="button"
+          class="start-button"
+          @click="handleStart"
+        >
+          <span class="start-button-icon">▶</span>
+          <span>開始遊戲</span>
+        </button>
 
-      <!-- 難度 -->
-      <div 
-        v-if="difficulty" 
-        class="game-difficulty"
-        :class="difficultyDisplay[difficulty]?.class"
-      >
-        {{ difficultyLabel || difficultyDisplay[difficulty]?.label }}
+        <!-- 提示 -->
+        <p class="hint">
+          {{ showCountdown ? `點擊後將倒數 ${countdownFrom} 秒` : '' }}
+        </p>
       </div>
-
-      <!-- 準備提示 -->
-      <p class="game-ready-hint">
-        準備好了嗎？點擊下方按鈕開始遊戲
-      </p>
-
-      <!-- 開始按鈕 -->
-      <button 
-        type="button"
-        class="start-button"
-        @click="handleStart"
-      >
-        <span class="start-button-icon">▶</span>
-        <span>開始遊戲</span>
-      </button>
-
-      <!-- 提示 -->
-      <p class="hint">
-        {{ showCountdown ? `點擊後將倒數 ${countdownFrom} 秒` : '' }}
-      </p>
     </div>
   </div>
 </template>
@@ -149,7 +193,8 @@ onUnmounted(() => {
   padding: 2rem;
   text-align: center;
   position: relative;
-  overflow: hidden;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
   background:
     radial-gradient(500px 260px at 15% 10%, rgba(59, 130, 246, 0.16), transparent 60%),
     radial-gradient(520px 260px at 90% 0%, rgba(245, 158, 11, 0.14), transparent 55%),
@@ -164,22 +209,31 @@ onUnmounted(() => {
   gap: 1rem;
   max-width: 400px;
   animation: fadeIn 0.35s ease-out;
-  background: var(--color-surface);
+  background: transparent;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-2xl);
   padding: 1.5rem 1.75rem;
   box-shadow: var(--shadow-lg);
   position: relative;
-  overflow: hidden;
+  isolation: isolate;
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-padding-bottom: var(--actual-sticky-height, var(--sticky-bar-height));
 }
 
 .game-info::before {
   content: '';
   position: absolute;
   inset: 0;
+  z-index: -1;
   background:
     radial-gradient(300px 120px at 20% 0%, rgba(59, 130, 246, 0.08), transparent 60%),
-    radial-gradient(260px 120px at 80% 100%, rgba(22, 163, 74, 0.08), transparent 60%);
+    radial-gradient(260px 120px at 80% 100%, rgba(22, 163, 74, 0.08), transparent 60%),
+    var(--color-surface);
+  border-radius: inherit;
+  outline: 1px solid transparent;
   pointer-events: none;
 }
 
@@ -234,6 +288,43 @@ onUnmounted(() => {
   font-size: var(--game-text-base);
 }
 
+.game-info-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+.game-info-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border-light);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+  padding: 0.75rem 0
+    calc(env(safe-area-inset-bottom) + var(--spacing-sm));
+}
+
+.game-info-actions::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -24px;
+  height: 24px;
+  background: linear-gradient(to top, transparent, var(--color-surface));
+  pointer-events: none;
+}
+
 /* 開始按鈕 */
 .start-button {
   display: flex;
@@ -241,7 +332,8 @@ onUnmounted(() => {
   justify-content: center;
   gap: 0.75rem;
   padding: 1rem 2.5rem;
-  margin-top: 1rem;
+  margin-top: 0;
+  min-height: var(--min-touch-target);
   background: var(--gradient-primary);
   color: white;
   border: none;
@@ -338,6 +430,23 @@ onUnmounted(() => {
   .start-button {
     padding: 1rem 2rem;
   }
+}
+
+:global(.is-ultra-short) .ready-screen .game-icon {
+  display: none;
+}
+
+:global(.is-ultra-short) .ready-screen .game-title {
+  font-size: clamp(1.25rem, 4vh, 2rem);
+}
+
+:global(.is-ultra-short) .ready-screen .game-info-actions {
+  flex-direction: row;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm)
+    calc(env(safe-area-inset-bottom) + var(--spacing-xs));
 }
 
 @media (prefers-reduced-motion: reduce) {

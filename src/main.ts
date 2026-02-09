@@ -13,9 +13,45 @@ import { useUserStore } from './stores/userStore'
 import { perfEnd, perfStart } from './utils/perf'
 import './style.css'
 
+let viewportRafId: number | null = null
+let viewportObserver: ResizeObserver | null = null
+const ultraShortQuery = window.matchMedia('(orientation: landscape) and (max-height: 400px)')
+type LegacyMediaQueryList = MediaQueryList & {
+  addListener?: (listener: (event: MediaQueryListEvent) => void) => void
+}
+
+const isEditableElement = (element: Element | null): boolean => {
+  if (!element) return false
+  if (element instanceof HTMLInputElement) return true
+  if (element instanceof HTMLTextAreaElement) return true
+  if (element instanceof HTMLSelectElement) return true
+  if (element instanceof HTMLElement && element.isContentEditable) return true
+  return false
+}
+
+const applyUltraShortClass = (): void => {
+  const root = document.documentElement
+  if (ultraShortQuery.matches) {
+    root.classList.add('is-ultra-short')
+    return
+  }
+  root.classList.remove('is-ultra-short')
+}
+
 function setViewportHeight(): void {
-  const viewportHeight = window.visualViewport?.height ?? window.innerHeight
-  document.documentElement.style.setProperty('--app-height', `${viewportHeight}px`)
+  if (viewportRafId !== null) return
+  viewportRafId = window.requestAnimationFrame(() => {
+    viewportRafId = null
+    const viewport = window.visualViewport
+    const viewportHeight = viewport?.height ?? window.innerHeight
+    document.documentElement.style.setProperty('--app-height', `${viewportHeight}px`)
+
+    if (viewport && viewport.offsetTop > 0 && !isEditableElement(document.activeElement)) {
+      window.scrollTo(0, 0)
+    }
+
+    applyUltraShortClass()
+  })
 }
 
 function initViewportHeightFix(): void {
@@ -24,6 +60,19 @@ function initViewportHeightFix(): void {
   window.addEventListener('orientationchange', setViewportHeight)
   window.visualViewport?.addEventListener('resize', setViewportHeight)
   window.visualViewport?.addEventListener('scroll', setViewportHeight)
+
+  if ('ResizeObserver' in window) {
+    viewportObserver = new ResizeObserver(() => {
+      setViewportHeight()
+    })
+    viewportObserver.observe(document.documentElement)
+  }
+
+  if (typeof ultraShortQuery.addEventListener === 'function') {
+    ultraShortQuery.addEventListener('change', setViewportHeight)
+  } else if (typeof (ultraShortQuery as LegacyMediaQueryList).addListener === 'function') {
+    ultraShortQuery.addListener(setViewportHeight)
+  }
 }
 
 // 建立應用程式

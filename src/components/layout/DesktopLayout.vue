@@ -209,6 +209,7 @@ const toggleCollapse = () => {
   /* 關鍵：強制容器高度等於視窗高度，禁止外層捲動 */
   height: 100vh;
   height: 100dvh;
+  height: var(--app-height, 100dvh);
   width: 100vw;
   width: 100dvw;
   background-color: var(--color-bg);
@@ -217,6 +218,7 @@ const toggleCollapse = () => {
   /* 確保最小高度 */
   min-height: 100vh;
   min-height: 100dvh;
+  min-height: var(--app-height, 100dvh);
 }
 
 /* ===== 主內容區 ===== */
