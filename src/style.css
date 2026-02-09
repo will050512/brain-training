@@ -2646,6 +2646,15 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
     padding: var(--spacing-sm);
   }
 
+  .game-content-fit {
+    justify-content: flex-start;
+    padding-bottom: calc(var(--spacing-md) + var(--min-touch-target));
+  }
+
+  .ready-screen-fit {
+    justify-content: flex-start;
+  }
+
   /* 遊戲標題區域緊湊化 */
   .game-header-compact {
     padding: var(--spacing-xs) var(--spacing-sm);
