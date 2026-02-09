@@ -332,7 +332,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 </script>
 
 <template>
-  <div class="stroop-test-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
+  <div class="stroop-test-game game-root game-frame" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -347,7 +347,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 題目區域 -->
       <div class="question-area game-panel stroop-panel mt-6 sm:mt-8 text-center px-3 sm:px-4">
-        <div class="question-number text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2">
+        <div class="question-number game-text-sm text-gray-500 dark:text-gray-400 mb-2 game-number">
           第 {{ currentRound + 1 }} / {{ totalRounds }} 題
         </div>
 
@@ -356,8 +356,8 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           v-if="questionPrompt"
           class="question-prompt mb-3 sm:mb-4 p-2 rounded-lg bg-[var(--color-bg-soft)] inline-block border border-[var(--color-border)]"
         >
-          <span class="text-base sm:text-lg mr-2">{{ questionPrompt.icon }}</span>
-          <span class="text-xs sm:text-sm font-medium">{{ questionPrompt.text }}</span>
+          <span class="game-text-lg mr-2">{{ questionPrompt.icon }}</span>
+          <span class="game-text-sm font-medium">{{ questionPrompt.text }}</span>
         </div>
 
         <!-- Stroop 文字顯示 -->
@@ -366,7 +366,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           class="stroop-display py-4 sm:py-6 md:py-8"
         >
           <div
-            class="stroop-word text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold select-none p-3 sm:p-4 rounded-xl inline-block break-words leading-tight"
+            class="stroop-word game-text-6xl font-bold select-none p-3 sm:p-4 rounded-xl inline-block break-words leading-tight"
             :style="{
               color: currentQuestion.inkColor,
               borderColor: currentQuestion.borderColor,
@@ -383,7 +383,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           <button
             v-for="option in options"
             :key="option.name"
-            class="color-option p-3 sm:p-4 md:p-5 rounded-xl text-white font-bold text-base sm:text-lg md:text-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[60px] sm:min-h-[70px] md:min-h-[80px] flex items-center justify-center"
+            class="color-option p-3 sm:p-4 md:p-5 rounded-xl text-white font-bold game-text-lg transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[60px] sm:min-h-[70px] md:min-h-[80px] flex items-center justify-center"
             :style="{ backgroundColor: option.value }"
             :disabled="isAnswering"
             @click="handleSelectAnswer(option.name)"

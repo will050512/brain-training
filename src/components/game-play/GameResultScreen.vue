@@ -2,27 +2,27 @@
   <div class="game-content-fit game-result-scroll max-w-sm sm:max-w-lg mx-auto text-center">
     <div class="game-result-card">
       <div class="game-result-body p-3 sm:p-6">
-        <div class="text-4xl sm:text-5xl lg:text-6xl mb-2 sm:mb-4 animate-bounce-in">
+        <div class="game-text-6xl mb-2 sm:mb-4 animate-bounce-in">
           {{ getFinalEmoji(currentScore) }}
         </div>
-        <h2 class="text-lg sm:text-xl font-bold mb-2 text-[var(--color-text)]">遊戲結束！</h2>
+        <h2 class="game-text-xl font-bold mb-2 text-[var(--color-text)]">遊戲結束！</h2>
 
         <div class="my-4 sm:my-6 lg:my-8 bg-[var(--color-bg)] rounded-xl p-4 sm:p-6 inline-block min-w-[140px] sm:min-w-[180px] shadow-inner relative overflow-hidden">
           <div class="absolute inset-0 bg-[var(--color-primary)]/5"></div>
-          <div class="relative z-10 text-6xl sm:text-7xl lg:text-8xl font-black leading-none filter drop-shadow-md" :class="getScoreClass(currentScore)">
+          <div class="relative z-10 game-text-6xl game-number font-black leading-none filter drop-shadow-md" :class="getScoreClass(currentScore)">
             {{ currentScore }}
           </div>
-          <div class="relative z-10 text-sm sm:text-base lg:text-xl text-[var(--color-text-secondary)] mt-2 font-bold tracking-widest uppercase">SCORE</div>
+          <div class="relative z-10 game-text-sm text-[var(--color-text-secondary)] mt-2 font-bold tracking-widest uppercase">SCORE</div>
         </div>
 
         <div class="mb-3 sm:mb-4 grid grid-cols-2 gap-2 sm:gap-3 text-left">
           <div class="bg-[var(--color-primary-bg)] p-2 sm:p-3 rounded-lg border border-[var(--color-border)] flex flex-col justify-center">
             <SubtleLabel text="等級評定" tone="secondary" weight="bold" class="mb-0.5" />
-            <div class="text-xl sm:text-2xl font-bold text-[var(--color-score)]">{{ unifiedGameResult?.grade || 'N/A' }}</div>
+            <div class="game-text-2xl font-bold text-[var(--color-score)]">{{ unifiedGameResult?.grade || 'N/A' }}</div>
           </div>
           <div class="bg-[var(--color-surface-alt)] p-2 sm:p-3 rounded-lg border border-[var(--color-border)] flex flex-col justify-center">
             <SubtleLabel text="遊戲時長" tone="secondary" weight="bold" class="mb-0.5" />
-            <div class="text-xl sm:text-2xl font-bold text-[var(--color-progress)]">{{ formatTime(gameResult?.duration || 0) }}</div>
+            <div class="game-text-2xl font-bold text-[var(--color-progress)]">{{ formatTime(gameResult?.duration || 0) }}</div>
           </div>
         </div>
 
@@ -37,10 +37,10 @@
                 stat.highlight ? 'border-[var(--color-success)]/40 bg-[var(--color-success-bg)]' : 'border-[var(--color-border)]'
               ]"
             >
-              <div v-if="stat.icon" class="text-xl sm:text-2xl flex-shrink-0">{{ stat.icon }}</div>
+              <div v-if="stat.icon" class="game-text-2xl flex-shrink-0">{{ stat.icon }}</div>
               <div class="flex-1 min-w-0">
                 <SubtleLabel :text="stat.label" tone="secondary" class="truncate block" />
-                <div class="text-base sm:text-lg lg:text-xl font-bold text-[var(--color-text)] truncate">
+                <div class="game-text-lg font-bold text-[var(--color-text)] truncate">
                   {{ typeof stat.value === 'number' ? stat.value : stat.value }}
                   <SubtleLabel v-if="stat.unit" :text="stat.unit" size="xs" tone="muted" class="ml-0.5" />
                 </div>
@@ -49,10 +49,10 @@
           </div>
         </div>
 
-        <div v-if="bestScore > 0" class="mb-6 p-3 sm:p-4 bg-[var(--color-primary-bg)] rounded-lg border border-[var(--color-border)] flex justify-between items-center text-sm sm:text-base">
+        <div v-if="bestScore > 0" class="mb-6 p-3 sm:p-4 bg-[var(--color-primary-bg)] rounded-lg border border-[var(--color-border)] flex justify-between items-center game-text-base">
           <span class="text-[var(--color-text)]">最佳成績</span>
           <div class="text-right">
-            <span class="font-bold text-[var(--color-score)] block">{{ bestScore }} 分</span>
+            <span class="font-bold text-[var(--color-score)] block game-number">{{ bestScore }} 分</span>
             <SubtleLabel v-if="currentScore > bestScore" text="🎉 新紀錄！" size="xs" class="text-[var(--color-record)] font-bold block" />
           </div>
         </div>
@@ -64,20 +64,20 @@
         >
           <div class="flex items-start gap-3">
             <div
-              class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xl sm:text-2xl flex-shrink-0"
+              class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center game-text-2xl flex-shrink-0"
               :class="difficultyFeedbackStyle.iconBgClass"
             >
               {{ difficultyFeedbackStyle.icon }}
             </div>
             <div class="flex-1 min-w-0">
-              <h4 class="font-bold text-sm sm:text-base mb-1" :class="difficultyFeedbackStyle.textClass">難度調整通知</h4>
+              <h4 class="font-bold game-text-base mb-1" :class="difficultyFeedbackStyle.textClass">難度調整通知</h4>
               <SubtleLabel :text="difficultyReasonText" size="sm" class="mb-2 break-words block" :class="difficultyFeedbackStyle.subTextClass" />
 
               <div
                 class="p-1.5 sm:p-2 rounded-lg bg-white/60 dark:bg-black/20"
                 :class="difficultyFeedbackStyle.subTextClass"
               >
-                <div class="flex flex-wrap items-center gap-1 sm:gap-2">
+                <div class="flex flex-wrap items-center gap-1 sm:gap-2 game-text-base">
                   <span class="font-medium truncate">{{ getFullDifficultyLabel(difficultyAdjustment.currentDifficulty, difficultyAdjustment.currentSubDifficulty) }}</span>
                   <span>→</span>
                   <span class="font-bold truncate">{{ getFullDifficultyLabel(difficultyAdjustment.newDifficulty, difficultyAdjustment.newSubDifficulty) }}</span>
@@ -88,7 +88,7 @@
         </div>
 
         <div v-if="!isFromDailyTraining && recommendedGames.length > 0" class="mt-4">
-          <h3 class="text-sm font-medium text-[var(--color-text)] mb-3 text-left">
+          <h3 class="game-text-sm font-medium text-[var(--color-text)] mb-3 text-left">
             🎯 其他推薦
           </h3>
           <div class="grid grid-cols-2 gap-2 sm:gap-3">
@@ -98,7 +98,7 @@
               @click="onStartRecommendedGame(game)"
               class="recommended-game-card"
             >
-              <span class="text-2xl sm:text-3xl mb-1 sm:mb-2">{{ game.icon }}</span>
+              <span class="game-text-3xl mb-1 sm:mb-2">{{ game.icon }}</span>
               <SubtleLabel :text="game.name" tone="secondary" weight="bold" class="truncate w-full px-1" />
               <SubtleLabel :text="getGameDimensionLabel(game.id)" size="xs" class="text-[var(--color-accent-purple)] font-medium" />
             </button>
@@ -157,7 +157,7 @@
               v-if="recommendedGames.length > 0 && recommendedGames[0]"
               size="xl"
               full-width
-              class="py-3 sm:py-4 text-base sm:text-lg shadow-md flex items-center justify-center gap-2"
+              class="py-3 sm:py-4 game-text-lg shadow-md flex items-center justify-center gap-2"
               @click="recommendedGames[0] && onStartRecommendedGame(recommendedGames[0])"
             >
               <span>➡️</span>

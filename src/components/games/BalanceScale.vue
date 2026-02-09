@@ -352,7 +352,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 </script>
 
 <template>
-  <div class="balance-scale-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
+  <div class="balance-scale-game game-root game-frame" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -368,22 +368,22 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
       <!-- 題目資訊 -->
         <div class="question-info game-panel text-center mt-4 px-4 py-3">
-          <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
+          <div class="game-text-sm text-[var(--color-text-muted)] game-number">
             第 {{ currentRound + 1 }} / {{ totalRounds }} 題
           </div>
-        <div class="text-base sm:text-lg font-medium mt-2">
+        <div class="game-text-lg font-medium mt-2">
           哪一邊比較重？
         </div>
         <div
           v-if="!isRoundReady"
-          class="text-xs sm:text-sm text-[var(--color-text-muted)] mt-2"
+          class="game-text-sm text-[var(--color-text-muted)] mt-2"
         >
           請先觀察天平再選擇
         </div>
       </div>
 
       <!-- 天平 -->
-        <div class="scale-container game-panel relative mt-4 sm:mt-6 px-4 py-4" v-if="currentRoundData">
+        <div class="scale-container game-panel game-board relative mt-4 sm:mt-6 px-4 py-4" v-if="currentRoundData">
         <img class="scale-bg" :src="scaleImg" alt="" aria-hidden="true" />
         <!-- 天平支架 -->
         <div class="scale-stand">
@@ -411,9 +411,9 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           >
             <div class="pan-items">
               <span
-                v-for="(item, i) in currentRoundData.leftItems"
-                :key="i"
-                class="text-2xl sm:text-3xl md:text-4xl"
+              v-for="(item, i) in currentRoundData.leftItems"
+              :key="i"
+                class="game-text-3xl"
               >
                 <span v-if="getWeightImage(item.weight)" class="weight-item">
                   <img
@@ -444,9 +444,9 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           >
             <div class="pan-items">
               <span
-                v-for="(item, i) in currentRoundData.rightItems"
-                :key="i"
-                class="text-2xl sm:text-3xl md:text-4xl"
+              v-for="(item, i) in currentRoundData.rightItems"
+              :key="i"
+                class="game-text-3xl"
               >
                 <span v-if="getWeightImage(item.weight)" class="weight-item">
                   <img
@@ -468,7 +468,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         <Transition name="fade">
           <div
             v-if="showResult"
-            class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-4xl sm:text-5xl z-10"
+            class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 game-text-4xl z-10"
           >
             {{ isCorrect ? '✅' : '❌' }}
           </div>
@@ -478,7 +478,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
       <!-- 重量提示（簡單模式） -->
       <div
         v-if="config.showWeightHint && currentRoundData"
-          class="weight-hint text-center mt-4 text-xs sm:text-sm text-[var(--color-text-muted)] px-4"
+          class="weight-hint text-center mt-4 game-text-sm text-[var(--color-text-muted)] px-4 game-number"
         >
         <div class="flex flex-wrap justify-center gap-2 sm:gap-4">
           <span>左邊: {{ currentRoundData.leftWeight }} 重量單位</span>

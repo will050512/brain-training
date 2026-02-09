@@ -304,7 +304,7 @@ watch(currentQuestionIndex, () => {
 </script>
 
 <template>
-  <div class="math-calc-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
+  <div class="math-calc-game game-root game-frame" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -319,13 +319,13 @@ watch(currentQuestionIndex, () => {
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 題目區域 -->
         <div class="question-area game-panel mt-6 sm:mt-8 text-center px-3 sm:px-4 py-3">
-          <div class="question-number text-xs sm:text-sm text-[var(--color-text-muted)] mb-2">
+          <div class="question-number game-text-sm text-[var(--color-text-muted)] mb-2 game-number">
             第 {{ currentRound + 1 }} / {{ totalRounds }} 題
           </div>
 
         <div
           v-if="currentQuestion"
-            class="question-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold py-4 sm:py-6 md:py-8 select-none break-words leading-tight rounded-2xl bg-[var(--color-bg-soft)] border border-[var(--color-border)]"
+            class="question-display game-text-5xl game-number font-bold py-4 sm:py-6 md:py-8 select-none break-words leading-tight rounded-2xl bg-[var(--color-bg-soft)] border border-[var(--color-border)]"
             :class="{ 'shake': feedbackData?.type === 'wrong' && feedbackData?.show }"
           >
           {{ currentQuestion.num1 }} {{ currentQuestion.operation }} {{ currentQuestion.num2 }} = ?
@@ -339,7 +339,7 @@ watch(currentQuestionIndex, () => {
           :disabled="isAnswering"
           :correct-answer="feedbackData?.show ? String(currentQuestion.answer) : undefined"
           size="large"
-          class="mt-4 sm:mt-6"
+          class="game-board mt-4 sm:mt-6"
           @select="(v) => handleSelectAnswer(Number(v))"
         />
       </div>

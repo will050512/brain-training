@@ -189,14 +189,14 @@ onUnmounted(() => {
 }
 
 .game-icon {
-  font-size: 4rem;
+  font-size: var(--game-text-6xl);
   line-height: 1;
   margin-bottom: 0.5rem;
   filter: drop-shadow(0 6px 14px rgba(15, 23, 42, 0.2));
 }
 
 .game-title {
-  font-size: 1.75rem;
+  font-size: var(--game-text-2xl);
   font-weight: 700;
   color: var(--color-text-primary);
   margin: 0;
@@ -207,7 +207,7 @@ onUnmounted(() => {
   align-items: center;
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius-full);
-  font-size: 0.875rem;
+  font-size: var(--game-text-sm);
   font-weight: 600;
 }
 
@@ -231,7 +231,7 @@ onUnmounted(() => {
   color: var(--color-text-secondary);
   line-height: 1.6;
   margin: 0.5rem 0;
-  font-size: 1rem;
+  font-size: var(--game-text-base);
 }
 
 /* 開始按鈕 */
@@ -246,7 +246,7 @@ onUnmounted(() => {
   color: white;
   border: none;
   border-radius: var(--radius-xl);
-  font-size: 1.25rem;
+  font-size: var(--game-text-xl);
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -265,11 +265,11 @@ onUnmounted(() => {
 }
 
 .start-button-icon {
-  font-size: 1rem;
+  font-size: var(--game-text-base);
 }
 
 .hint {
-  font-size: 0.875rem;
+  font-size: var(--game-text-sm);
   color: var(--color-text-muted);
   margin-top: 0.5rem;
 }
@@ -289,7 +289,7 @@ onUnmounted(() => {
 }
 
 .countdown-number {
-  font-size: 6rem;
+  font-size: var(--game-text-6xl);
   font-weight: 900;
   color: white;
   text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
@@ -335,22 +335,8 @@ onUnmounted(() => {
   .ready-screen {
     padding: 1.5rem;
   }
-  
-  .game-icon {
-    font-size: 3rem;
-  }
-  
-  .game-title {
-    font-size: 1.5rem;
-  }
-  
   .start-button {
     padding: 1rem 2rem;
-    font-size: 1.25rem;
-  }
-  
-  .countdown-number {
-    font-size: 4rem;
   }
 }
 

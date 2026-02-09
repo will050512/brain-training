@@ -86,19 +86,19 @@ const getResultEmoji = (score: number) => {
   <div class="card-match-result">
     <!-- 主要成績展示 -->
     <div class="result-header text-center mb-6">
-      <div class="emoji text-6xl mb-2">{{ getResultEmoji(result.score) }}</div>
-      <h2 class="text-2xl font-bold text-[var(--color-text)] mb-4">配對完成！</h2>
+      <div class="emoji game-text-6xl mb-2">{{ getResultEmoji(result.score) }}</div>
+      <h2 class="game-text-2xl font-bold text-[var(--color-text)] mb-4">配對完成！</h2>
 
       <!-- 分數展示 -->
       <div class="score-display bg-[var(--color-bg)] rounded-xl p-6 inline-block min-w-[140px] mb-4">
-        <div class="text-5xl font-bold leading-none" :class="getScoreColor(result.score)">
+        <div class="game-text-5xl game-number font-bold leading-none" :class="getScoreColor(result.score)">
           {{ result.score }}
         </div>
         <SubtleLabel text="分" tone="secondary" class="mt-1 block" />
       </div>
 
       <!-- 新紀錄提示 -->
-      <div v-if="isNewRecord" class="new-record text-green-600 dark:text-green-400 font-bold text-lg mb-4">
+      <div v-if="isNewRecord" class="new-record text-green-600 dark:text-green-400 font-bold game-text-lg mb-4">
         🎉 新紀錄！
       </div>
     </div>
@@ -108,59 +108,59 @@ const getResultEmoji = (score: number) => {
       <!-- 正確率 -->
       <div class="stat-card bg-[var(--color-surface-alt)] p-4 rounded-lg">
         <SubtleLabel text="正確率" tone="secondary" class="mb-1 block" />
-        <div class="text-2xl font-bold text-[var(--color-text)]">{{ Math.round(result.accuracy * 100) }}%</div>
+        <div class="game-text-2xl game-number font-bold text-[var(--color-text)]">{{ Math.round(result.accuracy * 100) }}%</div>
       </div>
 
       <!-- 配對效率 -->
       <div class="stat-card bg-[var(--color-surface-alt)] p-4 rounded-lg">
         <SubtleLabel text="配對效率" tone="secondary" class="mb-1 block" />
         <div class="flex items-center gap-2">
-          <span class="text-2xl font-bold" :class="efficiencyGrade.color">{{ efficiencyGrade.grade }}</span>
-          <span class="text-sm text-[var(--color-text-secondary)]">{{ Math.round(pairingEfficiency) }}%</span>
+          <span class="game-text-2xl font-bold" :class="efficiencyGrade.color">{{ efficiencyGrade.grade }}</span>
+          <span class="game-text-sm text-[var(--color-text-secondary)]">{{ Math.round(pairingEfficiency) }}%</span>
         </div>
       </div>
 
       <!-- 移動次數 -->
       <div class="stat-card bg-[var(--color-surface-alt)] p-4 rounded-lg">
         <SubtleLabel text="移動次數" tone="secondary" class="mb-1 block" />
-        <div class="text-2xl font-bold text-[var(--color-text)]">{{ result.moves }}</div>
+        <div class="game-text-2xl game-number font-bold text-[var(--color-text)]">{{ result.moves }}</div>
       </div>
 
       <!-- 遊戲時長 -->
       <div class="stat-card bg-[var(--color-surface-alt)] p-4 rounded-lg">
         <SubtleLabel text="遊戲時長" tone="secondary" class="mb-1 block" />
-        <div class="text-2xl font-bold text-[var(--color-text)]">{{ formatTime(result.duration) }}</div>
+        <div class="game-text-2xl game-number font-bold text-[var(--color-text)]">{{ formatTime(result.duration) }}</div>
       </div>
 
       <!-- 平均反應時間 -->
       <div class="stat-card bg-[var(--color-surface-alt)] p-4 rounded-lg">
         <SubtleLabel text="平均反應" tone="secondary" class="mb-1 block" />
-        <div class="text-2xl font-bold text-[var(--color-text)]">{{ result.avgReactionTime }}ms</div>
+        <div class="game-text-2xl game-number font-bold text-[var(--color-text)]">{{ result.avgReactionTime }}ms</div>
       </div>
 
       <!-- 最高連擊 -->
       <div v-if="result.maxCombo > 1" class="stat-card bg-[var(--color-surface-alt)] p-4 rounded-lg">
         <SubtleLabel text="最高連擊" tone="secondary" class="mb-1 block" />
-        <div class="text-2xl font-bold text-orange-500">{{ result.maxCombo }} 🔥</div>
+        <div class="game-text-2xl game-number font-bold text-orange-500">{{ result.maxCombo }} 🔥</div>
       </div>
     </div>
 
     <!-- 效率評價 -->
     <div class="efficiency-feedback text-center mb-6">
-      <div class="text-lg font-medium text-[var(--color-text-secondary)] mb-2">
+      <div class="game-text-lg font-medium text-[var(--color-text-secondary)] mb-2">
         {{ efficiencyGrade.text }}
       </div>
-      <div class="text-sm text-[var(--color-text-muted)]">
+      <div class="game-text-sm text-[var(--color-text-muted)]">
         配對 {{ result.correctCount }}/{{ result.totalCount }} 張卡片，共移動 {{ result.moves }} 次
       </div>
     </div>
 
     <!-- 最佳成績比較 -->
-    <div v-if="bestScore !== undefined" class="best-score mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
+    <div v-if="bestScore !== undefined" class="best-score mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700 game-text-base">
       <div class="flex justify-between items-center">
         <span class="text-[var(--color-text)] font-medium">最佳成績</span>
         <div class="text-right">
-          <span class="font-bold text-blue-600 dark:text-blue-400 block">{{ bestScore }} 分</span>
+          <span class="font-bold text-blue-600 dark:text-blue-400 block game-number">{{ bestScore }} 分</span>
           <SubtleLabel v-if="result.score > bestScore" text="🎉 打破紀錄！" size="xs" class="text-green-600 dark:text-green-400 font-bold block" />
         </div>
       </div>
@@ -177,13 +177,13 @@ const getResultEmoji = (score: number) => {
       }"
     >
       <div class="flex items-center gap-3">
-        <div class="text-2xl">
+        <div class="game-text-2xl">
           {{ difficultyAdjustment.reason === 'accuracy-high' ? '⬆️' :
              difficultyAdjustment.reason === 'accuracy-low' ? '⬇️' : '➡️' }}
         </div>
         <div>
-          <h4 class="font-bold mb-1">難度調整</h4>
-          <p class="text-sm mb-2">
+          <h4 class="font-bold mb-1 game-text-base">難度調整</h4>
+          <p class="game-text-sm mb-2">
             {{ difficultyAdjustment.reason === 'accuracy-high' ? '表現優異，難度提升！' :
                difficultyAdjustment.reason === 'accuracy-low' ? '正在適應新難度' : '難度保持穩定' }}
           </p>
@@ -256,14 +256,6 @@ const getResultEmoji = (score: number) => {
 
   .score-display {
     padding: 1rem;
-  }
-
-  .result-header .emoji {
-    font-size: 3rem;
-  }
-
-  .result-header h2 {
-    font-size: 1.5rem;
   }
 }
 </style>

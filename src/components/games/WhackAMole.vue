@@ -362,7 +362,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 </script>
 
 <template>
-  <div class="whack-a-mole-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
+  <div class="whack-a-mole-game game-root game-frame" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -377,7 +377,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲場地 -->
       <div
-        class="game-field whack-board grid gap-3 sm:gap-4 p-4 sm:p-6 rounded-2xl mt-4"
+        class="game-field whack-board game-board grid gap-3 sm:gap-4 p-4 sm:p-6 rounded-2xl mt-4"
         :class="gridClass"
       >
         <div
@@ -412,7 +412,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           <Transition name="fade">
             <div
               v-if="hole.showScore"
-              class="absolute -top-2 sm:-top-4 font-bold text-lg sm:text-xl"
+              class="absolute -top-2 sm:-top-4 font-bold game-text-xl"
               :class="hole.scoreClass"
             >
               {{ hole.scoreText }}

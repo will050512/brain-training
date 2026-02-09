@@ -1,6 +1,6 @@
 <template>
   <div
-    class="game-content-full w-full h-full min-h-0 overflow-x-hidden"
+    class="game-content-full game-stage w-full h-full min-h-0 overflow-x-hidden"
     :class="{ 'is-paused': isPaused }"
   >
     <component

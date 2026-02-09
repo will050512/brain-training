@@ -1,24 +1,24 @@
 <template>
   <div 
     ref="containerRef"
-    class="clock-drawing-test game-root"
+    class="clock-drawing-test game-root game-frame"
     :class="{ 'is-landscape': isSmallLandscape() }"
   >
     <!-- 指示區域 -->
       <div class="instructions game-panel px-4 py-4" v-if="!isComplete">
-      <h3 class="text-lg sm:text-xl font-bold text-[var(--color-text)]">🕐 時鐘測驗</h3>
-      <p class="target-time text-sm sm:text-base text-[var(--color-text-secondary)]">
+      <h3 class="game-text-xl font-bold text-[var(--color-text)]">🕐 時鐘測驗</h3>
+      <p class="target-time game-text-base text-[var(--color-text-secondary)]">
         請組裝一個時鐘，並將指針指向
-        <strong class="text-blue-600 text-base sm:text-lg">{{ actualTargetTime }}</strong>
-        <span class="time-hint text-xs sm:text-sm">（{{ targetTimeDescription }}）</span>
+        <strong class="text-blue-600 game-text-lg game-number">{{ actualTargetTime }}</strong>
+        <span class="time-hint game-text-sm">（{{ targetTimeDescription }}）</span>
       </p>
-      <p class="hint text-xs sm:text-sm text-[var(--color-text-muted)]">提示：拖放數字到正確位置，然後旋轉指針設定時間</p>
+      <p class="hint game-text-sm text-[var(--color-text-muted)]">提示：拖放數字到正確位置，然後旋轉指針設定時間</p>
       <img class="reference-img" :src="referenceImg" alt="參考示意" />
     </div>
 
     <!-- 組裝模式區域 -->
       <div 
-        class="assemble-container game-panel" 
+        class="assemble-container game-panel game-board" 
         v-if="!isComplete"
         ref="assembleContainerRef"
       >
@@ -660,9 +660,6 @@ onUnmounted(() => {
 
 <style scoped>
 .clock-drawing-test {
-  max-width: var(--game-container-lg);
-  margin: 0 auto;
-  padding: var(--space-md);
   padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
 }
 
@@ -672,30 +669,30 @@ onUnmounted(() => {
 }
 
 .instructions h3 {
-  font-size: var(--heading-3);
+  font-size: var(--game-text-xl);
   font-weight: 600;
   color: var(--color-text);
   margin-bottom: var(--space-sm);
 }
 
 .target-time {
-  font-size: var(--text-lg);
+  font-size: var(--game-text-base);
   color: var(--color-text-secondary);
 }
 
 .target-time strong {
   color: var(--color-accent-blue);
-  font-size: var(--text-xl);
+  font-size: var(--game-text-lg);
 }
 
 .time-hint {
-  font-size: var(--text-sm);
+  font-size: var(--game-text-sm);
   color: var(--color-text-muted);
   font-weight: normal;
 }
 
 .hint {
-  font-size: var(--text-sm);
+  font-size: var(--game-text-sm);
   color: var(--color-text-muted);
   margin-top: var(--space-sm);
 }
@@ -709,10 +706,6 @@ onUnmounted(() => {
 }
 
 @media (max-width: 640px) {
-  .clock-drawing-test {
-    padding: var(--space-sm);
-  }
-
   .assemble-container {
     padding: var(--space-xs);
   }
@@ -751,7 +744,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: var(--game-text-base);
   font-weight: bold;
   color: var(--color-text);
   background: var(--color-surface);
@@ -810,7 +803,7 @@ onUnmounted(() => {
   top: -20px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 1rem;
+  font-size: var(--game-text-base);
   cursor: grab;
 }
 
@@ -840,7 +833,7 @@ onUnmounted(() => {
 }
 
 .pool-hint {
-  font-size: 0.875rem;
+  font-size: var(--game-text-sm);
   color: var(--color-text-muted);
   margin-bottom: 0.75rem;
 }
@@ -858,7 +851,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: var(--game-text-base);
   font-weight: bold;
   color: #1f2937;
   background: #ffffff;
@@ -891,7 +884,7 @@ onUnmounted(() => {
   border-radius: var(--radius-md);
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: var(--text-base);
+  font-size: var(--game-text-base);
   cursor: pointer;
   transition: all 0.2s;
   min-height: var(--touch-target-comfort);
@@ -908,7 +901,7 @@ onUnmounted(() => {
   color: white;
   border: none;
   border-radius: var(--radius-md);
-  font-size: var(--text-base);
+  font-size: var(--game-text-base);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;

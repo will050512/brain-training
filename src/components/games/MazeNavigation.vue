@@ -336,7 +336,7 @@ watch(() => [props.difficulty, props.subDifficulty], () => {
 
 <template>
   <div 
-      class="garden-walk-game game-root maze-shell w-full h-full flex flex-col overflow-hidden relative"
+      class="garden-walk-game game-root maze-shell game-frame w-full h-full flex flex-col overflow-hidden relative"
     >
     <!-- 背景裝飾 -->
     <div class="absolute inset-0 pointer-events-none opacity-10 pattern-grid"></div>
@@ -366,10 +366,10 @@ watch(() => [props.difficulty, props.subDifficulty], () => {
         :class="isLandscapeLayout ? 'hidden' : 'block'"
       >
         <div class="flex items-center gap-2">
-           <span class="text-xl">🧭</span>
+           <span class="game-text-xl">🧭</span>
            <span class="font-bold text-stone-700">{{ difficultyLabel }}</span>
         </div>
-        <div class="bg-amber-100 rounded-full px-3 py-1 text-sm font-bold text-amber-800 flex items-center gap-2 border border-amber-200">
+        <div class="bg-amber-100 rounded-full px-3 py-1 game-text-sm font-bold text-amber-800 flex items-center gap-2 border border-amber-200 game-number">
           <span>👣</span>
           <span>{{ moves }} 步</span>
         </div>
@@ -383,7 +383,7 @@ watch(() => [props.difficulty, props.subDifficulty], () => {
         <!-- 迷宮 Grid -->
         <div
           v-if="mazeState"
-          class="garden-grid relative shadow-2xl rounded-xl overflow-hidden bg-[#8D6E63]"
+          class="garden-grid game-board relative shadow-2xl rounded-xl overflow-hidden bg-[#8D6E63]"
           :style="{
             width: `${gridSize * cellSize}px`,
             height: `${gridSize * cellSize}px`,
@@ -420,19 +420,19 @@ watch(() => [props.difficulty, props.subDifficulty], () => {
             <!-- 物件層 -->
             <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
               <!-- 主角 -->
-              <span 
-                v-if="index === playerPosition" 
-                class="text-[1.2em] leading-none filter drop-shadow-md transition-transform duration-200"
-                :style="{ fontSize: `${cellSize * 0.7}px` }"
-              >
+                <span 
+                  v-if="index === playerPosition" 
+                  class="game-text-lg leading-none filter drop-shadow-md transition-transform duration-200"
+                  :style="{ fontSize: `${cellSize * 0.7}px` }"
+                >
                 🧑‍🌾
               </span>
               <!-- 終點 -->
-              <span 
-                v-else-if="type === 'end'" 
-                class="text-[1.2em] leading-none animate-bounce motion-reduce:animate-none text-red-700"
-                :style="{ fontSize: `${cellSize * 0.6}px` }"
-              >
+                <span 
+                  v-else-if="type === 'end'" 
+                  class="game-text-lg leading-none animate-bounce motion-reduce:animate-none text-red-700"
+                  :style="{ fontSize: `${cellSize * 0.6}px` }"
+                >
                 🚩
               </span>
               <!-- 起點標記 -->
@@ -448,7 +448,7 @@ watch(() => [props.difficulty, props.subDifficulty], () => {
         </div>
 
         <!-- 提示文字 -->
-        <div v-if="moves === 0" class="absolute bottom-4 bg-black/60 text-white px-4 py-2 rounded-full text-sm animate-pulse motion-reduce:animate-none pointer-events-none">
+        <div v-if="moves === 0" class="absolute bottom-4 bg-black/60 text-white px-4 py-2 rounded-full game-text-sm animate-pulse motion-reduce:animate-none pointer-events-none">
           點擊鄰近格子或滑動螢幕移動
         </div>
       </div>
@@ -462,7 +462,7 @@ watch(() => [props.difficulty, props.subDifficulty], () => {
       >
         <div v-if="isLandscapeLayout" class="mb-4 text-center">
           <div class="text-stone-700 font-bold mb-2">{{ difficultyLabel }}</div>
-          <div class="bg-white rounded-lg px-2 py-1 text-sm font-bold text-stone-600 border border-stone-200">
+          <div class="bg-white rounded-lg px-2 py-1 game-text-sm font-bold text-stone-600 border border-stone-200 game-number">
             👣 {{ moves }}
           </div>
         </div>

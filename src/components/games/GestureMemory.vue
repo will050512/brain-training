@@ -328,7 +328,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 </script>
 
 <template>
-  <div class="gesture-memory-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
+  <div class="gesture-memory-game game-root game-frame" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -343,17 +343,17 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲資訊 -->
         <div class="game-info game-panel text-center mt-4 px-4 py-3">
-          <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
+          <div class="game-text-sm text-[var(--color-text-muted)] game-number">
             第 {{ currentRound + 1 }} / {{ totalRounds }} 回合
           </div>
-          <div class="flex flex-wrap justify-center gap-3 sm:gap-4 mt-2 text-xs sm:text-sm">
+          <div class="flex flex-wrap justify-center gap-3 sm:gap-4 mt-2 game-text-sm">
             <div>
               <span class="text-[var(--color-text-muted)]">序列長度：</span>
-              <span class="font-bold text-[var(--color-primary)]">{{ currentLength }}</span>
+              <span class="font-bold text-[var(--color-primary)] game-number">{{ currentLength }}</span>
             </div>
             <div>
               <span class="text-[var(--color-text-muted)]">連續正確：</span>
-              <span class="font-bold text-[var(--color-combo)]">{{ streak }}</span>
+              <span class="font-bold text-[var(--color-combo)] game-number">{{ streak }}</span>
             </div>
           </div>
         </div>
@@ -365,16 +365,16 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           v-if="showingPhase === 'showing'"
           class="showing-phase text-center"
         >
-            <div class="text-xs sm:text-sm text-[var(--color-text-muted)] mb-3 sm:mb-4">
+            <div class="game-text-sm text-[var(--color-text-muted)] mb-3 sm:mb-4">
               記住手勢順序...
             </div>
           <div
-            class="gesture-display text-6xl sm:text-7xl md:text-8xl transition-all duration-200 min-h-24 sm:min-h-28 md:min-h-32 flex items-center justify-center"
+            class="gesture-display game-text-6xl transition-all duration-200 min-h-24 sm:min-h-28 md:min-h-32 flex items-center justify-center"
             :class="{ 'opacity-0 scale-50': displayGesture === null, 'opacity-100 scale-110': displayGesture !== null }"
           >
             {{ displayGesture?.icon ?? '' }}
           </div>
-          <div class="gesture-name text-lg sm:text-xl font-medium mt-2">
+          <div class="gesture-name game-text-xl font-medium mt-2">
             {{ displayGesture?.name ?? '' }}
           </div>
         </div>
@@ -384,7 +384,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           v-else-if="showingPhase === 'input'"
           class="input-phase"
         >
-            <div class="text-xs sm:text-sm text-[var(--color-text-muted)] text-center mb-3 sm:mb-4">
+            <div class="game-text-sm text-[var(--color-text-muted)] text-center mb-3 sm:mb-4">
               按順序點擊手勢
             </div>
 
@@ -393,7 +393,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
             <div
               v-for="(gesture, index) in userInput"
               :key="index"
-              class="gesture-icon w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-lg sm:text-2xl bg-blue-100 dark:bg-blue-900 rounded-lg min-h-[32px] min-w-[32px] sm:min-h-[40px] sm:min-w-[40px]"
+              class="gesture-icon w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center game-text-2xl bg-blue-100 dark:bg-blue-900 rounded-lg min-h-[32px] min-w-[32px] sm:min-h-[40px] sm:min-w-[40px]"
             >
               {{ gesture.icon }}
             </div>
@@ -407,15 +407,15 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           </div>
 
           <!-- 手勢選擇區 -->
-          <div class="gesture-grid grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3 max-w-sm sm:max-w-md mx-auto">
+          <div class="gesture-grid game-board grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3 max-w-sm sm:max-w-md mx-auto">
             <button
               v-for="gesture in gesturePool"
               :key="gesture.id"
               class="gesture-btn p-3 sm:p-4 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-blue-500 hover:text-white transition-all transform hover:scale-105 active:scale-95 min-h-[60px] sm:min-h-[70px] md:min-h-[80px]"
               @click="handleGestureClick(gesture)"
             >
-              <div class="text-2xl sm:text-3xl">{{ gesture.icon }}</div>
-              <div class="text-xs mt-1">{{ gesture.name }}</div>
+              <div class="game-text-3xl">{{ gesture.icon }}</div>
+              <div class="game-text-xs mt-1">{{ gesture.name }}</div>
             </button>
           </div>
         </div>
@@ -426,22 +426,22 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           class="result-phase text-center"
         >
           <div class="sequence-compare">
-              <div class="text-sm text-[var(--color-text-muted)] mb-2">正確順序</div>
+              <div class="game-text-sm text-[var(--color-text-muted)] mb-2">正確順序</div>
             <div class="correct-sequence flex justify-center gap-2 mb-4">
               <div
                 v-for="(gesture, index) in roundState?.sequence"
                 :key="index"
-                class="w-10 h-10 flex items-center justify-center text-2xl bg-green-100 dark:bg-green-900 rounded-lg"
+                class="w-10 h-10 flex items-center justify-center game-text-2xl bg-green-100 dark:bg-green-900 rounded-lg"
               >
                 {{ gesture.icon }}
               </div>
             </div>
-              <div class="text-sm text-[var(--color-text-muted)] mb-2">你的順序</div>
+              <div class="game-text-sm text-[var(--color-text-muted)] mb-2">你的順序</div>
             <div class="user-sequence flex justify-center gap-2">
               <div
                 v-for="(gesture, index) in roundState?.userInput"
                 :key="index"
-                class="w-10 h-10 flex items-center justify-center text-2xl rounded-lg"
+                class="w-10 h-10 flex items-center justify-center game-text-2xl rounded-lg"
                 :class="{
                   'bg-green-100 dark:bg-green-900': gesture.id === roundState?.sequence[index]?.id,
                   'bg-red-100 dark:bg-red-900': gesture.id !== roundState?.sequence[index]?.id,

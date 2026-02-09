@@ -210,7 +210,7 @@ const displayGradeMessage = computed(() => {
   padding: 0.5rem 1.5rem;
   border-radius: var(--radius-full);
   font-weight: 700;
-  font-size: 1.125rem;
+  font-size: var(--game-text-lg);
   margin-bottom: 1rem;
   animation: bounce 0.5s ease-out;
   box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
@@ -234,7 +234,7 @@ const displayGradeMessage = computed(() => {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-xl);
-  font-size: 3.5rem;
+  font-size: var(--game-text-6xl);
   font-weight: 900;
   margin: 0 auto 0.75rem;
   animation: gradeAppear 0.5s ease-out;
@@ -254,7 +254,7 @@ const displayGradeMessage = computed(() => {
 .grade-f { background: linear-gradient(135deg, #f87171, #ef4444); color: white; }
 
 .grade-message {
-  font-size: 1.125rem;
+  font-size: var(--game-text-base);
   color: var(--color-text-secondary);
   margin: 0;
 }
@@ -269,14 +269,14 @@ const displayGradeMessage = computed(() => {
 }
 
 .score-label {
-  font-size: 0.875rem;
+  font-size: var(--game-text-sm);
   color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
 
 .score-value {
-  font-size: 3rem;
+  font-size: var(--game-text-5xl);
   font-weight: 900;
   color: var(--color-primary);
   line-height: 1;
@@ -284,7 +284,7 @@ const displayGradeMessage = computed(() => {
 }
 
 .high-score {
-  font-size: 0.875rem;
+  font-size: var(--game-text-sm);
   color: var(--color-text-muted);
 }
 
@@ -311,17 +311,17 @@ const displayGradeMessage = computed(() => {
 }
 
 .stat-icon {
-  font-size: 1.5rem;
+  font-size: var(--game-text-2xl);
 }
 
 .stat-value {
-  font-size: 1.5rem;
+  font-size: var(--game-text-2xl);
   font-weight: 700;
   color: var(--color-text-primary);
 }
 
 .stat-label {
-  font-size: 0.75rem;
+  font-size: var(--game-text-xs);
   color: var(--color-text-muted);
 }
 
@@ -339,7 +339,7 @@ const displayGradeMessage = computed(() => {
   gap: 0.5rem;
   padding: 1rem 2rem;
   border-radius: var(--radius-lg);
-  font-size: 1.125rem;
+  font-size: var(--game-text-lg);
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -370,7 +370,7 @@ const displayGradeMessage = computed(() => {
 }
 
 .button-icon {
-  font-size: 1.125rem;
+  font-size: var(--game-text-lg);
 }
 
 /* 手機優化 */
@@ -382,11 +382,6 @@ const displayGradeMessage = computed(() => {
   .grade {
     width: 80px;
     height: 80px;
-    font-size: 2.5rem;
-  }
-  
-  .score-value {
-    font-size: 2.5rem;
   }
   
   .stats-grid {
@@ -395,10 +390,6 @@ const displayGradeMessage = computed(() => {
   
   .stat-item {
     padding: 0.75rem;
-  }
-  
-  .stat-value {
-    font-size: 1.375rem;
   }
   
   .action-buttons {

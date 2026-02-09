@@ -331,7 +331,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 </script>
 
 <template>
-  <div class="spot-difference-game game-root w-full max-w-4xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
+  <div class="spot-difference-game game-root game-frame-wide" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -346,40 +346,40 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲資訊 -->
       <div class="game-info game-panel flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4 mt-4 px-3 py-2">
-        <div class="text-xs sm:text-sm">
+        <div class="game-text-sm game-number">
           <span class="text-gray-500 dark:text-gray-400">第</span>
           <span class="font-bold mx-1">{{ currentRound + 1 }} / {{ totalRounds }}</span>
           <span class="text-gray-500 dark:text-gray-400">回合</span>
         </div>
-        <div class="text-xs sm:text-sm">
+        <div class="game-text-sm game-number">
           <span class="text-gray-500 dark:text-gray-400">找到：</span>
           <span class="font-bold text-green-500">{{ foundDifferences.length }}</span>
           <span class="text-gray-500 dark:text-gray-400"> / {{ diffCount }}</span>
         </div>
         <button
           v-if="config.maxHints > 0"
-          class="hint-btn text-xs sm:text-sm px-2 sm:px-3 py-2 rounded-lg bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 min-h-[44px] font-medium"
+          class="hint-btn game-text-sm px-2 sm:px-3 py-2 rounded-lg bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 min-h-[44px] font-medium"
           :disabled="hintsUsed >= config.maxHints"
           @click="handleUseHint"
         >
-          💡 提示 ({{ config.maxHints - hintsUsed }})
+          💡 提示 (<span class="game-number">{{ config.maxHints - hintsUsed }}</span>)
         </button>
       </div>
       <div
         v-if="!isRoundReady"
-        class="text-xs sm:text-sm text-[var(--color-text-muted)] mt-2 text-center"
+        class="game-text-sm text-[var(--color-text-muted)] mt-2 text-center"
       >
         先觀察圖片，再開始找不同
       </div>
 
       <!-- 圖片對比區域 -->
       <div
-        class="comparison-area mt-3 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 px-2"
+        class="comparison-area game-board-wide mt-3 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 px-2"
         v-if="currentRoundData"
       >
         <!-- 原圖（左邊） -->
         <div class="image-container game-panel p-3">
-          <div class="label text-center text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+          <div class="label text-center game-text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
             原圖
           </div>
           <div
@@ -401,7 +401,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
         <!-- 比對圖（右邊，可點擊） -->
         <div class="image-container game-panel p-3">
-          <div class="label text-center text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+          <div class="label text-center game-text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
             找出不同（點擊此處）
           </div>
            <div

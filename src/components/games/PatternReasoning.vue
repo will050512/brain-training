@@ -414,7 +414,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 </script>
 
 <template>
-  <div class="pattern-reasoning-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
+  <div class="pattern-reasoning-game game-root game-frame" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -430,20 +430,20 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 
       <!-- 遊戲資訊 -->
         <div class="game-info game-panel text-center mt-4 px-4 py-3">
-          <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
+          <div class="game-text-sm text-[var(--color-text-muted)] game-number">
             第 {{ currentRound + 1 }} / {{ totalRounds }} 題
           </div>
-          <div class="flex justify-center gap-4 mt-2 text-xs sm:text-sm">
+          <div class="flex justify-center gap-4 mt-2 game-text-sm">
             <div>
               <span class="text-[var(--color-text-muted)]">連續正確：</span>
-              <span class="font-bold text-[var(--color-combo)]">{{ streak }}</span>
+              <span class="font-bold text-[var(--color-combo)] game-number">{{ streak }}</span>
             </div>
           </div>
         </div>
 
       <!-- 序列顯示區 -->
-        <div class="sequence-area game-panel mt-6 sm:mt-8 px-4 py-4">
-          <div class="text-xs sm:text-sm text-[var(--color-text-muted)] text-center mb-3 sm:mb-4">
+        <div class="sequence-area game-panel game-board mt-6 sm:mt-8 px-4 py-4">
+          <div class="game-text-sm text-[var(--color-text-muted)] text-center mb-3 sm:mb-4">
             {{ instruction }}
           </div>
 
@@ -469,15 +469,15 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           </div>
 
           <!-- 問號位置 -->
-          <div class="question-mark w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center text-2xl sm:text-3xl font-bold bg-blue-100 dark:bg-blue-900 rounded-lg border-2 border-dashed border-blue-400 min-h-[48px] min-w-[48px] sm:min-h-[56px] sm:min-w-[56px]">
+          <div class="question-mark w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center game-text-3xl font-bold bg-blue-100 dark:bg-blue-900 rounded-lg border-2 border-dashed border-blue-400 min-h-[48px] min-w-[48px] sm:min-h-[56px] sm:min-w-[56px]">
             ?
           </div>
         </div>
       </div>
 
       <!-- 選項區 -->
-        <div class="options-area game-panel mt-6 sm:mt-8 px-4 py-4">
-          <div class="text-xs sm:text-sm text-[var(--color-text-muted)] text-center mb-3 sm:mb-4">
+        <div class="options-area game-panel game-board mt-6 sm:mt-8 px-4 py-4">
+          <div class="game-text-sm text-[var(--color-text-muted)] text-center mb-3 sm:mb-4">
             選擇答案
           </div>
 

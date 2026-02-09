@@ -21,6 +21,29 @@
   --min-touch-target: calc(44px * var(--ui-scale) * var(--text-scale));
   --layout-padding: calc(1rem * var(--ui-space-scale));
 
+  /* 遊戲流體字級（依 text-scale 縮放） */
+  --game-text-xs-base: clamp(0.72rem, 0.68rem + 0.2vw, 0.85rem);
+  --game-text-sm-base: clamp(0.85rem, 0.8rem + 0.3vw, 1rem);
+  --game-text-base-base: clamp(0.98rem, 0.9rem + 0.4vw, 1.15rem);
+  --game-text-lg-base: clamp(1.1rem, 1rem + 0.55vw, 1.35rem);
+  --game-text-xl-base: clamp(1.25rem, 1.1rem + 0.8vw, 1.6rem);
+  --game-text-2xl-base: clamp(1.5rem, 1.3rem + 1.1vw, 2rem);
+  --game-text-3xl-base: clamp(1.85rem, 1.6rem + 1.4vw, 2.5rem);
+  --game-text-4xl-base: clamp(2.2rem, 1.9rem + 1.9vw, 3rem);
+  --game-text-5xl-base: clamp(2.6rem, 2.2rem + 2.4vw, 3.6rem);
+  --game-text-6xl-base: clamp(3.1rem, 2.6rem + 3vw, 4.4rem);
+
+  --game-text-xs: calc(var(--game-text-xs-base) * var(--text-scale));
+  --game-text-sm: calc(var(--game-text-sm-base) * var(--text-scale));
+  --game-text-base: calc(var(--game-text-base-base) * var(--text-scale));
+  --game-text-lg: calc(var(--game-text-lg-base) * var(--text-scale));
+  --game-text-xl: calc(var(--game-text-xl-base) * var(--text-scale));
+  --game-text-2xl: calc(var(--game-text-2xl-base) * var(--text-scale));
+  --game-text-3xl: calc(var(--game-text-3xl-base) * var(--text-scale));
+  --game-text-4xl: calc(var(--game-text-4xl-base) * var(--text-scale));
+  --game-text-5xl: calc(var(--game-text-5xl-base) * var(--text-scale));
+  --game-text-6xl: calc(var(--game-text-6xl-base) * var(--text-scale));
+
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
@@ -1184,6 +1207,43 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 .game-container-xl { max-width: var(--game-container-xl); margin: 0 auto; }
 .game-container-2xl { max-width: var(--game-container-2xl); margin: 0 auto; }
 
+/* 遊戲框架 */
+.game-frame {
+  width: 100%;
+  max-width: min(100%, 48rem);
+  margin: 0 auto;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+}
+
+.game-frame-wide {
+  width: 100%;
+  max-width: min(100%, 60rem);
+  margin: 0 auto;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+}
+
+/* 遊戲播放區置中/緊湊工具 */
+.game-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  gap: var(--spacing-sm);
+}
+
+.game-board {
+  width: min(100%, 44rem);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.game-board-wide {
+  width: min(100%, 60rem);
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* ===== 流體文字類別 ===== */
 .text-fluid-xs { font-size: var(--text-xs); }
 .text-fluid-sm { font-size: var(--text-sm); }
@@ -1193,6 +1253,22 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
 .text-fluid-2xl { font-size: var(--text-2xl); }
 .text-fluid-3xl { font-size: var(--text-3xl); }
 .text-fluid-4xl { font-size: var(--text-4xl); }
+
+/* ===== 遊戲流體字級 ===== */
+.game-text-xs { font-size: var(--game-text-xs); }
+.game-text-sm { font-size: var(--game-text-sm); }
+.game-text-base { font-size: var(--game-text-base); }
+.game-text-lg { font-size: var(--game-text-lg); }
+.game-text-xl { font-size: var(--game-text-xl); }
+.game-text-2xl { font-size: var(--game-text-2xl); }
+.game-text-3xl { font-size: var(--game-text-3xl); }
+.game-text-4xl { font-size: var(--game-text-4xl); line-height: 1.1; }
+.game-text-5xl { font-size: var(--game-text-5xl); line-height: 1.1; }
+.game-text-6xl { font-size: var(--game-text-6xl); line-height: 1.1; }
+
+.game-number {
+  font-variant-numeric: tabular-nums;
+}
 
 /* 標題類別 */
 .heading-fluid-1 { font-size: var(--heading-1); font-weight: 700; }
@@ -2523,6 +2599,10 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label {
     overflow-y: auto;
     padding-top: var(--spacing-sm);
     padding-bottom: var(--spacing-md);
+  }
+
+  .game-content-full.game-stage {
+    align-items: center;
   }
 
   .game-content-no-scroll {

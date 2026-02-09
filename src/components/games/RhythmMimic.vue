@@ -447,7 +447,7 @@ watch(isPaused, (paused) => {
 </script>
 
 <template>
-  <div class="rhythm-game-root game-root w-full max-w-2xl mx-auto p-4 select-none">
+  <div class="rhythm-game-root game-root game-frame select-none">
     <GameReadyScreen
       v-if="phase === 'ready'"
       title="節奏拍拍樂"
@@ -460,13 +460,13 @@ watch(isPaused, (paused) => {
 
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <div class="game-panel flex justify-between items-center mb-6 p-3 rounded-xl">
-        <div class="text-sm font-bold text-[var(--color-text-muted)]">
+        <div class="game-text-sm font-bold text-[var(--color-text-muted)] game-number">
           回合 {{ currentRound + 1 }}/{{ config.totalRounds }}
         </div>
-        <div class="text-xl font-bold text-[var(--color-primary)]">
+        <div class="game-text-xl game-number font-bold text-[var(--color-primary)]">
           {{ score }} 分
         </div>
-        <div class="text-sm font-medium px-2 py-1 rounded bg-[var(--color-bg-soft)]">
+        <div class="game-text-sm font-medium px-2 py-1 rounded bg-[var(--color-bg-soft)]">
           {{ currentPattern?.name }}
         </div>
       </div>
@@ -478,13 +478,13 @@ watch(isPaused, (paused) => {
           <span v-if="gamePhase === 'listening'" class="flex items-center justify-center gap-2">
             👂 請仔細聆聽示範
           </span>
-          <span v-else-if="gamePhase === 'countdown'" class="text-4xl font-black text-blue-500 animate-pulse">
+          <span v-else-if="gamePhase === 'countdown'" class="game-text-4xl game-number font-black text-blue-500 animate-pulse">
             {{ countdown }}
           </span>
-          <span v-else-if="gamePhase === 'input'" class="flex items-center justify-center gap-2 text-xl">
+          <span v-else-if="gamePhase === 'input'" class="flex items-center justify-center gap-2 game-text-xl">
             👇 換你跟著拍子按！
           </span>
-          <span v-else-if="gamePhase === 'result'" class="text-xl font-bold text-blue-500">
+          <span v-else-if="gamePhase === 'result'" class="game-text-xl font-bold text-blue-500">
             結算中...
           </span>
         </div>
@@ -533,7 +533,7 @@ watch(isPaused, (paused) => {
           @touchstart.prevent="handleTap"
           @mousedown.prevent="handleTap"
         >
-          <div class="text-4xl sm:text-5xl transform transition-transform group-active:scale-90">
+          <div class="game-text-4xl transform transition-transform group-active:scale-90">
             👏
           </div>
           <div v-if="isTapping" class="absolute inset-0 bg-white opacity-30 animate-ping rounded-full"></div>
@@ -543,9 +543,9 @@ watch(isPaused, (paused) => {
           <button 
             v-if="replayRemaining > 0 && gamePhase === 'input'"
             @click="replay"
-            class="px-4 py-2 min-h-[44px] rounded-full bg-amber-100 text-amber-700 font-bold text-sm hover:bg-amber-200 transition-colors flex items-center gap-2"
+            class="px-4 py-2 min-h-[44px] rounded-full bg-amber-100 text-amber-700 font-bold game-text-sm hover:bg-amber-200 transition-colors flex items-center gap-2"
           >
-            <span>↺</span> 再聽一次 ({{ replayRemaining }})
+            <span>↺</span> 再聽一次 (<span class="game-number">{{ replayRemaining }}</span>)
           </button>
         </div>
       </div>

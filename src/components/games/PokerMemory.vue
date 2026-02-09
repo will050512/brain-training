@@ -358,7 +358,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 </script>
 
 <template>
-  <div class="poker-memory-game game-root w-full max-w-3xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
+  <div class="poker-memory-game game-root game-frame-wide" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -372,34 +372,34 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲資訊 -->
-        <div class="game-info game-panel flex justify-center gap-4 sm:gap-6 mt-4 text-xs sm:text-sm px-4 py-2">
+        <div class="game-info game-panel flex justify-center gap-4 sm:gap-6 mt-4 game-text-sm px-4 py-2">
           <div class="stat">
             <span class="text-[var(--color-text-muted)]">配對：</span>
-            <span class="font-bold">{{ matchedPairs }} / {{ config.pairs }}</span>
+            <span class="font-bold game-number">{{ matchedPairs }} / {{ config.pairs }}</span>
           </div>
           <div class="stat">
             <span class="text-[var(--color-text-muted)]">翻牌：</span>
-            <span class="font-bold">{{ moves }}</span>
+            <span class="font-bold game-number">{{ moves }}</span>
           </div>
         </div>
 
       <!-- 預覽提示 -->
       <div
         v-if="isPreviewing"
-        class="preview-hint text-center mt-4 text-base sm:text-lg font-medium text-blue-500 px-4"
+        class="preview-hint text-center mt-4 game-text-lg font-medium text-blue-500 px-4"
       >
         記住牌面位置...
       </div>
       <div
         v-else-if="isTransitioning"
-        class="preview-hint text-center mt-4 text-base sm:text-lg font-medium text-blue-500 px-4"
+        class="preview-hint text-center mt-4 game-text-lg font-medium text-blue-500 px-4"
       >
         準備開始...
       </div>
 
       <!-- 卡片網格 -->
           <div
-            class="card-grid game-panel mt-4 sm:mt-6 grid gap-2 sm:gap-3 md:gap-4 mx-auto w-full px-3 sm:px-4 py-3"
+            class="card-grid game-panel game-board-wide mt-4 sm:mt-6 grid gap-2 sm:gap-3 md:gap-4 mx-auto w-full px-3 sm:px-4 py-3"
             :style="{
               gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`
             }"
@@ -435,7 +435,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
               }"
             >
               <div
-                class="rank text-xl sm:text-2xl md:text-3xl font-bold"
+                class="rank game-text-3xl font-bold"
                 :style="{ color: getSuitColor(card.suit) }"
               >
                 {{ card.rank }}
@@ -449,7 +449,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
               />
               <div
                 v-else
-                class="suit text-2xl sm:text-3xl md:text-4xl"
+                class="suit game-text-4xl"
                 :style="{ color: getSuitColor(card.suit) }"
               >
                 {{ card.suit }}

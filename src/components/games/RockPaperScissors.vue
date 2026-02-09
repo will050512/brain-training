@@ -290,7 +290,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 </script>
 
 <template>
-  <div class="rock-paper-scissors-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
+  <div class="rock-paper-scissors-game game-root game-frame" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -305,30 +305,30 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 題目資訊 -->
       <div class="round-info game-panel text-center mt-4 px-4 py-3">
-        <div class="text-sm text-[var(--color-text-muted)]">
+        <div class="game-text-sm text-[var(--color-text-muted)] game-number">
           第 {{ currentRound + 1 }} / {{ totalRounds }} 回合
         </div>
         
         <!-- 模式提示 -->
         <div 
           v-if="isReverse"
-          class="mode-hint mt-2 inline-block px-3 py-1 bg-[var(--color-warning-bg)] text-[var(--color-warning)] rounded-full text-sm font-medium"
+          class="mode-hint mt-2 inline-block px-3 py-1 bg-[var(--color-warning-bg)] text-[var(--color-warning)] rounded-full game-text-sm font-medium"
         >
           ⚠️ 反向模式：選擇會輸的！
         </div>
         <div 
           v-else
-          class="mode-hint mt-2 inline-block px-3 py-1 bg-[var(--color-primary-bg)] text-[var(--color-primary)] rounded-full text-sm font-medium"
+          class="mode-hint mt-2 inline-block px-3 py-1 bg-[var(--color-primary-bg)] text-[var(--color-primary)] rounded-full game-text-sm font-medium"
         >
           正常模式：選擇會贏的！
         </div>
       </div>      <!-- 電腦出拳 -->
       <div class="computer-gesture game-panel mt-6 text-center px-4 py-4">
-      <div class="text-sm text-[var(--color-text-muted)] mb-2">電腦出：</div>
-        <div class="gesture-display text-8xl leading-none">
+      <div class="game-text-sm text-[var(--color-text-muted)] mb-2">電腦出：</div>
+        <div class="gesture-display game-text-6xl leading-none">
           <span>{{ computerGesture ? GESTURES[computerGesture].emoji : '?' }}</span>
         </div>
-        <div class="gesture-name text-lg font-medium mt-2">
+        <div class="gesture-name game-text-lg font-medium mt-2">
           {{ computerGesture ? GESTURES[computerGesture].name : '' }}
         </div>
       </div>
@@ -338,12 +338,12 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
         v-if="showResult && currentRoundResult"
         class="result-display game-panel mt-6 text-center px-4 py-4"
       >
-                <div class="player-choice text-4xl mb-2 leading-none">
+                <div class="player-choice game-text-4xl mb-2 leading-none">
           你選：
           <span>{{ currentRoundResult.playerGesture ? GESTURES[currentRoundResult.playerGesture].emoji : '?' }}</span>
         </div>
         <div 
-          class="result-text text-xl font-bold"
+          class="result-text game-text-xl font-bold"
           :style="{ color: getResultColor(currentRoundResult.result!) }"
         >
           {{ getResultText(currentRoundResult.result!, isReverse) }}
@@ -361,8 +361,8 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           class="gesture-btn min-w-[80px] w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-primary)] hover:text-[var(--color-text-inverse)] transition-all transform hover:scale-105 active:scale-95 flex flex-col items-center justify-center gap-1 p-2 shadow-sm"
           @click="handleSelectGesture(gesture)"
         >
-          <div class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-none">{{ GESTURES[gesture].emoji }}</div>
-          <div class="text-xs sm:text-sm font-medium leading-tight">{{ GESTURES[gesture].name }}</div>
+          <div class="game-text-4xl leading-none">{{ GESTURES[gesture].emoji }}</div>
+          <div class="game-text-sm font-medium leading-tight">{{ GESTURES[gesture].name }}</div>
         </button>
       </div>
 

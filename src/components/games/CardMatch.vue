@@ -417,7 +417,7 @@ watch(isPaused, (paused) => {
 </script>
 
 <template>
-  <div class="card-match-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
+  <div class="card-match-game game-root game-frame" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -431,28 +431,28 @@ watch(isPaused, (paused) => {
     <!-- 遊戲進行中 -->
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲資訊 -->
-        <div class="game-info game-panel flex justify-center gap-6 mt-4 text-sm px-4 py-2">
+        <div class="game-info game-panel flex justify-center gap-6 mt-4 game-text-sm px-4 py-2">
           <div class="stat">
             <span class="text-[var(--color-text-muted)]">配對：</span>
-            <span class="font-bold">{{ matchedPairs }} / {{ totalPairs }}</span>
+            <span class="font-bold game-number">{{ matchedPairs }} / {{ totalPairs }}</span>
           </div>
           <div class="stat">
             <span class="text-[var(--color-text-muted)]">步數：</span>
-            <span class="font-bold">{{ moves }}</span>
+            <span class="font-bold game-number">{{ moves }}</span>
           </div>
         </div>
 
       <!-- 預覽提示 -->
       <div
         v-if="isPreviewing"
-        class="preview-hint text-center mt-4 text-lg font-medium text-blue-500"
+        class="preview-hint text-center mt-4 game-text-lg font-medium text-blue-500"
       >
         記住卡片位置...
       </div>
 
       <!-- 卡片網格 -->
         <div
-          class="card-grid game-panel mt-4 sm:mt-6 grid gap-2 sm:gap-3 px-3 py-3"
+          class="card-grid game-panel game-board mt-4 sm:mt-6 grid gap-2 sm:gap-3 px-3 py-3"
           :style="{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }"
         >
         <button
@@ -488,7 +488,7 @@ watch(isPaused, (paused) => {
               alt=""
               aria-hidden="true"
             />
-            <span v-else class="text-2xl sm:text-3xl md:text-4xl">{{ card.emoji }}</span>
+            <span v-else class="game-text-3xl">{{ card.emoji }}</span>
           </div>
         </button>
       </div>

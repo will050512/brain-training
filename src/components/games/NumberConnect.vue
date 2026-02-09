@@ -361,7 +361,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 </script>
 
 <template>
-  <div class="number-connect-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
+  <div class="number-connect-game game-root game-frame" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -377,7 +377,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
       <!-- 工具列 -->
         <div class="toolbar game-panel flex justify-center gap-4 mt-4 px-4 py-2">
         <button
-          class="tool-btn min-h-[48px] px-4 py-2 rounded-lg bg-yellow-200 dark:bg-yellow-700 hover:bg-yellow-300 dark:hover:bg-yellow-600 transition-colors text-base sm:text-lg font-medium"
+          class="tool-btn min-h-[48px] px-4 py-2 rounded-lg bg-yellow-200 dark:bg-yellow-700 hover:bg-yellow-300 dark:hover:bg-yellow-600 transition-colors game-text-lg font-medium"
           @click="showHint"
         >
           💡 提示
@@ -385,13 +385,13 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
       </div>
 
       <!-- 遊戲資訊 -->
-        <div class="game-info game-panel text-center mt-4 text-xs sm:text-sm text-[var(--color-text-muted)] px-4 py-2">
+        <div class="game-info game-panel text-center mt-4 game-text-sm text-[var(--color-text-muted)] px-4 py-2">
         <div class="flex flex-wrap justify-center gap-2 sm:gap-4">
-            <span>下一個：<strong class="text-[var(--color-primary)]">{{ currentTarget }}</strong></span>
+            <span>下一個：<strong class="text-[var(--color-primary)] game-number">{{ currentTarget }}</strong></span>
           <span class="hidden sm:inline">|</span>
-          <span>已連接：{{ connectedNumbersCount }} / {{ config.count }}</span>
+          <span>已連接：<span class="game-number">{{ connectedNumbersCount }} / {{ config.count }}</span></span>
           <span class="hidden sm:inline">|</span>
-          <span>錯誤：{{ errors }}</span>
+          <span>錯誤：<span class="game-number">{{ errors }}</span></span>
         </div>
       </div>
 
@@ -417,7 +417,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           <button
             v-for="node in nodes"
             :key="node.value"
-            class="node-btn absolute w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center text-sm sm:text-base md:text-lg font-bold transition-all transform hover:scale-110 min-h-[44px] min-w-[44px] sm:min-h-[48px] sm:min-w-[48px]"
+            class="node-btn absolute w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center game-text-lg game-number font-bold transition-all transform hover:scale-110 min-h-[44px] min-w-[44px] sm:min-h-[48px] sm:min-w-[48px]"
             :class="{
               'bg-green-500 text-white': node.connected,
               'bg-blue-500 text-white ring-2 ring-blue-300': !node.connected && node.value === currentTarget,

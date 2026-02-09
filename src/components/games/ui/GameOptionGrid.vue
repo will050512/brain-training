@@ -152,7 +152,7 @@ const handleSelect = (option: NormalizedOption) => {
   padding: 1rem;
   border-radius: var(--radius-lg);
   font-weight: 600;
-  font-size: 1.25rem;
+  font-size: var(--game-text-lg);
   cursor: pointer;
   transition: all var(--transition-fast);
   user-select: none;
@@ -195,13 +195,13 @@ const handleSelect = (option: NormalizedOption) => {
 /* 尺寸變體 */
 .variant-large .option-button {
   padding: 1.5rem;
-  font-size: 2rem;
+  font-size: var(--game-text-2xl);
   min-height: 100px;
 }
 
 .variant-compact .option-button {
   padding: 0.75rem;
-  font-size: 1rem;
+  font-size: var(--game-text-sm);
 }
 
 /* 狀態 */
@@ -264,12 +264,10 @@ const handleSelect = (option: NormalizedOption) => {
   
   .option-button {
     padding: 0.875rem;
-    font-size: 1.125rem;
   }
   
   .variant-large .option-button {
     padding: 1rem;
-    font-size: 1.5rem;
     min-height: 80px;
   }
   
@@ -283,7 +281,6 @@ const handleSelect = (option: NormalizedOption) => {
 @media (min-width: 768px) {
   .option-button {
     padding: 1.25rem;
-    font-size: 1.375rem;
   }
 }
 

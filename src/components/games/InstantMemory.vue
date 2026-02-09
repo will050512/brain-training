@@ -324,7 +324,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
 </script>
 
 <template>
-  <div class="instant-memory-game game-root w-full max-w-2xl mx-auto p-4" :class="{ 'is-landscape': isSmallLandscape() }">
+  <div class="instant-memory-game game-root game-frame" :class="{ 'is-landscape': isSmallLandscape() }">
     <!-- 準備畫面 -->
     <GameReadyScreen
       v-if="phase === 'ready'"
@@ -339,12 +339,12 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
     <template v-else-if="phase === 'playing' || phase === 'paused'">
       <!-- 遊戲資訊 -->
         <div class="game-info game-panel text-center mt-4 px-4 py-3">
-          <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
+          <div class="game-text-sm text-[var(--color-text-muted)] game-number">
             第 {{ currentRound + 1 }} / {{ totalRounds }} 回合
           </div>
-          <div class="text-xs sm:text-sm mt-1">
+          <div class="game-text-sm mt-1">
             <span class="text-[var(--color-text-muted)]">序列長度：</span>
-            <span class="font-bold text-[var(--color-primary)]">{{ currentLength }}</span>
+            <span class="font-bold text-[var(--color-primary)] game-number">{{ currentLength }}</span>
           </div>
         </div>
 
@@ -355,11 +355,12 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
             v-if="showingPhase === 'showing'"
             class="showing-phase text-center flex flex-col flex-grow justify-center items-center"
           >
-            <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-4 sm:mb-6">
+            <div class="game-text-sm text-gray-500 dark:text-gray-400 mb-4 sm:mb-6">
               記住這些數字...
             </div>
             <div
-              class="digit-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl xl:text-10xl font-bold transition-all duration-200 min-h-32 sm:min-h-40 md:min-h-48 lg:min-h-56 xl:min-h-64 flex items-center justify-center"
+              class="digit-display game-text-6xl game-number font-bold transition-all duration-200 flex items-center justify-center"
+              style="min-height: clamp(8rem, 20vw, 16rem);"
               :class="{ 'opacity-0': displayDigit === null, 'opacity-100 scale-110': displayDigit !== null }"
             >
               {{ displayDigit ?? '' }}
@@ -371,7 +372,7 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           v-else-if="showingPhase === 'input'"
           class="input-phase flex flex-col flex-grow justify-center"
         >
-          <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center mb-4 sm:mb-6">
+          <div class="game-text-sm text-gray-500 dark:text-gray-400 text-center mb-4 sm:mb-6">
             輸入剛才看到的數字
           </div>
 
@@ -380,31 +381,31 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
             <div
               v-for="(digit, index) in userInput"
               :key="index"
-              class="digit-box w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center text-xl sm:text-2xl lg:text-3xl font-bold bg-blue-100 dark:bg-blue-900 rounded-lg min-h-[48px] min-w-[48px] sm:min-h-[56px] sm:min-w-[56px]"
+              class="digit-box w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center game-text-2xl game-number font-bold bg-blue-100 dark:bg-blue-900 rounded-lg min-h-[48px] min-w-[48px] sm:min-h-[56px] sm:min-w-[56px]"
             >
               {{ digit }}
             </div>
             <div
               v-for="i in (currentLength - userInput.length)"
               :key="'placeholder-' + i"
-              class="digit-box w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center text-xl sm:text-2xl lg:text-3xl border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg min-h-[48px] min-w-[48px] sm:min-h-[56px] sm:min-w-[56px]"
+              class="digit-box w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center game-text-2xl game-number border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg min-h-[48px] min-w-[48px] sm:min-h-[56px] sm:min-w-[56px]"
             >
               _
             </div>
           </div>
 
           <!-- 數字鍵盤 -->
-          <div class="number-pad grid grid-cols-3 gap-2 sm:gap-3 max-w-xs sm:max-w-sm mx-auto">
+          <div class="number-pad game-board grid grid-cols-3 gap-2 sm:gap-3 max-w-xs sm:max-w-sm mx-auto">
             <button
               v-for="num in [1, 2, 3, 4, 5, 6, 7, 8, 9]"
               :key="num"
-              class="number-btn w-14 h-14 sm:w-16 sm:h-16 text-lg sm:text-2xl font-bold bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-blue-500 hover:text-white transition-colors min-h-[56px] min-w-[56px] sm:min-h-[64px] sm:min-w-[64px]"
+              class="number-btn w-14 h-14 sm:w-16 sm:h-16 game-text-2xl game-number font-bold bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-blue-500 hover:text-white transition-colors min-h-[56px] min-w-[56px] sm:min-h-[64px] sm:min-w-[64px]"
               @click="handleNumberInput(num)"
             >
               {{ num }}
             </button>
             <button
-              class="delete-btn col-span-3 w-full text-lg sm:text-xl bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 rounded-xl hover:bg-red-500 hover:text-white transition-colors min-h-[48px] sm:min-h-[56px]"
+              class="delete-btn col-span-3 w-full game-text-lg bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 rounded-xl hover:bg-red-500 hover:text-white transition-colors min-h-[48px] sm:min-h-[56px]"
               @click="handleDelete"
             >
               ⌫
@@ -418,22 +419,22 @@ watch(() => [props.difficulty, props.subDifficulty] as const, () => {
           class="result-phase text-center"
         >
           <div class="sequence-compare">
-            <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">正確答案</div>
+            <div class="game-text-sm text-gray-500 dark:text-gray-400 mb-2">正確答案</div>
             <div class="correct-sequence flex justify-center gap-2 mb-4">
               <div
                 v-for="(digit, index) in roundState?.sequence"
                 :key="index"
-                class="w-10 h-10 flex items-center justify-center text-xl font-bold bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg"
+                class="w-10 h-10 flex items-center justify-center game-text-xl game-number font-bold bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg"
               >
                 {{ digit }}
               </div>
             </div>
-            <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">你的答案</div>
+            <div class="game-text-sm text-gray-500 dark:text-gray-400 mb-2">你的答案</div>
             <div class="user-sequence flex justify-center gap-2">
               <div
                 v-for="(digit, index) in roundState?.userInput"
                 :key="index"
-                class="w-10 h-10 flex items-center justify-center text-xl font-bold rounded-lg"
+                class="w-10 h-10 flex items-center justify-center game-text-xl game-number font-bold rounded-lg"
                 :class="{
                   'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300': digit === roundState?.sequence[index],
                   'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300': digit !== roundState?.sequence[index],
