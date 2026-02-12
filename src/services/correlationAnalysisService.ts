@@ -48,8 +48,61 @@ export interface DomainCorrelation {
   dataPoints: { miniCogScore: number; domainScore: number }[]
 }
 
+export type QuickDirection = 'improving' | 'declining' | 'stable'
+
+export interface QuickDomainInsight {
+  domain: string
+  delta: number
+  direction: QuickDirection
+}
+
+export interface TrainingDirectionInsight {
+  hasEnoughGames: boolean
+  minimumGames: number
+  recentCount: number
+  previousCount: number
+  recentAverage: number
+  previousAverage: number
+  scoreDelta: number
+  direction: QuickDirection
+  confidence: 'low' | 'medium' | 'high'
+  domainInsights: QuickDomainInsight[]
+  miniCogReference: {
+    latestScore: number
+    previousScore: number | null
+    trend: 'up' | 'down' | 'flat' | 'unknown'
+  } | null
+  message: string
+  careSuggestion: string
+}
+
 /** 最小資料點數量要求（統計顯著性需求） */
 export const MINIMUM_DATA_POINTS = 5
+const QUICK_DIRECTION_MIN_GAMES = 6
+const QUICK_DIRECTION_MAX_GAMES = 12
+const QUICK_DIRECTION_THRESHOLD = 5
+
+function resolveQuickDirection(delta: number): QuickDirection {
+  if (delta >= QUICK_DIRECTION_THRESHOLD) return 'improving'
+  if (delta <= -QUICK_DIRECTION_THRESHOLD) return 'declining'
+  return 'stable'
+}
+
+function resolveQuickConfidence(totalSamples: number, absDelta: number): TrainingDirectionInsight['confidence'] {
+  if (totalSamples >= 10 && absDelta >= 8) return 'high'
+  if (totalSamples >= 8 || absDelta >= 5) return 'medium'
+  return 'low'
+}
+
+function getCareSuggestion(direction: QuickDirection): string {
+  if (direction === 'improving') {
+    return '目前走向不錯，建議維持固定練習節奏，每週至少 3 次。'
+  }
+  if (direction === 'declining') {
+    return '最近表現有些下滑，建議先降低難度、縮短單次時長，先求穩定再提升。'
+  }
+  return '目前表現大致穩定，建議維持規律練習，並逐步加入不同類型遊戲。'
+}
 
 /**
  * 檢查是否有足夠的資料進行關聯分析
@@ -343,6 +396,137 @@ export function getMiniCogGameCorrelationData(
   correlationData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   
   return correlationData
+}
+
+/**
+ * 即時方向分析
+ * 不等待統計門檻，使用最近訓練資料比較「近期 vs 前期」方向。
+ */
+export function analyzeTrainingDirection(
+  miniCogResults: MiniCogResult[],
+  gameSessions: GameSession[]
+): TrainingDirectionInsight {
+  const validSessions = (gameSessions || [])
+    .filter(session => Number.isFinite(new Date(session.createdAt).getTime()))
+    .filter(session => Number.isFinite(session.result?.score))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+  if (validSessions.length < QUICK_DIRECTION_MIN_GAMES) {
+    return {
+      hasEnoughGames: false,
+      minimumGames: QUICK_DIRECTION_MIN_GAMES,
+      recentCount: 0,
+      previousCount: 0,
+      recentAverage: 0,
+      previousAverage: 0,
+      scoreDelta: 0,
+      direction: 'stable',
+      confidence: 'low',
+      domainInsights: [],
+      miniCogReference: null,
+      message: `目前已完成 ${validSessions.length} 場訓練；再累積到 ${QUICK_DIRECTION_MIN_GAMES} 場，就能提供近期方向提醒。`,
+      careSuggestion: '先維持每天短時間練習，累積到足夠場次後，分析會更準確。'
+    }
+  }
+
+  const scopedSessions = validSessions.slice(0, QUICK_DIRECTION_MAX_GAMES)
+  const splitIndex = Math.floor(scopedSessions.length / 2)
+  const recentSessions = scopedSessions.slice(0, splitIndex)
+  const previousSessions = scopedSessions.slice(splitIndex)
+
+  const recentAverage = recentSessions.length > 0
+    ? recentSessions.reduce((sum, s) => sum + (s.result?.score || 0), 0) / recentSessions.length
+    : 0
+  const previousAverage = previousSessions.length > 0
+    ? previousSessions.reduce((sum, s) => sum + (s.result?.score || 0), 0) / previousSessions.length
+    : 0
+  const scoreDelta = Math.round((recentAverage - previousAverage) * 100) / 100
+  const direction = resolveQuickDirection(scoreDelta)
+  const confidence = resolveQuickConfidence(scopedSessions.length, Math.abs(scoreDelta))
+
+  const domainLabels: Record<CognitiveDomain, string> = {
+    memory: '記憶',
+    attention: '注意',
+    processing: '處理速度',
+    executive: '執行功能',
+    language: '語言'
+  }
+  const domains = Object.keys(COGNITIVE_DOMAIN_WEIGHTS) as CognitiveDomain[]
+  const recentScores = calculateOverallCognitiveScores(recentSessions)
+  const recentSamples = calculateDimensionSampleCounts(recentSessions)
+  const previousScores = calculateOverallCognitiveScores(previousSessions)
+  const previousSamples = calculateDimensionSampleCounts(previousSessions)
+  const recentDomainScores = calculateCognitiveDomainScores(recentScores, recentSamples)
+  const previousDomainScores = calculateCognitiveDomainScores(previousScores, previousSamples)
+
+  const domainInsights = domains
+    .map(domain => {
+      const delta = (recentDomainScores[domain] ?? 0) - (previousDomainScores[domain] ?? 0)
+      return {
+        domain: domainLabels[domain] ?? domain,
+        delta: Math.round(delta * 100) / 100,
+        direction: resolveQuickDirection(delta)
+      }
+    })
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .slice(0, 3)
+
+  const validMiniCog = (miniCogResults || [])
+    .filter(result => Number.isFinite(new Date(result.completedAt).getTime()))
+    .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
+  const latestMiniCog = validMiniCog[0]
+  const previousMiniCog = validMiniCog[1]
+  const miniCogDelta = latestMiniCog && previousMiniCog
+    ? latestMiniCog.totalScore - previousMiniCog.totalScore
+    : null
+  const miniCogTrend: 'up' | 'down' | 'flat' | 'unknown' = miniCogDelta === null
+    ? 'unknown'
+    : miniCogDelta >= 1
+      ? 'up'
+      : miniCogDelta <= -1
+        ? 'down'
+        : 'flat'
+  const miniCogReference = latestMiniCog
+    ? {
+        latestScore: latestMiniCog.totalScore,
+        previousScore: previousMiniCog?.totalScore ?? null,
+        trend: miniCogTrend
+      }
+    : null
+
+  const directionText = direction === 'improving'
+    ? '穩定進步'
+    : direction === 'declining'
+      ? '稍微下滑'
+      : '大致持平'
+  const confidenceText = confidence === 'high'
+    ? '高'
+    : confidence === 'medium'
+      ? '中'
+      : '初步'
+
+  const miniCogText = miniCogReference
+    ? ` Mini-Cog 最新 ${miniCogReference.latestScore} 分${miniCogReference.previousScore === null ? '（目前只有一次測驗）' : `，前次 ${miniCogReference.previousScore} 分`}。`
+    : ''
+
+  const message = `最近一段 ${recentSessions.length} 場平均 ${recentAverage.toFixed(1)} 分，前一段 ${previousSessions.length} 場平均 ${previousAverage.toFixed(1)} 分；目前看起來是${directionText}（${scoreDelta >= 0 ? '+' : ''}${scoreDelta.toFixed(1)} 分）。判讀信心：${confidenceText}。${miniCogText}`
+  const careSuggestion = getCareSuggestion(direction)
+
+  return {
+    hasEnoughGames: true,
+    minimumGames: QUICK_DIRECTION_MIN_GAMES,
+    recentCount: recentSessions.length,
+    previousCount: previousSessions.length,
+    recentAverage: Math.round(recentAverage * 100) / 100,
+    previousAverage: Math.round(previousAverage * 100) / 100,
+    scoreDelta,
+    direction,
+    confidence,
+    domainInsights,
+    miniCogReference,
+    message,
+    careSuggestion,
+  }
 }
 
 /**

@@ -116,6 +116,7 @@ import { useUserStore, useGameStore } from '@/stores'
 import { useResponsive } from '@/composables/useResponsive'
 import { COGNITIVE_DIMENSIONS, emptyCognitiveScores, type CognitiveDimensionInfo } from '@/types/cognitive'
 import { calculateCognitiveDomainScores, calculateCognitiveIndex, generateTrainingSuggestions } from '@/services/scoreCalculator'
+import { analyzeTrainingDirection } from '@/services/correlationAnalysisService'
 import { getLatestMiniCogResult, getUserMiniCogResults } from '@/services/db'
 import { type MiniCogResult, getRiskLevelDescription, calculateMiniCogTotal } from '@/services/miniCogService'
 import type { ReportUserInfo } from '@/services/pdfService'
@@ -445,6 +446,7 @@ async function downloadReport() {
 
      // 獲取圖表圖片
      const { radarChartImage, trendChartImage } = getChartImages()
+    const quickDirectionInsight = analyzeTrainingDirection(miniCogHistory.value, gameStore.sessions)
 
      let nutritionData: NutritionReportData | null = null
      if (nutritionUnlocked.value && nutritionResult.value) {
@@ -476,7 +478,8 @@ async function downloadReport() {
           includeNutrition: !!(nutritionUnlocked.value && nutritionData && nutritionData.recommendations.length > 0),
           language: 'bilingual',
           radarChartImage,
-          trendChartImage
+          trendChartImage,
+          quickDirectionInsight
         },
         nutritionData
      )

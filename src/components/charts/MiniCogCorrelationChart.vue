@@ -3,14 +3,47 @@
     <!-- 資料不足警告 -->
     <div v-if="!hasEnoughData" class="insufficient-data">
       <div class="warning-icon">📊</div>
-      <h4 class="warning-title">資料不足</h4>
+      <h4 class="warning-title">統計資料不足</h4>
       <p class="warning-message">
         目前僅有 <strong>{{ dataCount }}</strong> 筆配對資料，
         需要至少 <strong>{{ MINIMUM_DATA_POINTS }}</strong> 筆才能進行統計分析。
       </p>
-      <p class="warning-hint">
-        完成更多 Mini-Cog 評估並進行遊戲訓練後，即可查看關聯分析。
+      <p class="warning-hint" v-if="quickInsight?.hasEnoughGames">
+        已先提供即時方向分析，協助你不等待長週期也能看趨勢。
       </p>
+      <p class="warning-hint" v-else>
+        再完成 {{ quickInsight?.minimumGames || 6 }} 場遊戲可先啟用即時方向分析。
+      </p>
+
+      <div v-if="quickInsight?.hasEnoughGames" class="quick-insight">
+        <h5 class="quick-title">近期方向提醒</h5>
+        <p class="quick-message">{{ quickInsight.message }}</p>
+        <p class="quick-suggestion">建議：{{ quickInsight.careSuggestion }}</p>
+        <div class="quick-meta">
+          <div class="quick-meta-item">
+            <span>最近一段平均</span>
+            <strong>{{ quickInsight.recentAverage.toFixed(1) }}</strong>
+          </div>
+          <div class="quick-meta-item">
+            <span>前一段平均</span>
+            <strong>{{ quickInsight.previousAverage.toFixed(1) }}</strong>
+          </div>
+          <div class="quick-meta-item">
+            <span>分數變化</span>
+            <strong :class="quickDeltaClass">{{ quickDeltaText }}</strong>
+          </div>
+        </div>
+
+        <div v-if="quickInsight.domainInsights.length > 0" class="quick-domains">
+          <span
+            v-for="domain in quickInsight.domainInsights"
+            :key="domain.domain"
+            class="quick-domain-pill"
+          >
+            {{ domain.domain }} {{ domain.delta >= 0 ? '+' : '' }}{{ domain.delta.toFixed(1) }}
+          </span>
+        </div>
+      </div>
     </div>
 
     <!-- 有足夠資料時顯示圖表 -->
@@ -90,12 +123,14 @@ import { getAppFontFamily } from '@/utils/typography'
 import { 
   getMiniCogGameCorrelationData,
   analyzeMiniCogGameCorrelation, 
+  analyzeTrainingDirection,
   analyzeByDomain,
   MINIMUM_DATA_POINTS,
   getCorrelationColor,
   type CorrelationDataPoint,
   type CorrelationResult,
-  type DomainCorrelation
+  type DomainCorrelation,
+  type TrainingDirectionInsight
 } from '@/services/correlationAnalysisService'
 import type { MiniCogResult } from '@/services/miniCogService'
 import type { GameSession } from '@/types/game'
@@ -122,6 +157,7 @@ const dataCount = ref(0)
 const dataPoints = ref<CorrelationDataPoint[]>([])
 const correlation = ref<CorrelationResult | null>(null)
 const analysisMessage = ref('')
+const quickInsight = ref<TrainingDirectionInsight | null>(null)
 const domainCorrelations = ref<(DomainCorrelation & { name: string; hasEnoughData: boolean; coefficient: number; color: string })[]>([])
 
 // 計算屬性
@@ -161,9 +197,23 @@ const isSignificant = computed(() => {
   return correlation.value?.isSignificant || false
 })
 
+const quickDeltaText = computed(() => {
+  const delta = quickInsight.value?.scoreDelta ?? 0
+  return `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}`
+})
+
+const quickDeltaClass = computed(() => {
+  const direction = quickInsight.value?.direction
+  if (direction === 'improving') return 'quick-delta-up'
+  if (direction === 'declining') return 'quick-delta-down'
+  return 'quick-delta-flat'
+})
+
 // 載入資料
 function loadData() {
   try {
+    quickInsight.value = analyzeTrainingDirection(props.miniCogResults, props.gameSessions)
+
     // 主要關聯分析
     const result = analyzeMiniCogGameCorrelation(props.miniCogResults, props.gameSessions)
     hasEnoughData.value = result.hasEnoughData
@@ -184,6 +234,8 @@ function loadData() {
           ? getCorrelationColor(d.correlation.strength, d.correlation.direction)
           : '#9ca3af'
       }))
+    } else {
+      domainCorrelations.value = []
     }
 
     // 更新圖表
@@ -373,6 +425,15 @@ watch(isDark, () => {
   }
 })
 
+// 監聽資料變化（例如舊用戶升版後，背景同步把資料補齊）
+watch(
+  () => [props.miniCogResults, props.gameSessions],
+  () => {
+    loadData()
+  },
+  { deep: true }
+)
+
 // 生命週期
 onMounted(() => {
   loadData()
@@ -431,6 +492,87 @@ defineExpose({
   font-size: 13px;
   color: #a16207;
   margin: 0;
+}
+
+.quick-insight {
+  margin-top: 16px;
+  text-align: left;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.quick-title {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary, #1f2937);
+}
+
+.quick-message {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text-primary, #1f2937);
+}
+
+.quick-suggestion {
+  margin: 8px 0 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-primary, #4f46e5);
+  font-weight: 600;
+}
+
+.quick-meta {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.quick-meta-item {
+  background: var(--color-bg-secondary, #f9fafb);
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.quick-meta-item strong {
+  font-size: 14px;
+  color: var(--color-text-primary, #1f2937);
+}
+
+.quick-delta-up {
+  color: var(--color-success, #16a34a) !important;
+}
+
+.quick-delta-down {
+  color: var(--color-danger, #dc2626) !important;
+}
+
+.quick-delta-flat {
+  color: var(--color-text-secondary, #6b7280) !important;
+}
+
+.quick-domains {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.quick-domain-pill {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--color-bg-secondary, #f3f4f6);
+  color: var(--color-text-secondary, #4b5563);
 }
 
 /* 相關係數摘要 */
@@ -629,6 +771,27 @@ defineExpose({
   color: #f59e0b;
 }
 
+:global(.dark) .quick-insight {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+:global(.dark) .quick-title,
+:global(.dark) .quick-message,
+:global(.dark) .quick-meta-item strong {
+  color: #f9fafb;
+}
+
+:global(.dark) .quick-suggestion {
+  color: #a5b4fc;
+}
+
+:global(.dark) .quick-meta-item,
+:global(.dark) .quick-domain-pill {
+  background: #374151;
+  color: #d1d5db;
+}
+
 :global(.dark) .coefficient-display,
 :global(.dark) .meta-item,
 :global(.dark) .analysis-description,
@@ -666,6 +829,10 @@ defineExpose({
 
   .domain-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .quick-meta {
+    grid-template-columns: 1fr;
   }
 }
 </style>

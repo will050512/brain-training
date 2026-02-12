@@ -246,7 +246,7 @@
             <span>📐</span>
           </template>
         </SectionTitle>
-        <MiniCogCorrelationChart :mini-cog-results="miniCogHistory" :game-sessions="recentSessions" />
+        <MiniCogCorrelationChart :mini-cog-results="miniCogHistory" :game-sessions="sessionsForCorrelation" />
       </section>
 
       <section v-if="trainingSuggestions.length > 0" class="space-y-3">

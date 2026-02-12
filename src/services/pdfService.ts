@@ -5,6 +5,7 @@
  */
 
 import jsPDF from 'jspdf'
+import type { TrainingDirectionInsight } from '@/services/correlationAnalysisService'
 
 // 引入 LOGO Base64（由 generate-icons 腳本產生）
 let LOGO_BASE64: string | null = null
@@ -74,6 +75,7 @@ export interface PdfReportOptions {
   language?: 'zh-TW' | 'en' | 'bilingual'
   radarChartImage?: string | null
   trendChartImage?: string | null
+  quickDirectionInsight?: TrainingDirectionInsight | null
 }
 
 /** 營養建議資料（用於 PDF 報告） */
@@ -253,6 +255,12 @@ export async function generateCognitiveReport(
   if (options.includeTrends && trends && trends.length > 0) {
     currentY = ensurePageSpace(doc, currentY, 60, margin, pageHeight)
     currentY = drawTrendsSection(doc, trends, currentY, margin, pageWidth, options)
+  }
+
+  // ===== 近期方向提醒 =====
+  if (options.quickDirectionInsight && options.quickDirectionInsight.hasEnoughGames) {
+    currentY = ensurePageSpace(doc, currentY, 60, margin, pageHeight)
+    currentY = drawQuickDirectionSection(doc, options.quickDirectionInsight, currentY, margin, pageWidth)
   }
 
   // ===== 行為分析摘要 =====
@@ -558,10 +566,10 @@ function drawTrendsSection(
     const lastScore = trends[trends.length - 1]?.score || 0
     const change = lastScore - firstScore
     const trendText = change > 0 
-      ? `📈 整體呈上升趨勢 (變化: +${change.toFixed(1)})`
+      ? `整體表現逐步進步（變化 +${change.toFixed(1)} 分）`
       : change < 0
-        ? `📉 整體呈下降趨勢 (變化: ${change.toFixed(1)})`
-        : '➡️ 整體表現穩定'
+        ? `整體表現略有下滑（變化 ${change.toFixed(1)} 分）`
+        : '整體表現大致穩定'
     
     y += 5
     doc.setFontSize(FONT_SIZES.small)
@@ -570,6 +578,65 @@ function drawTrendsSection(
   }
 
   return y + 8
+}
+
+/**
+ * 繪製近期方向提醒區塊
+ */
+function drawQuickDirectionSection(
+  doc: jsPDF,
+  insight: TrainingDirectionInsight,
+  startY: number,
+  margin: number,
+  pageWidth: number
+): number {
+  let y = startY
+  y = drawSectionHeader(doc, '近期方向提醒 Quick Direction Summary', y, margin, pageWidth)
+
+  const cardWidth = pageWidth - margin * 2
+  const cardHeight = 34
+  const deltaColor = insight.scoreDelta >= 0 ? COLORS.success : COLORS.warning
+  const deltaText = `${insight.scoreDelta >= 0 ? '+' : ''}${insight.scoreDelta.toFixed(1)} 分`
+
+  doc.setFillColor(248, 250, 252)
+  doc.setDrawColor(COLORS.border)
+  doc.rect(margin, y, cardWidth, cardHeight, 'FD')
+
+  doc.setFontSize(FONT_SIZES.small)
+  doc.setTextColor(COLORS.lightText)
+  doc.text('最近一段平均', margin + 4, y + 7)
+  doc.text('前一段平均', margin + 38, y + 7)
+  doc.text('分數變化', margin + 72, y + 7)
+
+  doc.setFontSize(FONT_SIZES.body)
+  doc.setTextColor(COLORS.text)
+  doc.text(`${insight.recentAverage.toFixed(1)} 分`, margin + 4, y + 13)
+  doc.text(`${insight.previousAverage.toFixed(1)} 分`, margin + 38, y + 13)
+  doc.setTextColor(deltaColor)
+  doc.text(deltaText, margin + 72, y + 13)
+
+  doc.setFontSize(FONT_SIZES.small)
+  doc.setTextColor(COLORS.text)
+  const summaryLines = splitTextLines(doc, insight.message, cardWidth - 8)
+  doc.text(summaryLines, margin + 4, y + 20)
+
+  y += cardHeight + 4
+
+  doc.setFontSize(FONT_SIZES.small)
+  doc.setTextColor(COLORS.primary)
+  y = drawWrappedText(doc, `建議：${insight.careSuggestion}`, margin, y, cardWidth, LINE_HEIGHTS.small)
+  y += 2
+
+  if (insight.domainInsights.length > 0) {
+    const domainText = insight.domainInsights
+      .map(item => `${item.domain}${item.delta >= 0 ? '+' : ''}${item.delta.toFixed(1)}`)
+      .join('、')
+    doc.setTextColor(COLORS.lightText)
+    y = drawWrappedText(doc, `重點領域變化：${domainText}`, margin, y, cardWidth, LINE_HEIGHTS.small)
+    y += 2
+  }
+
+  return y + 3
 }
 
 /**

@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { calculatePearsonCorrelation, performCorrelationAnalysis } from '@/services/correlationAnalysisService'
+import { calculatePearsonCorrelation, performCorrelationAnalysis, analyzeTrainingDirection } from '@/services/correlationAnalysisService'
+import type { GameSession } from '@/types/game'
+import type { MiniCogResult } from '@/services/miniCogService'
 
 function must<T>(value: T | undefined, message: string): T {
   if (value === undefined) {
@@ -43,6 +45,72 @@ function generateCorrelatedPair(n: number, r: number): { x: number[]; y: number[
   const b = Math.sqrt(1 - r * r)
   const y = x.map((xi, i) => a * xi + b * (z[i] ?? 0))
   return { x, y }
+}
+
+function buildSession(score: number, daysAgo: number): GameSession {
+  const createdAt = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000)
+  return {
+    id: `s-${daysAgo}-${score}`,
+    odId: 'u1',
+    gameId: 'memory-cards',
+    difficulty: 'easy',
+    subDifficulty: 2,
+    result: {
+      gameId: 'memory-cards',
+      difficulty: 'easy',
+      subDifficulty: 2,
+      score,
+      maxScore: 100,
+      correctCount: 10,
+      totalCount: 12,
+      accuracy: 0.83,
+      avgReactionTime: 800,
+      duration: 120,
+      timestamp: createdAt,
+      mode: 'free'
+    },
+    cognitiveScores: {
+      reaction: score,
+      logic: score,
+      memory: score,
+      cognition: score,
+      coordination: score,
+      attention: score,
+    },
+    createdAt,
+  }
+}
+
+function buildMiniCog(totalScore: number, daysAgo: number): MiniCogResult {
+  return {
+    id: `m-${daysAgo}-${totalScore}`,
+    odId: 'u1',
+    wordRecall: {
+      wordSet: {
+        locale: 'zh-TW',
+        words: ['香蕉', '日出', '椅子'],
+        setIndex: 0,
+      },
+      immediateRecall: ['香蕉', '日出', '椅子'],
+      delayedRecall: ['香蕉', '日出'],
+      score: Math.max(0, Math.min(3, totalScore - 2)),
+    },
+    clockDrawing: {
+      targetTime: '11:10',
+      selfAssessment: {
+        hasCompleteCircle: true,
+        hasCorrectNumbers: true,
+        hasCorrectHands: true,
+      },
+      score: Math.max(0, Math.min(2, totalScore >= 4 ? 2 : totalScore >= 3 ? 1 : 0)),
+      completionTime: 10000,
+    },
+    totalScore,
+    atRisk: totalScore <= 2,
+    mmseCorrelation: '',
+    completedAt: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString(),
+    duration: 60,
+  }
 }
 
 describe('correlationAnalysisService (stats)', () => {
@@ -104,5 +172,61 @@ describe('correlationAnalysisService (stats)', () => {
     expect(resPos).not.toBeNull()
     expect(resNeg).not.toBeNull()
     expect(resPos!.pValue).toBeCloseTo(resNeg!.pValue, 10)
+  })
+
+  it('analyzeTrainingDirection returns improving direction with six sessions', () => {
+    const sessions = [
+      buildSession(80, 0),
+      buildSession(82, 1),
+      buildSession(78, 2),
+      buildSession(60, 3),
+      buildSession(62, 4),
+      buildSession(58, 5),
+    ]
+
+    const insight = analyzeTrainingDirection([buildMiniCog(4, 1)], sessions)
+
+    expect(insight.hasEnoughGames).toBe(true)
+    expect(insight.direction).toBe('improving')
+    expect(insight.scoreDelta).toBeGreaterThan(10)
+    expect(insight.domainInsights.length).toBeGreaterThan(0)
+    expect(insight.message).toContain('穩定進步')
+    expect(insight.careSuggestion).toContain('維持固定練習節奏')
+  })
+
+  it('analyzeTrainingDirection reports insufficient data when sessions are too few', () => {
+    const sessions = [
+      buildSession(70, 0),
+      buildSession(72, 1),
+      buildSession(68, 2),
+      buildSession(66, 3),
+      buildSession(65, 4),
+    ]
+
+    const insight = analyzeTrainingDirection([], sessions)
+
+    expect(insight.hasEnoughGames).toBe(false)
+    expect(insight.minimumGames).toBe(6)
+    expect(insight.message).toContain('再累積到 6 場')
+  })
+
+  it('analyzeTrainingDirection includes Mini-Cog trend reference', () => {
+    const sessions = [
+      buildSession(70, 0),
+      buildSession(72, 1),
+      buildSession(71, 2),
+      buildSession(68, 3),
+      buildSession(66, 4),
+      buildSession(67, 5),
+    ]
+
+    const insight = analyzeTrainingDirection(
+      [buildMiniCog(4, 0), buildMiniCog(3, 14)],
+      sessions
+    )
+
+    expect(insight.hasEnoughGames).toBe(true)
+    expect(insight.miniCogReference).not.toBeNull()
+    expect(insight.miniCogReference?.trend).toBe('up')
   })
 })
