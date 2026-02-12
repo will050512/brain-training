@@ -315,7 +315,7 @@
         <p class="mb-6">
           <SubtleLabel text="Mini-Cog 篩檢與遊戲訓練表現對照" size="sm" />
         </p>
-        <MiniCogCorrelationChart :mini-cog-results="miniCogHistory" :game-sessions="recentSessions" />
+        <MiniCogCorrelationChart :mini-cog-results="miniCogHistory" :game-sessions="sessionsForCorrelation" />
       </section>
 
       <section id="games" class="scroll-mt-24 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] shadow-sm p-6">
@@ -550,6 +550,7 @@ defineProps<{
   allGames: GameDefinition[]
   getBestScore: (gameId: string) => number | null | undefined
   getAverageScore: (gameId: string) => number | null | undefined
+  sessionsForCorrelation: GameSession[]
   recentSessions: GameSession[]
   getGameIcon: (gameId: string) => string
   getGameName: (gameId: string) => string

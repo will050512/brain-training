@@ -5,6 +5,13 @@
 
 import { type MiniCogResult } from './miniCogService'
 import type { GameSession } from '@/types/game'
+import {
+  calculateOverallCognitiveScores,
+  calculateDimensionSampleCounts,
+  calculateCognitiveDomainScores,
+  COGNITIVE_DOMAIN_WEIGHTS,
+  type CognitiveDomain
+} from '@/services/scoreCalculator'
 
 export interface CorrelationResult {
   /** 皮爾森相關係數 (-1 到 1) */
@@ -96,73 +103,111 @@ export function calculatePearsonCorrelation(x: number[], y: number[]): number {
  * 使用 t 分佈近似
  */
 function calculatePValue(r: number, n: number): number {
-  if (n <= 2 || Math.abs(r) >= 1) {
+  if (n <= 2) {
     return 1
+  }
+  if (Math.abs(r) >= 1) {
+    return 0
   }
   
   // t = r * sqrt((n-2) / (1-r^2))
   const t = r * Math.sqrt((n - 2) / (1 - r * r))
   const df = n - 2
-  
-  // 使用 t 分佈的近似 p 值計算
-  // 這是一個簡化的近似計算
-  const x = df / (df + t * t)
-  const pValue = incompleteBeta(df / 2, 0.5, x)
-  
-  return pValue
+
+  // two-tailed p-value: p = 2 * (1 - CDF_t(|t|, df))
+  const cdf = studentTCdf(Math.abs(t), df)
+  const pValue = 2 * (1 - cdf)
+  return clamp01(pValue)
 }
 
 /**
- * 不完全 Beta 函數的近似計算（用於 p 值估算）
+ * Clamp to [0, 1]
  */
-function incompleteBeta(a: number, b: number, x: number): number {
-  // 使用 Lentz 連分數近似
-  if (x === 0 || x === 1) {
-    return x
+function clamp01(v: number): number {
+  if (!Number.isFinite(v)) return 0
+  if (v < 0) return 0
+  if (v > 1) return 1
+  return v
+}
+
+/**
+ * Regularized incomplete beta I_x(a, b)
+ * Numerical Recipes style (continued fraction + symmetry transform)
+ */
+function regularizedIncompleteBeta(a: number, b: number, x: number): number {
+  if (!Number.isFinite(a) || !Number.isFinite(b) || !Number.isFinite(x)) return NaN
+  if (a <= 0 || b <= 0) return NaN
+  if (x <= 0) return 0
+  if (x >= 1) return 1
+
+  const lnBeta = logGamma(a + b) - logGamma(a) - logGamma(b)
+  const bt = Math.exp(lnBeta + a * Math.log(x) + b * Math.log(1 - x))
+
+  // Use symmetry transform for better convergence
+  const threshold = (a + 1) / (a + b + 2)
+  if (x < threshold) {
+    return clamp01((bt * betaContinuedFraction(a, b, x)) / a)
   }
-  
-  const EPSILON = 1e-10
+  return clamp01(1 - (bt * betaContinuedFraction(b, a, 1 - x)) / b)
+}
+
+function betaContinuedFraction(a: number, b: number, x: number): number {
   const MAX_ITERATIONS = 200
-  
-  let fpmin = 1e-30
-  let qab = a + b
-  let qap = a + 1
-  let qam = a - 1
+  const EPSILON = 3e-7
+  const FPMIN = 1e-30
+
+  const qab = a + b
+  const qap = a + 1
+  const qam = a - 1
   let c = 1
-  let d = 1 - qab * x / qap
-  
-  if (Math.abs(d) < fpmin) d = fpmin
+  let d = 1 - (qab * x) / qap
+  if (Math.abs(d) < FPMIN) d = FPMIN
   d = 1 / d
   let h = d
-  
+
   for (let m = 1; m <= MAX_ITERATIONS; m++) {
     const m2 = 2 * m
-    let aa = m * (b - m) * x / ((qam + m2) * (a + m2))
+
+    // even step
+    let aa = (m * (b - m) * x) / ((qam + m2) * (a + m2))
     d = 1 + aa * d
-    if (Math.abs(d) < fpmin) d = fpmin
+    if (Math.abs(d) < FPMIN) d = FPMIN
     c = 1 + aa / c
-    if (Math.abs(c) < fpmin) c = fpmin
+    if (Math.abs(c) < FPMIN) c = FPMIN
     d = 1 / d
     h *= d * c
-    
-    aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2))
+
+    // odd step
+    aa = (-(a + m) * (qab + m) * x) / ((a + m2) * (qap + m2))
     d = 1 + aa * d
-    if (Math.abs(d) < fpmin) d = fpmin
+    if (Math.abs(d) < FPMIN) d = FPMIN
     c = 1 + aa / c
-    if (Math.abs(c) < fpmin) c = fpmin
+    if (Math.abs(c) < FPMIN) c = FPMIN
     d = 1 / d
     const del = d * c
     h *= del
-    
+
     if (Math.abs(del - 1) < EPSILON) break
   }
-  
-  const bt = Math.exp(
-    logGamma(a + b) - logGamma(a) - logGamma(b) +
-    a * Math.log(x) + b * Math.log(1 - x)
-  )
-  
-  return bt * h / a
+
+  return h
+}
+
+/**
+ * Student's t CDF for t >= 0.
+ */
+function studentTCdf(t: number, df: number): number {
+  if (!Number.isFinite(t) || !Number.isFinite(df)) return NaN
+  if (df <= 0) return NaN
+  if (t === 0) return 0.5
+  if (t < 0) return 1 - studentTCdf(-t, df)
+
+  const x = df / (df + t * t)
+  const a = df / 2
+  const b = 0.5
+  const ib = regularizedIncompleteBeta(a, b, x)
+  // For t>0: CDF = 1 - 0.5 * I_{df/(df+t^2)}(df/2, 1/2)
+  return clamp01(1 - 0.5 * ib)
 }
 
 /**
@@ -258,9 +303,15 @@ export function getMiniCogGameCorrelationData(
   }
   
   const correlationData: CorrelationDataPoint[] = []
+
+  const toValidDate = (value: unknown): Date | null => {
+    const d = new Date(value as never)
+    return Number.isFinite(d.getTime()) ? d : null
+  }
   
   for (const result of miniCogResults) {
-    const assessmentDate = new Date(result.completedAt)
+    const assessmentDate = toValidDate(result.completedAt)
+    if (!assessmentDate) continue
     
     // 查找評估前後 7 天內的遊戲記錄
     const windowStart = new Date(assessmentDate)
@@ -269,7 +320,8 @@ export function getMiniCogGameCorrelationData(
     windowEnd.setDate(windowEnd.getDate() + 7)
     
     const relevantGames = gameSessions.filter((session: GameSession) => {
-      const gameDate = new Date(session.createdAt)
+      const gameDate = toValidDate(session.createdAt)
+      if (!gameDate) return false
       return gameDate >= windowStart && gameDate <= windowEnd
     })
     
@@ -364,62 +416,80 @@ export function analyzeByDomain(
   if (!miniCogResults || miniCogResults.length === 0 || !gameSessions || gameSessions.length === 0) {
     return []
   }
-  
-  // 定義認知領域與遊戲的對應
-  const domainGameMap: Record<string, string[]> = {
-    '記憶力': ['card-match', 'instant-memory', 'poker-memory', 'audio-memory'],
-    '注意力': ['whack-a-mole', 'spot-difference', 'number-connect'],
-    '執行功能': ['maze-navigation', 'balance-scale', 'math-calc'],
-    '視覺空間': ['clock-drawing', 'pattern-reasoning', 'gesture-memory'],
-    '反應能力': ['rock-paper-scissors', 'rhythm-mimic']
+
+  const domainLabels: Record<CognitiveDomain, string> = {
+    memory: '記憶',
+    attention: '注意',
+    processing: '處理速度',
+    executive: '執行功能',
+    language: '語言'
   }
-  
-  const results: DomainCorrelation[] = []
-  
-  for (const [domain, games] of Object.entries(domainGameMap)) {
-    const dataPoints: { miniCogScore: number; domainScore: number }[] = []
-    
-    for (const result of miniCogResults) {
-      const assessmentDate = new Date(result.completedAt)
-      
-      // 查找評估前後 7 天內特定領域的遊戲記錄
-      const windowStart = new Date(assessmentDate)
-      windowStart.setDate(windowStart.getDate() - 7)
-      const windowEnd = new Date(assessmentDate)
-      windowEnd.setDate(windowEnd.getDate() + 7)
-      
-      const domainGames = gameSessions.filter((session: GameSession) => {
-        const gameDate = new Date(session.createdAt)
-        return gameDate >= windowStart && 
-               gameDate <= windowEnd && 
-               games.includes(session.gameId)
+
+  const domains = Object.keys(COGNITIVE_DOMAIN_WEIGHTS) as CognitiveDomain[]
+  const results: DomainCorrelation[] = domains.map(domain => ({
+    domain: domainLabels[domain] ?? domain,
+    correlation: null,
+    dataPoints: []
+  }))
+
+  const domainIndex = new Map<CognitiveDomain, number>(domains.map((d, i) => [d, i]))
+
+  const toValidDate = (value: unknown): Date | null => {
+    const d = new Date(value as never)
+    return Number.isFinite(d.getTime()) ? d : null
+  }
+
+  for (const miniCog of miniCogResults) {
+    const assessmentDate = toValidDate(miniCog.completedAt)
+    if (!assessmentDate) continue
+    const windowStart = new Date(assessmentDate)
+    windowStart.setDate(windowStart.getDate() - 7)
+    const windowEnd = new Date(assessmentDate)
+    windowEnd.setDate(windowEnd.getDate() + 7)
+
+    const windowSessions = gameSessions.filter((session: GameSession) => {
+      const gameDate = toValidDate(session.createdAt)
+      if (!gameDate) return false
+      return gameDate >= windowStart && gameDate <= windowEnd
+    })
+
+    if (windowSessions.length === 0) continue
+
+    const cognitiveScores = calculateOverallCognitiveScores(windowSessions)
+    const sampleCounts = calculateDimensionSampleCounts(windowSessions)
+    const domainScores = calculateCognitiveDomainScores(cognitiveScores, sampleCounts)
+
+    for (const domain of domains) {
+      const idx = domainIndex.get(domain)
+      if (idx === undefined) continue
+
+      const target = results[idx]
+      if (!target) continue
+
+      // If the domain has no contributing samples in this window, skip the point.
+      const domainWeights = COGNITIVE_DOMAIN_WEIGHTS[domain]
+      const hasSamples = Object.keys(domainWeights).some(dim => {
+        const dimension = dim as keyof typeof sampleCounts
+        return (domainWeights[dimension] ?? 0) > 0 && (sampleCounts[dimension] ?? 0) > 0
       })
-      
-      if (domainGames.length > 0) {
-        const avgDomainScore = domainGames.reduce((sum: number, s: GameSession) => sum + (s.result?.score || 0), 0) / domainGames.length
-        dataPoints.push({
-          miniCogScore: result.totalScore,
-          domainScore: avgDomainScore
-        })
-      }
+      if (!hasSamples) continue
+
+      target.dataPoints.push({
+        miniCogScore: miniCog.totalScore,
+        domainScore: domainScores[domain] ?? 0
+      })
     }
-    
-    let correlation: CorrelationResult | null = null
-    
-    if (hasEnoughDataForCorrelation(dataPoints.length)) {
-      correlation = performCorrelationAnalysis(
-        dataPoints.map(d => d.miniCogScore),
-        dataPoints.map(d => d.domainScore)
+  }
+
+  for (const r of results) {
+    if (hasEnoughDataForCorrelation(r.dataPoints.length)) {
+      r.correlation = performCorrelationAnalysis(
+        r.dataPoints.map(d => d.miniCogScore),
+        r.dataPoints.map(d => d.domainScore)
       )
     }
-    
-    results.push({
-      domain,
-      correlation,
-      dataPoints
-    })
   }
-  
+
   return results
 }
 

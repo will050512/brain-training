@@ -146,6 +146,9 @@ const DOMAIN_WEIGHTS: Record<CognitiveDomain, Partial<Record<CognitiveDimension,
   language: { cognition: 0.7, coordination: 0.3 },
 }
 
+// 對外提供：五大領域定義（供報表/關聯分析等一致使用）
+export const COGNITIVE_DOMAIN_WEIGHTS = DOMAIN_WEIGHTS
+
 function clampScore(score: number): number {
   if (!Number.isFinite(score)) return 0
   return Math.max(0, Math.min(100, Math.round(score)))

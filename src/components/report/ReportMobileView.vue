@@ -336,7 +336,7 @@
           <p class="mb-2">
             <SubtleLabel
               :text="`再玩 ${NUTRITION_UNLOCK_REQUIRED_TRAININGS - nutritionUnlockProgress} 場解鎖`"
-              tone="muted"
+          <MiniCogCorrelationChart :mini-cog-results="miniCogHistory" :game-sessions="sessionsForCorrelation" />
             />
           </p>
           <div class="w-32 h-1 bg-[var(--color-bg-muted)] rounded-full mx-auto overflow-hidden">
@@ -464,6 +464,7 @@ defineProps<{
   allGames: GameDefinition[]
   getBestScore: (gameId: string) => number | null | undefined
   getAverageScore: (gameId: string) => number | null | undefined
+  sessionsForCorrelation: GameSession[]
   recentSessions: GameSession[]
   getGameIcon: (gameId: string) => string
   getGameName: (gameId: string) => string
